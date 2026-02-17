@@ -3,219 +3,306 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Step Class Gallery</title>
+    <title>Step Code Squad Gallery</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;900&family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
+    
     <style>
-        /* General Page Styling */
+        :root {
+            --primary: #ffaa00;
+            --glass: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
+
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #121212; 
+            font-family: 'Open Sans', sans-serif;
+            background: radial-gradient(circle at top center, #1a1a1a 0%, #050505 100%);
             color: #ffffff;
             margin: 0;
-            padding: 20px;
-            text-align: center;
-            overflow-x: hidden; /* Prevents the screen from scrolling sideways */
+            padding: 0;
+            overflow-x: hidden;
+            min-height: 100vh;
         }
 
-        h1 {
-            margin-bottom: 5px;
-            color: #ffaa00; 
-            font-size: 2.5rem;
-        }
-
-        p {
-            margin-bottom: 40px;
-            color: #aaaaaa;
-        }
-
-        /* --- SAKURA ANIMATION CSS --- */
-        #sakura-container {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            pointer-events: none; /* Allows you to click through the petals */
-            z-index: -1; /* Keeps the petals behind your photos */
-        }
-
-        .petal {
-            position: absolute;
-            background-color: #ffb7c5; /* Classic Cherry Blossom Pink */
-            border-radius: 15px 0px 15px 0px; /* Shapes the square into a petal */
-            opacity: 0.7;
-            animation: fall linear infinite, drift ease-in-out infinite alternate;
-        }
-
-        @keyframes fall {
-            0% { top: -10%; }
-            100% { top: 110%; }
-        }
-
-        @keyframes drift {
-            0% { transform: translateX(0) rotate(0deg); }
-            100% { transform: translateX(80px) rotate(360deg); }
-        }
-
-        /* The Grid System for the Gallery */
-        .gallery-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 30px;
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-
-        .image-card {
-            background-color: #1e1e1e; 
-            padding: 15px;
-            border-radius: 12px;
-            box-shadow: 0 6px 12px rgba(0,0,0,0.6);
-            transition: transform 0.3s ease;
-        }
-
-        .image-card:hover {
-            transform: translateY(-10px); 
-        }
-
-        .gallery-item {
-            width: 100%;
-            height: auto; 
-            border-radius: 8px;
-            cursor: pointer; 
-        }
-
-        .caption {
-            margin-top: 15px;
-            color: #ffffff;
-            font-weight: bold;
-            font-size: 16px;
-        }
-
-        /* Lightbox */
-        .lightbox {
-            display: none; 
+        /* --- UPGRADED CINEMATIC SPLASH SCREEN --- */
+        #splash-screen {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0, 0, 0, 0.9);
-            z-index: 1000;
+            background-color: #050505;
+            z-index: 2000;
+            display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
+            /* New 3D Zoom-out transition */
+            transition: opacity 0.8s ease-in-out, transform 1s cubic-bezier(0.16, 1, 0.3, 1), visibility 1s;
         }
 
-        .lightbox img {
-            max-width: 90%;
-            max-height: 90%;
-            border-radius: 10px;
-            box-shadow: 0 0 20px rgba(255, 170, 0, 0.4); 
+        .portal {
+            position: relative;
+            width: 250px;
+            height: 250px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            filter: drop-shadow(0 0 30px rgba(255, 170, 0, 0.4));
         }
 
-        .close-btn {
-            position: absolute;
-            top: 20px;
-            right: 40px;
-            color: white;
-            font-size: 50px;
-            font-weight: bold;
+        .splash-text {
+            margin-top: 20px;
+            font-family: 'Montserrat', sans-serif;
+            color: var(--primary);
+            letter-spacing: 6px;
+            font-size: 1rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            animation: pulse-text 1.5s infinite alternate;
+        }
+
+        @keyframes pulse-text {
+            0% { opacity: 0.5; filter: blur(1px); }
+            100% { opacity: 1; filter: blur(0px); text-shadow: 0 0 10px rgba(255, 170, 0, 0.8); }
+        }
+
+        /* The class that triggers the cinematic opening */
+        .zoom-out {
+            transform: scale(1.5);
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        /* --- MAIN CONTENT STYLING --- */
+        #main-content {
+            padding: 60px 20px;
+            text-align: center;
+            opacity: 0;
+            transform: scale(0.95);
+            transition: all 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .content-visible {
+            opacity: 1 !important;
+            transform: scale(1) !important;
+        }
+
+        h1 {
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 900;
+            text-transform: uppercase;
+            font-size: clamp(2.5rem, 8vw, 4.5rem);
+            background: linear-gradient(to right, #ffaa00, #ffdd00, #ffaa00);
+            background-size: 200% auto;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+            animation: shine 4s linear infinite;
+        }
+
+        @keyframes shine {
+            to { background-position: 200% center; }
+        }
+
+        .subtitle {
+            color: #888;
+            font-size: 1.1rem;
+            margin-bottom: 60px;
+            letter-spacing: 1px;
+        }
+
+        /* Glassmorphism Gallery */
+        .gallery-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 40px;
+            max-width: 1300px;
+            margin: 0 auto;
+        }
+
+        .image-card {
+            background: var(--glass);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            padding: 15px;
+            border-radius: 20px;
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.5);
+            transition: all 0.4s ease;
+        }
+
+        .image-card:hover {
+            transform: translateY(-12px) scale(1.02);
+            border-color: var(--primary);
+            box-shadow: 0 20px 40px rgba(255, 170, 0, 0.15);
+        }
+
+        .gallery-item {
+            width: 100%;
+            height: auto;
+            border-radius: 12px;
             cursor: pointer;
-            transition: color 0.3s ease;
+            filter: brightness(0.8) contrast(1.1);
+            transition: filter 0.4s ease;
         }
 
-        .close-btn:hover {
-            color: #ffaa00;
+        .image-card:hover .gallery-item {
+            filter: brightness(1.1) contrast(1.1);
         }
+
+        .caption {
+            margin-top: 20px;
+            font-family: 'Montserrat', sans-serif;
+            color: #fff;
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+
+        /* --- NEW: VIEW COUNTER & FOOTER --- */
+        .footer {
+            margin-top: 80px;
+            padding: 40px 20px;
+            border-top: 1px solid var(--glass-border);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .view-counter-box {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid var(--glass-border);
+            padding: 15px 30px;
+            border-radius: 50px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+        }
+
+        .view-counter-text {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 0.9rem;
+            color: #aaa;
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+
+        .developer-credit {
+            color: #666;
+            font-size: 0.85rem;
+            letter-spacing: 2px;
+        }
+        .developer-credit strong { color: var(--primary); }
+
+        /* Lightbox */
+        .lightbox {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0, 0, 0, 0.98);
+            z-index: 3000;
+            justify-content: center; align-items: center;
+            backdrop-filter: blur(10px);
+        }
+        .lightbox img { max-width: 85%; max-height: 85%; border-radius: 10px; border: 1px solid #333; }
+        .close-btn { position: absolute; top: 30px; right: 40px; color: #fff; font-size: 50px; cursor: pointer; transition: color 0.3s;}
+        .close-btn:hover { color: var(--primary); }
     </style>
 </head>
 <body>
 
-    <div id="sakura-container"></div>
-
-    <h1>Step Code Squad</h1>
-    <p>OOPS BANNER APP!</p>
-
-    <div class="gallery-container">
-        
-        <div class="image-card">
-            <img src="images/photo1.png" alt="Step Class Photo 1" class="gallery-item" onclick="openLightbox(this.src)">
-            <div class="caption">1</div>
+    <div id="splash-screen">
+        <div class="portal">
+            <lottie-player 
+                src="https://assets8.lottiefiles.com/packages/lf20_jvxwtdsz.json" 
+                background="transparent" 
+                speed="1.5" 
+                loop 
+                autoplay>
+            </lottie-player>
         </div>
-
-        <div class="image-card">
-            <img src="images/photo2.png" alt="Step Class Photo 2" class="gallery-item" onclick="openLightbox(this.src)">
-            <div class="caption">2</div>
-        </div>
-
-        <div class="image-card">
-            <img src="images/photo3.png" alt="Step Class Photo 3" class="gallery-item" onclick="openLightbox(this.src)">
-            <div class="caption">3</div>
-        </div>
-
-        <div class="image-card">
-            <img src="images/photo4.png" alt="Step Class Photo 4" class="gallery-item" onclick="openLightbox(this.src)">
-            <div class="caption">4</div>
-        </div>
-
-        <div class="image-card">
-            <img src="images/photo5.png" alt="Step Class Photo 5" class="gallery-item" onclick="openLightbox(this.src)">
-            <div class="caption">5</div>
-        </div>
-
-        <div class="image-card">
-            <img src="images/photo6.0.png" alt="Step Class Photo 6" class="gallery-item" onclick="openLightbox(this.src)">
-            <div class="caption">6</div>
-        </div>
-
-        <div class="image-card">
-            <img src="images/end.png" alt="Step Class Photo end" class="gallery-item" onclick="openLightbox(this.src)">
-            <div class="caption">end</div>
-        </div>
-
+        <div class="splash-text">Syncing Routine...</div>
     </div>
 
-    <div id="lightbox" class="lightbox">
+    <div id="main-content">
+        <header>
+            <h1>Step Code Squad</h1>
+            <p class="subtitle">Capturing our energy, movement, and the perfect sync.</p>
+        </header>
+
+        <div class="gallery-container">
+            <div class="image-card">
+                <img src="images/photo1.png" alt="Photo" class="gallery-item" onclick="openLightbox(this.src)">
+                <div class="caption">1</div>
+            </div>
+            <div class="image-card">
+                <img src="images/photo2.png" alt="Photo" class="gallery-item" onclick="openLightbox(this.src)">
+                <div class="caption">2</div>
+            </div>
+            <div class="image-card">
+                <img src="images/photo3.png" alt="Photo" class="gallery-item" onclick="openLightbox(this.src)">
+                <div class="caption">3</div>
+            </div>
+            <div class="image-card">
+                <img src="images/photo4.png" alt="Photo" class="gallery-item" onclick="openLightbox(this.src)">
+                <div class="caption">4</div>
+            </div>
+            <div class="image-card">
+                <img src="images/photo5.png" alt="Photo" class="gallery-item" onclick="openLightbox(this.src)">
+                <div class="caption">5</div>
+            </div>
+            <div class="image-card">
+                <img src="images/photo6.0.png" alt="Photo" class="gallery-item" onclick="openLightbox(this.src)">
+                <div class="caption">6</div>
+            </div>
+            <div class="image-card">
+                <img src="images/photo6.0.png" alt="Photo" class="gallery-item" onclick="openLightbox(this.src)">
+                <div class="caption">7</div>
+            </div>
+            <div class="image-card">
+                <img src="images/end.png" alt="Photo" class="gallery-item" onclick="openLightbox(this.src)">
+                <div class="caption">END</div>
+            </div>
+        </div>
+
+        <footer class="footer">
+            <div class="view-counter-box">
+                <span class="view-counter-text">SQUAD PAGE VIEWS:</span>
+                <img src="https://api.visitorbadge.io/api/visitors?path=step-code-squad.lalit.gallery&labelColor=%23000000&countColor=%23ffaa00&style=plastic" alt="View Counter">
+            </div>
+            
+            <div class="developer-credit">
+                DESIGNED & CODED BY &bull; <strong>LALIT KISHORE</strong>
+            </div>
+        </footer>
+    </div>
+
+    <div id="lightbox" class="lightbox" onclick="if(event.target === this) closeLightbox()">
         <span class="close-btn" onclick="closeLightbox()">&times;</span>
         <img id="lightbox-img" src="">
     </div>
 
     <script>
-        function openLightbox(picSource) {
-            document.getElementById("lightbox").style.display = "flex";
-            document.getElementById("lightbox-img").src = picSource;
-        }
+        // Cinematic Transition Logic
+        window.addEventListener('load', () => {
+            // Wait 2.8 seconds for the audio wave animation to play
+            setTimeout(() => {
+                document.getElementById('splash-screen').classList.add('zoom-out');
+                document.getElementById('main-content').classList.add('content-visible');
+            }, 2800); 
+        });
 
+        // Gallery Functions
+        function openLightbox(src) {
+            const lb = document.getElementById("lightbox");
+            lb.style.display = "flex";
+            document.getElementById("lightbox-img").src = src;
+        }
         function closeLightbox() {
             document.getElementById("lightbox").style.display = "none";
         }
-
-        function createPetals() {
-            const container = document.getElementById('sakura-container');
-            const petalCount = 35;
-
-            for (let i = 0; i < petalCount; i++) {
-                let petal = document.createElement('div');
-                petal.classList.add('petal');
-
-                let size = Math.random() * 10 + 10; 
-                petal.style.width = `${size}px`;
-                petal.style.height = `${size}px`;
-
-                petal.style.left = `${Math.random() * 100}vw`;
-
-                let fallDuration = Math.random() * 7 + 5; 
-                let driftDuration = Math.random() * 3 + 2; 
-                petal.style.animationDuration = `${fallDuration}s, ${driftDuration}s`;
-
-                let delay = Math.random() * 5; 
-                petal.style.animationDelay = `${delay}s, ${delay}s`;
-
-                container.appendChild(petal);
-            }
-        }
-
-        createPetals();
     </script>
-
 </body>
 </html>
