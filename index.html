@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Step Class Gallery</title>
+    <style>
+        /* General Page Styling */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #121212; 
+            color: #ffffff;
+            margin: 0;
+            padding: 20px;
+            text-align: center;
+            overflow-x: hidden; /* Prevents the screen from scrolling sideways */
+        }
+
+        h1 {
+            margin-bottom: 5px;
+            color: #ffaa00; 
+            font-size: 2.5rem;
+        }
+
+        p {
+            margin-bottom: 40px;
+            color: #aaaaaa;
+        }
+
+        /* --- SAKURA ANIMATION CSS --- */
+        #sakura-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none; /* Allows you to click through the petals */
+            z-index: -1; /* Keeps the petals behind your photos */
+        }
+
+        .petal {
+            position: absolute;
+            background-color: #ffb7c5; /* Classic Cherry Blossom Pink */
+            border-radius: 15px 0px 15px 0px; /* Shapes the square into a petal */
+            opacity: 0.7;
+            /* Links to the keyframes below */
+            animation: fall linear infinite, drift ease-in-out infinite alternate;
+        }
+
+        /* CSS Animation 1: Falling Down */
+        @keyframes fall {
+            0% { top: -10%; }
+            100% { top: 110%; }
+        }
+
+        /* CSS Animation 2: Swaying Side to Side */
+        @keyframes drift {
+            0% { transform: translateX(0) rotate(0deg); }
+            100% { transform: translateX(80px) rotate(360deg); }
+        }
+        /* ---------------------------- */
+
+        /* The Grid System for the Gallery */
+        .gallery-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 30px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* Image Cards with Captions */
+        .image-card {
+            background-color: #1e1e1e; 
+            padding: 15px;
+            border-radius: 12px;
+            box-shadow: 0 6px 12px rgba(0,0,0,0.6);
+            transition: transform 0.3s ease;
+        }
+
+        .image-card:hover {
+            transform: translateY(-10px); 
+        }
+
+        /* Fixed Image Styling */
+        .gallery-item {
+            width: 100%;
+            height: auto; 
+            border-radius: 8px;
+            cursor: pointer; 
+        }
+
+        .caption {
+            margin-top: 15px;
+            color: #ffffff;
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        /* Lightbox (Pop-up window) */
+        .lightbox {
+            display: none; 
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .lightbox img {
+            max-width: 90%;
+            max-height: 90%;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(255, 170, 0, 0.4); 
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 20px;
+            right: 40px;
+            color: white;
+            font-size: 50px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: color 0.3s ease;
+        }
+
+        .close-btn:hover {
+            color: #ffaa00;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="sakura-container"></div>
+
+    <h1>Step Code Squad</h1>
+    <p>OOPS BANNER APP!</p>
+
+    <div class="gallery-container">
+        
+        <div class="image-card">
+            <img src="photo1.png" alt="Step Class Photo 1" class="gallery-item" onclick="openLightbox(this.src)">
+            <div class="caption">1</div>
+        </div>
+
+        <div class="image-card">
+            <img src="photo2.png" alt="Step Class Photo 2" class="gallery-item" onclick="openLightbox(this.src)">
+            <div class="caption"> 2</div>
+        </div>
+
+        <div class="image-card">
+            <img src="photo3.png" alt="Step Class Photo 3" class="gallery-item" onclick="openLightbox(this.src)">
+            <div class="caption"> 3</div>
+        </div>
+
+        <div class="image-card">
+            <img src="photo4.png" alt="Step Class Photo 4" class="gallery-item" onclick="openLightbox(this.src)">
+            <div class="caption"> 4</div>
+        </div>
+
+        <div class="image-card">
+            <img src="photo6.png" alt="Step Class Photo 6" class="gallery-item" onclick="openLightbox(this.src)">
+            <div class="caption"></div>
+        </div>
+
+    </div>
+
+    <div id="lightbox" class="lightbox">
+        <span class="close-btn" onclick="closeLightbox()">&times;</span>
+        <img id="lightbox-img" src="">
+    </div>
+
+    <script>
+        // Lightbox functionality
+        function openLightbox(picSource) {
+            document.getElementById("lightbox").style.display = "flex";
+            document.getElementById("lightbox-img").src = picSource;
+        }
+
+        function closeLightbox() {
+            document.getElementById("lightbox").style.display = "none";
+        }
+
+        // --- SAKURA GENERATOR SCRIPT ---
+        function createPetals() {
+            const container = document.getElementById('sakura-container');
+            const petalCount = 35; // Change this number to add more or fewer petals
+
+            for (let i = 0; i < petalCount; i++) {
+                let petal = document.createElement('div');
+                petal.classList.add('petal');
+                
+                // Randomize petal size between 10px and 20px
+                let size = Math.random() * 10 + 10; 
+                petal.style.width = `${size}px`;
+                petal.style.height = `${size}px`;
+                
+                // Randomize starting position across the screen
+                petal.style.left = `${Math.random() * 100}vw`;
+                
+                // Randomize fall speed (5s to 12s) and drift speed (2s to 5s)
+                let fallDuration = Math.random() * 7 + 5; 
+                let driftDuration = Math.random() * 3 + 2; 
+                petal.style.animationDuration = `${fallDuration}s, ${driftDuration}s`;
+                
+                // Randomize start delay so they don't all fall at once
+                let delay = Math.random() * 5; 
+                petal.style.animationDelay = `${delay}s, ${delay}s`;
+                
+                container.appendChild(petal);
+            }
+        }
+        
+        // Run the generator when the page loads
+        createPetals();
+    </script>
+
+</body>
+</html>
