@@ -98,10 +98,11 @@
         }
         .image-card:hover { transform: translateY(-12px) scale(1.02); border-color: var(--primary); box-shadow: 0 20px 40px rgba(255, 170, 0, 0.15); }
         
+        /* 🔥 THIS IS THE FIX: Changed height to auto and removed object-fit: cover 🔥 */
         .gallery-item { 
-            width: 100%; height: 200px; object-fit: cover; border-radius: 12px; cursor: pointer; 
+            width: 100%; height: auto; border-radius: 12px; cursor: pointer; 
             filter: brightness(0.8) contrast(1.1); transition: filter 0.4s ease;
-            background-color: #222; 
+            background-color: transparent; 
         }
         .image-card:hover .gallery-item { filter: brightness(1.1) contrast(1.1); }
         .caption { margin-top: 20px; font-family: 'Montserrat', sans-serif; color: var(--text-main); font-weight: 700; letter-spacing: 1px; transition: color 0.5s ease;}
@@ -262,8 +263,7 @@
                     { src: 'images/oops-banner/uc9.png', label: '9' },
                     { src: 'images/oops-banner/uc10.png', label: '10' },
                     { src: 'images/oops-banner/end.png', label: 'end' }
-               ]
-
+                ]
             }
         };
 
@@ -329,4 +329,3 @@
     </script>
 </body>
 </html>
-
