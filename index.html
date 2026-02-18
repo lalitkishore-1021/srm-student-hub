@@ -3,15 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Step Code Squad Gallery</title>
+    <title>Step Code Squad Portfolio</title>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;900&family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
-    <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
     
     <style>
         /* --- CSS VARIABLES FOR THEME TOGGLE --- */
         :root {
             --primary: #ffaa00;
-            /* Dark Mode Defaults */
             --bg-start: #1a1a1a;
             --bg-end: #050505;
             --text-main: #ffffff;
@@ -22,7 +20,6 @@
             --splash-bg: #050505;
         }
 
-        /* Light Mode Overrides */
         body.light-mode {
             --bg-start: #ffffff;
             --bg-end: #e0e5ec;
@@ -46,130 +43,128 @@
         }
 
         /* --- SOCIALS & THEME BUTTONS --- */
-        .btn-container {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            display: flex;
-            gap: 12px; 
-            z-index: 1000;
-            opacity: 0; 
-            transition: opacity 0.5s ease;
-        }
-
+        .btn-container { position: fixed; top: 20px; right: 20px; display: flex; gap: 12px; z-index: 1000; opacity: 0; transition: opacity 0.5s ease; }
         .icon-btn {
-            background: var(--glass);
-            border: 1px solid var(--glass-border);
-            color: var(--text-main);
-            width: 45px;
-            height: 45px;
-            border-radius: 50%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 1.2rem;
-            cursor: pointer;
-            backdrop-filter: blur(10px);
-            box-shadow: 0 4px 10px var(--shadow);
-            transition: all 0.3s ease;
-            text-decoration: none; 
+            background: var(--glass); border: 1px solid var(--glass-border); color: var(--text-main);
+            width: 45px; height: 45px; border-radius: 50%; display: flex; justify-content: center; align-items: center;
+            font-size: 1.2rem; cursor: pointer; backdrop-filter: blur(10px); box-shadow: 0 4px 10px var(--shadow);
+            transition: all 0.3s ease; text-decoration: none; 
         }
+        .icon-btn:hover { transform: scale(1.1) translateY(-3px); border-color: var(--primary); color: var(--primary); }
+        .icon-btn svg { width: 20px; height: 20px; fill: currentColor; transition: fill 0.3s ease; }
 
-        .icon-btn:hover {
-            transform: scale(1.1) translateY(-3px);
-            border-color: var(--primary);
-            color: var(--primary);
-        }
-
-        .icon-btn svg {
-            width: 20px;
-            height: 20px;
-            fill: currentColor; 
-            transition: fill 0.3s ease;
-        }
-
-        /* --- UPGRADED CINEMATIC SPLASH SCREEN --- */
+        /* --- BULLETPROOF SPLASH SCREEN --- */
         #splash-screen {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background-color: var(--splash-bg);
-            z-index: 2000;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: var(--splash-bg); z-index: 2000;
             display: flex; flex-direction: column; justify-content: center; align-items: center;
             transition: opacity 0.8s ease-in-out, transform 1s cubic-bezier(0.16, 1, 0.3, 1), visibility 1s, background-color 0.5s ease;
         }
-
-        .portal {
-            position: relative; width: 250px; height: 250px; display: flex; justify-content: center; align-items: center;
-            filter: drop-shadow(0 0 30px rgba(255, 170, 0, 0.4));
+        
+        /* Pure CSS Glowing Spinner */
+        .css-loader {
+            width: 60px; height: 60px; border-radius: 50%;
+            border: 4px solid var(--glass-border);
+            border-top-color: var(--primary);
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+            box-shadow: 0 0 20px rgba(255, 170, 0, 0.2);
         }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
 
-        .splash-text {
-            margin-top: 20px; font-family: 'Montserrat', sans-serif; color: var(--primary);
-            letter-spacing: 6px; font-size: 1rem; font-weight: 900; text-transform: uppercase;
-            animation: pulse-text 1.5s infinite alternate;
-        }
+        .splash-text { font-family: 'Montserrat', sans-serif; color: var(--primary); letter-spacing: 6px; font-size: 1rem; font-weight: 900; text-transform: uppercase; animation: pulse-text 1.5s infinite alternate; }
+        @keyframes pulse-text { 0% { opacity: 0.5; filter: blur(1px); } 100% { opacity: 1; filter: blur(0px); text-shadow: 0 0 10px rgba(255, 170, 0, 0.8); } }
+        
+        .zoom-out { transform: scale(1.5); opacity: 0; visibility: hidden; pointer-events: none; }
 
-        @keyframes pulse-text {
-            0% { opacity: 0.5; filter: blur(1px); }
-            100% { opacity: 1; filter: blur(0px); text-shadow: 0 0 10px rgba(255, 170, 0, 0.8); }
-        }
-
-        .zoom-out { transform: scale(1.5); opacity: 0; visibility: hidden; }
-
-        /* --- MAIN CONTENT STYLING --- */
-        #main-content {
-            padding: 80px 20px 60px; /* Added top padding so buttons don't block title */
-            text-align: center; opacity: 0; transform: scale(0.95);
-            transition: all 1.2s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-
+        /* --- MAIN CONTENT & VIEWS --- */
+        #main-content { padding: 80px 20px 60px; text-align: center; opacity: 0; transform: scale(0.95); transition: all 1.2s cubic-bezier(0.16, 1, 0.3, 1); width: 100%; box-sizing: border-box;}
         .content-visible { opacity: 1 !important; transform: scale(1) !important; }
 
         h1 {
-            font-family: 'Montserrat', sans-serif; font-weight: 900; text-transform: uppercase;
-            font-size: clamp(2.5rem, 8vw, 4.5rem);
+            font-family: 'Montserrat', sans-serif; font-weight: 900; text-transform: uppercase; font-size: clamp(2.5rem, 8vw, 4.5rem);
             background: linear-gradient(to right, #ffaa00, #ffdd00, #ffaa00); background-size: 200% auto;
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-            margin-bottom: 10px; animation: shine 4s linear infinite;
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 10px; animation: shine 4s linear infinite;
         }
-
         @keyframes shine { to { background-position: 200% center; } }
-
         .subtitle { color: var(--text-sub); font-size: 1.1rem; margin-bottom: 60px; letter-spacing: 1px; transition: color 0.5s ease;}
 
-        /* Glassmorphism Gallery */
-        .gallery-container {
-            display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 40px;
-            max-width: 1300px; margin: 0 auto;
-        }
-
+        /* Gallery/Projects Grid */
+        .gallery-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 40px; max-width: 1200px; margin: 0 auto; }
+        
         .image-card {
             background: var(--glass); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
             padding: 15px; border-radius: 20px; border: 1px solid var(--glass-border);
             box-shadow: 0 15px 35px var(--shadow); transition: all 0.4s ease;
         }
-
         .image-card:hover { transform: translateY(-12px) scale(1.02); border-color: var(--primary); box-shadow: 0 20px 40px rgba(255, 170, 0, 0.15); }
-
-        .gallery-item {
-            width: 100%; height: auto; border-radius: 12px; cursor: pointer;
+        
+        .gallery-item { 
+            width: 100%; height: 200px; object-fit: cover; border-radius: 12px; cursor: pointer; 
             filter: brightness(0.8) contrast(1.1); transition: filter 0.4s ease;
+            background-color: #222; 
+        }
+        .image-card:hover .gallery-item { filter: brightness(1.1) contrast(1.1); }
+        .caption { margin-top: 20px; font-family: 'Montserrat', sans-serif; color: var(--text-main); font-weight: 700; letter-spacing: 1px; transition: color 0.5s ease;}
+        
+        /* --- PROJECT CARD & CUSTOM COVER STYLING --- */
+        .project-card { 
+            cursor: pointer; 
+            max-width: 400px; /* Prevents stretching */
+            margin: 0 auto; /* Centers the card */
+        }
+        
+        .project-card .caption { 
+            font-size: 1.2rem; 
+            color: var(--primary); 
         }
 
-        .image-card:hover .gallery-item { filter: brightness(1.1) contrast(1.1); }
+        .project-cover {
+            width: 100%;
+            height: 250px;
+            background: linear-gradient(135deg, rgba(255, 170, 0, 0.1) 0%, rgba(0, 0, 0, 0.4) 100%);
+            border-radius: 12px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border: 1px solid var(--glass-border);
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
+            transition: all 0.4s ease;
+            margin-bottom: 15px;
+        }
 
-        .caption { margin-top: 20px; font-family: 'Montserrat', sans-serif; color: var(--text-main); font-weight: 700; letter-spacing: 1px; transition: color 0.5s ease;}
+        .project-icon {
+            width: 80px;
+            height: 80px;
+            stroke: var(--primary);
+            filter: drop-shadow(0 0 10px rgba(255, 170, 0, 0.4));
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .project-card:hover .project-cover {
+            background: linear-gradient(135deg, rgba(255, 170, 0, 0.2) 0%, rgba(0, 0, 0, 0.6) 100%);
+        }
+        .project-card:hover .project-icon {
+            transform: scale(1.2);
+            filter: drop-shadow(0 0 20px rgba(255, 170, 0, 0.8));
+        }
+
+        /* --- GALLERY VIEW STYLING --- */
+        #gallery-view { display: none; }
+        .back-btn {
+            background: var(--glass); border: 1px solid var(--glass-border); color: var(--text-main);
+            padding: 10px 25px; border-radius: 30px; font-family: 'Montserrat', sans-serif; font-weight: bold;
+            cursor: pointer; margin-bottom: 40px; transition: all 0.3s ease; font-size: 1rem;
+        }
+        .back-btn:hover { border-color: var(--primary); color: var(--primary); transform: translateX(-5px); }
+        .gallery-title { font-family: 'Montserrat', sans-serif; font-size: 2rem; color: var(--text-main); margin-bottom: 40px; text-transform: uppercase;}
+
+        .fade-in-up { animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 
         /* --- VIEW COUNTER & FOOTER --- */
         .footer { margin-top: 80px; padding: 40px 20px; border-top: 1px solid var(--glass-border); display: flex; flex-direction: column; align-items: center; gap: 20px; transition: border-color 0.5s ease;}
-
-        .view-counter-box {
-            background: var(--glass); border: 1px solid var(--glass-border); padding: 15px 30px; border-radius: 50px; display: flex; align-items: center; gap: 15px;
-            box-shadow: 0 0 20px var(--shadow); transition: all 0.5s ease;
-        }
-
+        .view-counter-box { background: var(--glass); border: 1px solid var(--glass-border); padding: 15px 30px; border-radius: 50px; display: flex; align-items: center; gap: 15px; box-shadow: 0 0 20px var(--shadow); transition: all 0.5s ease; }
         .view-counter-text { font-family: 'Montserrat', sans-serif; font-size: 0.9rem; color: var(--text-sub); font-weight: 700; letter-spacing: 1px; transition: color 0.5s ease;}
-
         .developer-credit { color: var(--text-sub); font-size: 0.85rem; letter-spacing: 2px; transition: color 0.5s ease;}
         .developer-credit strong { color: var(--primary); }
 
@@ -183,38 +178,20 @@
 <body>
 
     <div id="splash-screen">
-        <div class="portal">
-            <lottie-player 
-                src="https://assets8.lottiefiles.com/packages/lf20_jvxwtdsz.json" 
-                background="transparent" 
-                speed="1.5" 
-                loop 
-                autoplay>
-            </lottie-player>
-        </div>
+        <div class="css-loader"></div>
         <div class="splash-text">Syncing codes...</div>
     </div>
 
     <div class="btn-container" id="navButtons">
-        
         <a href="https://www.instagram.com/lalit._.kishore?igsh=ZDVsOTIzaGxiY2I1" target="_blank" class="icon-btn" title="Instagram">
-            <svg viewBox="0 0 24 24">
-                <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.85s-.011 3.585-.069 4.85c-.148 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07s-3.584-.012-4.85-.07c-3.26-.148-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.85s.012-3.584.07-4.85c.148-3.204 1.671-4.771 4.919-4.919 1.266-.057 1.645-.069 4.85-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
-            </svg>
+            <svg viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.85s-.011 3.585-.069 4.85c-.148 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07s-3.584-.012-4.85-.07c-3.26-.148-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.85s.012-3.584.07-4.85c.148-3.204 1.671-4.771 4.919-4.919 1.266-.057 1.645-.069 4.85-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
         </a>
-
         <a href="https://www.linkedin.com/in/balagalalitkishore?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=android_app" target="_blank" class="icon-btn" title="LinkedIn">
-            <svg viewBox="0 0 24 24">
-                <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/>
-            </svg>
+            <svg viewBox="0 0 24 24"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg>
         </a>
-
         <a href="https://github.com/lalitkishore-1021" target="_blank" class="icon-btn" title="GitHub">
-            <svg viewBox="0 0 24 24">
-                <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
-            </svg>
+            <svg viewBox="0 0 24 24"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
         </a>
-
         <button id="themeToggle" class="icon-btn" onclick="toggleTheme()" title="Toggle Light/Dark Mode">☀️</button>
     </div>
 
@@ -224,51 +201,31 @@
             <p class="subtitle">All Java source code is available on my GitHub. Click the GitHub logo above to access and copy</p>
         </header>
 
-        <div class="gallery-container">
-            <div class="image-card">
-                <img src="images/photo1.png" alt="Photo" class="gallery-item" onclick="openLightbox(this.src)">
-                <div class="caption">1</div>
+        <div id="projects-view">
+            <div class="gallery-container">
+                
+                <div class="image-card project-card" onclick="openProject('oopsBanner')">
+                    
+                    <div class="project-cover">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="project-icon">
+                            <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                            <line x1="8" y1="21" x2="16" y2="21"></line>
+                            <line x1="12" y1="17" x2="12" y2="21"></line>
+                            <polyline points="10 8 8 10 10 12"></polyline>
+                            <polyline points="14 8 16 10 14 12"></polyline>
+                        </svg>
+                    </div>
+
+                    <div class="caption">OOPS Banner App</div>
+                </div>
+
             </div>
-            <div class="image-card">
-                <img src="images/photo2.png" alt="Photo" class="gallery-item" onclick="openLightbox(this.src)">
-                <div class="caption">2</div>
-            </div>
-            <div class="image-card">
-                <img src="images/photo3.png" alt="Photo" class="gallery-item" onclick="openLightbox(this.src)">
-                <div class="caption">3</div>
-            </div>
-            <div class="image-card">
-                <img src="images/photo4.png" alt="Photo" class="gallery-item" onclick="openLightbox(this.src)">
-                <div class="caption">4</div>
-            </div>
-            <div class="image-card">
-                <img src="images/photo5.png" alt="Photo" class="gallery-item" onclick="openLightbox(this.src)">
-                <div class="caption">5</div>
-            </div>
-            <div class="image-card">
-                <img src="images/photo6.0.png" alt="Photo" class="gallery-item" onclick="openLightbox(this.src)">
-                <div class="caption">6</div>
-            </div>
-            <div class="image-card">
-                <img src="images/photo7.png" alt="Photo" class="gallery-item" onclick="openLightbox(this.src)">
-                <div class="caption">7</div>
-            </div>
-            <div class="image-card">
-                <img src="images/photo8.png" alt="Photo" class="gallery-item" onclick="openLightbox(this.src)">
-                <div class="caption">8</div>
-            </div>
-            <div class="image-card">
-                <img src="images/photo9.png" alt="Photo" class="gallery-item" onclick="openLightbox(this.src)">
-                <div class="caption">9</div>
-            </div>
-            <div class="image-card">
-                <img src="images/photo10.png" alt="Photo" class="gallery-item" onclick="openLightbox(this.src)">
-                <div class="caption">10</div>
-            </div>
-            <div class="image-card">
-                <img src="images/end.png" alt="Photo" class="gallery-item" onclick="openLightbox(this.src)">
-                <div class="caption">END</div>
-            </div>
+        </div>
+
+        <div id="gallery-view">
+            <button class="back-btn" onclick="closeProject()">&#8592; Back to Projects</button>
+            <h2 class="gallery-title" id="dynamic-project-title">Project Name</h2>
+            <div class="gallery-container" id="dynamic-gallery"></div>
         </div>
 
         <footer class="footer">
@@ -289,40 +246,77 @@
     </div>
 
     <script>
-        // --- NEW: THEME TOGGLE LOGIC ---
+        // --- PORTFOLIO DATA ---
+        const projectsDatabase = {
+            'oopsBanner': {
+                title: 'OOPS Banner App',
+                images: [
+                    { src: 'images/oops-banner/uc1.png', label: '1' },
+                    { src: 'images/oops-banner/uc2.png', label: '2' },
+                    { src: 'images/oops-banner/uc3.png', label: '3' },
+                    { src: 'images/oops-banner/uc4.png', label: '4' },
+                    { src: 'images/oops-banner/uc5.png', label: '5' },
+                    { src: 'images/oops-banner/uc6.png', label: '6' },
+                    { src: 'images/oops-banner/uc7.png', label: '7' },
+                    { src: 'images/oops-banner/uc8.png', label: '8' }
+                    { src: 'images/oops-banner/uc9.png', label: '9' }
+                    { src: 'images/oops-banner/uc10.png', label: '10' }
+                    { src: 'images/oops-banner/ucend.png', label: 'end' }
+                ]
+            }
+        };
+
+        // --- VIEW SWITCHING LOGIC ---
+        function openProject(projectId) {
+            const projectData = projectsDatabase[projectId];
+            document.getElementById('dynamic-project-title').innerText = projectData.title;
+            
+            const galleryElement = document.getElementById('dynamic-gallery');
+            galleryElement.innerHTML = ''; 
+            
+            projectData.images.forEach(imgData => {
+                const cardHTML = `
+                    <div class="image-card fade-in-up">
+                        <img src="${imgData.src}" alt="${imgData.label}" class="gallery-item" onclick="openLightbox(this.src)">
+                        <div class="caption">${imgData.label}</div>
+                    </div>
+                `;
+                galleryElement.innerHTML += cardHTML;
+            });
+
+            document.getElementById('projects-view').style.display = 'none';
+            document.getElementById('gallery-view').style.display = 'block';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function closeProject() {
+            document.getElementById('gallery-view').style.display = 'none';
+            document.getElementById('projects-view').style.display = 'block';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // --- THEME TOGGLE LOGIC ---
         function toggleTheme() {
             const body = document.body;
             const btn = document.getElementById('themeToggle');
-            
-            // Toggle the 'light-mode' class
             body.classList.toggle('light-mode');
-            
-            // Switch the icon
-            if (body.classList.contains('light-mode')) {
-                btn.innerText = '🌙'; 
-            } else {
-                btn.innerText = '☀️'; 
-            }
+            btn.innerText = body.classList.contains('light-mode') ? '🌙' : '☀️'; 
         }
 
-        // Cinematic Transition Logic
-        window.addEventListener('load', () => {
-            // Wait 2.8 seconds for the audio wave animation to play
+        // --- BULLETPROOF SPLASH SCREEN LOGIC ---
+        document.addEventListener('DOMContentLoaded', () => {
             setTimeout(() => {
                 document.getElementById('splash-screen').classList.add('zoom-out');
                 document.getElementById('main-content').classList.add('content-visible');
-                
-                // Show the navigation buttons after the splash screen
                 document.getElementById('navButtons').style.opacity = '1';
 
-                // Hide splash completely so buttons are clickable
                 setTimeout(() => {
                     document.getElementById('splash-screen').style.display = 'none';
                 }, 1000);
-            }, 2800); 
+            }, 1200); 
         });
 
-        // Gallery Functions
+        // --- LIGHTBOX LOGIC ---
         function openLightbox(src) {
             const lb = document.getElementById("lightbox");
             lb.style.display = "flex";
@@ -334,5 +328,3 @@
     </script>
 </body>
 </html>
-
-
