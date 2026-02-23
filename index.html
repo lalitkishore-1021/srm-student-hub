@@ -98,7 +98,6 @@
         }
         .image-card:hover { transform: translateY(-12px) scale(1.02); border-color: var(--primary); box-shadow: 0 20px 40px rgba(255, 170, 0, 0.15); }
         
-        /* 🔥 THIS IS THE FIX: Changed height to auto and removed object-fit: cover 🔥 */
         .gallery-item { 
             width: 100%; height: auto; border-radius: 12px; cursor: pointer; 
             filter: brightness(0.8) contrast(1.1); transition: filter 0.4s ease;
@@ -110,8 +109,10 @@
         /* --- PROJECT CARD & CUSTOM COVER STYLING --- */
         .project-card { 
             cursor: pointer; 
-            max-width: 400px; /* Prevents stretching */
-            margin: 0 auto; /* Centers the card */
+            width: 100%; /* 🔥 FIX: Forces all cards to be the exact same width 🔥 */
+            max-width: 400px; 
+            margin: 0 auto; 
+            box-sizing: border-box; /* Protects width from padding */
         }
         
         .project-card .caption { 
@@ -204,9 +205,7 @@
 
         <div id="projects-view">
             <div class="gallery-container">
-                
                 <div class="image-card project-card" onclick="openProject('oopsBanner')">
-                    
                     <div class="project-cover">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="project-icon">
                             <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
@@ -216,10 +215,8 @@
                             <polyline points="14 8 16 10 14 12"></polyline>
                         </svg>
                     </div>
-
                     <div class="caption">OOPS Banner App</div>
                 </div>
-
             </div>
         </div>
 
@@ -247,10 +244,20 @@
     </div>
 
     <script>
-        // --- PORTFOLIO DATA ---
+        // --- PORTFOLIO DATA (Now with Dual Sub-Folders) ---
         const projectsDatabase = {
             'oopsBanner': {
                 title: 'OOPS Banner App',
+                // This array creates TWO folder cards INSIDE the OOPS gallery
+                subProjects: [
+                    { id: 'ucsFolder', title: "UC's" },
+                    { id: 'week1Problem', title: 'Week 1 Problem' }
+                ]
+                // Images have been moved into their own folders below!
+            },
+            'ucsFolder': {
+                title: "UC's",
+                parent: 'oopsBanner', // Takes the user back to the OOPS Banner view
                 images: [
                     { src: 'images/oops-banner/uc1.png', label: '1' },
                     { src: 'images/oops-banner/uc2.png', label: '2' },
@@ -264,6 +271,21 @@
                     { src: 'images/oops-banner/uc10.png', label: '10' },
                     { src: 'images/oops-banner/end.png', label: 'end' }
                 ]
+            },
+            'week1Problem': { 
+                title: 'Week 1 Problem',
+                parent: 'oopsBanner', // Takes the user back to the OOPS Banner view
+                images: [
+                    { src: 'images/oops-banner/Basic-step1.png', label: 'Basic-Step' },
+                    { src: 'images/oops-banner/Basic-step2.png', label: 'Basic-Step' },
+                    { src: 'images/oops-banner/level1.png', label: 'Part 1' },
+                    { src: 'images/oops-banner/level12.png', label: 'Part 2' },
+                    { src: 'images/oops-banner/level13.png', label: 'Part 3' },
+                    { src: 'images/oops-banner/bash.png', label: 'Bash' },
+                    { src: 'images/oops-banner/level21.png', label: 'Part 4' },
+                    { src: 'images/oops-banner/level22.png', label: 'Part 5' },
+                    { src: 'images/oops-banner/level3.png', label: 'Part 6' }
+                ]
             }
         };
 
@@ -275,15 +297,45 @@
             const galleryElement = document.getElementById('dynamic-gallery');
             galleryElement.innerHTML = ''; 
             
-            projectData.images.forEach(imgData => {
-                const cardHTML = `
-                    <div class="image-card fade-in-up">
-                        <img src="${imgData.src}" alt="${imgData.label}" class="gallery-item" onclick="openLightbox(this.src)">
-                        <div class="caption">${imgData.label}</div>
-                    </div>
-                `;
-                galleryElement.innerHTML += cardHTML;
-            });
+            // 1. Render Sub-folders (if they exist)
+            if (projectData.subProjects) {
+                projectData.subProjects.forEach(sub => {
+                    const folderHTML = `
+                        <div class="image-card project-card fade-in-up" onclick="openProject('${sub.id}')">
+                            <div class="project-cover">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="project-icon">
+                                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                                </svg>
+                            </div>
+                            <div class="caption">${sub.title}</div>
+                        </div>
+                    `;
+                    galleryElement.innerHTML += folderHTML;
+                });
+            }
+
+            // 2. Render standard Images
+            if (projectData.images) {
+                projectData.images.forEach(imgData => {
+                    const cardHTML = `
+                        <div class="image-card fade-in-up">
+                            <img src="${imgData.src}" alt="${imgData.label}" class="gallery-item" onclick="openLightbox(this.src)">
+                            <div class="caption">${imgData.label}</div>
+                        </div>
+                    `;
+                    galleryElement.innerHTML += cardHTML;
+                });
+            }
+
+            // 3. Dynamic Back Button Logic
+            const backBtn = document.querySelector('.back-btn');
+            if (projectData.parent) {
+                backBtn.onclick = () => openProject(projectData.parent);
+                backBtn.innerHTML = '&#8592; Back to ' + projectsDatabase[projectData.parent].title;
+            } else {
+                backBtn.onclick = closeProject;
+                backBtn.innerHTML = '&#8592; Back to Projects';
+            }
 
             document.getElementById('projects-view').style.display = 'none';
             document.getElementById('gallery-view').style.display = 'block';
@@ -304,18 +356,16 @@
             btn.innerText = body.classList.contains('light-mode') ? '🌙' : '☀️'; 
         }
 
-        // --- BULLETPROOF SPLASH SCREEN LOGIC ---
-        document.addEventListener('DOMContentLoaded', () => {
-            setTimeout(() => {
-                document.getElementById('splash-screen').classList.add('zoom-out');
-                document.getElementById('main-content').classList.add('content-visible');
-                document.getElementById('navButtons').style.opacity = '1';
+        // --- BULLETPROOF SPLASH SCREEN LOGIC (FORCED TIMER FOR ONLINE COMPILERS) ---
+        setTimeout(() => {
+            document.getElementById('splash-screen').classList.add('zoom-out');
+            document.getElementById('main-content').classList.add('content-visible');
+            document.getElementById('navButtons').style.opacity = '1';
 
-                setTimeout(() => {
-                    document.getElementById('splash-screen').style.display = 'none';
-                }, 1000);
-            }, 1200); 
-        });
+            setTimeout(() => {
+                document.getElementById('splash-screen').style.display = 'none';
+            }, 1000);
+        }, 1200);
 
         // --- LIGHTBOX LOGIC ---
         function openLightbox(src) {
