@@ -1,0 +1,17 @@
+{
+  "name": "SRM Student Hub",
+  "short_name": "SRM Hub",
+  "description": "Your all-in-one portal for Step Class, CGPA, and more.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#050505",
+  "theme_color": "#ffaa00",
+  "icons": [
+    {
+      "src": "images/app-icon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
