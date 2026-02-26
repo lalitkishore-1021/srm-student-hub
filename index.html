@@ -4,6 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SRM Student Hub</title>
+    
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#ffaa00">
+    <link rel="apple-touch-icon" href="images/oops-banner/uc1.png">
+    
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;900&family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
     
     <style>
@@ -62,13 +67,9 @@
             transition: opacity 0.8s ease-in-out, transform 1s cubic-bezier(0.16, 1, 0.3, 1), visibility 1s, background-color 0.5s ease;
         }
         
-        /* Pure CSS Glowing Spinner */
         .css-loader {
-            width: 60px; height: 60px; border-radius: 50%;
-            border: 4px solid var(--glass-border);
-            border-top-color: var(--primary);
-            animation: spin 1s linear infinite;
-            margin-bottom: 20px;
+            width: 60px; height: 60px; border-radius: 50%; border: 4px solid var(--glass-border);
+            border-top-color: var(--primary); animation: spin 1s linear infinite; margin-bottom: 20px;
             box-shadow: 0 0 20px rgba(255, 170, 0, 0.2);
         }
         @keyframes spin { 100% { transform: rotate(360deg); } }
@@ -78,9 +79,21 @@
         
         .zoom-out { transform: scale(1.5); opacity: 0; visibility: hidden; pointer-events: none; }
 
-        /* --- MAIN CONTENT & VIEWS --- */
+        /* --- MAIN CONTENT & NEW VIEWS ROUTING --- */
         #main-content { padding: 80px 20px 60px; text-align: center; opacity: 0; transform: scale(0.95); transition: all 1.2s cubic-bezier(0.16, 1, 0.3, 1); width: 100%; box-sizing: border-box;}
         .content-visible { opacity: 1 !important; transform: scale(1) !important; }
+        
+        .app-view { display: none; max-width: 1200px; margin: 0 auto; text-align: center; }
+        .app-view.active { display: block; }
+
+        /* --- CUSTOM SVG LOGO STYLING --- */
+        .site-header { display: flex; flex-direction: column; align-items: center; margin-bottom: 40px; }
+        .main-logo {
+            width: 90px; height: 90px; margin-bottom: 15px; cursor: pointer; /* Makes it look clickable for install */
+            filter: drop-shadow(0 0 15px rgba(255, 170, 0, 0.5));
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .main-logo:hover { transform: scale(1.15) rotate(5deg); filter: drop-shadow(0 0 25px rgba(255, 170, 0, 0.8)); }
 
         h1 {
             font-family: 'Montserrat', sans-serif; font-weight: 900; text-transform: uppercase; font-size: clamp(2.5rem, 8vw, 4.5rem);
@@ -88,7 +101,7 @@
             -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 10px; animation: shine 4s linear infinite;
         }
         @keyframes shine { to { background-position: 200% center; } }
-        .subtitle { color: var(--text-sub); font-size: 1.1rem; margin-bottom: 60px; letter-spacing: 1px; transition: color 0.5s ease;}
+        .subtitle { color: var(--text-sub); font-size: 1.1rem; margin-bottom: 30px; letter-spacing: 1px; transition: color 0.5s ease;}
 
         /* Gallery/Projects Grid */
         .gallery-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 40px; max-width: 1200px; margin: 0 auto; }
@@ -102,52 +115,30 @@
         
         .gallery-item { 
             width: 100%; height: auto; border-radius: 12px; cursor: pointer; 
-            filter: brightness(0.8) contrast(1.1); transition: filter 0.4s ease;
-            background-color: transparent; 
+            filter: brightness(0.8) contrast(1.1); transition: filter 0.4s ease; background-color: transparent; 
         }
         .image-card:hover .gallery-item { filter: brightness(1.1) contrast(1.1); }
         .caption { margin-top: 20px; font-family: 'Montserrat', sans-serif; color: var(--text-main); font-weight: 700; letter-spacing: 1px; transition: color 0.5s ease;}
         
         /* --- PROJECT CARD & CUSTOM COVER STYLING --- */
-        .project-card { 
-            cursor: pointer; 
-            width: 100%; 
-            max-width: 400px; 
-            margin: 0 auto; 
-            box-sizing: border-box; 
-        }
-        
-        .project-card .caption { font-size: 1.2rem; color: var(--primary); }
-
+        .project-card { cursor: pointer; width: 100%; max-width: 400px; margin: 0 auto; box-sizing: border-box; }
+        .project-card .caption { font-size: 1.2rem; color: var(--primary); text-transform: uppercase;}
         .project-cover {
             width: 100%; height: 250px; background: linear-gradient(135deg, rgba(255, 170, 0, 0.1) 0%, rgba(0, 0, 0, 0.4) 100%);
-            border-radius: 12px; display: flex; justify-content: center; align-items: center;
-            border: 1px solid var(--glass-border); box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
-            transition: all 0.4s ease; margin-bottom: 15px;
+            border-radius: 12px; display: flex; justify-content: center; align-items: center; border: 1px solid var(--glass-border);
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.5); transition: all 0.4s ease; margin-bottom: 15px;
         }
-
-        .project-icon {
-            width: 80px; height: 80px; stroke: var(--primary); filter: drop-shadow(0 0 10px rgba(255, 170, 0, 0.4));
-            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-
+        .project-icon { width: 80px; height: 80px; stroke: var(--primary); filter: drop-shadow(0 0 10px rgba(255, 170, 0, 0.4)); transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
         .project-card:hover .project-cover { background: linear-gradient(135deg, rgba(255, 170, 0, 0.2) 0%, rgba(0, 0, 0, 0.6) 100%); }
         .project-card:hover .project-icon { transform: scale(1.2); filter: drop-shadow(0 0 20px rgba(255, 170, 0, 0.8)); }
 
-        /* --- NEW VIEWS ROUTING --- */
-        .app-view { display: none; max-width: 1200px; margin: 0 auto; text-align: left; }
-        .app-view.active { display: block; }
-        .view-header { text-align: center; margin-bottom: 40px; }
-
         /* --- GALLERY VIEW STYLING --- */
         .back-btn {
-            background: var(--glass); border: 1px solid var(--glass-border); color: var(--text-main);
-            padding: 10px 25px; border-radius: 30px; font-family: 'Montserrat', sans-serif; font-weight: bold;
+            background: var(--glass); border: 1px solid var(--glass-border); color: var(--text-main); padding: 10px 25px; border-radius: 30px; font-family: 'Montserrat', sans-serif; font-weight: bold;
             cursor: pointer; margin-bottom: 40px; transition: all 0.3s ease; font-size: 1rem; display: inline-block;
         }
         .back-btn:hover { border-color: var(--primary); color: var(--primary); transform: translateX(-5px); }
-        .gallery-title { font-family: 'Montserrat', sans-serif; font-size: 2rem; color: var(--text-main); margin-bottom: 10px; text-transform: uppercase;}
-
+        .gallery-title { font-family: 'Montserrat', sans-serif; font-size: 2rem; color: var(--text-main); margin-bottom: 40px; text-transform: uppercase;}
         .fade-in-up { animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
         @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 
@@ -155,61 +146,35 @@
         .form-row { display: grid; grid-template-columns: 2fr 1fr 1fr auto; gap: 15px; margin-bottom: 15px; align-items: center; }
         @media (max-width: 600px) { .form-row { grid-template-columns: 1fr; gap: 10px; border-bottom: 1px solid var(--glass-border); padding-bottom: 15px;} }
         
-        input, select {
-            background: rgba(0,0,0,0.2); border: 1px solid var(--glass-border); color: var(--text-main);
-            padding: 12px; border-radius: 8px; font-family: 'Open Sans', sans-serif; width: 100%; box-sizing: border-box; outline: none; transition: border-color 0.3s;
-        }
+        input, select { background: rgba(0,0,0,0.2); border: 1px solid var(--glass-border); color: var(--text-main); padding: 12px; border-radius: 8px; font-family: 'Open Sans', sans-serif; width: 100%; box-sizing: border-box; outline: none; transition: border-color 0.3s; }
         body.light-mode input, body.light-mode select { background: rgba(255,255,255,0.8); }
         input:focus, select:focus { border-color: var(--primary); }
         select option { background: var(--bg-end); color: var(--text-main); }
         
-        .action-btn {
-            background: var(--primary); border: none; color: #000; padding: 12px 20px; border-radius: 8px;
-            font-weight: bold; cursor: pointer; transition: all 0.3s; width: 100%; text-transform: uppercase;
-        }
+        .action-btn { background: var(--primary); border: none; color: #000; padding: 12px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: all 0.3s; width: 100%; text-transform: uppercase; }
         .action-btn:hover { background: #ffcc00; transform: translateY(-2px); }
         .danger-btn { background: var(--danger); color: white; padding: 12px; border-radius: 8px; cursor: pointer; border: none; font-weight: bold; }
-        
         .result-box { background: var(--glass); border: 1px solid var(--primary); padding: 20px; border-radius: 12px; text-align: center; margin-top: 20px; font-size: 1.5rem; font-weight: bold; color: var(--primary); }
         
         /* Mess Menu Beautiful Styling */
         .tab-container { display: flex; overflow-x: auto; gap: 10px; margin-bottom: 30px; padding-bottom: 10px; }
         .tab-container::-webkit-scrollbar { display: none; } 
-        
         .tab-btn { background: var(--glass); border: 1px solid var(--glass-border); color: var(--text-main); padding: 12px 25px; border-radius: 30px; cursor: pointer; white-space: nowrap; transition: 0.3s; font-weight: bold; font-family: 'Montserrat', sans-serif; text-transform: uppercase; font-size: 0.85rem;}
         .tab-btn.active, .tab-btn:hover { background: var(--primary); color: #000; border-color: var(--primary); box-shadow: 0 0 15px rgba(255, 170, 0, 0.4);}
-        
-        .meal-card { 
-            display: flex; gap: 20px; background: var(--glass); padding: 25px; border-radius: 16px; 
-            border: 1px solid var(--glass-border); margin-bottom: 20px; transition: transform 0.3s, border-color 0.3s;
-            align-items: flex-start;
-        }
+        .meal-card { display: flex; gap: 20px; background: var(--glass); padding: 25px; border-radius: 16px; border: 1px solid var(--glass-border); margin-bottom: 20px; transition: transform 0.3s, border-color 0.3s; align-items: flex-start; }
         .meal-card:hover { transform: translateY(-5px); border-color: var(--primary); box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
-        
-        .meal-icon-box {
-            background: linear-gradient(135deg, rgba(255, 170, 0, 0.2) 0%, rgba(0, 0, 0, 0.2) 100%);
-            border: 1px solid var(--primary); padding: 15px; border-radius: 50%;
-            display: flex; justify-content: center; align-items: center; color: var(--primary);
-            flex-shrink: 0; box-shadow: inset 0 0 10px rgba(255,170,0,0.1);
-        }
+        .meal-icon-box { background: linear-gradient(135deg, rgba(255, 170, 0, 0.2) 0%, rgba(0, 0, 0, 0.2) 100%); border: 1px solid var(--primary); padding: 15px; border-radius: 50%; display: flex; justify-content: center; align-items: center; color: var(--primary); flex-shrink: 0; box-shadow: inset 0 0 10px rgba(255,170,0,0.1); }
         .meal-icon-box svg { width: 28px; height: 28px; stroke-width: 2; }
-        
-        .meal-content { flex-grow: 1; }
+        .meal-content { flex-grow: 1; text-align: left; }
         .meal-content h3 { margin: 0 0 10px 0; color: var(--text-main); font-size: 1.4rem; font-family: 'Montserrat', sans-serif; text-transform: uppercase; letter-spacing: 1px; }
         .meal-content p { margin: 0; color: var(--text-sub); line-height: 1.8; font-size: 1.05rem; }
-        
-        .special-badge {
-            display: inline-block; background: linear-gradient(135deg, #ff4444 0%, #cc0000 100%);
-            color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: bold;
-            margin-top: 10px; letter-spacing: 1px; box-shadow: 0 4px 10px rgba(255, 68, 68, 0.3);
-            text-transform: uppercase; font-family: 'Montserrat', sans-serif;
-        }
+        .special-badge { display: inline-block; background: linear-gradient(135deg, #ff4444 0%, #cc0000 100%); color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: bold; margin-top: 10px; letter-spacing: 1px; box-shadow: 0 4px 10px rgba(255, 68, 68, 0.3); text-transform: uppercase; font-family: 'Montserrat', sans-serif; }
 
         /* Helper Accordion */
         details { background: var(--glass); border: 1px solid var(--glass-border); border-radius: 8px; margin-bottom: 10px; }
         summary { padding: 15px; cursor: pointer; font-weight: bold; color: var(--primary); list-style: none; outline: none; }
         summary::-webkit-details-marker { display: none; }
-        .details-content { padding: 15px; border-top: 1px solid var(--glass-border); color: var(--text-sub); }
+        .details-content { padding: 15px; border-top: 1px solid var(--glass-border); color: var(--text-sub); text-align: left;}
         .details-content ul { margin: 0; padding-left: 20px; }
         .details-content li { margin-bottom: 8px; }
 
@@ -236,7 +201,7 @@
 
     <div id="splash-screen">
         <div class="css-loader"></div>
-        <div class="splash-text">Syncing codes...</div>
+        <div class="splash-text">Loading Hub...</div>
     </div>
 
     <div class="btn-container" id="navButtons">
@@ -249,13 +214,34 @@
         <a href="https://github.com/lalitkishore-1021" target="_blank" class="icon-btn" title="GitHub">
             <svg viewBox="0 0 24 24"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
         </a>
+        
+        <button id="installAppBtn" class="icon-btn" style="display: none;" title="Install App to Device">
+            <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+        </button>
+
         <button id="themeToggle" class="icon-btn" onclick="toggleTheme()" title="Toggle Light/Dark Mode">☀️</button>
     </div>
 
     <div id="main-content">
-        <header>
+        <header class="site-header">
+            <svg id="logoInstallTrigger" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" class="main-logo" title="Click to Install App">
+                <defs>
+                    <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="#ffaa00" />
+                        <stop offset="100%" stop-color="#ffdd00" />
+                    </linearGradient>
+                </defs>
+                <path d="M 30 20 L 10 50 L 30 80" fill="none" stroke="url(#logoGradient)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M 70 20 L 90 50 L 70 80" fill="none" stroke="url(#logoGradient)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M 35 65 L 45 65 L 45 50 L 55 50 L 55 35 L 65 35" fill="none" stroke="#ffffff" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+
             <h1>SRM Student Hub</h1>
-            <p class="subtitle">All Java source code is available on my GitHub. Click the GitHub logo above to access and copy</p>
+            <p class="subtitle">Your all-in-one portal for Step Class, CGPA, and more.</p>
         </header>
 
         <div id="projects-view" class="app-view active">
@@ -271,7 +257,7 @@
                             <polyline points="14 8 16 10 14 12"></polyline>
                         </svg>
                     </div>
-                    <div class="caption">STEP Class</div>
+                    <div class="caption">STEP Class Gallery</div>
                 </div>
 
                 <div class="image-card project-card" onclick="switchView('cgpa-view')">
@@ -366,10 +352,8 @@
                 <h2 class="gallery-title">Mess Menu</h2>
                 <p class="subtitle" style="margin-bottom: 20px;">SRMIST Hostel Mess Menu</p>
             </div>
-            <div class="tab-container" id="mess-tabs">
-                </div>
-            <div id="mess-content" style="max-width: 800px; margin: 0 auto;">
-                </div>
+            <div class="tab-container" id="mess-tabs"></div>
+            <div id="mess-content" style="max-width: 800px; margin: 0 auto;"></div>
         </div>
 
         <div id="helper-view" class="app-view">
@@ -377,8 +361,7 @@
                 <button class="back-btn" onclick="switchView('projects-view')">&#8592; Back to Home</button>
                 <h2 class="gallery-title">Study Helper</h2>
             </div>
-            <div class="gallery-container" id="helper-semesters">
-                </div>
+            <div class="gallery-container" id="helper-semesters"></div>
             <div id="helper-subjects" style="display: none; max-width: 800px; margin: 0 auto;">
                 <button class="back-btn" onclick="document.getElementById('helper-subjects').style.display='none'; document.getElementById('helper-semesters').style.display='grid';">&#8592; Back to Semesters</button>
                 <h3 style="color: var(--primary); text-align: center; margin-bottom: 20px;" id="helper-sem-title"></h3>
@@ -402,8 +385,7 @@
                 
                 <div id="overall-attendance" class="result-box" style="margin-bottom: 20px;">Overall: 0%</div>
                 
-                <div id="attendance-list">
-                    </div>
+                <div id="attendance-list"></div>
             </div>
         </div>
 
@@ -426,6 +408,60 @@
 
     <script>
         // ==========================================
+        // PWA SERVICE WORKER & INSTALL LOGIC
+        // ==========================================
+        
+        // 1. Register the Service Worker (sw.js)
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                .then(reg => console.log('Service Worker Registered!', reg))
+                .catch(err => console.log('Service Worker Failed:', err));
+            });
+        }
+
+        // 2. Handle the "Add to Home Screen" prompt
+        let deferredPrompt;
+        const installAppBtn = document.getElementById('installAppBtn');
+        const logoInstallTrigger = document.getElementById('logoInstallTrigger');
+
+        // Chrome triggers this event if the app meets PWA criteria
+        window.addEventListener('beforeinstallprompt', (e) => {
+            // Prevent Chrome from showing the mini-infobar automatically
+            e.preventDefault();
+            // Stash the event so it can be triggered later.
+            deferredPrompt = e;
+            // Show our custom Install Button in the top right
+            installAppBtn.style.display = 'flex';
+        });
+
+        async function triggerAppInstall() {
+            if (deferredPrompt) {
+                // Show the install prompt
+                deferredPrompt.prompt();
+                // Wait for the user to respond to the prompt
+                const { outcome } = await deferredPrompt.userChoice;
+                if (outcome === 'accepted') {
+                    console.log('User accepted the A2HS prompt');
+                } else {
+                    console.log('User dismissed the A2HS prompt');
+                }
+                // Clear the deferredPrompt so it can only be used once
+                deferredPrompt = null;
+                // Hide the button
+                installAppBtn.style.display = 'none';
+            } else {
+                // Fallback for iOS / Safari users (who don't get the automatic prompt)
+                alert("To install this app on iOS, tap the 'Share' icon at the bottom of Safari and select 'Add to Home Screen'.");
+            }
+        }
+
+        // Attach the install function to BOTH the top button AND the main logo
+        installAppBtn.addEventListener('click', triggerAppInstall);
+        logoInstallTrigger.addEventListener('click', triggerAppInstall);
+
+
+        // ==========================================
         // 1. ROUTING LOGIC (SPA)
         // ==========================================
         function switchView(viewId) {
@@ -437,7 +473,7 @@
         }
 
         // ==========================================
-        // 2. PORTFOLIO DATA (Your original data)
+        // 2. PORTFOLIO DATA
         // ==========================================
         const projectsDatabase = {
             'oopsBanner': {
@@ -665,18 +701,8 @@
         // ==========================================
         // 5. HELPER (RESOURCES) LOGIC
         // ==========================================
-        const dummySubject = { name: 'Content Adding Soon...', topics: ['Check back later for updates, PYQs, and CT Papers.'], pyqLink: '#', ctLink: '#' };
-        
-        const helperData = {
-            'Semester 1': [dummySubject],
-            'Semester 2': [dummySubject],
-            'Semester 3': [dummySubject],
-            'Semester 4': [dummySubject],
-            'Semester 5': [dummySubject],
-            'Semester 6': [dummySubject],
-            'Semester 7': [dummySubject],
-            'Semester 8': [dummySubject]
-        };
+        const dummySubject = { name: 'Content Adding Soon...', topics: ['Check back later for pyqs.'], pyqLink: '#', ctLink: '#' };
+        const helperData = { 'Semester 1': [dummySubject], 'Semester 2': [dummySubject], 'Semester 3': [dummySubject], 'Semester 4': [dummySubject] };
 
         function initHelper() {
             const semContainer = document.getElementById('helper-semesters');
@@ -701,7 +727,6 @@
             listContainer.innerHTML = '';
 
             const subjects = helperData[semName] || [];
-            
             subjects.forEach(sub => {
                 let topicsHTML = sub.topics.map(t => `<li>${t}</li>`).join('');
                 listContainer.innerHTML += `
@@ -710,8 +735,8 @@
                         <div class="details-content">
                             <strong>Important Topics:</strong>
                             <ul style="margin-top: 10px; margin-bottom: 15px;">${topicsHTML}</ul>
-                            <a href="${sub.ctLink}" style="color:var(--primary); text-decoration: none; font-weight: bold;">[ Download CT Papers ]</a> &nbsp;|&nbsp; 
-                            <a href="${sub.pyqLink}" style="color:var(--primary); text-decoration: none; font-weight: bold;">[ Download PYQs ]</a>
+                            <a href="${sub.ctLink}" style="color:var(--primary); text-decoration: none; font-weight: bold;">[ CT Papers ]</a> &nbsp;|&nbsp; 
+                            <a href="${sub.pyqLink}" style="color:var(--primary); text-decoration: none; font-weight: bold;">[ PYQs ]</a>
                         </div>
                     </details>
                 `;
@@ -833,4 +858,3 @@
     </script>
 </body>
 </html>
-
