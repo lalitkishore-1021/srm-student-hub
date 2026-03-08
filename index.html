@@ -10,6 +10,7 @@
     <link rel="apple-touch-icon" href="images/oops-banner/uc1.png">
     
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;900&family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
     
     <style>
         /* --- CSS VARIABLES FOR THEME TOGGLE --- */
@@ -195,6 +196,35 @@
         .lightbox img { max-width: 85%; max-height: 85%; border-radius: 10px; border: 1px solid #333; }
         .close-btn { position: absolute; top: 30px; right: 40px; color: #fff; font-size: 50px; cursor: pointer; transition: color 0.3s;}
         .close-btn:hover { color: var(--primary); }
+
+        /* --- SRM PORTAL SYNC MODAL --- */
+        .srm-modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8); backdrop-filter: blur(5px);
+            display: none; justify-content: center; align-items: center; z-index: 4000;
+            opacity: 0; transition: opacity 0.3s ease;
+        }
+        .srm-modal {
+            background: var(--bg-start); border: 1px solid var(--primary);
+            padding: 30px; border-radius: 16px; width: 90%; max-width: 400px;
+            box-shadow: 0 10px 30px rgba(255, 170, 0, 0.2);
+            transform: scale(0.9); transition: transform 0.3s ease; text-align: center;
+        }
+        .srm-modal.active { transform: scale(1); }
+        .srm-modal h3 { color: var(--primary); font-family: 'Montserrat', sans-serif; margin-bottom: 20px;}
+        .srm-modal input { margin-bottom: 15px; }
+        .sync-btn { background: linear-gradient(90deg, #ffaa00, #ffdd00); color: #000; font-weight: bold; border: none; padding: 12px; border-radius: 8px; width: 100%; cursor: pointer; text-transform: uppercase; letter-spacing: 1px; transition: transform 0.2s; }
+        .sync-btn:hover { transform: scale(1.02); }
+        .cancel-btn { background: transparent; color: var(--text-sub); border: none; margin-top: 15px; cursor: pointer; text-decoration: underline; font-weight: bold; }
+        
+        /* Spinner */
+        .sync-spinner {
+            width: 40px; height: 40px; border: 4px solid var(--glass-border);
+            border-top-color: var(--primary); border-radius: 50%;
+            animation: spin 1s linear infinite; margin: 0 auto 15px;
+            display: none;
+        }
+        .sync-status { color: var(--text-main); font-size: 0.9rem; display: none; margin-bottom: 15px;}
     </style>
 </head>
 <body>
@@ -247,7 +277,7 @@
         <div id="projects-view" class="app-view active">
             <div class="gallery-container">
                 
-                <div class="image-card project-card" onclick="openProject('oopsBanner')">
+                <div class="image-card project-card" onclick="openProject('oopsBanner')" data-aos="fade-up" data-aos-delay="100">
                     <div class="project-cover">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="project-icon">
                             <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
@@ -260,7 +290,7 @@
                     <div class="caption">STEP Class Gallery</div>
                 </div>
 
-                <div class="image-card project-card" onclick="switchView('cgpa-view')">
+                <div class="image-card project-card" onclick="switchView('cgpa-view')" data-aos="fade-up" data-aos-delay="200">
                     <div class="project-cover">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="project-icon">
                             <rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect>
@@ -276,7 +306,7 @@
                     <div class="caption">CGPA Calculator</div>
                 </div>
 
-                <div class="image-card project-card" onclick="openTodayMessMenu()">
+                <div class="image-card project-card" onclick="openTodayMessMenu()" data-aos="fade-up" data-aos-delay="300">
                     <div class="project-cover">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="project-icon">
                             <path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path>
@@ -287,7 +317,7 @@
                     <div class="caption">Mess Menu</div>
                 </div>
 
-                <div class="image-card project-card" onclick="switchView('helper-view')">
+                <div class="image-card project-card" onclick="switchView('helper-view')" data-aos="fade-up" data-aos-delay="400">
                     <div class="project-cover">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="project-icon">
                             <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"></path>
@@ -296,7 +326,7 @@
                     <div class="caption">Study Helper</div>
                 </div>
 
-                <div class="image-card project-card" onclick="switchView('attendance-view'); renderAttendance();">
+                <div class="image-card project-card" onclick="switchView('attendance-view'); renderAttendance();" data-aos="fade-up" data-aos-delay="500">
                     <div class="project-cover">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="project-icon">
                             <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
@@ -374,6 +404,10 @@
                 <button class="back-btn" onclick="switchView('projects-view')">&#8592; Back to Home</button>
                 <h2 class="gallery-title">Attendance Tracker</h2>
                 <p class="subtitle">Target: 75% | Data saves automatically to this device</p>
+                <button class="sync-btn" style="max-width: 300px; margin: 0 auto 20px; display: block;" onclick="openSyncModal()">
+                    <svg style="width:16px; height:16px; margin-right:8px; vertical-align:middle;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M2.13 15.57a9 9 0 1 0 3.87-11.13L2 8M2.5 22v-6h6M21.87 8.43a9 9 0 1 0-3.87 11.13L22 16" /></svg>
+                    Sync with SRM Portal
+                </button>
             </div>
             <div class="image-card" style="max-width: 800px; margin: 0 auto; cursor: default; transform: none;">
                 <div class="form-row">
@@ -404,6 +438,30 @@
     <div id="lightbox" class="lightbox" onclick="if(event.target === this) closeLightbox()">
         <span class="close-btn" onclick="closeLightbox()">&times;</span>
         <img id="lightbox-img" src="">
+    </div>
+
+    <!-- SRM Cloud Sync Modal -->
+    <div class="srm-modal-overlay" id="srmModalOverlay">
+        <div class="srm-modal" id="srmModal">
+            <h3 id="modalTitle">SRM Cloud Sync</h3>
+            <div id="syncForm">
+                <input type="text" id="srmRegNo" placeholder="Registration Number (e.g. RA22...)">
+                <input type="password" id="srmPwd" placeholder="Portal Password">
+                <button class="sync-btn" onclick="startSync()">Login & Fetch Data</button>
+                <button class="cancel-btn" onclick="closeSyncModal()">Cancel</button>
+            </div>
+            <div id="syncCaptcha" style="display: none; text-align: center;">
+                <p style="color: var(--text-main); font-size: 0.9rem; margin-bottom: 15px;">SRM requires a CAPTCHA for this account.</p>
+                <img id="captchaImage" src="" alt="CAPTCHA" style="max-width: 100%; border-radius: 8px; margin-bottom: 15px; border: 1px solid var(--border);">
+                <input type="text" id="srmCaptchaText" placeholder="Enter Captcha Letters" style="text-align: center; font-weight: bold; text-transform: uppercase;">
+                <button class="sync-btn" onclick="submitCaptcha()">Verify & Fetch Data</button>
+                <button class="cancel-btn" onclick="closeSyncModal()">Cancel</button>
+            </div>
+            <div id="syncLoader" style="display: none;">
+                <div class="sync-spinner" style="display: block;"></div>
+                <div class="sync-status" id="syncStatusText">Connecting to Cloud Backend...</div>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -871,9 +929,169 @@
         function closeLightbox() {
             document.getElementById("lightbox").style.display = "none";
         }
+
+        // ==========================================
+        // SRM PORTAL SYNC SIMULATION LOGIC
+        // ==========================================
+        function openSyncModal() {
+            const overlay = document.getElementById('srmModalOverlay');
+            overlay.style.display = 'flex';
+            setTimeout(() => {
+                overlay.style.opacity = '1';
+                document.getElementById('srmModal').classList.add('active');
+            }, 10);
+        }
+
+        function closeSyncModal() {
+            const overlay = document.getElementById('srmModalOverlay');
+            overlay.style.opacity = '0';
+            document.getElementById('srmModal').classList.remove('active');
+            setTimeout(() => {
+                overlay.style.display = 'none';
+                resetSyncModal();
+            }, 300);
+        }
+
+        function resetSyncModal() {
+            document.getElementById('syncForm').style.display = 'block';
+            document.getElementById('syncLoader').style.display = 'none';
+            document.getElementById('syncCaptcha').style.display = 'none';
+            document.getElementById('srmRegNo').value = '';
+            document.getElementById('srmPwd').value = '';
+            document.getElementById('srmCaptchaText').value = '';
+            document.getElementById('modalTitle').innerText = 'SRM Cloud Sync';
+            document.getElementById('modalTitle').style.color = 'var(--primary)';
+            activeSessionId = null;
+        }
+
+        async function startSync() {
+            const regNo = document.getElementById('srmRegNo').value;
+            const pwd = document.getElementById('srmPwd').value;
+
+            if(!regNo || !pwd) {
+                alert("Please enter both Registration Number and Password to sync.");
+                return;
+            }
+
+            document.getElementById('syncForm').style.display = 'none';
+            document.getElementById('syncCaptcha').style.display = 'none';
+            document.getElementById('syncLoader').style.display = 'block';
+            document.getElementById('modalTitle').innerText = 'Cloud Authentication...';
+            
+            const statusText = document.getElementById('syncStatusText');
+            statusText.style.display = 'block';
+            statusText.innerText = "Connecting to Python Server Engine...";
+            
+            try {
+                // Step 1: Initialize session and fetch optional Captcha
+                const response = await fetch('http://127.0.0.1:5000/api/start_session', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ regNo, pwd })
+                });
+
+                statusText.innerText = "Running headless browser in the cloud... (10s)";
+                
+                let jsonResponse;
+                try {
+                    jsonResponse = await response.json();
+                } catch(e) {
+                     throw new Error("Server disconnected or returned invalid data.");
+                }
+
+                if(!response.ok || !jsonResponse.success) {
+                    throw new Error(jsonResponse.error || "Unknown authentication error");
+                }
+
+                if(jsonResponse.requires_captcha) {
+                    // Stop loading and show the Captcha to the user
+                    activeSessionId = jsonResponse.session_id;
+                    document.getElementById('syncLoader').style.display = 'none';
+                    document.getElementById('syncCaptcha').style.display = 'block';
+                    document.getElementById('captchaImage').src = jsonResponse.captcha_base64;
+                    document.getElementById('srmCaptchaText').value = '';
+                    document.getElementById('modalTitle').innerText = 'Security Check';
+                } else {
+                    // No Captcha needed, it parsed it directly.
+                    processLiveScrapedData(jsonResponse.data);
+                }
+
+            } catch (err) {
+                console.error(err);
+                document.getElementById('modalTitle').innerText = 'Sync Failed';
+                document.getElementById('syncStatusText').innerHTML = err.message;
+                document.querySelector('.sync-spinner').style.display = 'none';
+                setTimeout(resetSyncModal, 5000);
+            }
+        }
+
+        async function submitCaptcha() {
+            const captchaText = document.getElementById('srmCaptchaText').value;
+
+            if(!captchaText) {
+                alert("Please enter the Captcha letters.");
+                return;
+            }
+
+            document.getElementById('syncCaptcha').style.display = 'none';
+            document.getElementById('syncLoader').style.display = 'block';
+            document.getElementById('modalTitle').innerText = 'Fetching Attendance...';
+            
+            const statusText = document.getElementById('syncStatusText');
+            statusText.style.display = 'block';
+            statusText.innerText = "Submitting Captcha to Cloud Browser... (15s)";
+            
+            try {
+                // Step 2: Push the captcha text to the waiting headless browser
+                const response = await fetch('http://127.0.0.1:5000/api/submit_captcha', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ session_id: activeSessionId, captcha_text: captchaText })
+                });
+                
+                let jsonResponse;
+                try {
+                    jsonResponse = await response.json();
+                } catch(e) {
+                     throw new Error("Server disconnected or returned invalid data.");
+                }
+
+                if(!response.ok || !jsonResponse.success) {
+                    throw new Error(jsonResponse.error || "Unknown scraping error");
+                }
+
+                processLiveScrapedData(jsonResponse.data);
+
+            } catch (err) {
+                console.error(err);
+                document.getElementById('modalTitle').innerText = 'Sync Failed';
+                document.getElementById('syncStatusText').innerHTML = err.message;
+                document.querySelector('.sync-spinner').style.display = 'none';
+                setTimeout(resetSyncModal, 5000);
+            }
+        }
+
+        function processLiveScrapedData(liveData) {
+            attendanceData = liveData;
+            saveAttendance();
+            renderAttendance();
+
+            document.getElementById('syncLoader').style.display = 'none';
+            document.getElementById('modalTitle').innerText = 'Sync Completed Successfully!';
+            document.getElementById('modalTitle').style.color = 'var(--success)';
+            
+            setTimeout(() => { closeSyncModal(); }, 2000);
+        }
+    </script>
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    <script>
+        AOS.init({
+            duration: 800,
+            once: true,
+            offset: 100
+        });
     </script>
 </body>
 </html> 
-
 
 
