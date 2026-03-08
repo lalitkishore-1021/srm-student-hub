@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
 from playwright.sync_api import sync_playwright
 import time
@@ -9,6 +9,9 @@ import threading
 import queue
 
 app = Flask(__name__)
+@app.route("/")
+def home():
+    return send_file("index.html")
 # Allow CORS for local dev and anywhere the frontend is hosted
 CORS(app)
 
