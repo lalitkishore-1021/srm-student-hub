@@ -7,6 +7,17 @@ import uuid
 import base64
 import threading
 import queue
+import subprocess
+
+# ----- RENDER.COM CRASH FIX -----
+# Render's free tier sometimes ignores render.yaml scripts and deletes the Chromium browser 
+# after the container builds. This forces the Python server to download it directly into 
+# the source folder every single time the container wakes up.
+os.environ["PLAYWRIGHT_BROWSERS_PATH"] = "0"
+print("Starting backend... Verifying Chromium installation...")
+subprocess.run(["python", "-m", "playwright", "install", "chromium"], check=False)
+print("Chromium Verification Complete.")
+# --------------------------------
 
 app = Flask(__name__)
 @app.route("/")
