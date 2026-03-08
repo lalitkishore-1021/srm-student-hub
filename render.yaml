@@ -1,9 +1,11 @@
 services:
   - type: web
-    name: srm-student-hub-backend
+    name: srm-student-hub
     env: python
+    plan: free
     buildCommand: pip install -r requirements.txt && playwright install chromium
     startCommand: gunicorn server:app
+    runtime: python
     envVars:
       - key: PYTHON_VERSION
-        value: 3.11.0
+        value: 3.11.9
