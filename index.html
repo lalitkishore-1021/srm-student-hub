@@ -7,7 +7,7 @@
     
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#ffaa00">
-    <link rel="apple-touch-icon" href="./images/oops-banner/uc1.png">
+    <link rel="apple-touch-icon" href="images/app-icon.svg">
     
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;900&family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
     <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
@@ -90,7 +90,7 @@
         /* --- CUSTOM SVG LOGO STYLING --- */
         .site-header { display: flex; flex-direction: column; align-items: center; margin-bottom: 40px; }
         .main-logo {
-            width: 90px; height: 90px; margin-bottom: 15px; cursor: pointer; /* Makes it look clickable for install */
+            width: 90px; height: 90px; margin-bottom: 15px; cursor: pointer;
             filter: drop-shadow(0 0 15px rgba(255, 170, 0, 0.5));
             transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
@@ -187,7 +187,7 @@
         /* --- VIEW COUNTER & FOOTER --- */
         .footer { margin-top: 80px; padding: 40px 20px; border-top: 1px solid var(--glass-border); display: flex; flex-direction: column; align-items: center; gap: 20px; transition: border-color 0.5s ease;}
         .view-counter-box { background: var(--glass); border: 1px solid var(--glass-border); padding: 15px 30px; border-radius: 50px; display: flex; align-items: center; gap: 15px; box-shadow: 0 0 20px var(--shadow); transition: all 0.5s ease; }
-        .view-counter-text { font-family: 'Montserrat', sans-serif; font-size: 0.9rem; color: var(--text-sub); font-weight: 700; letter-spacing: 1px; transition: color 0.5s ease;}
+        .view-counter-text { font-family: 'Montserrat', sans-serif; font-size: 0.9rem; color: var(--text-sub); font-weight: 700; letter-spacing: 1px; transition: color: 0.5s ease;}
         .developer-credit { color: var(--text-sub); font-size: 0.85rem; letter-spacing: 2px; transition: color 0.5s ease;}
         .developer-credit strong { color: var(--primary); }
 
@@ -339,6 +339,19 @@
                     <div class="caption">Attendance Tracker</div>
                 </div>
 
+                <div class="image-card project-card" onclick="switchView('timetable-view')" data-aos="fade-up" data-aos-delay="600">
+                    <div class="project-cover">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="project-icon">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                            <line x1="3" y1="9" x2="21" y2="9"></line>
+                            <line x1="3" y1="15" x2="21" y2="15"></line>
+                            <line x1="9" y1="3" x2="9" y2="21"></line>
+                            <line x1="15" y1="3" x2="15" y2="21"></line>
+                        </svg>
+                    </div>
+                    <div class="caption">Time Table</div>
+                </div>
+
             </div>
         </div>
 
@@ -423,6 +436,18 @@
             </div>
         </div>
 
+        <div id="timetable-view" class="app-view">
+            <div class="view-header">
+                <button class="back-btn" onclick="switchView('projects-view')">&#8592; Back to Home</button>
+                <h2 class="gallery-title">Time Table</h2>
+                <p class="subtitle">Your weekly class schedule</p>
+            </div>
+            <div class="image-card" style="max-width: 800px; margin: 0 auto; cursor: default; transform: none;">
+                <p style="color: var(--text-sub); margin-bottom: 20px; font-weight: bold;">Time table feature coming soon!</p>
+                <p style="color: var(--text-sub);">Here you will be able to map out your weekly periods, room numbers, and subject timings.</p>
+            </div>
+        </div>
+
         <footer class="footer">
             <div class="view-counter-box">
                 <span class="view-counter-text">SQUAD PAGE VIEWS:</span>
@@ -440,7 +465,6 @@
         <img id="lightbox-img" src="">
     </div>
 
-    <!-- SRM Cloud Sync Modal -->
     <div class="srm-modal-overlay" id="srmModalOverlay">
         <div class="srm-modal" id="srmModal">
             <h3 id="modalTitle">SRM Cloud Sync</h3>
@@ -466,58 +490,52 @@
 
     <script>
         // ==========================================
-        // PWA SERVICE WORKER & INSTALL LOGIC
+        // FORCE CLEAR OLD PWA CACHES (THE FIX!)
         // ==========================================
-        
-        // 1. Register the Service Worker (sw.js)
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('sw.js')
-                .then(reg => console.log('Service Worker Registered!', reg))
-                .catch(err => console.log('Service Worker Failed:', err));
+        if ('caches' in window) {
+            caches.keys().then((names) => {
+                names.forEach((name) => {
+                    caches.delete(name);
+                });
             });
         }
 
-        // 2. Handle the "Add to Home Screen" prompt
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(function(registrations) {
+                for(let registration of registrations) {
+                    registration.unregister();
+                }
+            });
+        }
+
         let deferredPrompt;
         const installAppBtn = document.getElementById('installAppBtn');
         const logoInstallTrigger = document.getElementById('logoInstallTrigger');
 
-        // Chrome triggers this event if the app meets PWA criteria
         window.addEventListener('beforeinstallprompt', (e) => {
-            // Prevent Chrome from showing the mini-infobar automatically
             e.preventDefault();
-            // Stash the event so it can be triggered later.
             deferredPrompt = e;
-            // Show our custom Install Button in the top right
             installAppBtn.style.display = 'flex';
         });
 
         async function triggerAppInstall() {
             if (deferredPrompt) {
-                // Show the install prompt
                 deferredPrompt.prompt();
-                // Wait for the user to respond to the prompt
                 const { outcome } = await deferredPrompt.userChoice;
                 if (outcome === 'accepted') {
                     console.log('User accepted the A2HS prompt');
                 } else {
                     console.log('User dismissed the A2HS prompt');
                 }
-                // Clear the deferredPrompt so it can only be used once
                 deferredPrompt = null;
-                // Hide the button
                 installAppBtn.style.display = 'none';
             } else {
-                // Fallback for iOS / Safari users (who don't get the automatic prompt)
                 alert("To install this app on iOS, tap the 'Share' icon at the bottom of Safari and select 'Add to Home Screen'.");
             }
         }
 
-        // Attach the install function to BOTH the top button AND the main logo
         installAppBtn.addEventListener('click', triggerAppInstall);
         logoInstallTrigger.addEventListener('click', triggerAppInstall);
-
 
         // ==========================================
         // 1. ROUTING LOGIC (SPA)
@@ -538,38 +556,39 @@
                 title: 'OOPS Banner App',
                 subProjects: [
                     { id: 'ucsFolder', title: "UC's" },
-                    { id: 'Week 1 and week 2 Problems', title: 'Week 1 and week 2 Problems' }
+                    { id: 'week1Problem', title: 'Week 1 Problem' }
                 ]
             },
             'ucsFolder': {
                 title: "UC's",
                 parent: 'oopsBanner',
                 images: [
-                    { src: './images/oops-banner/uc1.png', label: '1' },
-                    { src: './images/oops-banner/uc2.png', label: '2' },
-                    { src: './images/oops-banner/uc3.png', label: '3' },
-                    { src: './images/oops-banner/uc4.png', label: '4' },
-                    { src: './images/oops-banner/uc5.png', label: '5' },
-                    { src: './images/oops-banner/uc6.png', label: '6' },
-                    { src: './images/oops-banner/uc7.png', label: '7' },
-                    { src: './images/oops-banner/uc8.png', label: '8' },
-                    { src: './images/oops-banner/uc9.png', label: '9' },
-                    { src: './images/oops-banner/uc10.png', label: '10' },
-                    { src: './images/oops-banner/end.png', label: 'end' }
+                    { src: 'images/oops-banner/uc1.png', label: '1' },
+                    { src: 'images/oops-banner/uc2.png', label: '2' },
+                    { src: 'images/oops-banner/uc3.png', label: '3' },
+                    { src: 'images/oops-banner/uc4.png', label: '4' },
+                    { src: 'images/oops-banner/uc5.png', label: '5' },
+                    { src: 'images/oops-banner/uc6.png', label: '6' },
+                    { src: 'images/oops-banner/uc7.png', label: '7' },
+                    { src: 'images/oops-banner/uc8.png', label: '8' },
+                    { src: 'images/oops-banner/uc9.png', label: '9' },
+                    { src: 'images/oops-banner/uc10.png', label: '10' },
+                    { src: 'images/oops-banner/end.png', label: 'end' }
                 ]
             },
-            'Week 1 and week 2 Problems': { 
+            'week1Problem': { 
                 title: 'Week 1 and week 2 Problems',
                 parent: 'oopsBanner', 
                 images: [
-                    { src: './images/oops-banner/Basic-step1.png', label: 'Basic-Step' },
-                    { src: './images/oops-banner/Basic-step2.png', label: 'Basic-Step' },
-                    { src: './images/oops-banner/level1.png', label: 'Part 1' },
-                    { src: './images/oops-banner/level12.png', label: 'Part 2' },
-                    { src: './images/oops-banner/level11.png', label: 'Part 3' },
-                    { src: './images/oops-banner/bash.png', label: 'Bash' },
-                    { src: './images/oops-banner/level21.png', label: 'Part 4' },
-                    { src: './images/oops-banner/level22.png', label: 'Part 5' }
+                    { src: 'images/oops-banner/Basic-step1.png', label: 'Basic-Step' },
+                    { src: 'images/oops-banner/Basic-step2.png', label: 'Basic-Step' },
+                    { src: 'images/oops-banner/level1.png', label: 'Part 1' },
+                    { src: 'images/oops-banner/level12.png', label: 'Part 2' },
+                    { src: 'images/oops-banner/level13.png', label: 'Part 3' }, // Fixed typo from level11 to level13
+                    { src: 'images/oops-banner/bash.png', label: 'Bash' },
+                    { src: 'images/oops-banner/level21.png', label: 'Part 4' },
+                    { src: 'images/oops-banner/level22.png', label: 'Part 5' },
+                    { src: 'images/oops-banner/level3.png', label: 'Part 6' }
                 ]
             }
         };
@@ -720,7 +739,6 @@
             }
         };
 
-        // --- NEW AUTO-SELECT TODAY FUNCTION ---
         function openTodayMessMenu() {
             const daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
             const todayIndex = new Date().getDay();
@@ -745,11 +763,10 @@
                 btn.onclick = () => renderMessMenu(day);
                 tabContainer.appendChild(btn);
 
-                // --- NEW: Auto-scroll the tab bar to today's button ---
                 if (day === selectedDay) {
                     setTimeout(() => {
                         btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-                    }, 50); // Small delay to let the UI render first
+                    }, 150);
                 }
             });
 
@@ -771,6 +788,7 @@
                 `;
             });
         }
+
         // ==========================================
         // 5. HELPER (RESOURCES) LOGIC
         // ==========================================
@@ -982,7 +1000,6 @@
             statusText.innerText = "Connecting to Python Server Engine...";
             
             try {
-                // Step 1: Initialize session and fetch optional Captcha
                 const response = await fetch('https://srm-student-hub-1.onrender.com/api/start_session', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -1003,7 +1020,6 @@
                 }
 
                 if(jsonResponse.requires_captcha) {
-                    // Stop loading and show the Captcha to the user
                     activeSessionId = jsonResponse.session_id;
                     document.getElementById('syncLoader').style.display = 'none';
                     document.getElementById('syncCaptcha').style.display = 'block';
@@ -1011,7 +1027,6 @@
                     document.getElementById('srmCaptchaText').value = '';
                     document.getElementById('modalTitle').innerText = 'Security Check';
                 } else {
-                    // No Captcha needed, it parsed it directly.
                     processLiveScrapedData(jsonResponse.data);
                 }
 
@@ -1041,7 +1056,6 @@
             statusText.innerText = "Submitting Captcha to Cloud Browser... (15s)";
             
             try {
-                // Step 2: Push the captcha text to the waiting headless browser
                 const response = await fetch('https://srm-student-hub-1.onrender.com/api/submit_captcha', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -1091,6 +1105,4 @@
         });
     </script>
 </body>
-</html> 
-
-
+</html>
