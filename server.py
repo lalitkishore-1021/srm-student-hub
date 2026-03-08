@@ -107,26 +107,35 @@ def playwright_worker(session_id, reg_no, pwd, in_queue, out_queue):
             out_queue.put({'requires_captcha': False})
 
         # --- The Shared Scraping Logic ---
-        print(f"[{reg_no}] [Thread] Handling the Javascript Redirect Maze...")
+        print(f"[{reg_no}] [Thread] Handling the Javascript Redirect Maze... (giving SRM up to 40 seconds to load)")
         try:
-            page.wait_for_selector("text=Attendance Details, a:has-text('Attendance Details')", timeout=20000)
+            # Wait 40 seconds for ANY sign of a successful login (the Attendance link itself, or the user profile name)
+            page.wait_for_selector("text=Attendance Details, a:has-text('Attendance Details'), .navbar-brand >> visible=true", timeout=40000)
         except:
+            print(f"[{reg_no}] [Thread] Dashboard didn't load in 40s. Checking for invisible portal error messages...")
             error_el = page.locator("span, td, div", has_text="Invalid").first
             if error_el.count() == 0:
                  error_el = page.locator("text=wrong, text=incorrect").first
             
             if error_el.count() > 0:
                  error_text = error_el.inner_text().strip()
+                 print(f"[{reg_no}] [Thread] Found explicit Portal Error: {error_text}")
                  out_queue.put({'success': False, 'error': f'Portal Error: {error_text}'})
                  return
             
             print(f"[{reg_no}] [Thread] Dashboard load timeout. Generating debug screenshot...")
             page.screenshot(path=f"debug_playwright_{reg_no}.png", full_page=True)
-            out_queue.put({'success': False, 'error': 'Playwright timed out waiting for the dashboard. CAPTCHA might have been wrong, or portal is down.'})
+            out_queue.put({'success': False, 'error': 'Playwright gave SRM 40 seconds to load but it timed out. The Captcha might have been wrong, or the portal is completely down right now.'})
             return
         
-        print(f"[{reg_no}] [Thread] Clicking Attendance Details tab...")
-        page.click("text=Attendance Details, a:has-text('Attendance Details')")
+        print(f"[{reg_no}] [Thread] Successfully logged in! Navigating to Attendance...")
+        try:
+             # Just in case we matched a generic welcome text, force it to click Attendance now
+             page.click("text=Attendance Details, a:has-text('Attendance Details')", timeout=10000)
+        except:
+             print(f"[{reg_no}] [Thread] Could not find Attendance Details button to click.")
+             out_queue.put({'success': False, 'error': 'Logged in successfully, but the Attendance page link is missing from your portal dashboard.'})
+             return
         
         print(f"[{reg_no}] [Thread] Waiting for table frame...")
         try:
