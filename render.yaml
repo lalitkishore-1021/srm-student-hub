@@ -3,8 +3,8 @@ services:
     name: srm-student-hub
     env: python
     plan: free
-    buildCommand: pip install -r requirements.txt && python -m playwright install chromium
-    startCommand: gunicorn server:app --bind 0.0.0.0:$PORT --timeout 300
+    buildCommand: export PLAYWRIGHT_BROWSERS_PATH=/opt/render/project/src/.playwright && pip install -r requirements.txt && playwright install chromium
+    startCommand: export PLAYWRIGHT_BROWSERS_PATH=/opt/render/project/src/.playwright && gunicorn server:app --bind 0.0.0.0:$PORT --timeout 300
     runtime: python
     envVars:
       - key: PYTHON_VERSION
