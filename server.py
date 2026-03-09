@@ -40,6 +40,7 @@ def playwright_worker(session_id, reg_no, pwd, in_queue, out_queue):
         p = sync_playwright().start()
         print(f"[{reg_no}] [Thread] Launching Chromium...")
         
+        # Headless MUST be True for Render servers
         browser = p.chromium.launch(headless=True, args=['--no-sandbox', '--disable-setuid-sandbox'])
         context = browser.new_context(
             user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
@@ -91,7 +92,7 @@ def playwright_worker(session_id, reg_no, pwd, in_queue, out_queue):
             
             captcha_input.fill(captcha_text)
             
-            # UPGRADE 1: Explicitly click the Login button instead of pressing Enter
+            # Explicitly click the Login button to bypass old form issues
             login_btn = page.locator('input[type="submit"], button:has-text("Login"), a:has-text("Login")').first
             if login_btn.count() > 0:
                 login_btn.click()
@@ -104,9 +105,9 @@ def playwright_worker(session_id, reg_no, pwd, in_queue, out_queue):
             out_queue.put({'requires_captcha': False})
 
         print(f"[{reg_no}] [Thread] Waiting for page to respond...")
-        time.sleep(3) # Wait a brief moment for the page to process the login click
+        time.sleep(3)
 
-        # UPGRADE 2: Immediately check if the Captcha was wrong!
+        # Immediately check if the Captcha was wrong so we don't timeout!
         error_el = page.locator("span, td, div, p", has_text="Invalid").first
         if error_el.count() > 0:
             error_text = error_el.inner_text().strip()
@@ -116,14 +117,10 @@ def playwright_worker(session_id, reg_no, pwd, in_queue, out_queue):
 
         print(f"[{reg_no}] [Thread] Handling the Javascript Redirect Maze...")
         try:
-            # UPGRADE 3: Reduced timeout so the frontend doesn't disconnect
             page.wait_for_selector("text=Attendance Details, a:has-text('Attendance Details'), .navbar-brand >> visible=true", timeout=15000)
         except:
             print(f"[{reg_no}] [Thread] Dashboard timeout. Attempting Direct URL Navigation anyway...")
 
-        # ======================================================
-        # UPGRADED: DIRECT URL NAVIGATION FALLBACK
-        # ======================================================
         print(f"[{reg_no}] [Thread] Navigating to Attendance...")
         try:
              attendance_link = page.locator("a:has-text('Attendance Details'), #link_8").first
@@ -136,7 +133,6 @@ def playwright_worker(session_id, reg_no, pwd, in_queue, out_queue):
         try:
             page.wait_for_selector("table, #divMainDetails table", timeout=20000)
         except:
-            page.screenshot(path=f"debug_playwright_table_{reg_no}.png", full_page=True)
             out_queue.put({'success': False, 'error': 'Table never loaded. Dashboard might be blocked or session expired.'})
             return
 
