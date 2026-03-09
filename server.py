@@ -40,8 +40,6 @@ def playwright_worker(session_id, reg_no, pwd, in_queue, out_queue):
         p = sync_playwright().start()
         print(f"[{reg_no}] [Thread] Launching Chromium...")
         
-        # ADDED slow_mo=1000 so you can physically watch the actions on your screen
-       # Turned back to headless=True for Render deployment!
         browser = p.chromium.launch(headless=True, args=['--no-sandbox', '--disable-setuid-sandbox'])
         context = browser.new_context(
             user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
@@ -92,25 +90,35 @@ def playwright_worker(session_id, reg_no, pwd, in_queue, out_queue):
             print(f"[{reg_no}] [Thread] Woke up! User provided CAPTCHA: '{captcha_text}'. Submitting...")
             
             captcha_input.fill(captcha_text)
-            captcha_input.press('Enter')
+            
+            # UPGRADE 1: Explicitly click the Login button instead of pressing Enter
+            login_btn = page.locator('input[type="submit"], button:has-text("Login"), a:has-text("Login")').first
+            if login_btn.count() > 0:
+                login_btn.click()
+            else:
+                captcha_input.press('Enter')
             
         else:
             print(f"[{reg_no}] [Thread] No Captcha needed. Falling back to immediate submission...")
             page.press('input[type="password"]', 'Enter')
             out_queue.put({'requires_captcha': False})
 
+        print(f"[{reg_no}] [Thread] Waiting for page to respond...")
+        time.sleep(3) # Wait a brief moment for the page to process the login click
+
+        # UPGRADE 2: Immediately check if the Captcha was wrong!
+        error_el = page.locator("span, td, div, p", has_text="Invalid").first
+        if error_el.count() > 0:
+            error_text = error_el.inner_text().strip()
+            print(f"[{reg_no}] [Thread] Login Failed: {error_text}")
+            out_queue.put({'success': False, 'error': f'Portal Error: {error_text}'})
+            return
+
         print(f"[{reg_no}] [Thread] Handling the Javascript Redirect Maze...")
         try:
-            page.wait_for_selector("text=Attendance Details, a:has-text('Attendance Details'), .navbar-brand >> visible=true", timeout=40000)
+            # UPGRADE 3: Reduced timeout so the frontend doesn't disconnect
+            page.wait_for_selector("text=Attendance Details, a:has-text('Attendance Details'), .navbar-brand >> visible=true", timeout=15000)
         except:
-            print(f"[{reg_no}] Checking for Portal Error messages...")
-            error_el = page.locator("span, td, div", has_text="Invalid").first
-            if error_el.count() > 0:
-                 error_text = error_el.inner_text().strip()
-                 out_queue.put({'success': False, 'error': f'Portal Error: {error_text}'})
-                 return
-            
-            # If dashboard didn't load, we still try to navigate directly as a last resort
             print(f"[{reg_no}] [Thread] Dashboard timeout. Attempting Direct URL Navigation anyway...")
 
         # ======================================================
@@ -118,12 +126,10 @@ def playwright_worker(session_id, reg_no, pwd, in_queue, out_queue):
         # ======================================================
         print(f"[{reg_no}] [Thread] Navigating to Attendance...")
         try:
-             # Try clicking the menu button first
              attendance_link = page.locator("a:has-text('Attendance Details'), #link_8").first
-             attendance_link.click(timeout=10000)
+             attendance_link.click(timeout=5000)
         except:
              print(f"[{reg_no}] [Thread] Could not find button. Forcing Direct URL...")
-             # Fallback: Jump directly to the Attendance Report page
              page.goto("https://sp.srmist.edu.in/srmiststudentportal/students/report/viewAttendance.jsp")
         
         print(f"[{reg_no}] [Thread] Waiting for table data...")
@@ -216,8 +222,7 @@ def start_session():
                 'captcha_base64': result.get('captcha_base64')
             })
         else:
-            final_result = out_queue.get(timeout=60)
-            return jsonify(final_result)
+            return jsonify(result)
                 
     except queue.Empty:
         return jsonify({'success': False, 'error': 'Backend connection timed out.'}), 502
@@ -243,5 +248,5 @@ def submit_captcha():
          return jsonify({'success': False, 'error': 'Scraping timed out after captcha.'}), 502
 
 if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5001)) # Changed to 5001 to avoid VS Code clash
+    port = int(os.environ.get('PORT', 5001)) 
     app.run(host='0.0.0.0', port=port, debug=True)
