@@ -12,7 +12,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;900&family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
     
     <style>
-        /* --- CSS VARIABLES FOR THEME TOGGLE --- */
         :root {
             --primary: #ffaa00;
             --bg-start: #1a1a1a;
@@ -38,99 +37,54 @@
             --splash-bg: #f4f7f6;
         }
 
-        body {
-            font-family: 'Open Sans', sans-serif;
-            background: radial-gradient(circle at top center, var(--bg-start) 0%, var(--bg-end) 100%);
-            color: var(--text-main);
-            margin: 0;
-            padding: 0;
-            overflow-x: hidden;
-            min-height: 100vh;
-            transition: background 0.5s ease, color 0.5s ease;
-        }
-
-        /* --- SOCIALS & THEME BUTTONS --- */
+        body { font-family: 'Open Sans', sans-serif; background: radial-gradient(circle at top center, var(--bg-start) 0%, var(--bg-end) 100%); color: var(--text-main); margin: 0; padding: 0; overflow-x: hidden; min-height: 100vh; transition: background 0.5s ease, color 0.5s ease; }
         .btn-container { position: fixed; top: 20px; right: 20px; display: flex; gap: 12px; z-index: 1000; opacity: 0; transition: opacity 0.5s ease; }
-        .icon-btn {
-            background: var(--glass); border: 1px solid var(--glass-border); color: var(--text-main);
-            width: 45px; height: 45px; border-radius: 50%; display: flex; justify-content: center; align-items: center;
-            font-size: 1.2rem; cursor: pointer; backdrop-filter: blur(10px); box-shadow: 0 4px 10px var(--shadow);
-            transition: all 0.3s ease; text-decoration: none; 
-        }
+        .icon-btn { background: var(--glass); border: 1px solid var(--glass-border); color: var(--text-main); width: 45px; height: 45px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 1.2rem; cursor: pointer; backdrop-filter: blur(10px); box-shadow: 0 4px 10px var(--shadow); transition: all 0.3s ease; text-decoration: none; }
         .icon-btn:hover { transform: scale(1.1) translateY(-3px); border-color: var(--primary); color: var(--primary); }
         .icon-btn svg { width: 20px; height: 20px; fill: currentColor; transition: fill 0.3s ease; }
-
-        /* --- BULLETPROOF SPLASH SCREEN --- */
-        #splash-screen {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: var(--splash-bg); z-index: 2000;
-            display: flex; flex-direction: column; justify-content: center; align-items: center;
-            transition: opacity 0.8s ease-in-out, transform 1s cubic-bezier(0.16, 1, 0.3, 1), visibility 1s, background-color 0.5s ease;
-        }
-        .css-loader {
-            width: 60px; height: 60px; border-radius: 50%; border: 4px solid var(--glass-border);
-            border-top-color: var(--primary); animation: spin 1s linear infinite; margin-bottom: 20px;
-            box-shadow: 0 0 20px rgba(255, 170, 0, 0.2);
-        }
+        #splash-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: var(--splash-bg); z-index: 2000; display: flex; flex-direction: column; justify-content: center; align-items: center; transition: opacity 0.8s ease-in-out, transform 1s cubic-bezier(0.16, 1, 0.3, 1), visibility 1s, background-color 0.5s ease; }
+        .css-loader { width: 60px; height: 60px; border-radius: 50%; border: 4px solid var(--glass-border); border-top-color: var(--primary); animation: spin 1s linear infinite; margin-bottom: 20px; box-shadow: 0 0 20px rgba(255, 170, 0, 0.2); }
         @keyframes spin { 100% { transform: rotate(360deg); } }
-
         .splash-text { font-family: 'Montserrat', sans-serif; color: var(--primary); letter-spacing: 6px; font-size: 1rem; font-weight: 900; text-transform: uppercase; animation: pulse-text 1.5s infinite alternate; }
         @keyframes pulse-text { 0% { opacity: 0.5; filter: blur(1px); } 100% { opacity: 1; filter: blur(0px); text-shadow: 0 0 10px rgba(255, 170, 0, 0.8); } }
         .zoom-out { transform: scale(1.5); opacity: 0; visibility: hidden; pointer-events: none; }
-
-        /* --- MAIN CONTENT & NEW VIEWS ROUTING --- */
         #main-content { padding: 80px 20px 60px; text-align: center; opacity: 0; transform: scale(0.95); transition: all 1.2s cubic-bezier(0.16, 1, 0.3, 1); width: 100%; box-sizing: border-box;}
         .content-visible { opacity: 1 !important; transform: scale(1) !important; }
-        
         .app-view { display: none; max-width: 1200px; margin: 0 auto; text-align: center; }
         .app-view.active { display: block; }
-
-        /* --- CUSTOM SVG LOGO STYLING --- */
         .site-header { display: flex; flex-direction: column; align-items: center; margin-bottom: 40px; }
         .main-logo { width: 90px; height: 90px; margin-bottom: 15px; cursor: pointer; filter: drop-shadow(0 0 15px rgba(255, 170, 0, 0.5)); transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
         .main-logo:hover { transform: scale(1.15) rotate(5deg); filter: drop-shadow(0 0 25px rgba(255, 170, 0, 0.8)); }
-
         h1 { font-family: 'Montserrat', sans-serif; font-weight: 900; text-transform: uppercase; font-size: clamp(2.5rem, 8vw, 4.5rem); background: linear-gradient(to right, #ffaa00, #ffdd00, #ffaa00); background-size: 200% auto; -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 10px; animation: shine 4s linear infinite; }
         @keyframes shine { to { background-position: 200% center; } }
         .subtitle { color: var(--text-sub); font-size: 1.1rem; margin-bottom: 30px; letter-spacing: 1px; transition: color 0.5s ease;}
-
-        /* Gallery/Projects Grid */
         .gallery-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 40px; max-width: 1200px; margin: 0 auto; }
         .image-card { background: var(--glass); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); padding: 15px; border-radius: 20px; border: 1px solid var(--glass-border); box-shadow: 0 15px 35px var(--shadow); transition: all 0.4s ease; }
         .image-card:hover { transform: translateY(-12px) scale(1.02); border-color: var(--primary); box-shadow: 0 20px 40px rgba(255, 170, 0, 0.15); }
         .gallery-item { width: 100%; height: auto; border-radius: 12px; cursor: pointer; filter: brightness(0.8) contrast(1.1); transition: filter 0.4s ease; background-color: transparent; }
         .image-card:hover .gallery-item { filter: brightness(1.1) contrast(1.1); }
         .caption { margin-top: 20px; font-family: 'Montserrat', sans-serif; color: var(--text-main); font-weight: 700; letter-spacing: 1px; transition: color 0.5s ease;}
-        
-        /* --- PROJECT CARD & CUSTOM COVER STYLING --- */
         .project-card { cursor: pointer; width: 100%; max-width: 400px; margin: 0 auto; box-sizing: border-box; }
         .project-card .caption { font-size: 1.2rem; color: var(--primary); text-transform: uppercase;}
         .project-cover { width: 100%; height: 250px; background: linear-gradient(135deg, rgba(255, 170, 0, 0.1) 0%, rgba(0, 0, 0, 0.4) 100%); border-radius: 12px; display: flex; justify-content: center; align-items: center; border: 1px solid var(--glass-border); box-shadow: inset 0 0 20px rgba(0,0,0,0.5); transition: all 0.4s ease; margin-bottom: 15px; }
         .project-icon { width: 80px; height: 80px; stroke: var(--primary); filter: drop-shadow(0 0 10px rgba(255, 170, 0, 0.4)); transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
         .project-card:hover .project-cover { background: linear-gradient(135deg, rgba(255, 170, 0, 0.2) 0%, rgba(0, 0, 0, 0.6) 100%); }
         .project-card:hover .project-icon { transform: scale(1.2); filter: drop-shadow(0 0 20px rgba(255, 170, 0, 0.8)); }
-
-        /* --- GALLERY VIEW STYLING --- */
         .back-btn { background: var(--glass); border: 1px solid var(--glass-border); color: var(--text-main); padding: 10px 25px; border-radius: 30px; font-family: 'Montserrat', sans-serif; font-weight: bold; cursor: pointer; margin-bottom: 40px; transition: all 0.3s ease; font-size: 1rem; display: inline-block; }
         .back-btn:hover { border-color: var(--primary); color: var(--primary); transform: translateX(-5px); }
         .gallery-title { font-family: 'Montserrat', sans-serif; font-size: 2rem; color: var(--text-main); margin-bottom: 40px; text-transform: uppercase;}
         .fade-in-up { animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
         @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-
-        /* --- NEW TOOLS STYLING --- */
         .form-row { display: grid; grid-template-columns: 2fr 1fr 1fr auto; gap: 15px; margin-bottom: 15px; align-items: center; }
         @media (max-width: 600px) { .form-row { grid-template-columns: 1fr; gap: 10px; border-bottom: 1px solid var(--glass-border); padding-bottom: 15px;} }
-        
         input, select { background: rgba(0,0,0,0.2); border: 1px solid var(--glass-border); color: var(--text-main); padding: 12px; border-radius: 8px; font-family: 'Open Sans', sans-serif; width: 100%; box-sizing: border-box; outline: none; transition: border-color 0.3s; }
         body.light-mode input, body.light-mode select { background: rgba(255,255,255,0.8); }
         input:focus, select:focus { border-color: var(--primary); }
         select option { background: var(--bg-end); color: var(--text-main); }
-        
         .action-btn { background: var(--primary); border: none; color: #000; padding: 12px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: all 0.3s; width: 100%; text-transform: uppercase; }
         .action-btn:hover { background: #ffcc00; transform: translateY(-2px); }
         .danger-btn { background: var(--danger); color: white; padding: 12px; border-radius: 8px; cursor: pointer; border: none; font-weight: bold; }
         .result-box { background: var(--glass); border: 1px solid var(--primary); padding: 20px; border-radius: 12px; text-align: center; margin-top: 20px; font-size: 1.5rem; font-weight: bold; color: var(--primary); }
-        
-        /* Mess Menu Beautiful Styling */
         .tab-container { display: flex; overflow-x: auto; gap: 10px; margin-bottom: 30px; padding-bottom: 10px; scroll-behavior: smooth; }
         .tab-container::-webkit-scrollbar { display: none; } 
         .tab-btn { background: var(--glass); border: 1px solid var(--glass-border); color: var(--text-main); padding: 12px 25px; border-radius: 30px; cursor: pointer; white-space: nowrap; transition: 0.3s; font-weight: bold; font-family: 'Montserrat', sans-serif; text-transform: uppercase; font-size: 0.85rem;}
@@ -143,28 +97,20 @@
         .meal-content h3 { margin: 0 0 10px 0; color: var(--text-main); font-size: 1.4rem; font-family: 'Montserrat', sans-serif; text-transform: uppercase; letter-spacing: 1px; }
         .meal-content p { margin: 0; color: var(--text-sub); line-height: 1.8; font-size: 1.05rem; }
         .special-badge { display: inline-block; background: linear-gradient(135deg, #ff4444 0%, #cc0000 100%); color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: bold; margin-top: 10px; letter-spacing: 1px; box-shadow: 0 4px 10px rgba(255, 68, 68, 0.3); text-transform: uppercase; font-family: 'Montserrat', sans-serif; }
-
-        /* Helper Accordion */
         details { background: var(--glass); border: 1px solid var(--glass-border); border-radius: 8px; margin-bottom: 10px; }
         summary { padding: 15px; cursor: pointer; font-weight: bold; color: var(--primary); list-style: none; outline: none; }
         summary::-webkit-details-marker { display: none; }
         .details-content { padding: 15px; border-top: 1px solid var(--glass-border); color: var(--text-sub); text-align: left;}
         .details-content ul { margin: 0; padding-left: 20px; }
         .details-content li { margin-bottom: 8px; }
-
-        /* Attendance Stats */
         .stat-text { color: var(--text-sub); font-size: 0.9rem; margin-top: 5px; }
         .good-attendance { color: var(--success); }
         .bad-attendance { color: var(--danger); }
-
-        /* --- VIEW COUNTER & FOOTER --- */
         .footer { margin-top: 80px; padding: 40px 20px; border-top: 1px solid var(--glass-border); display: flex; flex-direction: column; align-items: center; gap: 20px; transition: border-color 0.5s ease;}
         .view-counter-box { background: var(--glass); border: 1px solid var(--glass-border); padding: 15px 30px; border-radius: 50px; display: flex; align-items: center; gap: 15px; box-shadow: 0 0 20px var(--shadow); transition: all 0.5s ease; }
         .view-counter-text { font-family: 'Montserrat', sans-serif; font-size: 0.9rem; color: var(--text-sub); font-weight: 700; letter-spacing: 1px; transition: color 0.5s ease;}
         .developer-credit { color: var(--text-sub); font-size: 0.85rem; letter-spacing: 2px; transition: color 0.5s ease;}
         .developer-credit strong { color: var(--primary); }
-
-        /* Lightbox */
         .lightbox { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.98); z-index: 3000; justify-content: center; align-items: center; backdrop-filter: blur(10px); }
         .lightbox img { max-width: 85%; max-height: 85%; border-radius: 10px; border: 1px solid #333; }
         .close-btn { position: absolute; top: 30px; right: 40px; color: #fff; font-size: 50px; cursor: pointer; transition: color 0.3s;}
@@ -410,22 +356,20 @@
         // ==========================================
         // CONFIGURATION: SET YOUR BACKEND URL HERE
         // ==========================================
-        // Change this URL to your live Render backend URL when deploying!
-        // Example: 'https://srm-student-hub-backend.onrender.com'
-        // const BACKEND_URL = 'http://127.0.0.1:5001';
-        // Change this to your exact Render URL
+        
+        // This is permanently pointing to your live Render backend URL!
         const BACKEND_URL = 'https://srm-student-hub-1.onrender.com';
+        
         let currentSessionId = null;
 
         // ==========================================
-        // PWA SERVICE WORKER (DEV MODE FIX)
+        // PWA SERVICE WORKER (RESTORED FOR APP INSTALL)
         // ==========================================
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.getRegistrations().then(function(registrations) {
-                for(let registration of registrations) {
-                    registration.unregister();
-                    console.log('Service Worker Unregistered for Development.');
-                }
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                .then(reg => console.log('Service Worker Registered!', reg))
+                .catch(err => console.log('Service Worker Failed:', err));
             });
         }
 
@@ -788,12 +732,11 @@
                 return;
             }
 
-            statusText.innerText = "Launching secure browser... Please wait (can take up to 40 seconds).";
+            statusText.innerText = "Launching secure browser... Please wait (can take up to 20 seconds).";
             statusText.style.color = "var(--primary)";
             document.getElementById('captcha-section').style.display = 'none';
 
             try {
-                // Point this to the Python Flask backend
                 const response = await fetch(`${BACKEND_URL}/api/start_session`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -818,7 +761,7 @@
                 }
             } catch (err) {
                 console.error(err);
-                statusText.innerText = "Failed to connect to backend server. Ensure it is running.";
+                statusText.innerText = "Failed to connect to backend server. Ensure it is running on Render.";
                 statusText.style.color = "var(--danger)";
             }
         }
@@ -846,7 +789,7 @@
                 } else {
                     statusText.innerText = "Error: " + result.error;
                     statusText.style.color = "var(--danger)";
-                    document.getElementById('login-section').style.display = 'block'; // Reset to start
+                    document.getElementById('login-section').style.display = 'block'; 
                 }
             } catch(err) {
                 console.error(err);
@@ -856,48 +799,17 @@
             }
         }
 
-        // function processScrapedData(dataArray) {
-        //     const statusText = document.getElementById('sync-status');
-            
-        //     // Clear old manual data and replace with fresh live data
-        //     attendanceData = [];
-
-        //     // The Python script sends: {code, name, conducted, attended, percentage}
-        //     dataArray.forEach(item => {
-        //         attendanceData.push({
-        //             id: Date.now() + Math.random(), // generate unique ID
-        //             name: item.name,
-        //             attended: item.attended,
-        //             total: item.conducted
-        //         });
-        //     });
-
-        //     saveAttendance();
-        //     renderAttendance();
-
-        //     statusText.innerText = "✅ Successfully synced live attendance!";
-        //     statusText.style.color = "var(--success)";
-            
-        //     // Reset UI
-        //     document.getElementById('login-section').style.display = 'block';
-        //     document.getElementById('captcha-section').style.display = 'none';
-        //     document.getElementById('srm-pwd').value = ''; // clear password for safety
-        //     document.getElementById('captcha-input').value = '';
-        //     currentSessionId = null;
-        // }
         function processScrapedData(dataArray) {
             const statusText = document.getElementById('sync-status');
             
-            // Clear old manual data and replace with fresh live data
             attendanceData = [];
 
-            // Read the data sent from Python
             dataArray.forEach(item => {
                 attendanceData.push({
                     id: Date.now() + Math.random(), 
                     name: item.name,
                     attended: parseInt(item.attended),
-                    total: parseInt(item.total || item.conducted) // FIXED: Now looks for 'total'
+                    total: parseInt(item.total || item.conducted) 
                 });
             });
 
@@ -907,10 +819,9 @@
             statusText.innerText = "✅ Successfully synced live attendance!";
             statusText.style.color = "var(--success)";
             
-            // Reset UI
             document.getElementById('login-section').style.display = 'block';
             document.getElementById('captcha-section').style.display = 'none';
-            document.getElementById('srm-pwd').value = ''; // clear password for safety
+            document.getElementById('srm-pwd').value = '';
             document.getElementById('captcha-input').value = '';
             currentSessionId = null;
         }
@@ -1021,4 +932,3 @@
     </script>
 </body>
 </html>
-
