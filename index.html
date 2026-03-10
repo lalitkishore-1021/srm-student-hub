@@ -125,6 +125,8 @@
     </div>
 
     <div class="btn-container" id="navButtons">
+        <button id="notifyBtn" class="icon-btn" onclick="requestNotificationPermission()" title="Enable Notifications">🔔</button>
+
         <a href="https://www.instagram.com/lalit._.kishore?igsh=ZDVsOTIzaGxiY2I1" target="_blank" class="icon-btn" title="Instagram">
             <svg viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.85s-.011 3.585-.069 4.85c-.148 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07s-3.584-.012-4.85-.07c-3.26-.148-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.85s.012-3.584.07-4.85c.148-3.204 1.671-4.771 4.919-4.919 1.266-.057 1.645-.069 4.85-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
         </a>
@@ -403,10 +405,7 @@
         // ==========================================
         // CONFIGURATION: SET YOUR BACKEND URL HERE
         // ==========================================
-        
-        // This is permanently pointing to your live Render backend URL!
         const BACKEND_URL = 'https://srm-student-hub-1.onrender.com';
-        
         let currentSessionId = null;
 
         // ==========================================
@@ -415,7 +414,9 @@
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('sw.js')
-                .then(reg => console.log('Service Worker Registered!', reg))
+                .then(reg => {
+                    console.log('Service Worker Registered!', reg);
+                })
                 .catch(err => console.log('Service Worker Failed:', err));
             });
         }
@@ -473,7 +474,7 @@
         });
 
         // ==========================================
-        // 2. PORTFOLIO DATA (UPDATED WITH WEEK 3 & 4)
+        // 2. PORTFOLIO DATA
         // ==========================================
         const projectsDatabase = {
             'oopsBanner': {
@@ -981,6 +982,9 @@
             setTimeout(() => {
                 document.getElementById('splash-screen').style.display = 'none';
             }, 1000);
+            
+            // Check notifications after app loads
+            checkAndScheduleNotifications();
         }, 1200);
 
         function openLightbox(src) {
@@ -990,6 +994,141 @@
         }
         function closeLightbox() {
             document.getElementById("lightbox").style.display = "none";
+        }
+
+        // ==========================================
+        // 8. NOTIFICATION SCHEDULER
+        // ==========================================
+        function requestNotificationPermission() {
+            if (!("Notification" in window)) {
+                alert("This browser does not support desktop notification");
+            } else if (Notification.permission === "granted") {
+                alert("Notifications are already enabled!");
+                checkAndScheduleNotifications(true); // Force check
+            } else if (Notification.permission !== "denied") {
+                Notification.requestPermission().then(function (permission) {
+                    if (permission === "granted") {
+                        alert("Notifications enabled! You will now receive daily mess updates.");
+                    }
+                });
+            }
+        }
+
+        function triggerLocalNotification(title, body) {
+            if (Notification.permission === 'granted' && navigator.serviceWorker) {
+                navigator.serviceWorker.ready.then(function(registration) {
+                    registration.active.postMessage({
+                        type: 'SHOW_NOTIFICATION',
+                        title: title,
+                        body: body
+                    });
+                });
+            }
+        }
+
+        function checkAndScheduleNotifications(force = false) {
+            if (Notification.permission !== 'granted') return;
+
+            const now = new Date();
+            const hours = now.getHours();
+            const minutes = now.getMinutes();
+            const todayStr = now.toDateString();
+            
+            // Get today's day name for the menu
+            const daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+            const currentDay = daysOfWeek[now.getDay()];
+            const todaysMenu = messMenuData[currentDay];
+
+            // LocalStorage to remember if we already sent it today so we don't spam
+            let lastNotifiedStr = localStorage.getItem('lastNotifiedDate') || "";
+            let notifiedEvents = JSON.parse(localStorage.getItem('notifiedEvents') || '{}');
+
+            // Reset tracked events if it's a new day
+            if (lastNotifiedStr !== todayStr) {
+                notifiedEvents = { breakfast: false, lunch: false, snacks: false, dinner: false, sleep: false };
+                localStorage.setItem('lastNotifiedDate', todayStr);
+            }
+
+            // Convert current time to a comparable float (e.g. 6:30 is 6.5)
+            // const timeFloat = hours + (minutes / 60);
+
+            // // 6:30 AM - Breakfast
+            // if ((timeFloat >= 6.5 && timeFloat < 10) && !notifiedEvents.breakfast) {
+            //     let firstItem = todaysMenu.Breakfast.split(',')[0];
+            //     triggerLocalNotification("Good Morning! ☀️", `Breakfast is ready: ${firstItem} and more 🥞☕`);
+            //     notifiedEvents.breakfast = true;
+            // }
+            
+            // // 11:00 AM - Lunch (You asked for breakfast again, but usually 11 is lunch prep)
+            // // If you truly wanted Breakfast again at 11, just change `todaysMenu.Lunch` to `todaysMenu.Breakfast`
+            // if ((timeFloat >= 11 && timeFloat < 14) && !notifiedEvents.lunch) {
+            //      let mainDish = todaysMenu.Lunch.split(',')[0];
+            //     triggerLocalNotification("Lunch Time Approaching! 🍛", `Today's Special: ${mainDish} 🥗`);
+            //     notifiedEvents.lunch = true;
+            // }
+
+            // // 3:00 PM (15:00) - Snacks
+            // if ((timeFloat >= 15 && timeFloat < 18) && !notifiedEvents.snacks) {
+            //     triggerLocalNotification("Snack Time! 🥨", `Menu: ${todaysMenu.Snacks} ☕`);
+            //     notifiedEvents.snacks = true;
+            // }
+
+            // // 6:30 PM (18:30) - Dinner
+            // if ((timeFloat >= 18.5 && timeFloat < 21) && !notifiedEvents.dinner) {
+            //     let dinnerSpecial = todaysMenu.Dinner.split(',')[0];
+            //     triggerLocalNotification("Dinner is served! 🍽️", `Tonight: ${dinnerSpecial} 🍲`);
+            //     notifiedEvents.dinner = true;
+            // }
+
+            // // 10:30 PM (22:30) - Sleep
+            // if ((timeFloat >= 22.5) && !notifiedEvents.sleep) {
+            //     triggerLocalNotification("Time to Sleep! 🌙", "Put the phone away and get some rest for classes tomorrow. 💤");
+            //     notifiedEvents.sleep = true;
+            // }
+            // Convert current time to a comparable float (e.g. 6:30 is 6.5)
+            const timeFloat = hours + (minutes / 60);
+
+            // 6:30 AM - Breakfast (Full Menu)
+            if ((timeFloat >= 6.5 && timeFloat < 10) && !notifiedEvents.breakfast) {
+                triggerLocalNotification("Good Morning! ☀️ Breakfast:", todaysMenu.Breakfast);
+                notifiedEvents.breakfast = true;
+            }
+            
+            // 11:00 AM - Lunch (Full Menu)
+            if ((timeFloat >= 11 && timeFloat < 14) && !notifiedEvents.lunch) {
+                triggerLocalNotification("Lunch Time Approaching! 🍛", todaysMenu.Lunch);
+                notifiedEvents.lunch = true;
+            }
+
+            // 3:00 PM (15:00) - Snacks (Full Menu)
+            if ((timeFloat >= 15 && timeFloat < 18) && !notifiedEvents.snacks) {
+                triggerLocalNotification("Snack Time! 🥨", todaysMenu.Snacks);
+                notifiedEvents.snacks = true;
+            }
+
+            // 6:30 PM (18:30) - Dinner (Full Menu)
+            if ((timeFloat >= 18.5 && timeFloat < 21) && !notifiedEvents.dinner) {
+                triggerLocalNotification("Dinner is served! 🍽️", todaysMenu.Dinner);
+                notifiedEvents.dinner = true;
+            }
+
+            // 10:30 PM (22:30) - Sleep
+            if ((timeFloat >= 22.5) && !notifiedEvents.sleep) {
+                triggerLocalNotification("Time to Sleep! 🌙", "Put the phone away and get some rest for classes tomorrow. 💤");
+                notifiedEvents.sleep = true;
+            
+            }
+
+            // Save the state
+            localStorage.setItem('notifiedEvents', JSON.stringify(notifiedEvents));
+
+            // Save the state
+            localStorage.setItem('notifiedEvents', JSON.stringify(notifiedEvents));
+            
+            // If the user forced a check (clicked the bell), let's give them a test notification if nothing else triggered
+            if (force && timeFloat < 6.5) {
+                 triggerLocalNotification("SRM Hub Active", "Notifications are active. Next alert will be at 6:30 AM! ⏰");
+            }
         }
     </script>
 </body>
