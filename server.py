@@ -9,7 +9,7 @@ import threading
 import queue
 import subprocess
 
-# ----- RENDER.COM CRASH FIX -----
+# ----- RENDER.COM SETUP -----
 os.environ["PLAYWRIGHT_BROWSERS_PATH"] = "0"
 print("Starting backend... Verifying Chromium installation...")
 subprocess.run(["python", "-m", "playwright", "install", "chromium"], check=False)
@@ -30,130 +30,179 @@ def serve_images(filename):
 def serve_root_files(filename):
     return send_from_directory('.', filename)
 
+# =========================================================
+# SESSION STORE
+# Each session has:
+#   in_queue  – main thread sends captcha text to worker
+#   result    – worker writes final result here (dict or None)
+#   status    – 'waiting_captcha' | 'scraping' | 'done' | 'error'
+# =========================================================
 active_sessions = {}
 session_lock = threading.Lock()
-def playwright_worker(session_id, reg_no, pwd, in_queue, out_queue):
+
+
+def playwright_worker(session_id, reg_no, pwd, in_queue):
+    """
+    Runs entirely in a background thread.
+    Writes its outcome back into active_sessions[session_id]['result']
+    so the polling endpoint can return it whenever it is ready.
+    """
     p = None
     browser = None
+
+    def set_status(status):
+        with session_lock:
+            if session_id in active_sessions:
+                active_sessions[session_id]['status'] = status
+
+    def set_result(result):
+        with session_lock:
+            if session_id in active_sessions:
+                active_sessions[session_id]['result'] = result
+                active_sessions[session_id]['status'] = 'done'
+
     try:
         p = sync_playwright().start()
-        print(f"[{reg_no}] [Thread] Launching Chromium in Low-Memory Mode...")
-        
-        # UPGRADED: Added flags to stop Render from crashing due to Out of Memory (OOM)
-        # Launch Chromium once with low-memory flags required for Render's free tier.
-        # NOTE: Do NOT add a second browser.launch() call here — that was the bug
-        # causing OOM crashes and "Connection lost during CAPTCHA submission".
+        print(f"[{reg_no}] [Thread] Launching Chromium...")
+
         browser = p.chromium.launch(
             headless=True,
             args=[
                 '--no-sandbox',
                 '--disable-setuid-sandbox',
-                '--disable-dev-shm-usage',  # Crucial for Render (no /dev/shm)
-                '--disable-gpu',            # Saves memory
-                '--no-zygote',              # Saves memory
-                '--single-process'          # Saves memory
+                '--disable-dev-shm-usage',  # Critical for Render (no /dev/shm)
+                '--disable-gpu',
+                '--no-zygote',
+                '--single-process',
             ]
         )
 
         context = browser.new_context(
-            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-            viewport={'width': 1280, 'height': 720}  # Smaller viewport = less RAM
+            user_agent=(
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) "
+                "Chrome/120.0.0.0 Safari/537.36"
+            ),
+            viewport={'width': 1280, 'height': 720},
         )
         page = context.new_page()
 
         print(f"[{reg_no}] [Thread] Navigating to SRM Portal...")
-        page.goto("https://sp.srmist.edu.in/srmiststudentportal/students/loginManager/youLogin.jsp")
+        page.goto(
+            "https://sp.srmist.edu.in/srmiststudentportal/students/loginManager/youLogin.jsp",
+            timeout=20000,
+        )
 
         print(f"[{reg_no}] [Thread] Waiting for login form...")
         page.wait_for_selector('input[type="text"]', timeout=15000)
-        
+
         print(f"[{reg_no}] [Thread] Filling credentials...")
         page.fill('input[type="text"]', reg_no)
         page.fill('input[type="password"]', pwd)
-        
-        captcha_input = page.locator('input[placeholder*="captcha" i], input[placeholder*="Captcha" i]').first
-        
-        if captcha_input.count() > 0:
-            print(f"[{reg_no}] [Thread] Captcha DETECTED! Taking screenshot...")
-            captcha_img = page.locator('img[src*="captcha" i], img[id*="captcha" i]').first
-            if captcha_img.count() == 0:
-                captcha_img = captcha_input.locator("xpath=..").locator("xpath=..")
-                if captcha_img.count() == 0:
-                     captcha_img = captcha_input
 
-            time.sleep(1) 
-            img_bytes = captcha_img.screenshot()
+        captcha_input = page.locator(
+            'input[placeholder*="captcha" i], input[placeholder*="Captcha" i]'
+        ).first
+
+        if captcha_input.count() > 0:
+            print(f"[{reg_no}] [Thread] CAPTCHA detected — taking screenshot...")
+            captcha_img_el = page.locator(
+                'img[src*="captcha" i], img[id*="captcha" i]'
+            ).first
+
+            if captcha_img_el.count() == 0:
+                captcha_img_el = captcha_input.locator("xpath=..").locator("xpath=..")
+            if captcha_img_el.count() == 0:
+                captcha_img_el = captcha_input
+
+            time.sleep(1)
+            img_bytes = captcha_img_el.screenshot()
             b64_img = base64.b64encode(img_bytes).decode('utf-8')
-            
-            out_queue.put({
-                'requires_captcha': True,
-                'captcha_base64': f"data:image/png;base64,{b64_img}"
-            })
-            
-            print(f"[{reg_no}] [Thread] Sleeping while waiting for user to solve Captcha...")
+
+            # Tell the API layer the CAPTCHA image is ready
+            with session_lock:
+                if session_id in active_sessions:
+                    active_sessions[session_id]['captcha_base64'] = (
+                        f"data:image/png;base64,{b64_img}"
+                    )
+                    active_sessions[session_id]['status'] = 'waiting_captcha'
+
+            print(f"[{reg_no}] [Thread] Waiting up to 3 minutes for user to solve CAPTCHA...")
             try:
-                user_msg = in_queue.get(timeout=180) 
+                user_msg = in_queue.get(timeout=180)
             except queue.Empty:
-                print(f"[{reg_no}] [Thread] User took too long to answer Captcha. Dying.")
-                return 
-                
+                print(f"[{reg_no}] [Thread] CAPTCHA timeout — user took too long.")
+                set_result({'success': False, 'error': 'CAPTCHA timeout — please try again.'})
+                return
+
             if user_msg.get('action') == 'kill':
                 return
-                
-            captcha_text = user_msg.get('captcha_text')
-            print(f"[{reg_no}] [Thread] Woke up! User provided CAPTCHA: '{captcha_text}'. Submitting...")
-            
+
+            captcha_text = user_msg.get('captcha_text', '')
+            print(f"[{reg_no}] [Thread] Got CAPTCHA answer: '{captcha_text}'. Submitting...")
+            set_status('scraping')
+
             captcha_input.fill(captcha_text)
-            
-            # Explicitly click the Login button to bypass old form issues
-            login_btn = page.locator('input[type="submit"], button:has-text("Login"), a:has-text("Login")').first
+
+            login_btn = page.locator(
+                'input[type="submit"], button:has-text("Login"), a:has-text("Login")'
+            ).first
             if login_btn.count() > 0:
                 login_btn.click()
             else:
                 captcha_input.press('Enter')
-            
-        else:
-            print(f"[{reg_no}] [Thread] No Captcha needed. Falling back to immediate submission...")
-            page.press('input[type="password"]', 'Enter')
-            out_queue.put({'requires_captcha': False})
 
-        print(f"[{reg_no}] [Thread] Waiting for page to respond...")
+        else:
+            print(f"[{reg_no}] [Thread] No CAPTCHA — submitting directly...")
+            set_status('scraping')
+            page.press('input[type="password"]', 'Enter')
+
+        print(f"[{reg_no}] [Thread] Waiting for portal to respond...")
         time.sleep(3)
 
-        # Immediately check if the Captcha was wrong so we don't timeout!
+        # Check for login errors
         error_el = page.locator("span, td, div, p", has_text="Invalid").first
         if error_el.count() > 0:
             error_text = error_el.inner_text().strip()
-            print(f"[{reg_no}] [Thread] Login Failed: {error_text}")
-            out_queue.put({'success': False, 'error': f'Portal Error: {error_text}'})
+            print(f"[{reg_no}] [Thread] Login failed: {error_text}")
+            set_result({'success': False, 'error': f'Portal Error: {error_text}'})
             return
 
-        print(f"[{reg_no}] [Thread] Handling the Javascript Redirect Maze...")
+        print(f"[{reg_no}] [Thread] Navigating to Attendance page...")
         try:
-            page.wait_for_selector("text=Attendance Details, a:has-text('Attendance Details'), .navbar-brand >> visible=true", timeout=15000)
-        except:
-            print(f"[{reg_no}] [Thread] Dashboard timeout. Attempting Direct URL Navigation anyway...")
+            page.wait_for_selector(
+                "text=Attendance Details, a:has-text('Attendance Details'), .navbar-brand >> visible=true",
+                timeout=15000,
+            )
+        except Exception:
+            print(f"[{reg_no}] [Thread] Dashboard selector timed out — trying direct URL...")
 
-        print(f"[{reg_no}] [Thread] Navigating to Attendance...")
         try:
-             attendance_link = page.locator("a:has-text('Attendance Details'), #link_8").first
-             attendance_link.click(timeout=5000)
-        except:
-             print(f"[{reg_no}] [Thread] Could not find button. Forcing Direct URL...")
-             page.goto("https://sp.srmist.edu.in/srmiststudentportal/students/report/viewAttendance.jsp")
-        
-        print(f"[{reg_no}] [Thread] Waiting for table data...")
+            attendance_link = page.locator(
+                "a:has-text('Attendance Details'), #link_8"
+            ).first
+            attendance_link.click(timeout=5000)
+        except Exception:
+            print(f"[{reg_no}] [Thread] Attendance link not found — forcing direct URL...")
+            page.goto(
+                "https://sp.srmist.edu.in/srmiststudentportal/students/report/viewAttendance.jsp"
+            )
+
+        print(f"[{reg_no}] [Thread] Waiting for attendance table...")
         try:
             page.wait_for_selector("table, #divMainDetails table", timeout=20000)
-        except:
-            out_queue.put({'success': False, 'error': 'Table never loaded. Dashboard might be blocked or session expired.'})
+        except Exception:
+            set_result({
+                'success': False,
+                'error': 'Attendance table never loaded. Session may have expired.'
+            })
             return
 
-        print(f"[{reg_no}] [Thread] Parsing Table Rows...")
+        print(f"[{reg_no}] [Thread] Parsing attendance rows...")
         rows_locator = page.locator("table tr")
         rows_count = rows_locator.count()
         live_scraped_data = []
-        
+
         for idx in range(1, rows_count):
             cols = rows_locator.nth(idx).locator("td")
             col_count = cols.count()
@@ -162,100 +211,177 @@ def playwright_worker(session_id, reg_no, pwd, in_queue, out_queue):
                     subject_name_text = cols.nth(1).inner_text().strip()
                     code_text = cols.nth(0).inner_text().strip()
                     subject_name = subject_name_text if len(subject_name_text) > 3 else code_text
-                    
+
                     max_hours_str = cols.nth(col_count - 4).inner_text().strip()
                     attended_hours_str = cols.nth(col_count - 3).inner_text().strip()
-                    
+
                     if max_hours_str.isdigit() and attended_hours_str.isdigit():
                         live_scraped_data.append({
                             'id': int(time.time() * 1000) + idx,
                             'name': subject_name,
                             'attended': int(attended_hours_str),
-                            'total': int(max_hours_str)
+                            'total': int(max_hours_str),
                         })
                 except Exception as parse_err:
-                    print(f"Row skipped: {parse_err}")
+                    print(f"[{reg_no}] Row parse skipped: {parse_err}")
 
-        if len(live_scraped_data) > 0:
-            print(f"[{reg_no}] [Thread] Scraping successful!")
-            out_queue.put({'success': True, 'data': live_scraped_data})
+        if live_scraped_data:
+            print(f"[{reg_no}] [Thread] Scraping successful! {len(live_scraped_data)} subjects.")
+            set_result({'success': True, 'data': live_scraped_data})
         else:
-            out_queue.put({'success': False, 'error': 'Table found, but it appears to be empty.'})
+            set_result({'success': False, 'error': 'Table was found but appears to be empty.'})
 
     except Exception as fn_err:
-        print(f"[{reg_no}] [Thread] Critical failure: {str(fn_err)}")
-        out_queue.put({'success': False, 'error': f'Backend error: {str(fn_err)}'})
+        print(f"[{reg_no}] [Thread] Critical failure: {fn_err}")
+        set_result({'success': False, 'error': f'Backend error: {str(fn_err)}'})
     finally:
-        print(f"[{reg_no}] [Thread] Tearing down browser.")
+        print(f"[{reg_no}] [Thread] Tearing down browser...")
         if browser:
-            try: browser.close()
-            except: pass
+            try:
+                browser.close()
+            except Exception:
+                pass
         if p:
-            try: p.stop()
-            except: pass
-        with session_lock:
-             active_sessions.pop(session_id, None)
+            try:
+                p.stop()
+            except Exception:
+                pass
+
+
+# =========================================================
+# API ENDPOINTS
+# =========================================================
 
 @app.route('/api/start_session', methods=['POST'])
 def start_session():
+    """
+    Kicks off a background Playwright worker.
+    Returns quickly (within ~25s) with either:
+      - requires_captcha=True  + session_id  → frontend shows CAPTCHA
+      - success result directly (if no CAPTCHA needed)
+      - error
+    """
     data = request.json
-    reg_no = data.get('regNo')
-    pwd = data.get('pwd')
+    reg_no = data.get('regNo', '').strip()
+    pwd = data.get('pwd', '').strip()
 
     if not reg_no or not pwd:
         return jsonify({'success': False, 'error': 'Registration number and password are required.'}), 400
 
     session_id = str(uuid.uuid4())
     in_queue = queue.Queue()
-    out_queue = queue.Queue()
-    
+
     with session_lock:
         active_sessions[session_id] = {
             'in_queue': in_queue,
-            'out_queue': out_queue,
+            'status': 'starting',       # starting | waiting_captcha | scraping | done
+            'result': None,
+            'captcha_base64': None,
             'reg_no': reg_no,
-            'timestamp': time.time()
+            'timestamp': time.time(),
         }
 
-    t = threading.Thread(target=playwright_worker, args=(session_id, reg_no, pwd, in_queue, out_queue))
-    t.daemon = True
+    t = threading.Thread(
+        target=playwright_worker,
+        args=(session_id, reg_no, pwd, in_queue),
+        daemon=True,
+    )
     t.start()
 
-    try:
-        result = out_queue.get(timeout=60) 
-        if result.get('requires_captcha'):
+    # Poll our own session store for up to 25 seconds waiting for the CAPTCHA image
+    # (well within Render's 30-second limit)
+    deadline = time.time() + 25
+    while time.time() < deadline:
+        time.sleep(0.5)
+        with session_lock:
+            sess = active_sessions.get(session_id, {})
+            status = sess.get('status')
+            result = sess.get('result')
+
+        if status == 'waiting_captcha':
+            with session_lock:
+                captcha_b64 = active_sessions[session_id]['captcha_base64']
             return jsonify({
                 'success': True,
                 'requires_captcha': True,
                 'session_id': session_id,
-                'captcha_base64': result.get('captcha_base64')
+                'captcha_base64': captcha_b64,
             })
-        else:
+
+        if status == 'done' and result is not None:
+            # No CAPTCHA needed — scraping already finished
             return jsonify(result)
-                
-    except queue.Empty:
-        return jsonify({'success': False, 'error': 'Backend connection timed out.'}), 502
+
+    # 25s passed and still starting — timeout
+    with session_lock:
+        active_sessions.pop(session_id, None)
+    return jsonify({'success': False, 'error': 'Portal took too long to respond. Please try again.'}), 502
+
 
 @app.route('/api/submit_captcha', methods=['POST'])
 def submit_captcha():
+    """
+    Forwards the solved CAPTCHA text to the worker thread and returns
+    IMMEDIATELY with status='pending'.  The frontend must then poll
+    /api/poll_result to find out when scraping is complete.
+
+    This keeps this HTTP request well under Render's 30-second timeout.
+    """
     data = request.json
-    session_id = data.get('session_id')
-    captcha_text = data.get('captcha_text')
+    session_id = data.get('session_id', '').strip()
+    captcha_text = data.get('captcha_text', '').strip()
+
+    if not session_id or not captcha_text:
+        return jsonify({'success': False, 'error': 'Missing session_id or captcha_text.'}), 400
 
     with session_lock:
         session_data = active_sessions.get(session_id)
-        
-    if not session_data:
-        return jsonify({'success': False, 'error': 'Session timed out.'}), 400
 
+    if not session_data:
+        return jsonify({'success': False, 'error': 'Session expired or not found. Please start again.'}), 400
+
+    # Send the answer to the worker; it will now continue scraping in the background
     session_data['in_queue'].put({'action': 'submit', 'captcha_text': captcha_text})
-    
-    try:
-        final_result = session_data['out_queue'].get(timeout=60)
-        return jsonify(final_result)
-    except queue.Empty:
-         return jsonify({'success': False, 'error': 'Scraping timed out after captcha.'}), 502
+
+    # Update status so poll endpoint knows we're working
+    with session_lock:
+        if session_id in active_sessions:
+            active_sessions[session_id]['status'] = 'scraping'
+
+    # Return immediately — frontend polls for the result
+    return jsonify({'success': True, 'status': 'pending', 'session_id': session_id})
+
+
+@app.route('/api/poll_result', methods=['POST'])
+def poll_result():
+    """
+    Lightweight polling endpoint.
+    Frontend calls this every 3 seconds after submitting CAPTCHA.
+    Returns:
+      { status: 'pending' }           – still scraping
+      { status: 'done', ...result }   – scraping finished (success or error)
+    """
+    data = request.json
+    session_id = data.get('session_id', '').strip()
+
+    with session_lock:
+        session_data = active_sessions.get(session_id)
+
+    if not session_data:
+        return jsonify({'status': 'done', 'success': False, 'error': 'Session expired. Please start again.'})
+
+    status = session_data.get('status')
+    result = session_data.get('result')
+
+    if status == 'done' and result is not None:
+        # Clean up session
+        with session_lock:
+            active_sessions.pop(session_id, None)
+        return jsonify({'status': 'done', **result})
+
+    return jsonify({'status': 'pending'})
+
 
 if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5001)) 
+    port = int(os.environ.get('PORT', 5001))
     app.run(host='0.0.0.0', port=port, debug=False)
