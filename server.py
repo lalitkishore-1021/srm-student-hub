@@ -40,28 +40,24 @@ def playwright_worker(session_id, reg_no, pwd, in_queue, out_queue):
         print(f"[{reg_no}] [Thread] Launching Chromium in Low-Memory Mode...")
         
         # UPGRADED: Added flags to stop Render from crashing due to Out of Memory (OOM)
+        # Launch Chromium once with low-memory flags required for Render's free tier.
+        # NOTE: Do NOT add a second browser.launch() call here — that was the bug
+        # causing OOM crashes and "Connection lost during CAPTCHA submission".
         browser = p.chromium.launch(
-            headless=True, 
+            headless=True,
             args=[
-                '--no-sandbox', 
+                '--no-sandbox',
                 '--disable-setuid-sandbox',
-                '--disable-dev-shm-usage', # Crucial for Render
-                '--disable-gpu',           # Saves memory
-                '--no-zygote',             # Saves memory
-                '--single-process'         # Saves memory
+                '--disable-dev-shm-usage',  # Crucial for Render (no /dev/shm)
+                '--disable-gpu',            # Saves memory
+                '--no-zygote',              # Saves memory
+                '--single-process'          # Saves memory
             ]
         )
-        
+
         context = browser.new_context(
             user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-            viewport={'width': 1280, 'height': 720} # Smaller screen = less RAM
-        )
-        page = context.new_page()
-        # Headless MUST be True for Render servers
-        browser = p.chromium.launch(headless=True, args=['--no-sandbox', '--disable-setuid-sandbox'])
-        context = browser.new_context(
-            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-            viewport={'width': 1920, 'height': 1080}
+            viewport={'width': 1280, 'height': 720}  # Smaller viewport = less RAM
         )
         page = context.new_page()
 
@@ -262,4 +258,4 @@ def submit_captcha():
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5001)) 
-    app.run(host='0.0.0.0', port=port, debug=True)
+    app.run(host='0.0.0.0', port=port, debug=False)
