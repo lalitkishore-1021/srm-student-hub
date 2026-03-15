@@ -830,33 +830,82 @@
         }
 
         async function submitCaptcha() {
-            const captchaText = document.getElementById('captcha-input').value;
+            const captchaText = document.getElementById('captcha-input').value.trim();
             const statusText = document.getElementById('sync-status');
 
-            if(!captchaText) return alert("Please enter the CAPTCHA text.");
+            if (!captchaText) return alert("Please enter the CAPTCHA text.");
 
-            statusText.innerText = "Submitting CAPTCHA and reading portal... Please wait.";
+            statusText.innerText = "Submitting CAPTCHA... Please wait while we fetch your attendance.";
+            statusText.style.color = "var(--primary)";
             document.getElementById('captcha-section').style.display = 'none';
 
             try {
-                const response = await fetch(`${BACKEND_URL}/api/submit_captcha`, {
+                // Step 1: Send captcha — server returns IMMEDIATELY (no timeout risk)
+                const submitResp = await fetch(`${BACKEND_URL}/api/submit_captcha`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ session_id: currentSessionId, captcha_text: captchaText })
                 });
 
-                const result = await response.json();
+                const submitResult = await submitResp.json();
 
-                if(result.success) {
-                    processScrapedData(result.data);
-                } else {
-                    statusText.innerText = "Error: " + result.error;
+                if (!submitResult.success) {
+                    statusText.innerText = "Error: " + submitResult.error;
                     statusText.style.color = "var(--danger)";
-                    document.getElementById('login-section').style.display = 'block'; 
+                    document.getElementById('login-section').style.display = 'block';
+                    return;
                 }
-            } catch(err) {
+
+                // Step 2: Poll /api/poll_result every 3 seconds for the final result
+                statusText.innerText = "Logging in and reading attendance data... (may take 20-40s)";
+                let attempts = 0;
+                const maxAttempts = 40; // 40 × 3s = 2 minutes max
+
+                const pollInterval = setInterval(async () => {
+                    attempts++;
+                    if (attempts > maxAttempts) {
+                        clearInterval(pollInterval);
+                        statusText.innerText = "Error: Timed out waiting for result. Please try again.";
+                        statusText.style.color = "var(--danger)";
+                        document.getElementById('login-section').style.display = 'block';
+                        return;
+                    }
+
+                    try {
+                        const pollResp = await fetch(`${BACKEND_URL}/api/poll_result`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ session_id: currentSessionId })
+                        });
+
+                        const pollResult = await pollResp.json();
+
+                        if (pollResult.status === 'pending') {
+                            const dots = '.'.repeat((attempts % 3) + 1);
+                            statusText.innerText = `Fetching attendance data${dots}`;
+                            return; // Still working — keep polling
+                        }
+
+                        // Got a final answer — stop polling
+                        clearInterval(pollInterval);
+
+                        if (pollResult.success) {
+                            processScrapedData(pollResult.data);
+                        } else {
+                            statusText.innerText = "Error: " + pollResult.error;
+                            statusText.style.color = "var(--danger)";
+                            document.getElementById('login-section').style.display = 'block';
+                        }
+
+                    } catch (pollErr) {
+                        // One failed poll is not fatal — retry next tick
+                        console.warn("Poll attempt failed, retrying:", pollErr);
+                    }
+                }, 3000);
+
+            } catch (err) {
                 console.error(err);
-                statusText.innerText = "Connection lost during CAPTCHA submission.";
+                statusText.innerText = "Failed to connect to backend. Is the server running on Render?";
                 statusText.style.color = "var(--danger)";
                 document.getElementById('login-section').style.display = 'block';
             }
