@@ -32,14 +32,31 @@ def serve_root_files(filename):
 
 active_sessions = {}
 session_lock = threading.Lock()
-
 def playwright_worker(session_id, reg_no, pwd, in_queue, out_queue):
     p = None
     browser = None
     try:
         p = sync_playwright().start()
-        print(f"[{reg_no}] [Thread] Launching Chromium...")
+        print(f"[{reg_no}] [Thread] Launching Chromium in Low-Memory Mode...")
         
+        # UPGRADED: Added flags to stop Render from crashing due to Out of Memory (OOM)
+        browser = p.chromium.launch(
+            headless=True, 
+            args=[
+                '--no-sandbox', 
+                '--disable-setuid-sandbox',
+                '--disable-dev-shm-usage', # Crucial for Render
+                '--disable-gpu',           # Saves memory
+                '--no-zygote',             # Saves memory
+                '--single-process'         # Saves memory
+            ]
+        )
+        
+        context = browser.new_context(
+            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            viewport={'width': 1280, 'height': 720} # Smaller screen = less RAM
+        )
+        page = context.new_page()
         # Headless MUST be True for Render servers
         browser = p.chromium.launch(headless=True, args=['--no-sandbox', '--disable-setuid-sandbox'])
         context = browser.new_context(
