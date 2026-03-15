@@ -73,7 +73,7 @@ def playwright_worker(session_id, reg_no, pwd, in_queue):
                 '--disable-dev-shm-usage',  # Critical for Render (no /dev/shm)
                 '--disable-gpu',
                 '--no-zygote',
-                '--single-process',
+                # NOTE: --single-process removed — it breaks JS-heavy portals like SRM
             ]
         )
 
@@ -157,44 +157,98 @@ def playwright_worker(session_id, reg_no, pwd, in_queue):
             set_status('scraping')
             page.press('input[type="password"]', 'Enter')
 
-        print(f"[{reg_no}] [Thread] Waiting for portal to respond...")
-        time.sleep(3)
+        print(f"[{reg_no}] [Thread] Waiting for portal to respond after login...")
+        # Wait for navigation to complete (JS-heavy portals need this)
+        try:
+            page.wait_for_load_state('networkidle', timeout=20000)
+        except Exception:
+            print(f"[{reg_no}] [Thread] networkidle wait timed out — continuing...")
+        time.sleep(2)
 
-        # Check for login errors
-        error_el = page.locator("span, td, div, p", has_text="Invalid").first
-        if error_el.count() > 0:
-            error_text = error_el.inner_text().strip()
-            print(f"[{reg_no}] [Thread] Login failed: {error_text}")
-            set_result({'success': False, 'error': f'Portal Error: {error_text}'})
+        current_url = page.url
+        print(f"[{reg_no}] [Thread] URL after login: {current_url}")
+
+        # Check if we were kicked back to the login page (wrong password/CAPTCHA)
+        if 'youLogin' in current_url or 'loginManager' in current_url:
+            set_result({'success': False, 'error': 'Login failed — wrong CAPTCHA or password. Please try again.'})
             return
 
-        print(f"[{reg_no}] [Thread] Navigating to Attendance page...")
+        # Check for any visible error messages on the page
         try:
+            error_el = page.locator("span, td, div, p").filter(has_text="Invalid").first
+            if error_el.count() > 0:
+                error_text = error_el.inner_text().strip()
+                print(f"[{reg_no}] [Thread] Portal error message: {error_text}")
+                set_result({'success': False, 'error': f'Portal error: {error_text}'})
+                return
+        except Exception:
+            pass
+
+        # --- Strategy 1: Try clicking the Attendance link from the dashboard ---
+        print(f"[{reg_no}] [Thread] Trying to click Attendance link...")
+        clicked = False
+        try:
+            # Wait for ANY attendance link to appear in the navbar
             page.wait_for_selector(
-                "text=Attendance Details, a:has-text('Attendance Details'), .navbar-brand >> visible=true",
-                timeout=15000,
+                "a:has-text('Attendance'), #link_8",
+                timeout=10000
             )
-        except Exception:
-            print(f"[{reg_no}] [Thread] Dashboard selector timed out — trying direct URL...")
+            att_link = page.locator("a:has-text('Attendance Details')").first
+            if att_link.count() == 0:
+                att_link = page.locator("a:has-text('Attendance')").first
+            if att_link.count() == 0:
+                att_link = page.locator("#link_8").first
 
-        try:
-            attendance_link = page.locator(
-                "a:has-text('Attendance Details'), #link_8"
-            ).first
-            attendance_link.click(timeout=5000)
-        except Exception:
-            print(f"[{reg_no}] [Thread] Attendance link not found — forcing direct URL...")
-            page.goto(
-                "https://sp.srmist.edu.in/srmiststudentportal/students/report/viewAttendance.jsp"
-            )
+            if att_link.count() > 0:
+                att_link.click(timeout=8000)
+                page.wait_for_load_state('networkidle', timeout=15000)
+                time.sleep(1)
+                clicked = True
+                print(f"[{reg_no}] [Thread] Clicked attendance link. URL: {page.url}")
+        except Exception as e:
+            print(f"[{reg_no}] [Thread] Attendance link strategy failed: {e}")
 
-        print(f"[{reg_no}] [Thread] Waiting for attendance table...")
-        try:
-            page.wait_for_selector("table, #divMainDetails table", timeout=20000)
-        except Exception:
+        # --- Strategy 2: Direct URL if click failed or didn't land on attendance page ---
+        if not clicked or 'viewAttendance' not in page.url:
+            print(f"[{reg_no}] [Thread] Going directly to attendance URL...")
+            try:
+                page.goto(
+                    "https://sp.srmist.edu.in/srmiststudentportal/students/report/viewAttendance.jsp",
+                    timeout=25000,
+                    wait_until='domcontentloaded'
+                )
+                page.wait_for_load_state('networkidle', timeout=15000)
+                time.sleep(2)
+                print(f"[{reg_no}] [Thread] Direct URL loaded. URL: {page.url}")
+            except Exception as e:
+                print(f"[{reg_no}] [Thread] Direct URL failed: {e}")
+
+        # Check again if we got redirected to login (session invalid)
+        if 'youLogin' in page.url or 'loginManager' in page.url:
+            set_result({'success': False, 'error': 'Session expired after login. Please try again.'})
+            return
+
+        # --- Wait for the attendance table ---
+        print(f"[{reg_no}] [Thread] Waiting for attendance table rows...")
+        table_found = False
+        for selector in ["table tr td", "table tr", "table", "#divMainDetails"]:
+            try:
+                page.wait_for_selector(selector, timeout=15000)
+                table_found = True
+                print(f"[{reg_no}] [Thread] Table found with selector: {selector}")
+                break
+            except Exception:
+                print(f"[{reg_no}] [Thread] Selector '{selector}' not found, trying next...")
+
+        if not table_found:
+            try:
+                body_text = page.inner_text("body")[:300]
+            except Exception:
+                body_text = "(could not read body)"
+            print(f"[{reg_no}] [Thread] Table not found. Page excerpt: {body_text}")
             set_result({
                 'success': False,
-                'error': 'Attendance table never loaded. Session may have expired.'
+                'error': 'Could not find attendance data. The portal may be slow or your session timed out. Please try again.'
             })
             return
 
