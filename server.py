@@ -228,33 +228,71 @@ def playwright_worker(session_id, reg_no, pwd, in_queue):
             set_result({'success': False, 'error': 'Session expired after login. Please try again.'})
             return
 
-        # --- Wait for the attendance table ---
-        print(f"[{reg_no}] [Thread] Waiting for attendance table rows...")
-        table_found = False
-        for selector in ["table tr td", "table tr", "table", "#divMainDetails"]:
+        # --- Search for attendance table in main frame AND all iframes ---
+        # SRM portal often loads content inside iframes (old JSP/Java portal pattern)
+        print(f"[{reg_no}] [Thread] Searching for attendance table (including iframes)...")
+
+        # Log all frames so we know what we're working with
+        all_frames = page.frames
+        print(f"[{reg_no}] [Thread] Frames on page ({len(all_frames)}): {[f.url for f in all_frames]}")
+
+        data_frame = None  # The frame that contains the attendance table
+
+        # First try main page
+        for selector in ["table tr td", "table tr", "table"]:
             try:
-                page.wait_for_selector(selector, timeout=15000)
-                table_found = True
-                print(f"[{reg_no}] [Thread] Table found with selector: {selector}")
+                page.wait_for_selector(selector, timeout=5000)
+                data_frame = page
+                print(f"[{reg_no}] [Thread] Table found in MAIN frame with '{selector}'")
                 break
             except Exception:
-                print(f"[{reg_no}] [Thread] Selector '{selector}' not found, trying next...")
+                pass
 
-        if not table_found:
+        # If not in main frame, check each iframe
+        if data_frame is None:
+            print(f"[{reg_no}] [Thread] Table not in main frame — checking iframes...")
+            for frame in all_frames:
+                if frame == page.main_frame:
+                    continue
+                try:
+                    frame.wait_for_selector("table tr td", timeout=8000)
+                    data_frame = frame
+                    print(f"[{reg_no}] [Thread] Table found in IFRAME: {frame.url}")
+                    break
+                except Exception:
+                    print(f"[{reg_no}] [Thread] Table not in frame: {frame.url}")
+
+        # Last resort: wait a bit more and re-check all frames
+        if data_frame is None:
+            print(f"[{reg_no}] [Thread] Waiting 5s more for lazy-loaded content...")
+            time.sleep(5)
+            for frame in page.frames:
+                try:
+                    frame.wait_for_selector("table", timeout=5000)
+                    data_frame = frame
+                    print(f"[{reg_no}] [Thread] Table found after extra wait in: {frame.url}")
+                    break
+                except Exception:
+                    pass
+
+        if data_frame is None:
+            # Capture page text for diagnostics
             try:
-                body_text = page.inner_text("body")[:300]
+                body_text = page.inner_text("body")[:500]
             except Exception:
                 body_text = "(could not read body)"
-            print(f"[{reg_no}] [Thread] Table not found. Page excerpt: {body_text}")
+            print(f"[{reg_no}] [Thread] ALL selectors failed. Page body: {body_text}")
             set_result({
                 'success': False,
-                'error': 'Could not find attendance data. The portal may be slow or your session timed out. Please try again.'
+                'error': f'Could not find attendance table on any frame. URL was: {page.url}. Please try again.'
             })
             return
 
-        print(f"[{reg_no}] [Thread] Parsing attendance rows...")
-        rows_locator = page.locator("table tr")
+        # --- Parse attendance rows from the found frame ---
+        print(f"[{reg_no}] [Thread] Parsing attendance rows from frame...")
+        rows_locator = data_frame.locator("table tr")
         rows_count = rows_locator.count()
+        print(f"[{reg_no}] [Thread] Found {rows_count} table rows to parse.")
         live_scraped_data = []
 
         for idx in range(1, rows_count):
