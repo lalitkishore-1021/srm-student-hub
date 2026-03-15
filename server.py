@@ -228,100 +228,142 @@ def playwright_worker(session_id, reg_no, pwd, in_queue):
             set_result({'success': False, 'error': 'Session expired after login. Please try again.'})
             return
 
-        # --- Search for attendance table in main frame AND all iframes ---
-        # SRM portal often loads content inside iframes (old JSP/Java portal pattern)
-        print(f"[{reg_no}] [Thread] Searching for attendance table (including iframes)...")
+        # --- Wait for AJAX to load the attendance table ---
+        # The SRM portal loads attendance data via AJAX after the page loads.
+        # We need to wait for that AJAX call to complete.
+        print(f"[{reg_no}] [Thread] Waiting for AJAX data to load (up to 15s)...")
+        time.sleep(3)  # initial buffer
 
-        # Log all frames so we know what we're working with
-        all_frames = page.frames
-        print(f"[{reg_no}] [Thread] Frames on page ({len(all_frames)}): {[f.url for f in all_frames]}")
+        # Try to wait for networkidle to catch AJAX calls finishing
+        try:
+            page.wait_for_load_state('networkidle', timeout=12000)
+        except Exception:
+            print(f"[{reg_no}] [Thread] networkidle timed out on attendance page — continuing...")
 
-        data_frame = None  # The frame that contains the attendance table
+        time.sleep(3)  # extra buffer for JS rendering
 
-        # First try main page
-        for selector in ["table tr td", "table tr", "table"]:
-            try:
-                page.wait_for_selector(selector, timeout=5000)
-                data_frame = page
-                print(f"[{reg_no}] [Thread] Table found in MAIN frame with '{selector}'")
-                break
-            except Exception:
-                pass
+        print(f"[{reg_no}] [Thread] Frames: {[f.url for f in page.frames]}")
 
-        # If not in main frame, check each iframe
-        if data_frame is None:
-            print(f"[{reg_no}] [Thread] Table not in main frame — checking iframes...")
+        # --- PRIMARY METHOD: JavaScript evaluation to scrape all tables ---
+        # This works across iframes and AJAX-loaded content, bypassing Playwright selectors.
+        print(f"[{reg_no}] [Thread] Using JS evaluation to extract table data...")
+        live_scraped_data = []
+
+        try:
+            # JS snippet to extract all table rows with 6+ columns from a frame
+            JS_EXTRACT = """() => {
+                const results = [];
+                document.querySelectorAll('table').forEach(table => {
+                    table.querySelectorAll('tr').forEach(row => {
+                        const cells = row.querySelectorAll('td');
+                        if (cells.length >= 6) {
+                            results.push(Array.from(cells).map(c => c.innerText.trim()));
+                        }
+                    });
+                });
+                return results;
+            }"""
+
+            # Run on ALL frames (main frame + every iframe)
+            all_frames_to_check = page.frames
+            print(f"[{reg_no}] [Thread] Checking {len(all_frames_to_check)} frame(s) via JS...")
+
+            for frame in all_frames_to_check:
+                try:
+                    frame_debug = frame.evaluate(
+                        "() => ({ url: window.location.href, tables: document.querySelectorAll('table').length })"
+                    )
+                    print(f"[{reg_no}] [Thread] Frame: {frame_debug}")
+
+                    if frame_debug.get('tables', 0) == 0:
+                        continue  # No tables in this frame
+
+                    js_rows = frame.evaluate(JS_EXTRACT)
+                    print(f"[{reg_no}] [Thread] Frame has {len(js_rows)} data rows")
+
+                    for row in js_rows:
+                        col_count = len(row)
+                        try:
+                            subject_name = row[1] if len(row[1]) > 3 else row[0]
+                            max_hours_str = row[col_count - 4]
+                            attended_hours_str = row[col_count - 3]
+                            if max_hours_str.isdigit() and attended_hours_str.isdigit():
+                                live_scraped_data.append({
+                                    'id': int(time.time() * 1000) + len(live_scraped_data),
+                                    'name': subject_name,
+                                    'attended': int(attended_hours_str),
+                                    'total': int(max_hours_str),
+                                })
+                        except Exception as parse_err:
+                            print(f"[{reg_no}] Row skipped: {parse_err}")
+
+                    if live_scraped_data:
+                        print(f"[{reg_no}] [Thread] Got data from frame — stopping search.")
+                        break  # Found data, stop checking other frames
+
+                except Exception as frame_err:
+                    print(f"[{reg_no}] [Thread] Frame JS failed: {frame_err}")
+
+        except Exception as js_err:
+            print(f"[{reg_no}] [Thread] JS evaluation error: {js_err}. Falling back to Playwright selectors...")
+
+        # --- FALLBACK: Playwright selector-based scraping ---
+        if not live_scraped_data:
+            print(f"[{reg_no}] [Thread] JS found no data. Trying Playwright selectors across all frames...")
+            all_frames = [page] + list(page.frames)
+            data_frame = None
+
             for frame in all_frames:
-                if frame == page.main_frame:
-                    continue
                 try:
-                    frame.wait_for_selector("table tr td", timeout=8000)
+                    frame.wait_for_selector("table tr td", timeout=5000)
                     data_frame = frame
-                    print(f"[{reg_no}] [Thread] Table found in IFRAME: {frame.url}")
-                    break
-                except Exception:
-                    print(f"[{reg_no}] [Thread] Table not in frame: {frame.url}")
-
-        # Last resort: wait a bit more and re-check all frames
-        if data_frame is None:
-            print(f"[{reg_no}] [Thread] Waiting 5s more for lazy-loaded content...")
-            time.sleep(5)
-            for frame in page.frames:
-                try:
-                    frame.wait_for_selector("table", timeout=5000)
-                    data_frame = frame
-                    print(f"[{reg_no}] [Thread] Table found after extra wait in: {frame.url}")
+                    print(f"[{reg_no}] [Thread] Fallback: table found in frame: {frame.url if hasattr(frame, 'url') else 'main'}")
                     break
                 except Exception:
                     pass
 
-        if data_frame is None:
-            # Capture page text for diagnostics
+            if data_frame:
+                rows_locator = data_frame.locator("table tr")
+                rows_count = rows_locator.count()
+                for idx in range(1, rows_count):
+                    cols = rows_locator.nth(idx).locator("td")
+                    col_count = cols.count()
+                    if col_count >= 6:
+                        try:
+                            subject_name = cols.nth(1).inner_text().strip()
+                            if len(subject_name) <= 3:
+                                subject_name = cols.nth(0).inner_text().strip()
+                            max_hours_str = cols.nth(col_count - 4).inner_text().strip()
+                            attended_hours_str = cols.nth(col_count - 3).inner_text().strip()
+                            if max_hours_str.isdigit() and attended_hours_str.isdigit():
+                                live_scraped_data.append({
+                                    'id': int(time.time() * 1000) + idx,
+                                    'name': subject_name,
+                                    'attended': int(attended_hours_str),
+                                    'total': int(max_hours_str),
+                                })
+                        except Exception as parse_err:
+                            print(f"[{reg_no}] Fallback row skipped: {parse_err}")
+
+        # --- Report failure with diagnostics if still nothing ---
+        if not live_scraped_data:
             try:
-                body_text = page.inner_text("body")[:500]
+                body_snippet = page.evaluate("() => document.body ? document.body.innerText.substring(0, 400) : 'no body'")
             except Exception:
-                body_text = "(could not read body)"
-            print(f"[{reg_no}] [Thread] ALL selectors failed. Page body: {body_text}")
+                body_snippet = "(could not read body)"
+            print(f"[{reg_no}] [Thread] No data found. Page text: {body_snippet}")
             set_result({
                 'success': False,
-                'error': f'Could not find attendance table on any frame. URL was: {page.url}. Please try again.'
+                'error': f'Attendance page loaded (URL: {page.url}) but no data found. '
+                         f'This usually means the AJAX call is slow — please try again.'
             })
             return
 
-        # --- Parse attendance rows from the found frame ---
-        print(f"[{reg_no}] [Thread] Parsing attendance rows from frame...")
-        rows_locator = data_frame.locator("table tr")
-        rows_count = rows_locator.count()
-        print(f"[{reg_no}] [Thread] Found {rows_count} table rows to parse.")
-        live_scraped_data = []
-
-        for idx in range(1, rows_count):
-            cols = rows_locator.nth(idx).locator("td")
-            col_count = cols.count()
-            if col_count >= 6:
-                try:
-                    subject_name_text = cols.nth(1).inner_text().strip()
-                    code_text = cols.nth(0).inner_text().strip()
-                    subject_name = subject_name_text if len(subject_name_text) > 3 else code_text
-
-                    max_hours_str = cols.nth(col_count - 4).inner_text().strip()
-                    attended_hours_str = cols.nth(col_count - 3).inner_text().strip()
-
-                    if max_hours_str.isdigit() and attended_hours_str.isdigit():
-                        live_scraped_data.append({
-                            'id': int(time.time() * 1000) + idx,
-                            'name': subject_name,
-                            'attended': int(attended_hours_str),
-                            'total': int(max_hours_str),
-                        })
-                except Exception as parse_err:
-                    print(f"[{reg_no}] Row parse skipped: {parse_err}")
-
         if live_scraped_data:
-            print(f"[{reg_no}] [Thread] Scraping successful! {len(live_scraped_data)} subjects.")
+            print(f"[{reg_no}] [Thread] Scraping successful! {len(live_scraped_data)} subjects found.")
             set_result({'success': True, 'data': live_scraped_data})
         else:
-            set_result({'success': False, 'error': 'Table was found but appears to be empty.'})
+            set_result({'success': False, 'error': 'Table was found but no valid attendance rows could be parsed.'})
 
     except Exception as fn_err:
         print(f"[{reg_no}] [Thread] Critical failure: {fn_err}")
