@@ -1,10 +1,7 @@
 services:
   - type: web
     name: srm-student-hub
-    env: node
+    env: python
     plan: free
-    buildCommand: npm install
-    startCommand: node server.js
-    envVars:
-      - key: NODE_VERSION
-        value: 20
+    buildCommand: "pip install -r requirements.txt && playwright install chromium"
+    startCommand: "gunicorn server:app"
