@@ -1,3 +1,14 @@
+import time
+import threading
+import queue
+from flask import Flask, request, jsonify, send_from_directory
+from flask_cors import CORS
+from playwright.sync_api import sync_playwright
+
+# THIS WAS MISSING! Render needs this line to start.
+app = Flask(__name__, static_folder='.')
+CORS(app)
+
 def scrape_vercel_worker(reg_no, pwd, out_queue):
     p = None
     browser = None
@@ -95,3 +106,24 @@ def scrape_vercel_worker(reg_no, pwd, out_queue):
     finally:
         if browser: browser.close()
         if p: p.stop()
+
+@app.route('/api/start_session', methods=['POST'])
+def start_session():
+    data = request.json
+    out_queue = queue.Queue()
+    t = threading.Thread(target=scrape_vercel_worker, args=(data.get('regNo'), data.get('pwd'), out_queue))
+    t.start()
+    try:
+        result = out_queue.get(timeout=60)
+        if result.get('success'): return jsonify(result)
+        return jsonify({'success': False, 'error': result.get('error')})
+    except queue.Empty:
+        return jsonify({'success': False, 'error': 'Timeout waiting for API.'})
+
+@app.route('/')
+def serve_index(): return send_from_directory('.', 'index.html')
+
+@app.route('/<path:filename>')
+def serve_static(filename): return send_from_directory('.', filename)
+
+if __name__ == '__main__': app.run(host='0.0.0.0', port=5000)
