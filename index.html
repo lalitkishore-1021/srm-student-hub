@@ -426,7 +426,8 @@
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
             deferredPrompt = e;
-            installAppBtn.style.display = 'flex';
+            // CRASH-PROOF CHECK:
+            if (installAppBtn) installAppBtn.style.display = 'flex';
         });
 
         async function triggerAppInstall() {
@@ -437,14 +438,15 @@
                     console.log('User accepted the A2HS prompt');
                 }
                 deferredPrompt = null;
-                installAppBtn.style.display = 'none';
+                if (installAppBtn) installAppBtn.style.display = 'none';
             } else {
                 alert("To install this app on iOS, tap the 'Share' icon at the bottom of Safari and select 'Add to Home Screen'.");
             }
         }
 
-        installAppBtn.addEventListener('click', triggerAppInstall);
-        logoInstallTrigger.addEventListener('click', triggerAppInstall);
+        // CRASH-PROOF CHECKS:
+        if (installAppBtn) installAppBtn.addEventListener('click', triggerAppInstall);
+        if (logoInstallTrigger) logoInstallTrigger.addEventListener('click', triggerAppInstall);
 
         // ==========================================
         // 1. ROUTING LOGIC & MOBILE BACK BUTTON FIX
