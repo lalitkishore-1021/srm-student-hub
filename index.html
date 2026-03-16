@@ -271,11 +271,15 @@
             </div>
         </div>
 
-        <div id="marks-view" class="app-view">
+      <div id="marks-view" class="app-view">
             <div class="view-header">
                 <button class="back-btn" onclick="switchView('projects-view')">&#8592; Back to Home</button>
                 <h2 class="gallery-title">Marks Tracker</h2>
             </div>
+            <div id="marks-container" style="max-width: 800px; margin: 0 auto;">
+                <p style="color: var(--text-sub);">Sync your data on the Mega Sync page to load marks.</p>
+            </div>
+        </div>
             <div class="image-card" style="max-width: 600px; margin: 0 auto; padding: 40px; cursor: default; transform: none;">
                 <div class="meal-icon-box" style="width: 60px; height: 60px; margin: 0 auto 20px auto; border-radius: 50%;">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 35px; height: 35px;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
@@ -285,11 +289,15 @@
             </div>
         </div>
 
-        <div id="timetable-view" class="app-view">
+     <div id="timetable-view" class="app-view">
             <div class="view-header">
                 <button class="back-btn" onclick="switchView('projects-view')">&#8592; Back to Home</button>
                 <h2 class="gallery-title">Time Table</h2>
             </div>
+            <div id="timetable-container" style="max-width: 800px; margin: 0 auto;">
+                <p style="color: var(--text-sub);">Sync your data on the Mega Sync page to load timetable.</p>
+            </div>
+        </div></div>
             <div class="image-card" style="max-width: 600px; margin: 0 auto; padding: 40px; cursor: default; transform: none;">
                 <div class="meal-icon-box" style="width: 60px; height: 60px; margin: 0 auto 20px auto; border-radius: 50%;">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 35px; height: 35px;"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
@@ -1072,6 +1080,74 @@
             
             if (force && timeFloat < 6.5) {
                  triggerLocalNotification("SRM Hub Active", "Notifications are active. Next alert will be at 6:30 AM! ⏰");
+                function renderMarks() {
+            const container = document.getElementById('marks-container');
+            const savedMarks = JSON.parse(localStorage.getItem('squadMarks'));
+            
+            if (!savedMarks || Object.keys(savedMarks).length === 0) {
+                container.innerHTML = '<p style="color: var(--text-sub);">No marks data found. Run Mega Sync first!</p>';
+                return;
+            }
+            
+            container.innerHTML = '';
+            
+            // Loop through whatever array or object the API gave us
+            let marksArray = Array.isArray(savedMarks) ? savedMarks : (savedMarks.marks || savedMarks.data || Object.values(savedMarks));
+            
+            marksArray.forEach(subject => {
+                let detailsHTML = '';
+                // Dynamically grab all keys (like CT1, Assignment, etc.)
+                for (let key in subject) {
+                    if(key !== 'name' && key !== 'courseTitle' && key !== 'subject') {
+                        detailsHTML += `
+                            <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--glass-border); padding: 8px 0;">
+                                <span style="color: var(--text-sub); text-transform: uppercase; font-size: 0.85rem;">${key}</span>
+                                <span style="color: var(--primary); font-weight: bold;">${subject[key]}</span>
+                            </div>
+                        `;
+                    }
+                }
+
+                let subName = subject.name || subject.courseTitle || subject.subject || "Unknown Subject";
+
+                container.innerHTML += `
+                    <div class="meal-card fade-in-up" style="flex-direction: column; padding: 20px;">
+                        <h3 style="color: var(--primary); font-family: 'Montserrat', sans-serif; text-transform: uppercase; margin-top: 0; margin-bottom: 15px;">${subName}</h3>
+                        <div style="width: 100%;">${detailsHTML}</div>
+                    </div>
+                `;
+            });
+        }
+
+        function renderTimetable() {
+            const container = document.getElementById('timetable-container');
+            const savedTime = JSON.parse(localStorage.getItem('squadTimetable'));
+            
+            if (!savedTime || Object.keys(savedTime).length === 0) {
+                container.innerHTML = '<p style="color: var(--text-sub);">No timetable data found. Run Mega Sync first!</p>';
+                return;
+            }
+            
+            container.innerHTML = '';
+            let timeArray = Array.isArray(savedTime) ? savedTime : (savedTime.timetable || savedTime.data || Object.values(savedTime));
+            
+            timeArray.forEach(day => {
+                container.innerHTML += `
+                    <div class="meal-card fade-in-up" style="flex-direction: column; padding: 20px; text-align: center;">
+                        <h3 style="color: var(--primary); font-family: 'Montserrat', sans-serif; margin-top: 0;">${JSON.stringify(day)}</h3>
+                        <p style="color: var(--text-sub); font-size: 0.9rem;">(Raw API Data Rendered)</p>
+                    </div>
+                `;
+            });
+        }
+
+        // Hook these up to your buttons! Modify the switchView function to call them:
+        const originalSwitchView = switchView;
+        switchView = function(viewId, pushToHistory = true) {
+            originalSwitchView(viewId, pushToHistory);
+            if(viewId === 'marks-view') renderMarks();
+            if(viewId === 'timetable-view') renderTimetable();
+        };
             }
         }
     </script>
