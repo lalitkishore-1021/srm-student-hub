@@ -2,7 +2,7 @@ import time
 import threading
 import queue
 import base64
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 from playwright.sync_api import sync_playwright
 
@@ -163,6 +163,17 @@ def start_session():
 @app.route('/api/submit_captcha', methods=['POST'])
 def submit_captcha():
     return jsonify({'success': False, 'error': 'Captcha is not needed.'})
+# --- ADD THIS RIGHT ABOVE "if __name__ == '__main__':" ---
+
+@app.route('/')
+def serve_index():
+    return send_from_directory('.', 'index.html')
+
+@app.route('/<path:filename>')
+def serve_static(filename):
+    return send_from_directory('.', filename)
+
+# ---------------------------------------------------------
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
