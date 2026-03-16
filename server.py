@@ -6,7 +6,7 @@ from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 from playwright.sync_api import sync_playwright
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder='.')
 CORS(app)
 
 def scrape_vercel_worker(reg_no, pwd, out_queue):
@@ -16,7 +16,7 @@ def scrape_vercel_worker(reg_no, pwd, out_queue):
         p = sync_playwright().start()
         print(f"[{reg_no}] Launching Chromium to sniff Vercel App...")
         
-        # Low memory mode
+        # SUPER LOW MEMORY MODE (Diet Mode)
         browser = p.chromium.launch(
             headless=True,
             args=[
@@ -53,13 +53,23 @@ def scrape_vercel_worker(reg_no, pwd, out_queue):
 
         # Attach our sniffer to the browser
         page.on("response", handle_response)
+
+        # BLOCK HEAVY RESOURCES (Stops Render from crashing)
+        def block_heavy_resources(route):
+            rt = route.request.resource_type
+            if rt in ["media", "font", "stylesheet", "image"]:
+                route.abort()
+            else:
+                route.continue_()
+
+        page.route("**/*", block_heavy_resources)
         
         print(f"[{reg_no}] Going to Vercel App...")
         page.goto("https://console-x-academia.vercel.app/")
         
-        page.wait_for_timeout(3000) # Let their animations load
+        page.wait_for_timeout(3000) # Let their scripts load
         
-        # Fix email formatting if needed
+        # Fix email formatting if the user just typed "bl9209"
         if "@" not in reg_no:
             reg_no += "@srmist.edu.in"
             
@@ -81,7 +91,7 @@ def scrape_vercel_worker(reg_no, pwd, out_queue):
         page.wait_for_timeout(5000)
 
         # ==========================================
-        # 🚨 YOUR FIX: CLICKING THE LOCATIONS
+        # CLICKING THE LOCATIONS TO TRIGGER APIs
         # ==========================================
         print(f"[{reg_no}] Clicking around to trigger the hidden APIs...")
 
@@ -129,7 +139,7 @@ def scrape_vercel_worker(reg_no, pwd, out_queue):
                 'timetable': intercepted_data.get('timetable')
             })
         else:
-            out_queue.put({'success': False, 'error': 'Login failed or app layout changed.'})
+            out_queue.put({'success': False, 'error': 'Login failed (Incorrect Password) or app layout changed.'})
 
     except Exception as e:
         print(f"Error: {str(e)}")
@@ -138,7 +148,8 @@ def scrape_vercel_worker(reg_no, pwd, out_queue):
         if browser: browser.close()
         if p: p.stop()
 
-# ... (Keep the rest of your app.route functions below exactly the same!)
+
+# --- API ROUTES ---
 
 @app.route('/api/start_session', methods=['POST'])
 def start_session():
@@ -151,19 +162,28 @@ def start_session():
     t.start()
 
     try:
-        # Wait up to 60 seconds
+        # Wait up to 60 seconds for the sniffer to finish
         result = out_queue.get(timeout=60)
         if result.get('success'):
-            return jsonify({'success': True, 'requires_captcha': False, 'data': result.get('data')})
+            return jsonify({
+                'success': True, 
+                'requires_captcha': False, 
+                'data': result.get('data'),
+                'marks': result.get('marks'),
+                'timetable': result.get('timetable')
+            })
         else:
             return jsonify({'success': False, 'error': result.get('error')})
     except queue.Empty:
         return jsonify({'success': False, 'error': 'Timeout waiting for Vercel app.'})
 
+
 @app.route('/api/submit_captcha', methods=['POST'])
 def submit_captcha():
-    return jsonify({'success': False, 'error': 'Captcha is not needed.'})
-# --- ADD THIS RIGHT ABOVE "if __name__ == '__main__':" ---
+    return jsonify({'success': False, 'error': 'Captcha is dead. We do not need this.'})
+
+
+# --- WEB ROUTING (FIXES THE 404 ERROR!) ---
 
 @app.route('/')
 def serve_index():
@@ -173,7 +193,7 @@ def serve_index():
 def serve_static(filename):
     return send_from_directory('.', filename)
 
-# ---------------------------------------------------------
+# ------------------------------------------
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
