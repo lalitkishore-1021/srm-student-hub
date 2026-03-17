@@ -53,56 +53,64 @@ def scrape_gradex_worker(reg_no, pwd, out_queue):
                 route.continue_()
 
         page.route("**/*", handle_route)
-        
-        print(f"[{reg_no}] 1. Loading /srm-login and waiting 15s for animation...")
+
+        # 🚨 THE POPUP KILLER FUNCTION 🚨
+        def kill_popup():
+            print(f"[{reg_no}] Attempting to kill popup...")
+            try:
+                page.locator('text="Maybe later"').first.click(timeout=3000)
+            except: pass
+            
+            try:
+                # Click the top left empty space to click OUTSIDE the popup
+                page.mouse.click(10, 10)
+            except: pass
+            page.wait_for_timeout(1500)
+
+        print(f"[{reg_no}] 1. Loading Home Page and waiting 15s for animation...")
         try:
-            page.goto("https://gradex.bond/srm-login", wait_until="load", timeout=60000)
-            page.wait_for_timeout(15000) # Wait out the animation
+            page.goto("https://gradex.bond/", wait_until="domcontentloaded", timeout=60000)
+            page.wait_for_timeout(15000) # Let the animation finish
         except Exception:
-            out_queue.put({'success': False, 'error': 'GradeX login page failed to load.'})
+            out_queue.put({'success': False, 'error': 'GradeX home page failed to load.'})
             return
             
-        # Mash escape to clear the WhatsApp popup
-        for _ in range(3):
-            page.keyboard.press("Escape")
-            page.wait_for_timeout(500)
+        print(f"[{reg_no}] 2. Killing First WhatsApp Popup...")
+        kill_popup()
             
-        # Safety Net: If we got redirected to the Home page, click "Login to SRM"
+        print(f"[{reg_no}] 3. Clicking 'Login to SRM' button...")
         try:
-            btn = page.locator('text="Login to SRM"').first
-            if btn.is_visible(timeout=3000):
-                btn.click(force=True)
-                page.wait_for_timeout(5000)
-        except: pass
+            page.locator('text="Login to SRM"').last.click(force=True, timeout=5000)
+            page.wait_for_timeout(3000) # wait for login boxes to appear
+        except Exception:
+            out_queue.put({'success': False, 'error': 'Could not find the "Login to SRM" button.'})
+            return
 
         if "@" not in reg_no: reg_no += "@srmist.edu.in"
             
-        print(f"[{reg_no}] 2. Entering credentials (Forcing through popups)...")
+        print(f"[{reg_no}] 4. Entering credentials into the boxes...")
         try:
-            # Wait for any input box to exist in the code
             page.wait_for_selector('input', timeout=15000)
             
-            # 🚨 FORCE=TRUE: Ignore the dark popup overlay and type anyway!
-            page.locator('input').nth(0).fill(reg_no, force=True)
-            page.locator('input[type="password"]').first.fill(pwd, force=True)
+            inputs = page.locator('input')
+            inputs.nth(0).fill(reg_no, force=True)
+            inputs.nth(1).fill(pwd, force=True)
             
             try:
                 page.locator('button:has-text("CONNECT")').first.click(force=True, timeout=3000)
             except:
                 page.keyboard.press("Enter")
         except Exception as e:
-            out_queue.put({'success': False, 'error': f'Could not inject credentials. Error: {str(e)}'})
+            out_queue.put({'success': False, 'error': 'Could not find the USER ID or PASSWORD boxes.'})
             return
         
-        print(f"[{reg_no}] 3. Waiting for dashboard to load (10s)...")
+        print(f"[{reg_no}] 5. Waiting for dashboard to load (10s)...")
         page.wait_for_timeout(10000) 
         
-        # Mash Escape again just in case the dashboard has a popup
-        for _ in range(3):
-            page.keyboard.press("Escape")
-            page.wait_for_timeout(500)
+        print(f"[{reg_no}] 6. Killing Second WhatsApp Popup on Dashboard...")
+        kill_popup() # 🚨 RUNNING IT AGAIN HERE! 🚨
 
-        print(f"[{reg_no}] 4. Clicking Navigation Tabs to sniff API...")
+        print(f"[{reg_no}] 7. Clicking Navigation Tabs to sniff API...")
         try:
             page.locator('text="Attendance"').first.evaluate("node => node.click()", timeout=5000)
             page.wait_for_timeout(3000)
@@ -159,3 +167,4 @@ def serve_static(path): return send_from_directory('.', path)
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)
+    \
