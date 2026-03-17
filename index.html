@@ -55,7 +55,7 @@
         .site-header { display: flex; flex-direction: column; align-items: center; margin-bottom: 40px; }
         .main-logo { width: 90px; height: 90px; margin-bottom: 15px; cursor: pointer; filter: drop-shadow(0 0 15px rgba(255, 170, 0, 0.5)); transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
         .main-logo:hover { transform: scale(1.15) rotate(5deg); filter: drop-shadow(0 0 25px rgba(255, 170, 0, 0.8)); }
-        h1 { font-family: 'Montserrat', sans-serif; font-weight: 900; text-transform: uppercase; font-size: clamp(2.5rem, 8vw, 4.5rem); background: linear-gradient(to right, #ffaa00, #ffdd00, #ffaa00); background-size: 200% auto; -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 10px; animation: shine 4s linear infinite; }
+        h1 { font-family: 'Montserrat', sans-serif; font-weight: 900; text-transform: uppercase; font-size: clamp(2.5rem, 8vw, 4.5rem); background: linear-gradient(to right, #ffaa00, #ffdd00, #ffaa00); background-size: 200% auto; -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; color: transparent; margin-bottom: 10px; animation: shine 4s linear infinite; }
         @keyframes shine { to { background-position: 200% center; } }
         .subtitle { color: var(--text-sub); font-size: 1.1rem; margin-bottom: 30px; letter-spacing: 1px; transition: color 0.5s ease;}
         .gallery-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 40px; max-width: 1200px; margin: 0 auto; }
@@ -144,7 +144,6 @@
 
     <div class="btn-container" id="navButtons">
         <button id="notifyBtn" class="icon-btn" onclick="requestNotificationPermission()" title="Enable Notifications">🔔</button>
-
         <a href="https://www.instagram.com/lalit._.kishore?igsh=ZDVsOTIzaGxiY2I1" target="_blank" class="icon-btn" title="Instagram">
             <svg viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.85s-.011 3.585-.069 4.85c-.148 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07s-3.584-.012-4.85-.07c-3.26-.148-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.85s.012-3.584.07-4.85c.148-3.204 1.671-4.771 4.919-4.919 1.266-.057 1.645-.069 4.85-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
         </a>
@@ -154,15 +153,6 @@
         <a href="https://github.com/lalitkishore-1021" target="_blank" class="icon-btn" title="GitHub">
             <svg viewBox="0 0 24 24"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
         </a>
-        
-        <button id="installAppBtn" class="icon-btn" style="display: none;" title="Install App to Device">
-            <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                <polyline points="7 10 12 15 17 10"></polyline>
-                <line x1="12" y1="15" x2="12" y2="3"></line>
-            </svg>
-        </button>
-
         <button id="themeToggle" class="icon-btn" onclick="toggleTheme()" title="Toggle Light/Dark Mode">☀️</button>
     </div>
 
@@ -221,7 +211,7 @@
                             <path d="m9 16 2 2 4-4"></path>
                         </svg>
                     </div>
-                    <div class="caption">Mega Sync Tracker</div>
+                    <div class="caption">Attendance Tracker</div>
                 </div>
 
                 <div class="image-card project-card" onclick="switchView('helper-view')">
@@ -275,20 +265,32 @@
             <div class="view-header">
                 <button class="back-btn" onclick="switchView('projects-view')">&#8592; Back to Home</button>
                 <h2 class="gallery-title">Marks Tracker</h2>
+                <p class="subtitle" style="margin-bottom: 20px;">Sync from the Attendance Tracker to load your marks automatically.</p>
             </div>
-            <div id="marks-container" style="max-width: 800px; margin: 0 auto;">
-                <p style="color: var(--text-sub);">Sync your data on the Mega Sync page to load marks.</p>
+            <div id="marks-no-data" class="image-card" style="max-width: 600px; margin: 0 auto; padding: 40px; cursor: default; transform: none;">
+                <div class="meal-icon-box" style="width: 60px; height: 60px; margin: 0 auto 20px auto; border-radius: 50%;">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 35px; height: 35px;"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+                </div>
+                <h3 style="color: var(--primary); margin-bottom: 15px; font-family: 'Montserrat', sans-serif; text-transform: uppercase;">No Marks Data Yet</h3>
+                <p style="color: var(--text-sub); line-height: 1.6; font-size: 1.1rem;">Use the <strong style="color:var(--primary);">Attendance Tracker → Live Portal Sync</strong> to fetch your marks automatically from the academia portal.</p>
             </div>
+            <div id="marks-list" style="max-width: 900px; margin: 0 auto; display: none;"></div>
         </div>
 
         <div id="timetable-view" class="app-view">
             <div class="view-header">
                 <button class="back-btn" onclick="switchView('projects-view')">&#8592; Back to Home</button>
                 <h2 class="gallery-title">Time Table</h2>
+                <p class="subtitle" style="margin-bottom: 20px;">Sync from the Attendance Tracker to load your schedule automatically.</p>
             </div>
-            <div id="timetable-container" style="max-width: 800px; margin: 0 auto;">
-                <p style="color: var(--text-sub);">Sync your data on the Mega Sync page to load timetable.</p>
+            <div id="timetable-no-data" class="image-card" style="max-width: 600px; margin: 0 auto; padding: 40px; cursor: default; transform: none;">
+                <div class="meal-icon-box" style="width: 60px; height: 60px; margin: 0 auto 20px auto; border-radius: 50%;">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 35px; height: 35px;"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                </div>
+                <h3 style="color: var(--primary); margin-bottom: 15px; font-family: 'Montserrat', sans-serif; text-transform: uppercase;">No Timetable Data Yet</h3>
+                <p style="color: var(--text-sub); line-height: 1.6; font-size: 1.1rem;">Use the <strong style="color:var(--primary);">Attendance Tracker → Live Portal Sync</strong> to fetch your timetable automatically from the academia portal.</p>
             </div>
+            <div id="timetable-grid" style="max-width: 1100px; margin: 0 auto; display: none;"></div>
         </div>
 
         <div id="gallery-view" class="app-view">
@@ -361,7 +363,7 @@
                 <div id="login-section">
                     <p style="color: var(--text-sub); text-align: left; margin-bottom: 15px; font-size: 0.9rem;">Auto-fetch your attendance directly from Academia.</p>
                     <div class="form-row" style="grid-template-columns: 1fr 1fr auto;">
-                        <input type="text" id="srm-reg" placeholder="Registration Number">
+                        <input type="text" id="srm-reg" placeholder="NetID or Email">
                         <input type="password" id="srm-pwd" placeholder="Portal Password">
                         <button class="action-btn" onclick="startLiveSync()">Sync</button>
                     </div>
@@ -403,6 +405,14 @@
     </div>
 
     <script>
+        // ==========================================
+        // CONFIGURATION: SET YOUR BACKEND URL HERE
+        // ==========================================
+        const BACKEND_URL = 'https://srm-student-hub-1.onrender.com';
+
+        // ==========================================
+        // PWA SERVICE WORKER
+        // ==========================================
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('sw.js')
@@ -414,13 +424,14 @@
         }
 
         let deferredPrompt;
+        // FIX: installAppBtn does not exist in the HTML — use null-safe references throughout
         const installAppBtn = document.getElementById('installAppBtn');
         const logoInstallTrigger = document.getElementById('logoInstallTrigger');
 
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
             deferredPrompt = e;
-            installAppBtn.style.display = 'flex';
+            if (installAppBtn) installAppBtn.style.display = 'flex';
         });
 
         async function triggerAppInstall() {
@@ -431,15 +442,18 @@
                     console.log('User accepted the A2HS prompt');
                 }
                 deferredPrompt = null;
-                installAppBtn.style.display = 'none';
+                if (installAppBtn) installAppBtn.style.display = 'none';
             } else {
                 alert("To install this app on iOS, tap the 'Share' icon at the bottom of Safari and select 'Add to Home Screen'.");
             }
         }
 
-        installAppBtn.addEventListener('click', triggerAppInstall);
-        logoInstallTrigger.addEventListener('click', triggerAppInstall);
+        if (installAppBtn) installAppBtn.addEventListener('click', triggerAppInstall);
+        if (logoInstallTrigger) logoInstallTrigger.addEventListener('click', triggerAppInstall);
 
+        // ==========================================
+        // 1. ROUTING LOGIC & MOBILE BACK BUTTON FIX
+        // ==========================================
         history.replaceState({ viewId: 'projects-view' }, '', '#projects-view');
 
         function switchView(viewId, pushToHistory = true) {
@@ -452,10 +466,6 @@
             if (pushToHistory) {
                 history.pushState({ viewId: viewId }, '', `#${viewId}`);
             }
-
-            // Fire rendering logic for dynamic pages
-            if(viewId === 'marks-view') renderMarks();
-            if(viewId === 'timetable-view') renderTimetable();
         }
 
         window.addEventListener('popstate', (e) => {
@@ -466,6 +476,9 @@
             }
         });
 
+        // ==========================================
+        // 2. PORTFOLIO DATA
+        // ==========================================
         const projectsDatabase = {
             'oopsBanner': {
                 title: 'OOPS Banner App',
@@ -524,15 +537,11 @@
             'helloAppFolder': { 
                 title: 'HelloApp UC\'s',
                 parent: 'oopsBanner',
-                video:'https://www.youtube.com/embed/k8eX_rkQxPk',
-, 
+                video: 'https://www.youtube.com/embed/IxZHnxaVpp4', 
                 images: [
-                    { src: 'images/oops-banner/ha1.png', label: 'Step 1' },
-                    { src: 'images/oops-banner/ha2.png', label: 'Step 2' },
-                    { src: 'images/oops-banner/ha3.png', label: 'Step 3' },
-                    { src: 'images/oops-banner/ha4.png', label: 'Step 4' },
-                    { src: 'images/oops-banner/end.png', label: 'end' },
-                    
+                    { src: 'images/helloapp/uc1.png', label: 'UC 1' },
+                    { src: 'images/helloapp/uc2.png', label: 'UC 2' },
+                    { src: 'images/helloapp/uc3.png', label: 'UC 3' }
                 ]
             }
         };
@@ -595,6 +604,9 @@
             }
         }
 
+        // ==========================================
+        // 3. CGPA CALCULATOR LOGIC
+        // ==========================================
         function addCgpaRow() {
             const rowHTML = `
                 <div class="form-row fade-in-up">
@@ -637,6 +649,9 @@
             }
         }
 
+        // ==========================================
+        // 4. BEAUTIFUL MESS MENU LOGIC
+        // ==========================================
         const mealIcons = {
             'Breakfast': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M17 8h1a4 4 0 1 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z"/><line x1="6" y1="2" x2="6" y2="4"/><line x1="10" y1="2" x2="10" y2="4"/><line x1="14" y1="2" x2="14" y2="4"/></svg>',
             'Lunch': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>',
@@ -739,6 +754,9 @@
             });
         }
 
+        // ==========================================
+        // 5. HELPER (RESOURCES) LOGIC
+        // ==========================================
         const dummySubject = { name: 'Content Adding Soon...', topics: ['Check back later for pyqs.'], pyqLink: '#', ctLink: '#' };
         const helperData = { 'Semester 1': [dummySubject], 'Semester 2': [dummySubject], 'Semester 3': [dummySubject], 'Semester 4': [dummySubject] };
 
@@ -782,6 +800,9 @@
         }
         initHelper(); 
 
+        // ==========================================
+        // 6. NODE.JS MEGA-SYNC LOGIC
+        // ==========================================
         let attendanceData = JSON.parse(localStorage.getItem('squadAttendance')) || [];
 
         function saveAttendance() {
@@ -789,74 +810,223 @@
         }
 
         async function startLiveSync() {
-            const regNo = document.getElementById('srm-reg').value;
+            const regNo = document.getElementById('srm-reg').value.trim();
             const pwd = document.getElementById('srm-pwd').value;
             const statusText = document.getElementById('sync-status');
-            
-            if(!regNo || !pwd) {
-                alert("Please enter Registration Number and Password.");
+
+            if (!regNo || !pwd) {
+                alert("Please enter your NetID/Email and Password.");
                 return;
             }
 
-            statusText.innerText = "Launching secure sniper... Please wait (can take up to 45 seconds).";
+            statusText.innerText = "🔄 Opening academia portal in background... This may take up to 30 seconds.";
             statusText.style.color = "var(--primary)";
 
             try {
-                // 🚨 ABSOLUTE URL FIX: This guarantees it finds the Render server.
-                const response = await fetch('https://srm-student-hub-1.onrender.com/api/start_session', {
+                const response = await fetch(`${BACKEND_URL}/api/mega-sync`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ regNo: regNo, pwd: pwd })
+                    // FIX: Send correct field names that server expects
+                    body: JSON.stringify({ email: regNo, password: pwd })
                 });
+
+                if (!response.ok) {
+                    throw new Error(`Server responded with status ${response.status}`);
+                }
 
                 const result = await response.json();
 
-                if(result.success) {
-                    processScrapedData(result.data);
-                    
-                    if(result.marks) {
-                        localStorage.setItem('squadMarks', JSON.stringify(result.marks));
-                    }
-                    if(result.timetable) {
-                        localStorage.setItem('squadTimetable', JSON.stringify(result.timetable));
-                    }
+                if (result.success) {
+                    const data = result.data || {};
+                    const att = Array.isArray(data.attendance) ? data.attendance : [];
+                    const marks = Array.isArray(data.marks) ? data.marks : [];
+                    const timetable = Array.isArray(data.timetable) ? data.timetable : [];
 
+                    // Save all three to localStorage
+                    localStorage.setItem('squadMarks', JSON.stringify(marks));
+                    localStorage.setItem('squadTimetable', JSON.stringify(timetable));
+
+                    // Process and render attendance
+                    processScrapedData(att);
+
+                    // Render marks and timetable immediately
+                    renderMarks(marks);
+                    renderTimetable(timetable);
+
+                    let summary = `✅ Sync complete! Got: Attendance(${att.length})`;
+                    if (marks.length) summary += `, Marks(${marks.length})`;
+                    if (timetable.length) summary += `, Timetable(${timetable.length})`;
+                    if (!marks.length) summary += ` | Marks: not available from portal`;
+                    if (!timetable.length) summary += ` | Timetable: not available from portal`;
+
+                    statusText.innerText = summary;
+                    statusText.style.color = "var(--success)";
                 } else {
-                    statusText.innerText = "Error: " + result.error;
+                    statusText.innerText = "❌ Error: " + (result.error || "Unknown error from server.");
                     statusText.style.color = "var(--danger)";
                 }
             } catch (err) {
-                console.error(err);
-                statusText.innerText = "Failed to connect to the Python server. Please try again.";
+                console.error("Sync error:", err);
+                statusText.innerText = "❌ Could not connect to backend. Make sure your Render server is running.";
                 statusText.style.color = "var(--danger)";
+            } finally {
+                // Always clear password from field for security
+                document.getElementById('srm-pwd').value = '';
             }
         }
 
         function processScrapedData(dataArray) {
-            const statusText = document.getElementById('sync-status');
-            
             attendanceData = [];
 
-            if (dataArray && Array.isArray(dataArray)) {
-                dataArray.forEach(item => {
+            if (!Array.isArray(dataArray) || dataArray.length === 0) return;
+
+            dataArray.forEach(item => {
+                // FIX: Handle many possible field names the Vercel app may use
+                const name = item.courseTitle || item.name || item.subject || item.courseName || item.title || "Unknown Subject";
+                const attended = parseInt(item.attended || item.present || item.attendedClasses || 0);
+                const total = parseInt(item.total || item.conducted || item.totalClasses || item.totalConducted || 0);
+
+                if (name && !isNaN(attended) && !isNaN(total) && total > 0) {
                     attendanceData.push({
-                        id: Date.now() + Math.random(), 
-                        name: item.name || item.courseTitle || item.subject || item.courseCode || "Unknown Subject",
-                        attended: parseInt(item.attended || item.present || 0),
-                        total: parseInt(item.total || item.conducted || item.totalClasses || 1) 
+                        id: Date.now() + Math.random(),
+                        name: name,
+                        attended: attended,
+                        total: total
                     });
-                });
-            }
+                }
+            });
 
             saveAttendance();
             renderAttendance();
-
-            statusText.innerText = "✅ Mega-Sync Complete! Data saved.";
-            statusText.style.color = "var(--success)";
-            
-            document.getElementById('srm-pwd').value = '';
         }
 
+        function renderMarks(marksArray) {
+            const noData = document.getElementById('marks-no-data');
+            const list = document.getElementById('marks-list');
+
+            if (!Array.isArray(marksArray) || marksArray.length === 0) {
+                if (noData) noData.style.display = 'block';
+                if (list) list.style.display = 'none';
+                return;
+            }
+
+            if (noData) noData.style.display = 'none';
+            list.style.display = 'block';
+            list.innerHTML = '';
+
+            marksArray.forEach(item => {
+                const course = item.courseTitle || item.name || item.subject || item.courseName || "Subject";
+                // Try to extract any numeric fields as marks
+                const fields = Object.entries(item).filter(([k, v]) => {
+                    const key = k.toLowerCase();
+                    return (key.includes('mark') || key.includes('score') || key.includes('grade') ||
+                            key.includes('internal') || key.includes('total') || key.includes('max') ||
+                            key.includes('obtain') || key.includes('ct') || key.includes('exam'))
+                           && !['coursecode','courseid','id','regNo'].includes(k);
+                });
+
+                let detailsHTML = fields.map(([k, v]) => {
+                    const label = k.replace(/([A-Z])/g, ' $1').replace(/_/g, ' ').trim();
+                    const displayVal = (v !== null && v !== undefined && v !== '') ? v : '—';
+                    return `<div style="display:flex; justify-content:space-between; padding: 8px 0; border-bottom: 1px solid var(--glass-border);">
+                                <span style="color:var(--text-sub); text-transform: capitalize;">${label}</span>
+                                <span style="color:var(--primary); font-weight: bold;">${displayVal}</span>
+                            </div>`;
+                }).join('');
+
+                if (!detailsHTML) {
+                    detailsHTML = `<p style="color:var(--text-sub);">Mark details not available for this subject.</p>`;
+                }
+
+                list.innerHTML += `
+                    <div class="meal-card fade-in-up" style="flex-direction: column; align-items: flex-start; margin-bottom: 20px;">
+                        <h3 style="margin: 0 0 15px 0; color: var(--primary); font-family: 'Montserrat', sans-serif; text-transform: uppercase; font-size: 1rem;">
+                            ${course}
+                        </h3>
+                        ${detailsHTML}
+                    </div>
+                `;
+            });
+        }
+
+        function renderTimetable(ttArray) {
+            const noData = document.getElementById('timetable-no-data');
+            const grid = document.getElementById('timetable-grid');
+
+            if (!Array.isArray(ttArray) || ttArray.length === 0) {
+                if (noData) noData.style.display = 'block';
+                if (grid) grid.style.display = 'none';
+                return;
+            }
+
+            if (noData) noData.style.display = 'none';
+            grid.style.display = 'block';
+            grid.innerHTML = '';
+
+            // Try to group by day if 'day' field exists
+            const days = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+            const grouped = {};
+            let hasDayField = false;
+
+            ttArray.forEach(item => {
+                const day = item.day || item.dayName || item.weekDay || null;
+                if (day) {
+                    hasDayField = true;
+                    if (!grouped[day]) grouped[day] = [];
+                    grouped[day].push(item);
+                }
+            });
+
+            if (hasDayField) {
+                days.forEach(day => {
+                    if (!grouped[day]) return;
+                    let slots = grouped[day].map(item => {
+                        const sub = item.courseTitle || item.subject || item.name || item.courseName || '—';
+                        const time = item.time || item.slot || item.period || item.startTime || '';
+                        const venue = item.venue || item.room || item.location || '';
+                        return `<div style="background: var(--glass); border: 1px solid var(--glass-border); border-radius: 8px; padding: 12px; margin-bottom: 8px; text-align:left;">
+                                    <div style="color:var(--primary); font-weight: bold; font-size: 0.95rem;">${sub}</div>
+                                    ${time ? `<div style="color:var(--text-sub); font-size:0.85rem;">⏰ ${time}</div>` : ''}
+                                    ${venue ? `<div style="color:var(--text-sub); font-size:0.85rem;">📍 ${venue}</div>` : ''}
+                                </div>`;
+                    }).join('');
+
+                    grid.innerHTML += `
+                        <div class="image-card fade-in-up" style="margin-bottom: 20px; cursor: default; transform: none; text-align: left;">
+                            <h3 style="color:var(--primary); font-family:'Montserrat',sans-serif; text-transform:uppercase; margin: 0 0 15px 0;">${day}</h3>
+                            ${slots}
+                        </div>
+                    `;
+                });
+            } else {
+                // No day field — just show a flat list of all slots
+                ttArray.forEach(item => {
+                    const sub = item.courseTitle || item.subject || item.name || item.courseName || '—';
+                    const time = item.time || item.slot || item.period || item.startTime || '';
+                    const venue = item.venue || item.room || item.location || '';
+                    const day = item.day || item.weekDay || '';
+                    grid.innerHTML += `
+                        <div class="meal-card fade-in-up" style="flex-direction:column; align-items:flex-start; margin-bottom:15px;">
+                            <div style="color:var(--primary); font-weight:bold; font-size:1rem; margin-bottom:5px;">${sub}</div>
+                            ${day ? `<div style="color:var(--text-sub); font-size:0.9rem;">📅 ${day}</div>` : ''}
+                            ${time ? `<div style="color:var(--text-sub); font-size:0.9rem;">⏰ ${time}</div>` : ''}
+                            ${venue ? `<div style="color:var(--text-sub); font-size:0.9rem;">📍 ${venue}</div>` : ''}
+                        </div>
+                    `;
+                });
+            }
+        }
+
+        // Load saved marks and timetable on page load
+        function loadSavedMarksAndTimetable() {
+            const savedMarks = JSON.parse(localStorage.getItem('squadMarks') || '[]');
+            const savedTimetable = JSON.parse(localStorage.getItem('squadTimetable') || '[]');
+            if (savedMarks.length) renderMarks(savedMarks);
+            if (savedTimetable.length) renderTimetable(savedTimetable);
+        }
+        loadSavedMarksAndTimetable();
+
+        // --- MANUAL ENTRY FUNCTIONS ---
         function addAttendance() {
             const nameInput = document.getElementById('att-sub-name');
             const attInput = document.getElementById('att-attended');
@@ -931,65 +1101,9 @@
             }
         }
 
-        function renderMarks() {
-            const container = document.getElementById('marks-container');
-            const savedMarks = JSON.parse(localStorage.getItem('squadMarks'));
-            
-            if (!savedMarks || Object.keys(savedMarks).length === 0) {
-                container.innerHTML = '<p style="color: var(--text-sub);">No marks data found. Run Mega Sync first!</p>';
-                return;
-            }
-            
-            container.innerHTML = '';
-            
-            let marksArray = Array.isArray(savedMarks) ? savedMarks : (savedMarks.marks || savedMarks.data || Object.values(savedMarks));
-            
-            marksArray.forEach(subject => {
-                let detailsHTML = '';
-                for (let key in subject) {
-                    if(key !== 'name' && key !== 'courseTitle' && key !== 'subject') {
-                        detailsHTML += `
-                            <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--glass-border); padding: 8px 0;">
-                                <span style="color: var(--text-sub); text-transform: uppercase; font-size: 0.85rem;">${key}</span>
-                                <span style="color: var(--primary); font-weight: bold;">${subject[key]}</span>
-                            </div>
-                        `;
-                    }
-                }
-
-                let subName = subject.name || subject.courseTitle || subject.subject || "Unknown Subject";
-
-                container.innerHTML += `
-                    <div class="meal-card fade-in-up" style="flex-direction: column; padding: 20px;">
-                        <h3 style="color: var(--primary); font-family: 'Montserrat', sans-serif; text-transform: uppercase; margin-top: 0; margin-bottom: 15px;">${subName}</h3>
-                        <div style="width: 100%;">${detailsHTML}</div>
-                    </div>
-                `;
-            });
-        }
-
-        function renderTimetable() {
-            const container = document.getElementById('timetable-container');
-            const savedTime = JSON.parse(localStorage.getItem('squadTimetable'));
-            
-            if (!savedTime || Object.keys(savedTime).length === 0) {
-                container.innerHTML = '<p style="color: var(--text-sub);">No timetable data found. Run Mega Sync first!</p>';
-                return;
-            }
-            
-            container.innerHTML = '';
-            let timeArray = Array.isArray(savedTime) ? savedTime : (savedTime.timetable || savedTime.data || Object.values(savedTime));
-            
-            timeArray.forEach(day => {
-                container.innerHTML += `
-                    <div class="meal-card fade-in-up" style="flex-direction: column; padding: 20px; text-align: center;">
-                        <h3 style="color: var(--primary); font-family: 'Montserrat', sans-serif; margin-top: 0;">${JSON.stringify(day)}</h3>
-                        <p style="color: var(--text-sub); font-size: 0.9rem;">(Raw API Data Rendered)</p>
-                    </div>
-                `;
-            });
-        }
-
+        // ==========================================
+        // UI & UTILITY LOGIC
+        // ==========================================
         function toggleTheme() {
             const body = document.body;
             const btn = document.getElementById('themeToggle');
@@ -1018,6 +1132,1228 @@
             document.getElementById("lightbox").style.display = "none";
         }
 
+        // ==========================================
+        // 8. NOTIFICATION SCHEDULER
+        // ==========================================
+        function requestNotificationPermission() {
+            if (!("Notification" in window)) {
+                alert("This browser does not support desktop notification");
+            } else if (Notification.permission === "granted") {
+                alert("Notifications are already enabled!");
+                checkAndScheduleNotifications(true); 
+            } else if (Notification.permission !== "denied") {
+                Notification.requestPermission().then(function (permission) {
+                    if (permission === "granted") {
+                        alert("Notifications enabled! You will now receive daily mess updates.");
+                    }
+                });
+            }
+        }
+
+        function triggerLocalNotification(title, body) {
+            if (Notification.permission === 'granted' && navigator.serviceWorker) {
+                navigator.serviceWorker.ready.then(function(registration) {
+                    registration.active.postMessage({
+                        type: 'SHOW_NOTIFICATION',
+                        title: title,
+                        body: body
+                    });
+                });
+            }
+        }
+
+        function checkAndScheduleNotifications(force = false) {
+            if (Notification.permission !== 'granted') return;
+
+            const now = new Date();
+            const hours = now.getHours();
+            const minutes = now.getMinutes();
+            const todayStr = now.toDateString();
+            
+            const daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+            const currentDay = daysOfWeek[now.getDay()];
+            const todaysMenu = messMenuData[currentDay];
+
+            let lastNotifiedStr = localStorage.getItem('lastNotifiedDate') || "";
+            let notifiedEvents = JSON.parse(localStorage.getItem('notifiedEvents') || '{}');
+
+            if (lastNotifiedStr !== todayStr) {
+                notifiedEvents = { breakfast: false, lunch: false, snacks: false, dinner: false, sleep: false };
+                localStorage.setItem('lastNotifiedDate', todayStr);
+            }
+
+            const timeFloat = hours + (minutes / 60);
+
+            if ((timeFloat >= 6.5 && timeFloat < 10) && !notifiedEvents.breakfast) {
+                triggerLocalNotification("Good Morning! ☀️ Breakfast:", todaysMenu.Breakfast);
+                notifiedEvents.breakfast = true;
+            }
+            
+            if ((timeFloat >= 11 && timeFloat < 14) && !notifiedEvents.lunch) {
+                triggerLocalNotification("Lunch Time Approaching! 🍛", todaysMenu.Lunch);
+                notifiedEvents.lunch = true;
+            }
+
+            if ((timeFloat >= 15 && timeFloat < 18) && !notifiedEvents.snacks) {
+                triggerLocalNotification("Snack Time! 🥨", todaysMenu.Snacks);
+                notifiedEvents.snacks = true;
+            }
+
+            if ((timeFloat >= 18.5 && timeFloat < 21) && !notifiedEvents.dinner) {
+                triggerLocalNotification("Dinner is served! 🍽️", todaysMenu.Dinner);
+                notifiedEvents.dinner = true;
+            }
+
+            if ((timeFloat >= 22.5) && !notifiedEvents.sleep) {
+                triggerLocalNotification("Time to Sleep! 🌙", "Put the phone away and get some rest for classes tomorrow. 💤");
+                notifiedEvents.sleep = true;
+            }
+
+            localStorage.setItem('notifiedEvents', JSON.stringify(notifiedEvents));
+            
+            if (force && timeFloat < 6.5) {
+                 triggerLocalNotification("SRM Hub Active", "Notifications are active. Next alert will be at 6:30 AM! ⏰");
+            }
+        }
+    </script>
+</body>
+</html><!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SRM Student Hub</title>
+    
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#ffaa00">
+    <link rel="apple-touch-icon" href="images/app-icon.svg">
+    
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;900&family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary: #ffaa00;
+            --bg-start: #1a1a1a;
+            --bg-end: #050505;
+            --text-main: #ffffff;
+            --text-sub: #888888;
+            --glass: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --shadow: rgba(0,0,0,0.5);
+            --splash-bg: #050505;
+            --danger: #ff4444;
+            --success: #00cc66;
+        }
+
+        body.light-mode {
+            --bg-start: #ffffff;
+            --bg-end: #e0e5ec;
+            --text-main: #121212;
+            --text-sub: #555555;
+            --glass: rgba(255, 255, 255, 0.6);
+            --glass-border: rgba(255, 255, 255, 0.8);
+            --shadow: rgba(0, 0, 0, 0.1);
+            --splash-bg: #f4f7f6;
+        }
+
+        body { font-family: 'Open Sans', sans-serif; background: radial-gradient(circle at top center, var(--bg-start) 0%, var(--bg-end) 100%); color: var(--text-main); margin: 0; padding: 0; overflow-x: hidden; min-height: 100vh; transition: background 0.5s ease, color 0.5s ease; }
+        .btn-container { position: fixed; top: 20px; right: 20px; display: flex; gap: 12px; z-index: 1000; opacity: 0; transition: opacity 0.5s ease; }
+        .icon-btn { background: var(--glass); border: 1px solid var(--glass-border); color: var(--text-main); width: 45px; height: 45px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 1.2rem; cursor: pointer; backdrop-filter: blur(10px); box-shadow: 0 4px 10px var(--shadow); transition: all 0.3s ease; text-decoration: none; }
+        .icon-btn:hover { transform: scale(1.1) translateY(-3px); border-color: var(--primary); color: var(--primary); }
+        .icon-btn svg { width: 20px; height: 20px; fill: currentColor; transition: fill 0.3s ease; }
+        #splash-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: var(--splash-bg); z-index: 2000; display: flex; flex-direction: column; justify-content: center; align-items: center; transition: opacity 0.8s ease-in-out, transform 1s cubic-bezier(0.16, 1, 0.3, 1), visibility 1s, background-color 0.5s ease; }
+        .css-loader { width: 60px; height: 60px; border-radius: 50%; border: 4px solid var(--glass-border); border-top-color: var(--primary); animation: spin 1s linear infinite; margin-bottom: 20px; box-shadow: 0 0 20px rgba(255, 170, 0, 0.2); }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+        .splash-text { font-family: 'Montserrat', sans-serif; color: var(--primary); letter-spacing: 6px; font-size: 1rem; font-weight: 900; text-transform: uppercase; animation: pulse-text 1.5s infinite alternate; }
+        @keyframes pulse-text { 0% { opacity: 0.5; filter: blur(1px); } 100% { opacity: 1; filter: blur(0px); text-shadow: 0 0 10px rgba(255, 170, 0, 0.8); } }
+        .zoom-out { transform: scale(1.5); opacity: 0; visibility: hidden; pointer-events: none; }
+        #main-content { padding: 80px 20px 60px; text-align: center; opacity: 0; transform: scale(0.95); transition: all 1.2s cubic-bezier(0.16, 1, 0.3, 1); width: 100%; box-sizing: border-box;}
+        .content-visible { opacity: 1 !important; transform: scale(1) !important; }
+        .app-view { display: none; max-width: 1200px; margin: 0 auto; text-align: center; }
+        .app-view.active { display: block; }
+        .site-header { display: flex; flex-direction: column; align-items: center; margin-bottom: 40px; }
+        .main-logo { width: 90px; height: 90px; margin-bottom: 15px; cursor: pointer; filter: drop-shadow(0 0 15px rgba(255, 170, 0, 0.5)); transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .main-logo:hover { transform: scale(1.15) rotate(5deg); filter: drop-shadow(0 0 25px rgba(255, 170, 0, 0.8)); }
+        h1 { font-family: 'Montserrat', sans-serif; font-weight: 900; text-transform: uppercase; font-size: clamp(2.5rem, 8vw, 4.5rem); background: linear-gradient(to right, #ffaa00, #ffdd00, #ffaa00); background-size: 200% auto; -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; color: transparent; margin-bottom: 10px; animation: shine 4s linear infinite; }
+        @keyframes shine { to { background-position: 200% center; } }
+        .subtitle { color: var(--text-sub); font-size: 1.1rem; margin-bottom: 30px; letter-spacing: 1px; transition: color 0.5s ease;}
+        .gallery-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 40px; max-width: 1200px; margin: 0 auto; }
+        .image-card { background: var(--glass); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); padding: 15px; border-radius: 20px; border: 1px solid var(--glass-border); box-shadow: 0 15px 35px var(--shadow); transition: all 0.4s ease; }
+        .image-card:hover { transform: translateY(-12px) scale(1.02); border-color: var(--primary); box-shadow: 0 20px 40px rgba(255, 170, 0, 0.15); }
+        .gallery-item { width: 100%; height: auto; border-radius: 12px; cursor: pointer; filter: brightness(0.8) contrast(1.1); transition: filter 0.4s ease; background-color: transparent; }
+        .image-card:hover .gallery-item { filter: brightness(1.1) contrast(1.1); }
+        .caption { margin-top: 20px; font-family: 'Montserrat', sans-serif; color: var(--text-main); font-weight: 700; letter-spacing: 1px; transition: color 0.5s ease;}
+        .project-card { cursor: pointer; width: 100%; max-width: 400px; margin: 0 auto; box-sizing: border-box; }
+        .project-card .caption { font-size: 1.2rem; color: var(--primary); text-transform: uppercase;}
+        .project-cover { width: 100%; height: 250px; background: linear-gradient(135deg, rgba(255, 170, 0, 0.1) 0%, rgba(0, 0, 0, 0.4) 100%); border-radius: 12px; display: flex; justify-content: center; align-items: center; border: 1px solid var(--glass-border); box-shadow: inset 0 0 20px rgba(0,0,0,0.5); transition: all 0.4s ease; margin-bottom: 15px; }
+        .project-icon { width: 80px; height: 80px; stroke: var(--primary); filter: drop-shadow(0 0 10px rgba(255, 170, 0, 0.4)); transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .project-card:hover .project-cover { background: linear-gradient(135deg, rgba(255, 170, 0, 0.2) 0%, rgba(0, 0, 0, 0.6) 100%); }
+        .project-card:hover .project-icon { transform: scale(1.2); filter: drop-shadow(0 0 20px rgba(255, 170, 0, 0.8)); }
+        .back-btn { background: var(--glass); border: 1px solid var(--glass-border); color: var(--text-main); padding: 10px 25px; border-radius: 30px; font-family: 'Montserrat', sans-serif; font-weight: bold; cursor: pointer; margin-bottom: 40px; transition: all 0.3s ease; font-size: 1rem; display: inline-block; }
+        .back-btn:hover { border-color: var(--primary); color: var(--primary); transform: translateX(-5px); }
+        .gallery-title { font-family: 'Montserrat', sans-serif; font-size: 2rem; color: var(--text-main); margin-bottom: 40px; text-transform: uppercase;}
+        .fade-in-up { animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .form-row { display: grid; grid-template-columns: 2fr 1fr 1fr auto; gap: 15px; margin-bottom: 15px; align-items: center; }
+        @media (max-width: 600px) { .form-row { grid-template-columns: 1fr; gap: 10px; border-bottom: 1px solid var(--glass-border); padding-bottom: 15px;} }
+        input, select { background: rgba(0,0,0,0.2); border: 1px solid var(--glass-border); color: var(--text-main); padding: 12px; border-radius: 8px; font-family: 'Open Sans', sans-serif; width: 100%; box-sizing: border-box; outline: none; transition: border-color 0.3s; }
+        body.light-mode input, body.light-mode select { background: rgba(255,255,255,0.8); }
+        input:focus, select:focus { border-color: var(--primary); }
+        select option { background: var(--bg-end); color: var(--text-main); }
+        .action-btn { background: var(--primary); border: none; color: #000; padding: 12px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: all 0.3s; width: 100%; text-transform: uppercase; }
+        .action-btn:hover { background: #ffcc00; transform: translateY(-2px); }
+        .danger-btn { background: var(--danger); color: white; padding: 12px; border-radius: 8px; cursor: pointer; border: none; font-weight: bold; }
+        .result-box { background: var(--glass); border: 1px solid var(--primary); padding: 20px; border-radius: 12px; text-align: center; margin-top: 20px; font-size: 1.5rem; font-weight: bold; color: var(--primary); }
+        .tab-container { display: flex; overflow-x: auto; gap: 10px; margin-bottom: 30px; padding-bottom: 10px; scroll-behavior: smooth; }
+        .tab-container::-webkit-scrollbar { display: none; } 
+        .tab-btn { background: var(--glass); border: 1px solid var(--glass-border); color: var(--text-main); padding: 12px 25px; border-radius: 30px; cursor: pointer; white-space: nowrap; transition: 0.3s; font-weight: bold; font-family: 'Montserrat', sans-serif; text-transform: uppercase; font-size: 0.85rem;}
+        .tab-btn.active, .tab-btn:hover { background: var(--primary); color: #000; border-color: var(--primary); box-shadow: 0 0 15px rgba(255, 170, 0, 0.4);}
+        .meal-card { display: flex; gap: 20px; background: var(--glass); padding: 25px; border-radius: 16px; border: 1px solid var(--glass-border); margin-bottom: 20px; transition: transform 0.3s, border-color 0.3s; align-items: flex-start; text-align: left; }
+        .meal-card:hover { transform: translateY(-5px); border-color: var(--primary); box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
+        .meal-icon-box { background: linear-gradient(135deg, rgba(255, 170, 0, 0.2) 0%, rgba(0, 0, 0, 0.2) 100%); border: 1px solid var(--primary); padding: 15px; border-radius: 50%; display: flex; justify-content: center; align-items: center; color: var(--primary); flex-shrink: 0; box-shadow: inset 0 0 10px rgba(255,170,0,0.1); }
+        .meal-icon-box svg { width: 28px; height: 28px; stroke-width: 2; }
+        .meal-content { flex-grow: 1; text-align: left; }
+        .meal-content h3 { margin: 0 0 10px 0; color: var(--text-main); font-size: 1.4rem; font-family: 'Montserrat', sans-serif; text-transform: uppercase; letter-spacing: 1px; }
+        .meal-content p { margin: 0; color: var(--text-sub); line-height: 1.8; font-size: 1.05rem; }
+        .special-badge { display: inline-block; background: linear-gradient(135deg, #ff4444 0%, #cc0000 100%); color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: bold; margin-top: 10px; letter-spacing: 1px; box-shadow: 0 4px 10px rgba(255, 68, 68, 0.3); text-transform: uppercase; font-family: 'Montserrat', sans-serif; }
+        details { background: var(--glass); border: 1px solid var(--glass-border); border-radius: 8px; margin-bottom: 10px; }
+        summary { padding: 15px; cursor: pointer; font-weight: bold; color: var(--primary); list-style: none; outline: none; }
+        summary::-webkit-details-marker { display: none; }
+        .details-content { padding: 15px; border-top: 1px solid var(--glass-border); color: var(--text-sub); text-align: left;}
+        .details-content ul { margin: 0; padding-left: 20px; }
+        .details-content li { margin-bottom: 8px; }
+        .stat-text { color: var(--text-sub); font-size: 0.9rem; margin-top: 5px; }
+        .good-attendance { color: var(--success); }
+        .bad-attendance { color: var(--danger); }
+        .footer { margin-top: 80px; padding: 40px 20px; border-top: 1px solid var(--glass-border); display: flex; flex-direction: column; align-items: center; gap: 20px; transition: border-color 0.5s ease;}
+        .view-counter-box { background: var(--glass); border: 1px solid var(--glass-border); padding: 15px 30px; border-radius: 50px; display: flex; align-items: center; gap: 15px; box-shadow: 0 0 20px var(--shadow); transition: all 0.5s ease; }
+        .view-counter-text { font-family: 'Montserrat', sans-serif; font-size: 0.9rem; color: var(--text-sub); font-weight: 700; letter-spacing: 1px; transition: color 0.5s ease;}
+        .developer-credit { color: var(--text-sub); font-size: 0.85rem; letter-spacing: 2px; transition: color 0.5s ease;}
+        .developer-credit strong { color: var(--primary); }
+        .lightbox { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.98); z-index: 3000; justify-content: center; align-items: center; backdrop-filter: blur(10px); }
+        .lightbox img { max-width: 85%; max-height: 85%; border-radius: 10px; border: 1px solid #333; }
+        .close-btn { position: absolute; top: 30px; right: 40px; color: #fff; font-size: 50px; cursor: pointer; transition: color 0.3s;}
+        .close-btn:hover { color: var(--primary); }
+        
+        .video-container {
+            position: relative;
+            padding-bottom: 56.25%; 
+            height: 0;
+            overflow: hidden;
+            border-radius: 12px;
+            margin-bottom: 15px;
+            border: 1px solid var(--glass-border);
+        }
+        .video-container iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: 0;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="splash-screen">
+        <div class="css-loader"></div>
+        <div class="splash-text">Loading Hub...</div>
+    </div>
+
+    <div class="btn-container" id="navButtons">
+        <button id="notifyBtn" class="icon-btn" onclick="requestNotificationPermission()" title="Enable Notifications">🔔</button>
+        <a href="https://www.instagram.com/lalit._.kishore?igsh=ZDVsOTIzaGxiY2I1" target="_blank" class="icon-btn" title="Instagram">
+            <svg viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.85s-.011 3.585-.069 4.85c-.148 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07s-3.584-.012-4.85-.07c-3.26-.148-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.85s.012-3.584.07-4.85c.148-3.204 1.671-4.771 4.919-4.919 1.266-.057 1.645-.069 4.85-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+        </a>
+        <a href="https://www.linkedin.com/in/balagalalitkishore?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=android_app" target="_blank" class="icon-btn" title="LinkedIn">
+            <svg viewBox="0 0 24 24"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg>
+        </a>
+        <a href="https://github.com/lalitkishore-1021" target="_blank" class="icon-btn" title="GitHub">
+            <svg viewBox="0 0 24 24"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+        </a>
+        <button id="themeToggle" class="icon-btn" onclick="toggleTheme()" title="Toggle Light/Dark Mode">☀️</button>
+    </div>
+
+    <div id="main-content">
+        <header class="site-header">
+            <svg id="logoInstallTrigger" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" class="main-logo" title="Click to Install App">
+                <defs>
+                    <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="#ffaa00" />
+                        <stop offset="100%" stop-color="#ffdd00" />
+                    </linearGradient>
+                </defs>
+                <path d="M 30 20 L 10 50 L 30 80" fill="none" stroke="url(#logoGradient)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M 70 20 L 90 50 L 70 80" fill="none" stroke="url(#logoGradient)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M 35 65 L 45 65 L 45 50 L 55 50 L 55 35 L 65 35" fill="none" stroke="#ffffff" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+
+            <h1>SRM Student Hub</h1>
+            <p class="subtitle">Your all-in-one portal for Step Class, CGPA, and more.</p>
+        </header>
+
+        <div id="projects-view" class="app-view active">
+            <div class="gallery-container">
+                
+                <div class="image-card project-card" onclick="openProject('oopsBanner')">
+                    <div class="project-cover">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="project-icon">
+                            <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                            <line x1="8" y1="21" x2="16" y2="21"></line>
+                            <line x1="12" y1="17" x2="12" y2="21"></line>
+                            <polyline points="10 8 8 10 10 12"></polyline>
+                            <polyline points="14 8 16 10 14 12"></polyline>
+                        </svg>
+                    </div>
+                    <div class="caption">STEP Class Gallery</div>
+                </div>
+
+                <div class="image-card project-card" onclick="openTodayMessMenu()">
+                    <div class="project-cover">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="project-icon">
+                            <path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path>
+                            <path d="M7 2v20"></path>
+                            <path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"></path>
+                        </svg>
+                    </div>
+                    <div class="caption">Mess Menu</div>
+                </div>
+
+                <div class="image-card project-card" onclick="switchView('attendance-view'); renderAttendance();">
+                    <div class="project-cover">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="project-icon">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                            <line x1="16" y1="2" x2="16" y2="6"></line>
+                            <line x1="8" y1="2" x2="8" y2="6"></line>
+                            <line x1="3" y1="10" x2="21" y2="10"></line>
+                            <path d="m9 16 2 2 4-4"></path>
+                        </svg>
+                    </div>
+                    <div class="caption">Attendance Tracker</div>
+                </div>
+
+                <div class="image-card project-card" onclick="switchView('helper-view')">
+                    <div class="project-cover">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="project-icon">
+                            <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"></path>
+                        </svg>
+                    </div>
+                    <div class="caption">Study Helper</div>
+                </div>
+
+                <div class="image-card project-card" onclick="switchView('marks-view')">
+                    <div class="project-cover">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="project-icon">
+                            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                        </svg>
+                    </div>
+                    <div class="caption">Marks Tracker</div>
+                </div>
+
+                <div class="image-card project-card" onclick="switchView('timetable-view')">
+                    <div class="project-cover">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="project-icon">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <polyline points="12 6 12 12 16 14"></polyline>
+                        </svg>
+                    </div>
+                    <div class="caption">Time Table</div>
+                </div>
+
+                <div class="image-card project-card" onclick="switchView('cgpa-view')">
+                    <div class="project-cover">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="project-icon">
+                            <rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect>
+                            <line x1="8" y1="6" x2="16" y2="6"></line>
+                            <line x1="16" y1="14" x2="16" y2="14.01"></line>
+                            <line x1="12" y1="14" x2="12" y2="14.01"></line>
+                            <line x1="8" y1="14" x2="8" y2="14.01"></line>
+                            <line x1="16" y1="18" x2="16" y2="18.01"></line>
+                            <line x1="12" y1="18" x2="12" y2="18.01"></line>
+                            <line x1="8" y1="18" x2="8" y2="18.01"></line>
+                        </svg>
+                    </div>
+                    <div class="caption">CGPA Calculator</div>
+                </div>
+
+            </div>
+        </div>
+
+        <div id="marks-view" class="app-view">
+            <div class="view-header">
+                <button class="back-btn" onclick="switchView('projects-view')">&#8592; Back to Home</button>
+                <h2 class="gallery-title">Marks Tracker</h2>
+                <p class="subtitle" style="margin-bottom: 20px;">Sync from the Attendance Tracker to load your marks automatically.</p>
+            </div>
+            <div id="marks-no-data" class="image-card" style="max-width: 600px; margin: 0 auto; padding: 40px; cursor: default; transform: none;">
+                <div class="meal-icon-box" style="width: 60px; height: 60px; margin: 0 auto 20px auto; border-radius: 50%;">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 35px; height: 35px;"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+                </div>
+                <h3 style="color: var(--primary); margin-bottom: 15px; font-family: 'Montserrat', sans-serif; text-transform: uppercase;">No Marks Data Yet</h3>
+                <p style="color: var(--text-sub); line-height: 1.6; font-size: 1.1rem;">Use the <strong style="color:var(--primary);">Attendance Tracker → Live Portal Sync</strong> to fetch your marks automatically from the academia portal.</p>
+            </div>
+            <div id="marks-list" style="max-width: 900px; margin: 0 auto; display: none;"></div>
+        </div>
+
+        <div id="timetable-view" class="app-view">
+            <div class="view-header">
+                <button class="back-btn" onclick="switchView('projects-view')">&#8592; Back to Home</button>
+                <h2 class="gallery-title">Time Table</h2>
+                <p class="subtitle" style="margin-bottom: 20px;">Sync from the Attendance Tracker to load your schedule automatically.</p>
+            </div>
+            <div id="timetable-no-data" class="image-card" style="max-width: 600px; margin: 0 auto; padding: 40px; cursor: default; transform: none;">
+                <div class="meal-icon-box" style="width: 60px; height: 60px; margin: 0 auto 20px auto; border-radius: 50%;">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 35px; height: 35px;"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                </div>
+                <h3 style="color: var(--primary); margin-bottom: 15px; font-family: 'Montserrat', sans-serif; text-transform: uppercase;">No Timetable Data Yet</h3>
+                <p style="color: var(--text-sub); line-height: 1.6; font-size: 1.1rem;">Use the <strong style="color:var(--primary);">Attendance Tracker → Live Portal Sync</strong> to fetch your timetable automatically from the academia portal.</p>
+            </div>
+            <div id="timetable-grid" style="max-width: 1100px; margin: 0 auto; display: none;"></div>
+        </div>
+
+        <div id="gallery-view" class="app-view">
+            <div class="view-header">
+                <button class="back-btn" onclick="switchView('projects-view')">&#8592; Back to Home</button>
+                <h2 class="gallery-title" id="dynamic-project-title">Project Name</h2>
+            </div>
+            <div class="gallery-container" id="dynamic-gallery"></div>
+        </div>
+
+        <div id="cgpa-view" class="app-view">
+            <div class="view-header">
+                <button class="back-btn" onclick="switchView('projects-view')">&#8592; Back to Home</button>
+                <h2 class="gallery-title">CGPA Calculator</h2>
+            </div>
+            <div class="image-card" style="max-width: 800px; margin: 0 auto; cursor: default; transform: none;">
+                <div id="cgpa-rows">
+                    <div class="form-row">
+                        <input type="text" placeholder="Subject Name (Optional)">
+                        <select class="cgpa-grade">
+                            <option value="">Grade</option>
+                            <option value="10">O</option><option value="9">A+</option><option value="8">A</option>
+                            <option value="7">B+</option><option value="6">B</option><option value="5">C</option>
+                        </select>
+                        <input type="number" class="cgpa-credit" placeholder="Credits" min="1" max="10">
+                        <button class="danger-btn" onclick="this.parentElement.remove()">X</button>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 15px; margin-top: 20px;">
+                    <button class="action-btn" style="background: var(--glass); color: var(--primary);" onclick="addCgpaRow()">+ Add Subject</button>
+                    <button class="action-btn" onclick="calculateCGPA()">Calculate CGPA</button>
+                </div>
+                <div id="cgpa-result" class="result-box" style="display: none;"></div>
+            </div>
+        </div>
+
+        <div id="mess-view" class="app-view">
+            <div class="view-header">
+                <button class="back-btn" onclick="switchView('projects-view')">&#8592; Back to Home</button>
+                <h2 class="gallery-title">Mess Menu</h2>
+                <p class="subtitle" style="margin-bottom: 20px;">SRMIST Hostel Mess Menu</p>
+            </div>
+            <div class="tab-container" id="mess-tabs"></div>
+            <div id="mess-content" style="max-width: 800px; margin: 0 auto;"></div>
+        </div>
+
+        <div id="helper-view" class="app-view">
+            <div class="view-header">
+                <button class="back-btn" onclick="switchView('projects-view')">&#8592; Back to Home</button>
+                <h2 class="gallery-title">Study Helper</h2>
+            </div>
+            <div class="gallery-container" id="helper-semesters"></div>
+            <div id="helper-subjects" style="display: none; max-width: 800px; margin: 0 auto;">
+                <button class="back-btn" onclick="document.getElementById('helper-subjects').style.display='none'; document.getElementById('helper-semesters').style.display='grid';">&#8592; Back to Semesters</button>
+                <h3 style="color: var(--primary); text-align: center; margin-bottom: 20px;" id="helper-sem-title"></h3>
+                <div id="helper-subject-list"></div>
+            </div>
+        </div>
+
+        <div id="attendance-view" class="app-view">
+            <div class="view-header">
+                <button class="back-btn" onclick="switchView('projects-view')">&#8592; Back to Home</button>
+                <h2 class="gallery-title">Mega Sync Tracker</h2>
+                <p class="subtitle">Target: 75% | Data saves automatically to this device</p>
+            </div>
+            
+            <div class="image-card" style="max-width: 800px; margin: 0 auto 20px auto; cursor: default; transform: none; border-color: var(--primary); box-shadow: 0 0 20px rgba(255, 170, 0, 0.2);">
+                <h3 style="color: var(--primary); margin-top:0; font-family: 'Montserrat', sans-serif; text-transform: uppercase; text-align: left;">Live Portal Sync</h3>
+                
+                <div id="login-section">
+                    <p style="color: var(--text-sub); text-align: left; margin-bottom: 15px; font-size: 0.9rem;">Auto-fetch your attendance directly from Academia.</p>
+                    <div class="form-row" style="grid-template-columns: 1fr 1fr auto;">
+                        <input type="text" id="srm-reg" placeholder="NetID or Email">
+                        <input type="password" id="srm-pwd" placeholder="Portal Password">
+                        <button class="action-btn" onclick="startLiveSync()">Sync</button>
+                    </div>
+                </div>
+
+                <p id="sync-status" style="color: var(--text-sub); font-size: 0.95rem; margin-top: 15px; font-weight: bold;"></p>
+            </div>
+
+            <div class="image-card" style="max-width: 800px; margin: 0 auto; cursor: default; transform: none;">
+                <h4 style="text-align: left; color: var(--text-sub); margin-bottom: 15px;">Or add manually:</h4>
+                <div class="form-row">
+                    <input type="text" id="att-sub-name" placeholder="Subject Name">
+                    <input type="number" id="att-attended" placeholder="Attended" min="0">
+                    <input type="number" id="att-total" placeholder="Total" min="1">
+                    <button class="action-btn" onclick="addAttendance()" style="background: var(--glass); color: var(--primary);">Add</button>
+                </div>
+                
+                <div id="overall-attendance" class="result-box" style="margin-bottom: 20px;">Overall: 0%</div>
+                
+                <div id="attendance-list"></div>
+            </div>
+        </div>
+
+        <footer class="footer">
+            <div class="view-counter-box">
+                <span class="view-counter-text">SQUAD PAGE VIEWS:</span>
+                <img src="https://api.visitorbadge.io/api/visitors?path=step-code-squad.lalit.gallery&labelColor=%23000000&countColor=%23ffaa00&style=plastic" alt="View Counter">
+            </div>
+            
+            <div class="developer-credit">
+                DESIGNED & CODED BY &bull; <strong>LALIT KISHORE</strong>
+            </div>
+        </footer>
+    </div>
+
+    <div id="lightbox" class="lightbox" onclick="if(event.target === this) closeLightbox()">
+        <span class="close-btn" onclick="closeLightbox()">&times;</span>
+        <img id="lightbox-img" src="">
+    </div>
+
+    <script>
+        // ==========================================
+        // CONFIGURATION: SET YOUR BACKEND URL HERE
+        // ==========================================
+        const BACKEND_URL = 'https://srm-student-hub-1.onrender.com';
+
+        // ==========================================
+        // PWA SERVICE WORKER
+        // ==========================================
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                .then(reg => {
+                    console.log('Service Worker Registered!', reg);
+                })
+                .catch(err => console.log('Service Worker Failed:', err));
+            });
+        }
+
+        let deferredPrompt;
+        // FIX: installAppBtn does not exist in the HTML — use null-safe references throughout
+        const installAppBtn = document.getElementById('installAppBtn');
+        const logoInstallTrigger = document.getElementById('logoInstallTrigger');
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            if (installAppBtn) installAppBtn.style.display = 'flex';
+        });
+
+        async function triggerAppInstall() {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                if (outcome === 'accepted') {
+                    console.log('User accepted the A2HS prompt');
+                }
+                deferredPrompt = null;
+                if (installAppBtn) installAppBtn.style.display = 'none';
+            } else {
+                alert("To install this app on iOS, tap the 'Share' icon at the bottom of Safari and select 'Add to Home Screen'.");
+            }
+        }
+
+        if (installAppBtn) installAppBtn.addEventListener('click', triggerAppInstall);
+        if (logoInstallTrigger) logoInstallTrigger.addEventListener('click', triggerAppInstall);
+
+        // ==========================================
+        // 1. ROUTING LOGIC & MOBILE BACK BUTTON FIX
+        // ==========================================
+        history.replaceState({ viewId: 'projects-view' }, '', '#projects-view');
+
+        function switchView(viewId, pushToHistory = true) {
+            document.querySelectorAll('.app-view').forEach(view => {
+                view.classList.remove('active');
+            });
+            document.getElementById(viewId).classList.add('active');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+
+            if (pushToHistory) {
+                history.pushState({ viewId: viewId }, '', `#${viewId}`);
+            }
+        }
+
+        window.addEventListener('popstate', (e) => {
+            if (e.state && e.state.viewId) {
+                switchView(e.state.viewId, false);
+            } else {
+                switchView('projects-view', false);
+            }
+        });
+
+        // ==========================================
+        // 2. PORTFOLIO DATA
+        // ==========================================
+        const projectsDatabase = {
+            'oopsBanner': {
+                title: 'OOPS Banner App',
+                subProjects: [
+                    { id: 'ucsFolder', title: "UC's" },
+                    { id: 'week1Problem', title: 'Week 1 & 2 Problems' },
+                    { id: 'week34Problem', title: 'Week 3 & 4 Problems' },
+                    { id: 'helloAppFolder', title: 'HelloApp UC\'s' }
+                ]
+            },
+            'ucsFolder': {
+                title: "UC's",
+                parent: 'oopsBanner',
+                images: [
+                    { src: 'images/oops-banner/uc1.png', label: '1' },
+                    { src: 'images/oops-banner/uc2.png', label: '2' },
+                    { src: 'images/oops-banner/uc3.png', label: '3' },
+                    { src: 'images/oops-banner/uc4.png', label: '4' },
+                    { src: 'images/oops-banner/uc5.png', label: '5' },
+                    { src: 'images/oops-banner/uc6.png', label: '6' },
+                    { src: 'images/oops-banner/uc7.png', label: '7' },
+                    { src: 'images/oops-banner/uc8.png', label: '8' },
+                    { src: 'images/oops-banner/uc9.png', label: '9' },
+                    { src: 'images/oops-banner/uc10.png', label: '10' },
+                    { src: 'images/oops-banner/end.png', label: 'end' }
+                ]
+            },
+            'week1Problem': { 
+                title: 'Week 1 and 2 Problems',
+                parent: 'oopsBanner', 
+                images: [
+                    { src: 'images/oops-banner/Basic-step1.png', label: 'Basic-Step' },
+                    { src: 'images/oops-banner/Basic-step2.png', label: 'Basic-Step' },
+                    { src: 'images/oops-banner/level1.png', label: 'Part 1' },
+                    { src: 'images/oops-banner/level12.png', label: 'Part 2' },
+                    { src: 'images/oops-banner/level13.png', label: 'Part 3' },
+                    { src: 'images/oops-banner/bash.png', label: 'Bash' },
+                    { src: 'images/oops-banner/level21.png', label: 'Part 4' },
+                    { src: 'images/oops-banner/level22.png', label: 'Part 5' },
+                    { src: 'images/oops-banner/level3.png', label: 'Part 6' }
+                ]
+            },
+            'week34Problem': { 
+                title: 'Week 3 and 4 Problems',
+                parent: 'oopsBanner', 
+                images: [
+                    { src: 'images/oops-banner/w31.png', label: 'Step1' },
+                    { src: 'images/oops-banner/w32.png', label: 'Step2' },
+                    { src: 'images/oops-banner/w33.png', label: 'Step3' },
+                    { src: 'images/oops-banner/w34.png', label: 'Step4' },
+                    { src: 'images/oops-banner/w35.png', label: 'Step5' },
+                    { src: 'images/oops-banner/w36.png', label: 'Step6' },
+                    { src: 'images/oops-banner/end.png', label: 'end' }
+                ]
+            },
+            'helloAppFolder': { 
+                title: 'HelloApp UC\'s',
+                parent: 'oopsBanner',
+                video: 'https://www.youtube.com/embed/IxZHnxaVpp4', 
+                images: [
+                    { src: 'images/helloapp/uc1.png', label: 'UC 1' },
+                    { src: 'images/helloapp/uc2.png', label: 'UC 2' },
+                    { src: 'images/helloapp/uc3.png', label: 'UC 3' }
+                ]
+            }
+        };
+
+        function openProject(projectId) {
+            switchView('gallery-view');
+            const projectData = projectsDatabase[projectId];
+            document.getElementById('dynamic-project-title').innerText = projectData.title;
+            
+            const galleryElement = document.getElementById('dynamic-gallery');
+            galleryElement.innerHTML = ''; 
+            
+            if (projectData.subProjects) {
+                projectData.subProjects.forEach(sub => {
+                    const folderHTML = `
+                        <div class="image-card project-card fade-in-up" onclick="openProject('${sub.id}')">
+                            <div class="project-cover">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="project-icon">
+                                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                                </svg>
+                            </div>
+                            <div class="caption">${sub.title}</div>
+                        </div>
+                    `;
+                    galleryElement.innerHTML += folderHTML;
+                });
+            }
+
+            if (projectData.video) {
+                const videoHTML = `
+                    <div class="image-card fade-in-up" style="grid-column: 1 / -1; max-width: 800px; margin: 0 auto; width: 100%;">
+                        <div class="video-container">
+                            <iframe src="${projectData.video}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                        </div>
+                        <div class="caption" style="color: var(--primary);">Video Tutorial</div>
+                    </div>
+                `;
+                galleryElement.innerHTML += videoHTML;
+            }
+
+            if (projectData.images) {
+                projectData.images.forEach(imgData => {
+                    const cardHTML = `
+                        <div class="image-card fade-in-up">
+                            <img src="${imgData.src}" alt="${imgData.label}" class="gallery-item" onclick="openLightbox(this.src)">
+                            <div class="caption">${imgData.label}</div>
+                        </div>
+                    `;
+                    galleryElement.innerHTML += cardHTML;
+                });
+            }
+
+            const backBtn = document.querySelector('#gallery-view .back-btn');
+            if (projectData.parent) {
+                backBtn.onclick = () => openProject(projectData.parent);
+                backBtn.innerHTML = '&#8592; Back to ' + projectsDatabase[projectData.parent].title;
+            } else {
+                backBtn.onclick = () => switchView('projects-view');
+                backBtn.innerHTML = '&#8592; Back to Home';
+            }
+        }
+
+        // ==========================================
+        // 3. CGPA CALCULATOR LOGIC
+        // ==========================================
+        function addCgpaRow() {
+            const rowHTML = `
+                <div class="form-row fade-in-up">
+                    <input type="text" placeholder="Subject Name (Optional)">
+                    <select class="cgpa-grade">
+                        <option value="">Grade</option>
+                        <option value="10">O</option><option value="9">A+</option><option value="8">A</option>
+                        <option value="7">B+</option><option value="6">B</option><option value="5">C</option>
+                    </select>
+                    <input type="number" class="cgpa-credit" placeholder="Credits" min="1" max="10">
+                    <button class="danger-btn" onclick="this.parentElement.remove()">X</button>
+                </div>
+            `;
+            document.getElementById('cgpa-rows').insertAdjacentHTML('beforeend', rowHTML);
+        }
+
+        function calculateCGPA() {
+            const grades = document.querySelectorAll('.cgpa-grade');
+            const credits = document.querySelectorAll('.cgpa-credit');
+            let totalPoints = 0;
+            let totalCredits = 0;
+
+            for(let i = 0; i < grades.length; i++) {
+                let gradeVal = parseFloat(grades[i].value);
+                let creditVal = parseFloat(credits[i].value);
+                
+                if(!isNaN(gradeVal) && !isNaN(creditVal)) {
+                    totalPoints += (gradeVal * creditVal);
+                    totalCredits += creditVal;
+                }
+            }
+
+            const resultBox = document.getElementById('cgpa-result');
+            resultBox.style.display = 'block';
+            if (totalCredits === 0) {
+                resultBox.innerText = "Please enter valid grades and credits!";
+            } else {
+                const cgpa = (totalPoints / totalCredits).toFixed(2);
+                resultBox.innerText = `Your CGPA: ${cgpa}`;
+            }
+        }
+
+        // ==========================================
+        // 4. BEAUTIFUL MESS MENU LOGIC
+        // ==========================================
+        const mealIcons = {
+            'Breakfast': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M17 8h1a4 4 0 1 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z"/><line x1="6" y1="2" x2="6" y2="4"/><line x1="10" y1="2" x2="10" y2="4"/><line x1="14" y1="2" x2="14" y2="4"/></svg>',
+            'Lunch': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>',
+            'Snacks': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M2 21c1.2-1.5 3-2 4-2 1.9 0 2.8.5 4 2 1.2-1.5 3-2 4-2 1.9 0 2.8.5 4 2"/><path d="M3 7a3 3 0 0 1 3-3h12a3 3 0 0 1 3 3v4a7 7 0 0 1-7 7h-4a7 7 0 0 1-7-7z"/></svg>',
+            'Dinner': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>'
+        };
+
+        const messMenuData = {
+            'Monday': { 
+                Breakfast: 'Bread, Butter, Jam, Ghee Pongal, Sambar, Coconut Chutney, Vadai, Tea/Coffee/Milk / Boiled Egg (1 Piece), Poori, Potato Masala, Herbal Kanji', 
+                Lunch: 'Payasam, Ghee Chappathi, Green Peas Masala, Variety Rice, Steamed Rice, Sambar, Dal Lasooni, Tomato Rasam, Gobi-65 OR Bitter Guard-65, Raw Banana Chops, Millet Kanji, Special Fryums, Butter Milk, Pickle', 
+                Snacks: 'Pav Bajji, Tea/Coffee', 
+                Dinner: 'Malabar Paratha, Mix Veg Kuruma, Millet Dosa, Idly Podi, Oil, Special Chutney, Steamed Rice, Chilli Sambar, Jeera Dal, Rasam, Aloo Capsicum, Pickle, Fryums, Veg-Salad, Banana, Millet Kanji, *** Dry Fish Gravy ***' 
+            },
+            'Tuesday': { 
+                Breakfast: 'Bread, Butter, Jam, Idly, Veg Kosthu, Spl Chutney, Poha, Mint Chutney, Tea/Coffee/Milk, Herbal Kanji, Masala Omlet (1 Piece)', 
+                Lunch: 'Millet Sweet, Luchi, Kashmiri Dum Aloo, Jeera Pulao, Steamed Rice, Masala Sambar, Bagara Dal, Mix Veg Usili, Pepper Rasam, Lauki Subji, Pickle, Millet Kanji, Butter Milk, Fryums', 
+                Snacks: 'Boiled Peanut / Black Channa Sundal, Tea/Coffee', 
+                Dinner: 'Chappathi, Aloo Chenna Khurma, Fried Rice / Noodles / Pastha, Manchurian Gravy / Crispy Vegetable, Steamed Rice, Rasam, Dal Fry, Millet Kanji, Pickle, Fryums, Veg-Salad, Milk, Spl Fruits, *** Chicken Gravy ***' 
+            },
+            'Wednesday': { 
+                Breakfast: 'Bread, Butter, Jam, Millet Dosa, Idly Podi, Oil, Arachivitta Sambar, Chutney, Butter Chappathi, Aloo Rajma Masala, Herbal Kanji, Tea/Coffee/Milk', 
+                Lunch: 'Chappathi, Soya Kasa, Suitani Pulao, Steamed Rice, Mysore Dal Fry, Kadi Pakoda, Garlic Rasam, Aloo Palak (or) Aloo Paruval, Yam Mochai Roast, Pickle, Fryums, Millet Kanji, Butter Milk', 
+                Snacks: 'Veg Puff / Sweet Bun, Tea/Coffee', 
+                Dinner: 'Chappathi, Steamed Rice, Dal Tadka, Chicken Masala / Chilli Chicken (Non-Veg) / Paneer Butter Masala, Rasam, Pickle, Millet Kanji, Fryums, Veg Salad, Milk, Banana, *** Chicken Gravy ***' 
+            },
+            'Thursday': { 
+                Breakfast: 'Bread, Butter, Jam, Chappathi, Dal Masala, Veg Semiya Kichadi, Coconut Chutney, Boiled Egg (1 Piece), Banana, Herbal Kanji, Tea/Coffee/Milk', 
+                Lunch: 'Poori, Aloo Mutar Ghughni, Corn Pulao, Punjabi Dal Tadka, Kadai Vegetable, Steamed Rice, Drumstick Brinjal Sambar, Pineapple Rasam, Beetroot Poriyal, Pickle, Fryums, Millet Kanji, Butter Milk', 
+                Snacks: 'Pani Poori (or) Mixture, Tea/Coffee', 
+                Dinner: 'Ghee Pulao / Kaji Pulao (Basmati Rice), Chappathi, Rajma Paneer, Steamed Rice, Chole Dal Fry, Rasam, Aloo Peanut Masala, Fryums, Pickle, Veg Salad, Milk, Ice Cream, *** Chicken Gravy ***' 
+            },
+            'Friday': { 
+                Breakfast: 'Bread, Butter, Jam, Onion Podi Uthappam, Idly Podi, Oil, Chilli Sambar, Kara Chutney, Ghee Chappathi, Muttar Masala, Tea/Coffee/Milk, Boiled Egg (1 Piece), Herbal Kanji', 
+                Lunch: 'Spl Dry Jamun / Bread Halwa, Veg Briyani, Mix Raitha, Bisebelabath, Curd Rice, Steamed Rice, Tomato Rasam, Aloo Gobi Adaraki, Moongdal Tadka, Millet Kanji, Pickle, Potato Chips', 
+                Snacks: 'Bonda / Sambar Vada, Chutney, Tea/Coffee', 
+                Dinner: 'Chole Bhatura, Steamed Rice, Tomato Dal, Veg Upma, Coconut Chutney, Rasam, Cabbage Thoran, Pickle, Fryums, Veg Soup, Banana, Veg Salad, Milk, *** Mutton Gravy ***' 
+            },
+            'Saturday': { 
+                Breakfast: 'Bread, Butter, Jam, Chappathi, Aloo Meal Maker Kasa, Idiyappam (Lemon or Masala or Coconut Milk), Coconut Chutney, Tea/Coffee/Milk, Boiled Egg (1 Piece), Herbal Kanji', 
+                Lunch: 'Butter Roti, Aloo Double Beans Masala, Veg Pulao, Steamed Rice, Dal Makhni, Bhindi Do Pyasa, Parupu Urundai Kuzhambu, Kootu, Jeera Rasam, Pickle, Special Fryums, Millet Kanji, Butter Milk', 
+                Snacks: 'Cake (or) Browni, Tea/Coffee', 
+                Dinner: 'Sweet, Panjabi Paratha, Rajma Makan Wala, French Fry, Steamed Rice, Mysore Dal Fry, Veg Idly, Idly Podi, Oil, Chutney, Tiffen Sambar, Rasam, Pickle, Fryums, Veg Salad, Milk, Millet Kanji, Special Fruit, *** Fish Gravy ***' 
+            },
+            'Sunday': { 
+                Breakfast: 'Bread, Butter, Jam, Chole Poori, Veg Upma, Coconut Chutney, Tea/Coffee/Milk, Herbal Kanji', 
+                Lunch: 'Chappathi, Chicken (Pepper / Kadai), Paneer Butter Masala (or) Kadai Paneer, Dal Dhadka, Mint Pulao, Steamed Rice, Garlic Rasam, Poriyal, Pickle, Fryums, Butter Milk, Millet Kanji, *** Chicken Gravy ***', 
+                Snacks: 'Corn / Bajji, Chutney (OR) Juice, Tea/Coffee', 
+                Dinner: 'Variety Stuffing Paratha, Curd, Steamed Rice, Hara Moong Dal Tadka, Kathamba Sambar, Poriyal, Rasam, Pickle, Fryums, Veg Salad, Milk, Ice Cream, Millet Kanji, *** Chicken Gravy ***' 
+            }
+        };
+
+        function openTodayMessMenu() {
+            const daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+            const todayIndex = new Date().getDay();
+            const currentDay = daysOfWeek[todayIndex];
+            
+            switchView('mess-view');
+            renderMessMenu(currentDay);
+        }
+
+        function renderMessMenu(selectedDay) {
+            const days = Object.keys(messMenuData);
+            const tabContainer = document.getElementById('mess-tabs');
+            const contentContainer = document.getElementById('mess-content');
+            
+            tabContainer.innerHTML = '';
+            contentContainer.innerHTML = '';
+
+            days.forEach(day => {
+                const btn = document.createElement('button');
+                btn.className = `tab-btn ${day === selectedDay ? 'active' : ''}`;
+                btn.innerText = day;
+                btn.onclick = () => renderMessMenu(day);
+                tabContainer.appendChild(btn);
+
+                if (day === selectedDay) {
+                    setTimeout(() => {
+                        btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+                    }, 150); 
+                }
+            });
+
+            const meals = messMenuData[selectedDay];
+            Object.entries(meals).forEach(([time, items]) => {
+                let formattedText = items.split(', ').join(' <span style="color: var(--primary); font-weight: bold; padding: 0 5px;">&bull;</span> ');
+                formattedText = formattedText.replace(/\*\*\*(.*?)\*\*\*/g, '<br><span class="special-badge">🔥 $1 🔥</span>');
+
+                contentContainer.innerHTML += `
+                    <div class="meal-card fade-in-up" style="display: flex; gap: 20px; align-items: flex-start;">
+                        <div class="meal-icon-box">
+                            ${mealIcons[time]}
+                        </div>
+                        <div class="meal-content">
+                            <h3>${time}</h3>
+                            <p>${formattedText}</p>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        // ==========================================
+        // 5. HELPER (RESOURCES) LOGIC
+        // ==========================================
+        const dummySubject = { name: 'Content Adding Soon...', topics: ['Check back later for pyqs.'], pyqLink: '#', ctLink: '#' };
+        const helperData = { 'Semester 1': [dummySubject], 'Semester 2': [dummySubject], 'Semester 3': [dummySubject], 'Semester 4': [dummySubject] };
+
+        function initHelper() {
+            const semContainer = document.getElementById('helper-semesters');
+            for(let i=1; i<=8; i++) {
+                const semName = `Semester ${i}`;
+                semContainer.innerHTML += `
+                    <div class="image-card project-card fade-in-up" onclick="showHelperSubjects('${semName}')">
+                        <div class="project-cover" style="height: 150px;">
+                            <h2 style="color: var(--primary); margin:0;">SEM ${i}</h2>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        function showHelperSubjects(semName) {
+            document.getElementById('helper-semesters').style.display = 'none';
+            document.getElementById('helper-subjects').style.display = 'block';
+            document.getElementById('helper-sem-title').innerText = semName;
+            
+            const listContainer = document.getElementById('helper-subject-list');
+            listContainer.innerHTML = '';
+
+            const subjects = helperData[semName] || [];
+            subjects.forEach(sub => {
+                let topicsHTML = sub.topics.map(t => `<li>${t}</li>`).join('');
+                listContainer.innerHTML += `
+                    <details class="fade-in-up">
+                        <summary>${sub.name} &#9662;</summary>
+                        <div class="details-content">
+                            <strong>Important Topics:</strong>
+                            <ul style="margin-top: 10px; margin-bottom: 15px;">${topicsHTML}</ul>
+                            <a href="${sub.ctLink}" style="color:var(--primary); text-decoration: none; font-weight: bold;">[ CT Papers ]</a> &nbsp;|&nbsp; 
+                            <a href="${sub.pyqLink}" style="color:var(--primary); text-decoration: none; font-weight: bold;">[ PYQs ]</a>
+                        </div>
+                    </details>
+                `;
+            });
+        }
+        initHelper(); 
+
+        // ==========================================
+        // 6. NODE.JS MEGA-SYNC LOGIC
+        // ==========================================
+        let attendanceData = JSON.parse(localStorage.getItem('squadAttendance')) || [];
+
+        function saveAttendance() {
+            localStorage.setItem('squadAttendance', JSON.stringify(attendanceData));
+        }
+
+        async function startLiveSync() {
+            const regNo = document.getElementById('srm-reg').value.trim();
+            const pwd = document.getElementById('srm-pwd').value;
+            const statusText = document.getElementById('sync-status');
+
+            if (!regNo || !pwd) {
+                alert("Please enter your NetID/Email and Password.");
+                return;
+            }
+
+            statusText.innerText = "🔄 Opening academia portal in background... This may take up to 30 seconds.";
+            statusText.style.color = "var(--primary)";
+
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/mega-sync`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    // FIX: Send correct field names that server expects
+                    body: JSON.stringify({ email: regNo, password: pwd })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Server responded with status ${response.status}`);
+                }
+
+                const result = await response.json();
+
+                if (result.success) {
+                    const data = result.data || {};
+                    const att = Array.isArray(data.attendance) ? data.attendance : [];
+                    const marks = Array.isArray(data.marks) ? data.marks : [];
+                    const timetable = Array.isArray(data.timetable) ? data.timetable : [];
+
+                    // Save all three to localStorage
+                    localStorage.setItem('squadMarks', JSON.stringify(marks));
+                    localStorage.setItem('squadTimetable', JSON.stringify(timetable));
+
+                    // Process and render attendance
+                    processScrapedData(att);
+
+                    // Render marks and timetable immediately
+                    renderMarks(marks);
+                    renderTimetable(timetable);
+
+                    let summary = `✅ Sync complete! Got: Attendance(${att.length})`;
+                    if (marks.length) summary += `, Marks(${marks.length})`;
+                    if (timetable.length) summary += `, Timetable(${timetable.length})`;
+                    if (!marks.length) summary += ` | Marks: not available from portal`;
+                    if (!timetable.length) summary += ` | Timetable: not available from portal`;
+
+                    statusText.innerText = summary;
+                    statusText.style.color = "var(--success)";
+                } else {
+                    statusText.innerText = "❌ Error: " + (result.error || "Unknown error from server.");
+                    statusText.style.color = "var(--danger)";
+                }
+            } catch (err) {
+                console.error("Sync error:", err);
+                statusText.innerText = "❌ Could not connect to backend. Make sure your Render server is running.";
+                statusText.style.color = "var(--danger)";
+            } finally {
+                // Always clear password from field for security
+                document.getElementById('srm-pwd').value = '';
+            }
+        }
+
+        function processScrapedData(dataArray) {
+            attendanceData = [];
+
+            if (!Array.isArray(dataArray) || dataArray.length === 0) return;
+
+            dataArray.forEach(item => {
+                // FIX: Handle many possible field names the Vercel app may use
+                const name = item.courseTitle || item.name || item.subject || item.courseName || item.title || "Unknown Subject";
+                const attended = parseInt(item.attended || item.present || item.attendedClasses || 0);
+                const total = parseInt(item.total || item.conducted || item.totalClasses || item.totalConducted || 0);
+
+                if (name && !isNaN(attended) && !isNaN(total) && total > 0) {
+                    attendanceData.push({
+                        id: Date.now() + Math.random(),
+                        name: name,
+                        attended: attended,
+                        total: total
+                    });
+                }
+            });
+
+            saveAttendance();
+            renderAttendance();
+        }
+
+        function renderMarks(marksArray) {
+            const noData = document.getElementById('marks-no-data');
+            const list = document.getElementById('marks-list');
+
+            if (!Array.isArray(marksArray) || marksArray.length === 0) {
+                if (noData) noData.style.display = 'block';
+                if (list) list.style.display = 'none';
+                return;
+            }
+
+            if (noData) noData.style.display = 'none';
+            list.style.display = 'block';
+            list.innerHTML = '';
+
+            marksArray.forEach(item => {
+                const course = item.courseTitle || item.name || item.subject || item.courseName || "Subject";
+                // Try to extract any numeric fields as marks
+                const fields = Object.entries(item).filter(([k, v]) => {
+                    const key = k.toLowerCase();
+                    return (key.includes('mark') || key.includes('score') || key.includes('grade') ||
+                            key.includes('internal') || key.includes('total') || key.includes('max') ||
+                            key.includes('obtain') || key.includes('ct') || key.includes('exam'))
+                           && !['coursecode','courseid','id','regNo'].includes(k);
+                });
+
+                let detailsHTML = fields.map(([k, v]) => {
+                    const label = k.replace(/([A-Z])/g, ' $1').replace(/_/g, ' ').trim();
+                    const displayVal = (v !== null && v !== undefined && v !== '') ? v : '—';
+                    return `<div style="display:flex; justify-content:space-between; padding: 8px 0; border-bottom: 1px solid var(--glass-border);">
+                                <span style="color:var(--text-sub); text-transform: capitalize;">${label}</span>
+                                <span style="color:var(--primary); font-weight: bold;">${displayVal}</span>
+                            </div>`;
+                }).join('');
+
+                if (!detailsHTML) {
+                    detailsHTML = `<p style="color:var(--text-sub);">Mark details not available for this subject.</p>`;
+                }
+
+                list.innerHTML += `
+                    <div class="meal-card fade-in-up" style="flex-direction: column; align-items: flex-start; margin-bottom: 20px;">
+                        <h3 style="margin: 0 0 15px 0; color: var(--primary); font-family: 'Montserrat', sans-serif; text-transform: uppercase; font-size: 1rem;">
+                            ${course}
+                        </h3>
+                        ${detailsHTML}
+                    </div>
+                `;
+            });
+        }
+
+        function renderTimetable(ttArray) {
+            const noData = document.getElementById('timetable-no-data');
+            const grid = document.getElementById('timetable-grid');
+
+            if (!Array.isArray(ttArray) || ttArray.length === 0) {
+                if (noData) noData.style.display = 'block';
+                if (grid) grid.style.display = 'none';
+                return;
+            }
+
+            if (noData) noData.style.display = 'none';
+            grid.style.display = 'block';
+            grid.innerHTML = '';
+
+            // Try to group by day if 'day' field exists
+            const days = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+            const grouped = {};
+            let hasDayField = false;
+
+            ttArray.forEach(item => {
+                const day = item.day || item.dayName || item.weekDay || null;
+                if (day) {
+                    hasDayField = true;
+                    if (!grouped[day]) grouped[day] = [];
+                    grouped[day].push(item);
+                }
+            });
+
+            if (hasDayField) {
+                days.forEach(day => {
+                    if (!grouped[day]) return;
+                    let slots = grouped[day].map(item => {
+                        const sub = item.courseTitle || item.subject || item.name || item.courseName || '—';
+                        const time = item.time || item.slot || item.period || item.startTime || '';
+                        const venue = item.venue || item.room || item.location || '';
+                        return `<div style="background: var(--glass); border: 1px solid var(--glass-border); border-radius: 8px; padding: 12px; margin-bottom: 8px; text-align:left;">
+                                    <div style="color:var(--primary); font-weight: bold; font-size: 0.95rem;">${sub}</div>
+                                    ${time ? `<div style="color:var(--text-sub); font-size:0.85rem;">⏰ ${time}</div>` : ''}
+                                    ${venue ? `<div style="color:var(--text-sub); font-size:0.85rem;">📍 ${venue}</div>` : ''}
+                                </div>`;
+                    }).join('');
+
+                    grid.innerHTML += `
+                        <div class="image-card fade-in-up" style="margin-bottom: 20px; cursor: default; transform: none; text-align: left;">
+                            <h3 style="color:var(--primary); font-family:'Montserrat',sans-serif; text-transform:uppercase; margin: 0 0 15px 0;">${day}</h3>
+                            ${slots}
+                        </div>
+                    `;
+                });
+            } else {
+                // No day field — just show a flat list of all slots
+                ttArray.forEach(item => {
+                    const sub = item.courseTitle || item.subject || item.name || item.courseName || '—';
+                    const time = item.time || item.slot || item.period || item.startTime || '';
+                    const venue = item.venue || item.room || item.location || '';
+                    const day = item.day || item.weekDay || '';
+                    grid.innerHTML += `
+                        <div class="meal-card fade-in-up" style="flex-direction:column; align-items:flex-start; margin-bottom:15px;">
+                            <div style="color:var(--primary); font-weight:bold; font-size:1rem; margin-bottom:5px;">${sub}</div>
+                            ${day ? `<div style="color:var(--text-sub); font-size:0.9rem;">📅 ${day}</div>` : ''}
+                            ${time ? `<div style="color:var(--text-sub); font-size:0.9rem;">⏰ ${time}</div>` : ''}
+                            ${venue ? `<div style="color:var(--text-sub); font-size:0.9rem;">📍 ${venue}</div>` : ''}
+                        </div>
+                    `;
+                });
+            }
+        }
+
+        // Load saved marks and timetable on page load
+        function loadSavedMarksAndTimetable() {
+            const savedMarks = JSON.parse(localStorage.getItem('squadMarks') || '[]');
+            const savedTimetable = JSON.parse(localStorage.getItem('squadTimetable') || '[]');
+            if (savedMarks.length) renderMarks(savedMarks);
+            if (savedTimetable.length) renderTimetable(savedTimetable);
+        }
+        loadSavedMarksAndTimetable();
+
+        // --- MANUAL ENTRY FUNCTIONS ---
+        function addAttendance() {
+            const nameInput = document.getElementById('att-sub-name');
+            const attInput = document.getElementById('att-attended');
+            const totInput = document.getElementById('att-total');
+            
+            if(!nameInput.value || !attInput.value || !totInput.value) return alert("Fill all fields");
+            
+            attendanceData.push({
+                id: Date.now(),
+                name: nameInput.value,
+                attended: parseInt(attInput.value),
+                total: parseInt(totInput.value)
+            });
+            
+            nameInput.value = ''; attInput.value = ''; totInput.value = '';
+            saveAttendance();
+            renderAttendance();
+        }
+
+        function deleteAttendance(id) {
+            attendanceData = attendanceData.filter(item => item.id !== id);
+            saveAttendance();
+            renderAttendance();
+        }
+
+        function renderAttendance() {
+            const list = document.getElementById('attendance-list');
+            list.innerHTML = '';
+            
+            let grandAttended = 0;
+            let grandTotal = 0;
+
+            attendanceData.forEach(item => {
+                grandAttended += item.attended;
+                grandTotal += item.total;
+                
+                const percentage = item.total === 0 ? 0 : ((item.attended / item.total) * 100).toFixed(1);
+                const isGood = percentage >= 75;
+                
+                let statusText = "";
+                if(isGood) {
+                    let bunk = Math.floor((item.attended - (0.75 * item.total)) / 0.75);
+                    statusText = `You can safely bunk ${bunk} classes.`;
+                } else {
+                    let needed = Math.ceil(((0.75 * item.total) - item.attended) / 0.25);
+                    statusText = `Attend ${needed} more classes to hit 75%.`;
+                }
+
+                list.innerHTML += `
+                    <div class="meal-card fade-in-up" style="display: flex; justify-content: space-between; align-items: center; padding: 20px; border-radius: 12px; margin-bottom: 15px;">
+                        <div>
+                            <h3 style="margin-bottom: 5px; color: var(--primary); font-family: 'Montserrat', sans-serif; text-transform: uppercase;">${item.name}</h3>
+                            <div style="font-size: 1.5rem; font-weight: bold;" class="${isGood ? 'good-attendance' : 'bad-attendance'}">
+                                ${percentage}%
+                            </div>
+                            <div class="stat-text">${item.attended} / ${item.total} Attended</div>
+                            <div class="stat-text" style="color:var(--text-main); font-weight: bold; margin-top: 8px;">${statusText}</div>
+                        </div>
+                        <button class="danger-btn" onclick="deleteAttendance(${item.id})">Del</button>
+                    </div>
+                `;
+            });
+
+            const overallEl = document.getElementById('overall-attendance');
+            if(grandTotal === 0) {
+                overallEl.innerText = "Overall: 0%";
+                overallEl.style.color = "var(--primary)";
+            } else {
+                const overallPerc = ((grandAttended / grandTotal) * 100).toFixed(1);
+                overallEl.innerText = `Overall: ${overallPerc}%`;
+                overallEl.style.color = overallPerc >= 75 ? "var(--success)" : "var(--danger)";
+            }
+        }
+
+        // ==========================================
+        // UI & UTILITY LOGIC
+        // ==========================================
+        function toggleTheme() {
+            const body = document.body;
+            const btn = document.getElementById('themeToggle');
+            body.classList.toggle('light-mode');
+            btn.innerText = body.classList.contains('light-mode') ? '🌙' : '☀️'; 
+        }
+
+        setTimeout(() => {
+            document.getElementById('splash-screen').classList.add('zoom-out');
+            document.getElementById('main-content').classList.add('content-visible');
+            document.getElementById('navButtons').style.opacity = '1';
+
+            setTimeout(() => {
+                document.getElementById('splash-screen').style.display = 'none';
+            }, 1000);
+            
+            checkAndScheduleNotifications();
+        }, 1200);
+
+        function openLightbox(src) {
+            const lb = document.getElementById("lightbox");
+            lb.style.display = "flex";
+            document.getElementById("lightbox-img").src = src;
+        }
+        function closeLightbox() {
+            document.getElementById("lightbox").style.display = "none";
+        }
+
+        // ==========================================
+        // 8. NOTIFICATION SCHEDULER
+        // ==========================================
         function requestNotificationPermission() {
             if (!("Notification" in window)) {
                 alert("This browser does not support desktop notification");
