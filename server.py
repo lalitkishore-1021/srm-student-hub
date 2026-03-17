@@ -28,55 +28,85 @@ def scrape_academia_worker(email, pwd, out_queue):
         page = context.new_page()
         page.set_default_timeout(60000)
 
-        # Removed the image blocker so Zoho doesn't think we are a bot!
-
         print(f"[{email}] 1. Navigating to Academia...")
         try:
-            # wait_until="commit" stops it from infinitely loading if Zoho is slow
             page.goto("https://academia.srmist.edu.in/", wait_until="commit", timeout=45000)
-            page.wait_for_timeout(8000) # Give Zoho time to render the login box
+            page.wait_for_timeout(8000) # Give Zoho iframe time to render
         except Exception as e:
             print(f"[{email}] Page load warning, pushing through: {str(e)}")
         
-        print(f"[{email}] 2. Entering Email...")
-        try:
-            page.wait_for_selector('input[id="login_id"], input[type="email"]', timeout=15000)
-            page.locator('input[id="login_id"], input[type="email"]').first.fill(email, force=True)
-            
-            try:
-                page.locator('button:has-text("Next"), button[id="nextbtn"]').first.click(force=True, timeout=5000)
-            except:
-                page.keyboard.press("Enter")
-        except Exception as e:
-            out_queue.put({'success': False, 'error': 'Could not find the Zoho Email box.'})
+        # 🚨 THE X-RAY IFRAME SCANNER FOR EMAIL 🚨
+        print(f"[{email}] 2. Entering Email (Scanning Iframes)...")
+        email_found = False
+        email_selectors = ['input[id="login_id"]', 'input[type="email"]', 'input[placeholder*="Email" i]']
+        
+        for selector in email_selectors:
+            if email_found: break
+            # 1. Check main page
+            if page.locator(selector).count() > 0:
+                page.locator(selector).first.fill(email, force=True)
+                page.locator(selector).first.press("Enter")
+                email_found = True
+                break
+            # 2. Check ALL hidden iframes
+            for frame in page.frames:
+                if frame.locator(selector).count() > 0:
+                    frame.locator(selector).first.fill(email, force=True)
+                    frame.locator(selector).first.press("Enter")
+                    email_found = True
+                    break
+
+        if not email_found:
+            out_queue.put({'success': False, 'error': 'Could not find the Zoho Email box inside the iframes.'})
             return
             
-        page.wait_for_timeout(5000)
+        page.wait_for_timeout(5000) # Wait for password box animation
 
-        print(f"[{email}] 3. Entering Password...")
-        try:
-            page.wait_for_selector('input[type="password"], input[id="password"]', timeout=15000)
-            page.locator('input[type="password"], input[id="password"]').first.fill(pwd, force=True)
-            
-            try:
-                page.locator('button:has-text("Sign in"), button[id="nextbtn"]').first.click(force=True, timeout=5000)
-            except:
-                page.keyboard.press("Enter")
-        except Exception as e:
-            out_queue.put({'success': False, 'error': 'Could not find the Zoho Password box. Check your email.'})
+        # 🚨 THE X-RAY IFRAME SCANNER FOR PASSWORD 🚨
+        print(f"[{email}] 3. Entering Password (Scanning Iframes)...")
+        pwd_found = False
+        pwd_selectors = ['input[type="password"]', 'input[id="password"]', 'input[placeholder*="Password" i]']
+        
+        for selector in pwd_selectors:
+            if pwd_found: break
+            if page.locator(selector).count() > 0:
+                page.locator(selector).first.fill(pwd, force=True)
+                page.locator(selector).first.press("Enter")
+                pwd_found = True
+                break
+            for frame in page.frames:
+                if frame.locator(selector).count() > 0:
+                    frame.locator(selector).first.fill(pwd, force=True)
+                    frame.locator(selector).first.press("Enter")
+                    pwd_found = True
+                    break
+                    
+        if not pwd_found:
+            out_queue.put({'success': False, 'error': 'Could not find the Zoho Password box.'})
             return
 
         print(f"[{email}] 4. Checking for 'Terminate All Sessions' limit...")
         page.wait_for_timeout(6000)
         
         try:
-            terminate_btn = page.locator('text="Terminate All Sessions", button:has-text("Terminate")').first
-            if terminate_btn.is_visible(timeout=5000):
-                print(f"[{email}] Limit exceeded found! Terminating old sessions...")
-                terminate_btn.click(force=True)
+            # Also checking iframes for the Terminate button just in case!
+            term_clicked = False
+            if page.locator('text="Terminate All Sessions"').count() > 0:
+                page.locator('text="Terminate All Sessions"').first.click(force=True)
+                term_clicked = True
+            else:
+                for frame in page.frames:
+                    if frame.locator('text="Terminate All Sessions"').count() > 0:
+                        frame.locator('text="Terminate All Sessions"').first.click(force=True)
+                        term_clicked = True
+                        break
+            if term_clicked:
+                print(f"[{email}] Limit exceeded found! Terminated old sessions.")
                 page.wait_for_timeout(6000)
-        except:
-            print(f"[{email}] No session limits detected, proceeding.")
+            else:
+                print(f"[{email}] No session limits detected.")
+        except Exception as e:
+            print(f"[{email}] Terminate check error: {str(e)}")
 
         print(f"[{email}] 5. Waiting for main dashboard to load...")
         page.wait_for_timeout(10000)
