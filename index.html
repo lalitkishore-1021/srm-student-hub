@@ -405,26 +405,17 @@
     </div>
 
     <script>
-        // ==========================================
-        // CONFIGURATION: SET YOUR BACKEND URL HERE
-        // ==========================================
         const BACKEND_URL = 'https://srm-student-hub-1.onrender.com';
 
-        // ==========================================
-        // PWA SERVICE WORKER
-        // ==========================================
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('sw.js')
-                .then(reg => {
-                    console.log('Service Worker Registered!', reg);
-                })
+                .then(reg => console.log('Service Worker Registered!', reg))
                 .catch(err => console.log('Service Worker Failed:', err));
             });
         }
 
         let deferredPrompt;
-        // FIX: installAppBtn does not exist in the HTML — use null-safe references throughout
         const installAppBtn = document.getElementById('installAppBtn');
         const logoInstallTrigger = document.getElementById('logoInstallTrigger');
 
@@ -438,9 +429,6 @@
             if (deferredPrompt) {
                 deferredPrompt.prompt();
                 const { outcome } = await deferredPrompt.userChoice;
-                if (outcome === 'accepted') {
-                    console.log('User accepted the A2HS prompt');
-                }
                 deferredPrompt = null;
                 if (installAppBtn) installAppBtn.style.display = 'none';
             } else {
@@ -451,9 +439,6 @@
         if (installAppBtn) installAppBtn.addEventListener('click', triggerAppInstall);
         if (logoInstallTrigger) logoInstallTrigger.addEventListener('click', triggerAppInstall);
 
-        // ==========================================
-        // 1. ROUTING LOGIC & MOBILE BACK BUTTON FIX
-        // ==========================================
         history.replaceState({ viewId: 'projects-view' }, '', '#projects-view');
 
         function switchView(viewId, pushToHistory = true) {
@@ -476,9 +461,6 @@
             }
         });
 
-        // ==========================================
-        // 2. PORTFOLIO DATA
-        // ==========================================
         const projectsDatabase = {
             'oopsBanner': {
                 title: 'OOPS Banner App',
@@ -558,7 +540,7 @@
             
             if (projectData.subProjects) {
                 projectData.subProjects.forEach(sub => {
-                    const folderHTML = `
+                    galleryElement.innerHTML += `
                         <div class="image-card project-card fade-in-up" onclick="openProject('${sub.id}')">
                             <div class="project-cover">
                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="project-icon">
@@ -568,12 +550,11 @@
                             <div class="caption">${sub.title}</div>
                         </div>
                     `;
-                    galleryElement.innerHTML += folderHTML;
                 });
             }
 
             if (projectData.video) {
-                const videoHTML = `
+                galleryElement.innerHTML += `
                     <div class="image-card fade-in-up" style="grid-column: 1 / -1; max-width: 800px; margin: 0 auto; width: 100%;">
                         <div class="video-container">
                             <iframe src="${projectData.video}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
@@ -581,18 +562,16 @@
                         <div class="caption" style="color: var(--primary);">Video Tutorial</div>
                     </div>
                 `;
-                galleryElement.innerHTML += videoHTML;
             }
 
             if (projectData.images) {
                 projectData.images.forEach(imgData => {
-                    const cardHTML = `
+                    galleryElement.innerHTML += `
                         <div class="image-card fade-in-up">
                             <img src="${imgData.src}" alt="${imgData.label}" class="gallery-item" onclick="openLightbox(this.src)">
                             <div class="caption">${imgData.label}</div>
                         </div>
                     `;
-                    galleryElement.innerHTML += cardHTML;
                 });
             }
 
@@ -606,11 +585,8 @@
             }
         }
 
-        // ==========================================
-        // 3. CGPA CALCULATOR LOGIC
-        // ==========================================
         function addCgpaRow() {
-            const rowHTML = `
+            document.getElementById('cgpa-rows').insertAdjacentHTML('beforeend', `
                 <div class="form-row fade-in-up">
                     <input type="text" placeholder="Subject Name (Optional)">
                     <select class="cgpa-grade">
@@ -621,8 +597,7 @@
                     <input type="number" class="cgpa-credit" placeholder="Credits" min="1" max="10">
                     <button class="danger-btn" onclick="this.parentElement.remove()">X</button>
                 </div>
-            `;
-            document.getElementById('cgpa-rows').insertAdjacentHTML('beforeend', rowHTML);
+            `);
         }
 
         function calculateCGPA() {
@@ -634,7 +609,6 @@
             for(let i = 0; i < grades.length; i++) {
                 let gradeVal = parseFloat(grades[i].value);
                 let creditVal = parseFloat(credits[i].value);
-                
                 if(!isNaN(gradeVal) && !isNaN(creditVal)) {
                     totalPoints += (gradeVal * creditVal);
                     totalCredits += creditVal;
@@ -646,14 +620,10 @@
             if (totalCredits === 0) {
                 resultBox.innerText = "Please enter valid grades and credits!";
             } else {
-                const cgpa = (totalPoints / totalCredits).toFixed(2);
-                resultBox.innerText = `Your CGPA: ${cgpa}`;
+                resultBox.innerText = `Your CGPA: ${(totalPoints / totalCredits).toFixed(2)}`;
             }
         }
 
-        // ==========================================
-        // 4. BEAUTIFUL MESS MENU LOGIC
-        // ==========================================
         const mealIcons = {
             'Breakfast': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M17 8h1a4 4 0 1 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z"/><line x1="6" y1="2" x2="6" y2="4"/><line x1="10" y1="2" x2="10" y2="4"/><line x1="14" y1="2" x2="14" y2="4"/></svg>',
             'Lunch': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>',
@@ -662,115 +632,61 @@
         };
 
         const messMenuData = {
-            'Monday': { 
-                Breakfast: 'Bread, Butter, Jam, Ghee Pongal, Sambar, Coconut Chutney, Vadai, Tea/Coffee/Milk / Boiled Egg (1 Piece), Poori, Potato Masala, Herbal Kanji', 
-                Lunch: 'Payasam, Ghee Chappathi, Green Peas Masala, Variety Rice, Steamed Rice, Sambar, Dal Lasooni, Tomato Rasam, Gobi-65 OR Bitter Guard-65, Raw Banana Chops, Millet Kanji, Special Fryums, Butter Milk, Pickle', 
-                Snacks: 'Pav Bajji, Tea/Coffee', 
-                Dinner: 'Malabar Paratha, Mix Veg Kuruma, Millet Dosa, Idly Podi, Oil, Special Chutney, Steamed Rice, Chilli Sambar, Jeera Dal, Rasam, Aloo Capsicum, Pickle, Fryums, Veg-Salad, Banana, Millet Kanji, *** Dry Fish Gravy ***' 
-            },
-            'Tuesday': { 
-                Breakfast: 'Bread, Butter, Jam, Idly, Veg Kosthu, Spl Chutney, Poha, Mint Chutney, Tea/Coffee/Milk, Herbal Kanji, Masala Omlet (1 Piece)', 
-                Lunch: 'Millet Sweet, Luchi, Kashmiri Dum Aloo, Jeera Pulao, Steamed Rice, Masala Sambar, Bagara Dal, Mix Veg Usili, Pepper Rasam, Lauki Subji, Pickle, Millet Kanji, Butter Milk, Fryums', 
-                Snacks: 'Boiled Peanut / Black Channa Sundal, Tea/Coffee', 
-                Dinner: 'Chappathi, Aloo Chenna Khurma, Fried Rice / Noodles / Pastha, Manchurian Gravy / Crispy Vegetable, Steamed Rice, Rasam, Dal Fry, Millet Kanji, Pickle, Fryums, Veg-Salad, Milk, Spl Fruits, *** Chicken Gravy ***' 
-            },
-            'Wednesday': { 
-                Breakfast: 'Bread, Butter, Jam, Millet Dosa, Idly Podi, Oil, Arachivitta Sambar, Chutney, Butter Chappathi, Aloo Rajma Masala, Herbal Kanji, Tea/Coffee/Milk', 
-                Lunch: 'Chappathi, Soya Kasa, Suitani Pulao, Steamed Rice, Mysore Dal Fry, Kadi Pakoda, Garlic Rasam, Aloo Palak (or) Aloo Paruval, Yam Mochai Roast, Pickle, Fryums, Millet Kanji, Butter Milk', 
-                Snacks: 'Veg Puff / Sweet Bun, Tea/Coffee', 
-                Dinner: 'Chappathi, Steamed Rice, Dal Tadka, Chicken Masala / Chilli Chicken (Non-Veg) / Paneer Butter Masala, Rasam, Pickle, Millet Kanji, Fryums, Veg Salad, Milk, Banana, *** Chicken Gravy ***' 
-            },
-            'Thursday': { 
-                Breakfast: 'Bread, Butter, Jam, Chappathi, Dal Masala, Veg Semiya Kichadi, Coconut Chutney, Boiled Egg (1 Piece), Banana, Herbal Kanji, Tea/Coffee/Milk', 
-                Lunch: 'Poori, Aloo Mutar Ghughni, Corn Pulao, Punjabi Dal Tadka, Kadai Vegetable, Steamed Rice, Drumstick Brinjal Sambar, Pineapple Rasam, Beetroot Poriyal, Pickle, Fryums, Millet Kanji, Butter Milk', 
-                Snacks: 'Pani Poori (or) Mixture, Tea/Coffee', 
-                Dinner: 'Ghee Pulao / Kaji Pulao (Basmati Rice), Chappathi, Rajma Paneer, Steamed Rice, Chole Dal Fry, Rasam, Aloo Peanut Masala, Fryums, Pickle, Veg Salad, Milk, Ice Cream, *** Chicken Gravy ***' 
-            },
-            'Friday': { 
-                Breakfast: 'Bread, Butter, Jam, Onion Podi Uthappam, Idly Podi, Oil, Chilli Sambar, Kara Chutney, Ghee Chappathi, Muttar Masala, Tea/Coffee/Milk, Boiled Egg (1 Piece), Herbal Kanji', 
-                Lunch: 'Spl Dry Jamun / Bread Halwa, Veg Briyani, Mix Raitha, Bisebelabath, Curd Rice, Steamed Rice, Tomato Rasam, Aloo Gobi Adaraki, Moongdal Tadka, Millet Kanji, Pickle, Potato Chips', 
-                Snacks: 'Bonda / Sambar Vada, Chutney, Tea/Coffee', 
-                Dinner: 'Chole Bhatura, Steamed Rice, Tomato Dal, Veg Upma, Coconut Chutney, Rasam, Cabbage Thoran, Pickle, Fryums, Veg Soup, Banana, Veg Salad, Milk, *** Mutton Gravy ***' 
-            },
-            'Saturday': { 
-                Breakfast: 'Bread, Butter, Jam, Chappathi, Aloo Meal Maker Kasa, Idiyappam (Lemon or Masala or Coconut Milk), Coconut Chutney, Tea/Coffee/Milk, Boiled Egg (1 Piece), Herbal Kanji', 
-                Lunch: 'Butter Roti, Aloo Double Beans Masala, Veg Pulao, Steamed Rice, Dal Makhni, Bhindi Do Pyasa, Parupu Urundai Kuzhambu, Kootu, Jeera Rasam, Pickle, Special Fryums, Millet Kanji, Butter Milk', 
-                Snacks: 'Cake (or) Browni, Tea/Coffee', 
-                Dinner: 'Sweet, Panjabi Paratha, Rajma Makan Wala, French Fry, Steamed Rice, Mysore Dal Fry, Veg Idly, Idly Podi, Oil, Chutney, Tiffen Sambar, Rasam, Pickle, Fryums, Veg Salad, Milk, Millet Kanji, Special Fruit, *** Fish Gravy ***' 
-            },
-            'Sunday': { 
-                Breakfast: 'Bread, Butter, Jam, Chole Poori, Veg Upma, Coconut Chutney, Tea/Coffee/Milk, Herbal Kanji', 
-                Lunch: 'Chappathi, Chicken (Pepper / Kadai), Paneer Butter Masala (or) Kadai Paneer, Dal Dhadka, Mint Pulao, Steamed Rice, Garlic Rasam, Poriyal, Pickle, Fryums, Butter Milk, Millet Kanji, *** Chicken Gravy ***', 
-                Snacks: 'Corn / Bajji, Chutney (OR) Juice, Tea/Coffee', 
-                Dinner: 'Variety Stuffing Paratha, Curd, Steamed Rice, Hara Moong Dal Tadka, Kathamba Sambar, Poriyal, Rasam, Pickle, Fryums, Veg Salad, Milk, Ice Cream, Millet Kanji, *** Chicken Gravy ***' 
-            }
+            'Monday': { Breakfast: 'Bread, Butter, Jam, Ghee Pongal, Sambar, Coconut Chutney, Vadai, Tea/Coffee/Milk / Boiled Egg (1 Piece), Poori, Potato Masala, Herbal Kanji', Lunch: 'Payasam, Ghee Chappathi, Green Peas Masala, Variety Rice, Steamed Rice, Sambar, Dal Lasooni, Tomato Rasam, Gobi-65 OR Bitter Guard-65, Raw Banana Chops, Millet Kanji, Special Fryums, Butter Milk, Pickle', Snacks: 'Pav Bajji, Tea/Coffee', Dinner: 'Malabar Paratha, Mix Veg Kuruma, Millet Dosa, Idly Podi, Oil, Special Chutney, Steamed Rice, Chilli Sambar, Jeera Dal, Rasam, Aloo Capsicum, Pickle, Fryums, Veg-Salad, Banana, Millet Kanji, *** Dry Fish Gravy ***' },
+            'Tuesday': { Breakfast: 'Bread, Butter, Jam, Idly, Veg Kosthu, Spl Chutney, Poha, Mint Chutney, Tea/Coffee/Milk, Herbal Kanji, Masala Omlet (1 Piece)', Lunch: 'Millet Sweet, Luchi, Kashmiri Dum Aloo, Jeera Pulao, Steamed Rice, Masala Sambar, Bagara Dal, Mix Veg Usili, Pepper Rasam, Lauki Subji, Pickle, Millet Kanji, Butter Milk, Fryums', Snacks: 'Boiled Peanut / Black Channa Sundal, Tea/Coffee', Dinner: 'Chappathi, Aloo Chenna Khurma, Fried Rice / Noodles / Pastha, Manchurian Gravy / Crispy Vegetable, Steamed Rice, Rasam, Dal Fry, Millet Kanji, Pickle, Fryums, Veg-Salad, Milk, Spl Fruits, *** Chicken Gravy ***' },
+            'Wednesday': { Breakfast: 'Bread, Butter, Jam, Millet Dosa, Idly Podi, Oil, Arachivitta Sambar, Chutney, Butter Chappathi, Aloo Rajma Masala, Herbal Kanji, Tea/Coffee/Milk', Lunch: 'Chappathi, Soya Kasa, Suitani Pulao, Steamed Rice, Mysore Dal Fry, Kadi Pakoda, Garlic Rasam, Aloo Palak (or) Aloo Paruval, Yam Mochai Roast, Pickle, Fryums, Millet Kanji, Butter Milk', Snacks: 'Veg Puff / Sweet Bun, Tea/Coffee', Dinner: 'Chappathi, Steamed Rice, Dal Tadka, Chicken Masala / Chilli Chicken (Non-Veg) / Paneer Butter Masala, Rasam, Pickle, Millet Kanji, Fryums, Veg Salad, Milk, Banana, *** Chicken Gravy ***' },
+            'Thursday': { Breakfast: 'Bread, Butter, Jam, Chappathi, Dal Masala, Veg Semiya Kichadi, Coconut Chutney, Boiled Egg (1 Piece), Banana, Herbal Kanji, Tea/Coffee/Milk', Lunch: 'Poori, Aloo Mutar Ghughni, Corn Pulao, Punjabi Dal Tadka, Kadai Vegetable, Steamed Rice, Drumstick Brinjal Sambar, Pineapple Rasam, Beetroot Poriyal, Pickle, Fryums, Millet Kanji, Butter Milk', Snacks: 'Pani Poori (or) Mixture, Tea/Coffee', Dinner: 'Ghee Pulao / Kaji Pulao (Basmati Rice), Chappathi, Rajma Paneer, Steamed Rice, Chole Dal Fry, Rasam, Aloo Peanut Masala, Fryums, Pickle, Veg Salad, Milk, Ice Cream, *** Chicken Gravy ***' },
+            'Friday': { Breakfast: 'Bread, Butter, Jam, Onion Podi Uthappam, Idly Podi, Oil, Chilli Sambar, Kara Chutney, Ghee Chappathi, Muttar Masala, Tea/Coffee/Milk, Boiled Egg (1 Piece), Herbal Kanji', Lunch: 'Spl Dry Jamun / Bread Halwa, Veg Briyani, Mix Raitha, Bisebelabath, Curd Rice, Steamed Rice, Tomato Rasam, Aloo Gobi Adaraki, Moongdal Tadka, Millet Kanji, Pickle, Potato Chips', Snacks: 'Bonda / Sambar Vada, Chutney, Tea/Coffee', Dinner: 'Chole Bhatura, Steamed Rice, Tomato Dal, Veg Upma, Coconut Chutney, Rasam, Cabbage Thoran, Pickle, Fryums, Veg Soup, Banana, Veg Salad, Milk, *** Mutton Gravy ***' },
+            'Saturday': { Breakfast: 'Bread, Butter, Jam, Chappathi, Aloo Meal Maker Kasa, Idiyappam (Lemon or Masala or Coconut Milk), Coconut Chutney, Tea/Coffee/Milk, Boiled Egg (1 Piece), Herbal Kanji', Lunch: 'Butter Roti, Aloo Double Beans Masala, Veg Pulao, Steamed Rice, Dal Makhni, Bhindi Do Pyasa, Parupu Urundai Kuzhambu, Kootu, Jeera Rasam, Pickle, Special Fryums, Millet Kanji, Butter Milk', Snacks: 'Cake (or) Browni, Tea/Coffee', Dinner: 'Sweet, Panjabi Paratha, Rajma Makan Wala, French Fry, Steamed Rice, Mysore Dal Fry, Veg Idly, Idly Podi, Oil, Chutney, Tiffen Sambar, Rasam, Pickle, Fryums, Veg Salad, Milk, Millet Kanji, Special Fruit, *** Fish Gravy ***' },
+            'Sunday': { Breakfast: 'Bread, Butter, Jam, Chole Poori, Veg Upma, Coconut Chutney, Tea/Coffee/Milk, Herbal Kanji', Lunch: 'Chappathi, Chicken (Pepper / Kadai), Paneer Butter Masala (or) Kadai Paneer, Dal Dhadka, Mint Pulao, Steamed Rice, Garlic Rasam, Poriyal, Pickle, Fryums, Butter Milk, Millet Kanji, *** Chicken Gravy ***', Snacks: 'Corn / Bajji, Chutney (OR) Juice, Tea/Coffee', Dinner: 'Variety Stuffing Paratha, Curd, Steamed Rice, Hara Moong Dal Tadka, Kathamba Sambar, Poriyal, Rasam, Pickle, Fryums, Veg Salad, Milk, Ice Cream, Millet Kanji, *** Chicken Gravy ***' }
         };
 
         function openTodayMessMenu() {
             const daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-            const todayIndex = new Date().getDay();
-            const currentDay = daysOfWeek[todayIndex];
-            
             switchView('mess-view');
-            renderMessMenu(currentDay);
+            renderMessMenu(daysOfWeek[new Date().getDay()]);
         }
 
         function renderMessMenu(selectedDay) {
-            const days = Object.keys(messMenuData);
             const tabContainer = document.getElementById('mess-tabs');
             const contentContainer = document.getElementById('mess-content');
-            
             tabContainer.innerHTML = '';
             contentContainer.innerHTML = '';
 
-            days.forEach(day => {
+            Object.keys(messMenuData).forEach(day => {
                 const btn = document.createElement('button');
                 btn.className = `tab-btn ${day === selectedDay ? 'active' : ''}`;
                 btn.innerText = day;
                 btn.onclick = () => renderMessMenu(day);
                 tabContainer.appendChild(btn);
-
-                if (day === selectedDay) {
-                    setTimeout(() => {
-                        btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-                    }, 150); 
-                }
+                if (day === selectedDay) setTimeout(() => btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' }), 150); 
             });
 
-            const meals = messMenuData[selectedDay];
-            Object.entries(meals).forEach(([time, items]) => {
+            Object.entries(messMenuData[selectedDay]).forEach(([time, items]) => {
                 let formattedText = items.split(', ').join(' <span style="color: var(--primary); font-weight: bold; padding: 0 5px;">&bull;</span> ');
                 formattedText = formattedText.replace(/\*\*\*(.*?)\*\*\*/g, '<br><span class="special-badge">🔥 $1 🔥</span>');
-
                 contentContainer.innerHTML += `
                     <div class="meal-card fade-in-up" style="display: flex; gap: 20px; align-items: flex-start;">
-                        <div class="meal-icon-box">
-                            ${mealIcons[time]}
-                        </div>
-                        <div class="meal-content">
-                            <h3>${time}</h3>
-                            <p>${formattedText}</p>
-                        </div>
+                        <div class="meal-icon-box">${mealIcons[time]}</div>
+                        <div class="meal-content"><h3>${time}</h3><p>${formattedText}</p></div>
                     </div>
                 `;
             });
         }
 
-        // ==========================================
-        // 5. HELPER (RESOURCES) LOGIC
-        // ==========================================
-        const dummySubject = { name: 'Content Adding Soon...', topics: ['Check back later for pyqs.'], pyqLink: '#', ctLink: '#' };
-        const helperData = { 'Semester 1': [dummySubject], 'Semester 2': [dummySubject], 'Semester 3': [dummySubject], 'Semester 4': [dummySubject] };
+        const helperData = {
+            'Semester 1': [{ name: 'Content Adding Soon...', topics: ['Check back later for pyqs.'], pyqLink: '#', ctLink: '#' }],
+            'Semester 2': [{ name: 'Content Adding Soon...', topics: ['Check back later for pyqs.'], pyqLink: '#', ctLink: '#' }],
+            'Semester 3': [{ name: 'Content Adding Soon...', topics: ['Check back later for pyqs.'], pyqLink: '#', ctLink: '#' }],
+            'Semester 4': [{ name: 'Content Adding Soon...', topics: ['Check back later for pyqs.'], pyqLink: '#', ctLink: '#' }]
+        };
 
         function initHelper() {
             const semContainer = document.getElementById('helper-semesters');
             for(let i=1; i<=8; i++) {
-                const semName = `Semester ${i}`;
                 semContainer.innerHTML += `
-                    <div class="image-card project-card fade-in-up" onclick="showHelperSubjects('${semName}')">
-                        <div class="project-cover" style="height: 150px;">
-                            <h2 style="color: var(--primary); margin:0;">SEM ${i}</h2>
-                        </div>
+                    <div class="image-card project-card fade-in-up" onclick="showHelperSubjects('Semester ${i}')">
+                        <div class="project-cover" style="height: 150px;"><h2 style="color: var(--primary); margin:0;">SEM ${i}</h2></div>
                     </div>
                 `;
             }
@@ -784,15 +700,13 @@
             const listContainer = document.getElementById('helper-subject-list');
             listContainer.innerHTML = '';
 
-            const subjects = helperData[semName] || [];
-            subjects.forEach(sub => {
-                let topicsHTML = sub.topics.map(t => `<li>${t}</li>`).join('');
+            (helperData[semName] || []).forEach(sub => {
                 listContainer.innerHTML += `
                     <details class="fade-in-up">
                         <summary>${sub.name} &#9662;</summary>
                         <div class="details-content">
                             <strong>Important Topics:</strong>
-                            <ul style="margin-top: 10px; margin-bottom: 15px;">${topicsHTML}</ul>
+                            <ul style="margin-top: 10px; margin-bottom: 15px;">${sub.topics.map(t => `<li>${t}</li>`).join('')}</ul>
                             <a href="${sub.ctLink}" style="color:var(--primary); text-decoration: none; font-weight: bold;">[ CT Papers ]</a> &nbsp;|&nbsp; 
                             <a href="${sub.pyqLink}" style="color:var(--primary); text-decoration: none; font-weight: bold;">[ PYQs ]</a>
                         </div>
@@ -802,14 +716,8 @@
         }
         initHelper(); 
 
-        // ==========================================
-        // 6. NODE.JS MEGA-SYNC LOGIC
-        // ==========================================
         let attendanceData = JSON.parse(localStorage.getItem('squadAttendance')) || [];
-
-        function saveAttendance() {
-            localStorage.setItem('squadAttendance', JSON.stringify(attendanceData));
-        }
+        function saveAttendance() { localStorage.setItem('squadAttendance', JSON.stringify(attendanceData)); }
 
         async function startLiveSync() {
             const regNo = document.getElementById('srm-reg').value.trim();
@@ -817,50 +725,37 @@
             const statusText = document.getElementById('sync-status');
 
             if (!regNo || !pwd) {
-                alert("Please enter your SRM Email and Password.");
+                alert("Please enter your NetID/Email and Password.");
                 return;
             }
 
-            statusText.innerText = "statusText.innerText = "🔄 Connecting to Official Academia... This is a heavy site, please wait 60-90 seconds.";
+            statusText.innerText = "🔄 Connecting to Official Academia... This is a heavy site, please wait 60-90 seconds.";
             statusText.style.color = "var(--primary)";
 
             try {
-                // 👇 FIXED ENDPOINT AND DATA NAMES 👇
                 const response = await fetch(`${BACKEND_URL}/api/start_session`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ regNo: regNo, pwd: pwd })
                 });
 
-                if (!response.ok) {
-                    throw new Error(`Server responded with status ${response.status}`);
-                }
+                if (!response.ok) throw new Error(`Server responded with status ${response.status}`);
 
                 const result = await response.json();
 
                 if (result.success) {
-                    const data = result.data || {};
-                    // We directly process the array sent by Python
                     const att = Array.isArray(result.data) ? result.data : [];
                     const marks = result.marks ? result.marks : [];
                     const timetable = result.timetable ? result.timetable : [];
 
-                    // Save all three to localStorage
                     localStorage.setItem('squadMarks', JSON.stringify(marks));
                     localStorage.setItem('squadTimetable', JSON.stringify(timetable));
 
-                    // Process and render attendance
                     processScrapedData(att);
-
-                    // Render marks and timetable immediately
                     renderMarks(marks);
                     renderTimetable(timetable);
 
-                    let summary = `✅ Sync complete! Got: Attendance`;
-                    if (marks.length || Object.keys(marks).length) summary += `, Marks`;
-                    if (timetable.length || Object.keys(timetable).length) summary += `, Timetable`;
-
-                    statusText.innerText = summary;
+                    statusText.innerText = `✅ Sync complete! Check your Marks and Timetable tabs.`;
                     statusText.style.color = "var(--success)";
                 } else {
                     statusText.innerText = "❌ Error: " + (result.error || "Unknown error from server.");
@@ -871,32 +766,23 @@
                 statusText.innerText = "❌ Could not connect to backend. Make sure your Render server is running.";
                 statusText.style.color = "var(--danger)";
             } finally {
-                // Always clear password from field for security
                 document.getElementById('srm-pwd').value = '';
             }
         }
 
         function processScrapedData(dataArray) {
             attendanceData = [];
-
             if (!Array.isArray(dataArray) || dataArray.length === 0) return;
 
             dataArray.forEach(item => {
-                // FIX: Handle many possible field names the app may use
                 const name = item.courseTitle || item.name || item.subject || item.courseName || item.title || "Unknown Subject";
                 const attended = parseInt(item.attended || item.present || item.attendedClasses || 0);
                 const total = parseInt(item.total || item.conducted || item.totalClasses || item.totalConducted || 0);
 
                 if (name && !isNaN(attended) && !isNaN(total) && total > 0) {
-                    attendanceData.push({
-                        id: Date.now() + Math.random(),
-                        name: name,
-                        attended: attended,
-                        total: total
-                    });
+                    attendanceData.push({ id: Date.now() + Math.random(), name, attended, total });
                 }
             });
-
             saveAttendance();
             renderAttendance();
         }
@@ -916,35 +802,22 @@
             list.innerHTML = '';
 
             marksArray.forEach(item => {
-                const course = item.courseTitle || item.name || item.subject || item.courseName || "Subject";
-                // Try to extract any numeric fields as marks
-                const fields = Object.entries(item).filter(([k, v]) => {
-                    const key = k.toLowerCase();
-                    return (key.includes('mark') || key.includes('score') || key.includes('grade') ||
-                            key.includes('internal') || key.includes('total') || key.includes('max') ||
-                            key.includes('obtain') || key.includes('ct') || key.includes('exam'))
-                           && !['coursecode','courseid','id','regNo'].includes(k);
-                });
+                const course = item.courseTitle || item.name || item.subject || item.courseName || "Raw Academia Data";
+                const fields = Object.entries(item).filter(([k, v]) => !['coursecode','courseid','id','regNo'].includes(k));
 
                 let detailsHTML = fields.map(([k, v]) => {
-                    const label = k.replace(/([A-Z])/g, ' $1').replace(/_/g, ' ').trim();
-                    const displayVal = (v !== null && v !== undefined && v !== '') ? v : '—';
+                    let displayVal = v;
+                    if(typeof v === 'object') displayVal = JSON.stringify(v);
                     return `<div style="display:flex; justify-content:space-between; padding: 8px 0; border-bottom: 1px solid var(--glass-border);">
-                                <span style="color:var(--text-sub); text-transform: capitalize;">${label}</span>
-                                <span style="color:var(--primary); font-weight: bold;">${displayVal}</span>
+                                <span style="color:var(--text-sub); text-transform: capitalize;">${k}</span>
+                                <span style="color:var(--primary); font-weight: bold; font-size:0.85rem; max-width:60%; word-wrap:break-word; text-align:right;">${displayVal}</span>
                             </div>`;
                 }).join('');
 
-                if (!detailsHTML) {
-                    detailsHTML = `<p style="color:var(--text-sub);">Mark details not available for this subject.</p>`;
-                }
-
                 list.innerHTML += `
                     <div class="meal-card fade-in-up" style="flex-direction: column; align-items: flex-start; margin-bottom: 20px;">
-                        <h3 style="margin: 0 0 15px 0; color: var(--primary); font-family: 'Montserrat', sans-serif; text-transform: uppercase; font-size: 1rem;">
-                            ${course}
-                        </h3>
-                        ${detailsHTML}
+                        <h3 style="margin: 0 0 15px 0; color: var(--primary); font-family: 'Montserrat', sans-serif; text-transform: uppercase; font-size: 1rem;">${course}</h3>
+                        <div style="width:100%;">${detailsHTML}</div>
                     </div>
                 `;
             });
@@ -964,61 +837,11 @@
             grid.style.display = 'block';
             grid.innerHTML = '';
 
-            // Try to group by day if 'day' field exists
-            const days = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
-            const grouped = {};
-            let hasDayField = false;
-
             ttArray.forEach(item => {
-                const day = item.day || item.dayName || item.weekDay || null;
-                if (day) {
-                    hasDayField = true;
-                    if (!grouped[day]) grouped[day] = [];
-                    grouped[day].push(item);
-                }
+                grid.innerHTML += `<div class="meal-card fade-in-up"><div style="color:var(--primary);">${JSON.stringify(item)}</div></div>`;
             });
-
-            if (hasDayField) {
-                days.forEach(day => {
-                    if (!grouped[day]) return;
-                    let slots = grouped[day].map(item => {
-                        const sub = item.courseTitle || item.subject || item.name || item.courseName || '—';
-                        const time = item.time || item.slot || item.period || item.startTime || '';
-                        const venue = item.venue || item.room || item.location || '';
-                        return `<div style="background: var(--glass); border: 1px solid var(--glass-border); border-radius: 8px; padding: 12px; margin-bottom: 8px; text-align:left;">
-                                    <div style="color:var(--primary); font-weight: bold; font-size: 0.95rem;">${sub}</div>
-                                    ${time ? `<div style="color:var(--text-sub); font-size:0.85rem;">⏰ ${time}</div>` : ''}
-                                    ${venue ? `<div style="color:var(--text-sub); font-size:0.85rem;">📍 ${venue}</div>` : ''}
-                                </div>`;
-                    }).join('');
-
-                    grid.innerHTML += `
-                        <div class="image-card fade-in-up" style="margin-bottom: 20px; cursor: default; transform: none; text-align: left;">
-                            <h3 style="color:var(--primary); font-family:'Montserrat',sans-serif; text-transform:uppercase; margin: 0 0 15px 0;">${day}</h3>
-                            ${slots}
-                        </div>
-                    `;
-                });
-            } else {
-                // No day field — just show a flat list of all slots
-                ttArray.forEach(item => {
-                    const sub = item.courseTitle || item.subject || item.name || item.courseName || '—';
-                    const time = item.time || item.slot || item.period || item.startTime || '';
-                    const venue = item.venue || item.room || item.location || '';
-                    const day = item.day || item.weekDay || '';
-                    grid.innerHTML += `
-                        <div class="meal-card fade-in-up" style="flex-direction:column; align-items:flex-start; margin-bottom:15px;">
-                            <div style="color:var(--primary); font-weight:bold; font-size:1rem; margin-bottom:5px;">${sub}</div>
-                            ${day ? `<div style="color:var(--text-sub); font-size:0.9rem;">📅 ${day}</div>` : ''}
-                            ${time ? `<div style="color:var(--text-sub); font-size:0.9rem;">⏰ ${time}</div>` : ''}
-                            ${venue ? `<div style="color:var(--text-sub); font-size:0.9rem;">📍 ${venue}</div>` : ''}
-                        </div>
-                    `;
-                });
-            }
         }
 
-        // Load saved marks and timetable on page load
         function loadSavedMarksAndTimetable() {
             const savedMarks = JSON.parse(localStorage.getItem('squadMarks') || '[]');
             const savedTimetable = JSON.parse(localStorage.getItem('squadTimetable') || '[]');
@@ -1027,21 +850,13 @@
         }
         loadSavedMarksAndTimetable();
 
-        // --- MANUAL ENTRY FUNCTIONS ---
         function addAttendance() {
             const nameInput = document.getElementById('att-sub-name');
             const attInput = document.getElementById('att-attended');
             const totInput = document.getElementById('att-total');
-            
             if(!nameInput.value || !attInput.value || !totInput.value) return alert("Fill all fields");
             
-            attendanceData.push({
-                id: Date.now(),
-                name: nameInput.value,
-                attended: parseInt(attInput.value),
-                total: parseInt(totInput.value)
-            });
-            
+            attendanceData.push({ id: Date.now(), name: nameInput.value, attended: parseInt(attInput.value), total: parseInt(totInput.value) });
             nameInput.value = ''; attInput.value = ''; totInput.value = '';
             saveAttendance();
             renderAttendance();
@@ -1056,33 +871,22 @@
         function renderAttendance() {
             const list = document.getElementById('attendance-list');
             list.innerHTML = '';
-            
-            let grandAttended = 0;
-            let grandTotal = 0;
+            let grandAttended = 0, grandTotal = 0;
 
             attendanceData.forEach(item => {
                 grandAttended += item.attended;
                 grandTotal += item.total;
-                
                 const percentage = item.total === 0 ? 0 : ((item.attended / item.total) * 100).toFixed(1);
                 const isGood = percentage >= 75;
-                
-                let statusText = "";
-                if(isGood) {
-                    let bunk = Math.floor((item.attended - (0.75 * item.total)) / 0.75);
-                    statusText = `You can safely bunk ${bunk} classes.`;
-                } else {
-                    let needed = Math.ceil(((0.75 * item.total) - item.attended) / 0.25);
-                    statusText = `Attend ${needed} more classes to hit 75%.`;
-                }
+                let statusText = isGood 
+                    ? `You can safely bunk ${Math.floor((item.attended - (0.75 * item.total)) / 0.75)} classes.`
+                    : `Attend ${Math.ceil(((0.75 * item.total) - item.attended) / 0.25)} more classes to hit 75%.`;
 
                 list.innerHTML += `
                     <div class="meal-card fade-in-up" style="display: flex; justify-content: space-between; align-items: center; padding: 20px; border-radius: 12px; margin-bottom: 15px;">
                         <div>
                             <h3 style="margin-bottom: 5px; color: var(--primary); font-family: 'Montserrat', sans-serif; text-transform: uppercase;">${item.name}</h3>
-                            <div style="font-size: 1.5rem; font-weight: bold;" class="${isGood ? 'good-attendance' : 'bad-attendance'}">
-                                ${percentage}%
-                            </div>
+                            <div style="font-size: 1.5rem; font-weight: bold;" class="${isGood ? 'good-attendance' : 'bad-attendance'}">${percentage}%</div>
                             <div class="stat-text">${item.attended} / ${item.total} Attended</div>
                             <div class="stat-text" style="color:var(--text-main); font-weight: bold; margin-top: 8px;">${statusText}</div>
                         </div>
@@ -1102,119 +906,60 @@
             }
         }
 
-        // ==========================================
-        // UI & UTILITY LOGIC
-        // ==========================================
         function toggleTheme() {
-            const body = document.body;
-            const btn = document.getElementById('themeToggle');
-            body.classList.toggle('light-mode');
-            btn.innerText = body.classList.contains('light-mode') ? '🌙' : '☀️'; 
+            document.body.classList.toggle('light-mode');
+            document.getElementById('themeToggle').innerText = document.body.classList.contains('light-mode') ? '🌙' : '☀️'; 
         }
 
         setTimeout(() => {
             document.getElementById('splash-screen').classList.add('zoom-out');
             document.getElementById('main-content').classList.add('content-visible');
             document.getElementById('navButtons').style.opacity = '1';
-
-            setTimeout(() => {
-                document.getElementById('splash-screen').style.display = 'none';
-            }, 1000);
-            
+            setTimeout(() => document.getElementById('splash-screen').style.display = 'none', 1000);
             checkAndScheduleNotifications();
         }, 1200);
 
         function openLightbox(src) {
-            const lb = document.getElementById("lightbox");
-            lb.style.display = "flex";
+            document.getElementById("lightbox").style.display = "flex";
             document.getElementById("lightbox-img").src = src;
         }
-        function closeLightbox() {
-            document.getElementById("lightbox").style.display = "none";
-        }
+        function closeLightbox() { document.getElementById("lightbox").style.display = "none"; }
 
-        // ==========================================
-        // 8. NOTIFICATION SCHEDULER
-        // ==========================================
         function requestNotificationPermission() {
-            if (!("Notification" in window)) {
-                alert("This browser does not support desktop notification");
-            } else if (Notification.permission === "granted") {
-                alert("Notifications are already enabled!");
-                checkAndScheduleNotifications(true); 
-            } else if (Notification.permission !== "denied") {
-                Notification.requestPermission().then(function (permission) {
-                    if (permission === "granted") {
-                        alert("Notifications enabled! You will now receive daily mess updates.");
-                    }
+            if (!("Notification" in window)) alert("This browser does not support desktop notification");
+            else if (Notification.permission === "granted") { alert("Notifications are already enabled!"); checkAndScheduleNotifications(true); }
+            else if (Notification.permission !== "denied") {
+                Notification.requestPermission().then(permission => {
+                    if (permission === "granted") alert("Notifications enabled! You will now receive daily mess updates.");
                 });
             }
         }
 
         function triggerLocalNotification(title, body) {
             if (Notification.permission === 'granted' && navigator.serviceWorker) {
-                navigator.serviceWorker.ready.then(function(registration) {
-                    registration.active.postMessage({
-                        type: 'SHOW_NOTIFICATION',
-                        title: title,
-                        body: body
-                    });
-                });
+                navigator.serviceWorker.ready.then(reg => reg.active.postMessage({ type: 'SHOW_NOTIFICATION', title, body }));
             }
         }
 
         function checkAndScheduleNotifications(force = false) {
             if (Notification.permission !== 'granted') return;
-
-            const now = new Date();
-            const hours = now.getHours();
-            const minutes = now.getMinutes();
-            const todayStr = now.toDateString();
-            
-            const daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-            const currentDay = daysOfWeek[now.getDay()];
-            const todaysMenu = messMenuData[currentDay];
-
-            let lastNotifiedStr = localStorage.getItem('lastNotifiedDate') || "";
+            const now = new Date(), hours = now.getHours(), minutes = now.getMinutes(), timeFloat = hours + (minutes / 60);
+            const todaysMenu = messMenuData[['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][now.getDay()]];
             let notifiedEvents = JSON.parse(localStorage.getItem('notifiedEvents') || '{}');
 
-            if (lastNotifiedStr !== todayStr) {
+            if (localStorage.getItem('lastNotifiedDate') !== now.toDateString()) {
                 notifiedEvents = { breakfast: false, lunch: false, snacks: false, dinner: false, sleep: false };
-                localStorage.setItem('lastNotifiedDate', todayStr);
+                localStorage.setItem('lastNotifiedDate', now.toDateString());
             }
 
-            const timeFloat = hours + (minutes / 60);
-
-            if ((timeFloat >= 6.5 && timeFloat < 10) && !notifiedEvents.breakfast) {
-                triggerLocalNotification("Good Morning! ☀️ Breakfast:", todaysMenu.Breakfast);
-                notifiedEvents.breakfast = true;
-            }
-            
-            if ((timeFloat >= 11 && timeFloat < 14) && !notifiedEvents.lunch) {
-                triggerLocalNotification("Lunch Time Approaching! 🍛", todaysMenu.Lunch);
-                notifiedEvents.lunch = true;
-            }
-
-            if ((timeFloat >= 15 && timeFloat < 18) && !notifiedEvents.snacks) {
-                triggerLocalNotification("Snack Time! 🥨", todaysMenu.Snacks);
-                notifiedEvents.snacks = true;
-            }
-
-            if ((timeFloat >= 18.5 && timeFloat < 21) && !notifiedEvents.dinner) {
-                triggerLocalNotification("Dinner is served! 🍽️", todaysMenu.Dinner);
-                notifiedEvents.dinner = true;
-            }
-
-            if ((timeFloat >= 22.5) && !notifiedEvents.sleep) {
-                triggerLocalNotification("Time to Sleep! 🌙", "Put the phone away and get some rest for classes tomorrow. 💤");
-                notifiedEvents.sleep = true;
-            }
+            if (timeFloat >= 6.5 && timeFloat < 10 && !notifiedEvents.breakfast) { triggerLocalNotification("Good Morning! ☀️ Breakfast:", todaysMenu.Breakfast); notifiedEvents.breakfast = true; }
+            if (timeFloat >= 11 && timeFloat < 14 && !notifiedEvents.lunch) { triggerLocalNotification("Lunch Time Approaching! 🍛", todaysMenu.Lunch); notifiedEvents.lunch = true; }
+            if (timeFloat >= 15 && timeFloat < 18 && !notifiedEvents.snacks) { triggerLocalNotification("Snack Time! 🥨", todaysMenu.Snacks); notifiedEvents.snacks = true; }
+            if (timeFloat >= 18.5 && timeFloat < 21 && !notifiedEvents.dinner) { triggerLocalNotification("Dinner is served! 🍽️", todaysMenu.Dinner); notifiedEvents.dinner = true; }
+            if (timeFloat >= 22.5 && !notifiedEvents.sleep) { triggerLocalNotification("Time to Sleep! 🌙", "Put the phone away and get some rest for classes tomorrow. 💤"); notifiedEvents.sleep = true; }
 
             localStorage.setItem('notifiedEvents', JSON.stringify(notifiedEvents));
-            
-            if (force && timeFloat < 6.5) {
-                 triggerLocalNotification("SRM Hub Active", "Notifications are active. Next alert will be at 6:30 AM! ⏰");
-            }
+            if (force && timeFloat < 6.5) triggerLocalNotification("SRM Hub Active", "Notifications are active. Next alert will be at 6:30 AM! ⏰");
         }
     </script>
 </body>
