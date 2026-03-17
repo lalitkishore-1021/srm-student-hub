@@ -537,7 +537,7 @@
             'helloAppFolder': { 
                 title: 'HelloApp UC\'s',
                 parent: 'oopsBanner',
-                video: 'https://www.youtube.com/embed/k8eX_rkQxPk', 
+                video: 'https://www.youtube.com/embed/k8eX_rkQxPk',
                 images: [
                     { src: 'images/oops-banner/ha1.png', label: 'Step 1' },
                     { src: 'images/oops-banner/ha2.png', label: 'Step 2' },
@@ -821,15 +821,15 @@
                 return;
             }
 
-            statusText.innerText = "🔄 Opening academia portal in background... This may take up to 30 seconds.";
+            statusText.innerText = "🔄 Launching GradeX Sniper in background... This may take up to 45 seconds.";
             statusText.style.color = "var(--primary)";
 
             try {
-                const response = await fetch(`${BACKEND_URL}/api/mega-sync`, {
+                // 👇 FIXED ENDPOINT AND DATA NAMES 👇
+                const response = await fetch(`${BACKEND_URL}/api/start_session`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    // FIX: Send correct field names that server expects
-                    body: JSON.stringify({ email: regNo, password: pwd })
+                    body: JSON.stringify({ regNo: regNo, pwd: pwd })
                 });
 
                 if (!response.ok) {
@@ -840,9 +840,10 @@
 
                 if (result.success) {
                     const data = result.data || {};
-                    const att = Array.isArray(data.attendance) ? data.attendance : [];
-                    const marks = Array.isArray(data.marks) ? data.marks : [];
-                    const timetable = Array.isArray(data.timetable) ? data.timetable : [];
+                    // We directly process the array sent by Python
+                    const att = Array.isArray(result.data) ? result.data : [];
+                    const marks = result.marks ? result.marks : [];
+                    const timetable = result.timetable ? result.timetable : [];
 
                     // Save all three to localStorage
                     localStorage.setItem('squadMarks', JSON.stringify(marks));
@@ -855,11 +856,9 @@
                     renderMarks(marks);
                     renderTimetable(timetable);
 
-                    let summary = `✅ Sync complete! Got: Attendance(${att.length})`;
-                    if (marks.length) summary += `, Marks(${marks.length})`;
-                    if (timetable.length) summary += `, Timetable(${timetable.length})`;
-                    if (!marks.length) summary += ` | Marks: not available from portal`;
-                    if (!timetable.length) summary += ` | Timetable: not available from portal`;
+                    let summary = `✅ Sync complete! Got: Attendance`;
+                    if (marks.length || Object.keys(marks).length) summary += `, Marks`;
+                    if (timetable.length || Object.keys(timetable).length) summary += `, Timetable`;
 
                     statusText.innerText = summary;
                     statusText.style.color = "var(--success)";
@@ -883,7 +882,7 @@
             if (!Array.isArray(dataArray) || dataArray.length === 0) return;
 
             dataArray.forEach(item => {
-                // FIX: Handle many possible field names the Vercel app may use
+                // FIX: Handle many possible field names the app may use
                 const name = item.courseTitle || item.name || item.subject || item.courseName || item.title || "Unknown Subject";
                 const attended = parseInt(item.attended || item.present || item.attendedClasses || 0);
                 const total = parseInt(item.total || item.conducted || item.totalClasses || item.totalConducted || 0);
