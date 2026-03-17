@@ -53,45 +53,54 @@ def scrape_gradex_worker(reg_no, pwd, out_queue):
                 route.continue_()
 
         page.route("**/*", handle_route)
-
-        # Custom function to destroy the WhatsApp popup
-        def kill_popup():
-            try:
-                page.locator('text="Maybe later"').first.click(timeout=2000)
-            except: pass
-            # Click the top left empty space to click OUTSIDE the popup
-            page.mouse.click(10, 10)
-            page.wait_for_timeout(1000)
-
         
         print(f"[{reg_no}] 1. Loading /srm-login and waiting 15s for animation...")
         try:
-            page.goto("https://gradex.bond/srm-login", wait_until="domcontentloaded", timeout=60000)
-            # 🚨 WAIT 15 SECONDS FOR THE ANIMATION TO FINISH
-            page.wait_for_timeout(15000) 
-            kill_popup()
+            page.goto("https://gradex.bond/srm-login", wait_until="load", timeout=60000)
+            page.wait_for_timeout(15000) # Wait out the animation
         except Exception:
             out_queue.put({'success': False, 'error': 'GradeX login page failed to load.'})
             return
-        
+            
+        # Mash escape to clear the WhatsApp popup
+        for _ in range(3):
+            page.keyboard.press("Escape")
+            page.wait_for_timeout(500)
+            
+        # Safety Net: If we got redirected to the Home page, click "Login to SRM"
+        try:
+            btn = page.locator('text="Login to SRM"').first
+            if btn.is_visible(timeout=3000):
+                btn.click(force=True)
+                page.wait_for_timeout(5000)
+        except: pass
+
         if "@" not in reg_no: reg_no += "@srmist.edu.in"
             
-        print(f"[{reg_no}] 2. Entering credentials...")
+        print(f"[{reg_no}] 2. Entering credentials (Forcing through popups)...")
         try:
-            page.locator('input[placeholder*="USER ID" i], input[type="text"]').first.fill(reg_no, timeout=10000)
-            page.locator('input[placeholder*="Pass Please" i], input[type="password"]').first.fill(pwd, timeout=5000)
+            # Wait for any input box to exist in the code
+            page.wait_for_selector('input', timeout=15000)
+            
+            # 🚨 FORCE=TRUE: Ignore the dark popup overlay and type anyway!
+            page.locator('input').nth(0).fill(reg_no, force=True)
+            page.locator('input[type="password"]').first.fill(pwd, force=True)
             
             try:
-                page.locator('button:has-text("CONNECT")').first.click(timeout=3000)
+                page.locator('button:has-text("CONNECT")').first.click(force=True, timeout=3000)
             except:
                 page.keyboard.press("Enter")
-        except Exception:
-            out_queue.put({'success': False, 'error': 'Could not find the USER ID or PASSWORD boxes.'})
+        except Exception as e:
+            out_queue.put({'success': False, 'error': f'Could not inject credentials. Error: {str(e)}'})
             return
         
         print(f"[{reg_no}] 3. Waiting for dashboard to load (10s)...")
         page.wait_for_timeout(10000) 
-        kill_popup() # Kill the popup again just in case it spawns after login
+        
+        # Mash Escape again just in case the dashboard has a popup
+        for _ in range(3):
+            page.keyboard.press("Escape")
+            page.wait_for_timeout(500)
 
         print(f"[{reg_no}] 4. Clicking Navigation Tabs to sniff API...")
         try:
@@ -122,7 +131,7 @@ def scrape_gradex_worker(reg_no, pwd, out_queue):
                 'timetable': intercepted_data.get('timetable')
             })
         else:
-            out_queue.put({'success': False, 'error': 'Logged in successfully, but no data was received. Check password.'})
+            out_queue.put({'success': False, 'error': 'Logged in successfully, but no data was received. GradeX API might be empty.'})
 
     except Exception as e:
         out_queue.put({'success': False, 'error': f"Unexpected Error: {str(e)}"})
@@ -137,7 +146,7 @@ def start_session():
     t = threading.Thread(target=scrape_gradex_worker, args=(data.get('regNo'), data.get('pwd'), out_queue))
     t.start()
     try:
-        result = out_queue.get(timeout=110) # Gave it a little extra time for the 15s wait
+        result = out_queue.get(timeout=110)
         return jsonify(result)
     except queue.Empty:
         return jsonify({'success': False, 'error': 'Server Timeout. GradeX took too long to respond.'})
