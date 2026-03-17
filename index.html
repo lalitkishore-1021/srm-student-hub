@@ -276,12 +276,8 @@
                 <button class="back-btn" onclick="switchView('projects-view')">&#8592; Back to Home</button>
                 <h2 class="gallery-title">Marks Tracker</h2>
             </div>
-            <div class="image-card" style="max-width: 600px; margin: 0 auto; padding: 40px; cursor: default; transform: none;">
-                <div class="meal-icon-box" style="width: 60px; height: 60px; margin: 0 auto 20px auto; border-radius: 50%;">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 35px; height: 35px;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
-                </div>
-                <h3 style="color: var(--primary); margin-bottom: 15px; font-family: 'Montserrat', sans-serif; text-transform: uppercase;">🚧 Under Construction 🚧</h3>
-                <p style="color: var(--text-sub); line-height: 1.6; font-size: 1.1rem;">We are secretly saving your marks in the background now. The beautiful UI to view them will be here soon!</p>
+            <div id="marks-container" style="max-width: 800px; margin: 0 auto;">
+                <p style="color: var(--text-sub);">Sync your data on the Mega Sync page to load marks.</p>
             </div>
         </div>
 
@@ -290,12 +286,8 @@
                 <button class="back-btn" onclick="switchView('projects-view')">&#8592; Back to Home</button>
                 <h2 class="gallery-title">Time Table</h2>
             </div>
-            <div class="image-card" style="max-width: 600px; margin: 0 auto; padding: 40px; cursor: default; transform: none;">
-                <div class="meal-icon-box" style="width: 60px; height: 60px; margin: 0 auto 20px auto; border-radius: 50%;">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 35px; height: 35px;"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-                </div>
-                <h3 style="color: var(--primary); margin-bottom: 15px; font-family: 'Montserrat', sans-serif; text-transform: uppercase;">🚧 Coming Soon 🚧</h3>
-                <p style="color: var(--text-sub); line-height: 1.6; font-size: 1.1rem;">The interactive timetable is under development. Your data is ready to go!</p>
+            <div id="timetable-container" style="max-width: 800px; margin: 0 auto;">
+                <p style="color: var(--text-sub);">Sync your data on the Mega Sync page to load timetable.</p>
             </div>
         </div>
 
@@ -369,7 +361,7 @@
                 <div id="login-section">
                     <p style="color: var(--text-sub); text-align: left; margin-bottom: 15px; font-size: 0.9rem;">Auto-fetch your attendance directly from Academia.</p>
                     <div class="form-row" style="grid-template-columns: 1fr 1fr auto;">
-                        <input type="text" id="srm-reg" placeholder="NetID or Email">
+                        <input type="text" id="srm-reg" placeholder="Registration Number">
                         <input type="password" id="srm-pwd" placeholder="Portal Password">
                         <button class="action-btn" onclick="startLiveSync()">Sync</button>
                     </div>
@@ -411,14 +403,6 @@
     </div>
 
     <script>
-        // ==========================================
-        // CONFIGURATION: SET YOUR BACKEND URL HERE
-        // ==========================================
-        const BACKEND_URL = 'https://srm-student-hub-1.onrender.com';
-
-        // ==========================================
-        // PWA SERVICE WORKER
-        // ==========================================
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('sw.js')
@@ -456,9 +440,6 @@
         installAppBtn.addEventListener('click', triggerAppInstall);
         logoInstallTrigger.addEventListener('click', triggerAppInstall);
 
-        // ==========================================
-        // 1. ROUTING LOGIC & MOBILE BACK BUTTON FIX
-        // ==========================================
         history.replaceState({ viewId: 'projects-view' }, '', '#projects-view');
 
         function switchView(viewId, pushToHistory = true) {
@@ -471,6 +452,10 @@
             if (pushToHistory) {
                 history.pushState({ viewId: viewId }, '', `#${viewId}`);
             }
+
+            // Fire rendering logic for dynamic pages
+            if(viewId === 'marks-view') renderMarks();
+            if(viewId === 'timetable-view') renderTimetable();
         }
 
         window.addEventListener('popstate', (e) => {
@@ -481,9 +466,6 @@
             }
         });
 
-        // ==========================================
-        // 2. PORTFOLIO DATA
-        // ==========================================
         const projectsDatabase = {
             'oopsBanner': {
                 title: 'OOPS Banner App',
@@ -609,9 +591,6 @@
             }
         }
 
-        // ==========================================
-        // 3. CGPA CALCULATOR LOGIC
-        // ==========================================
         function addCgpaRow() {
             const rowHTML = `
                 <div class="form-row fade-in-up">
@@ -654,9 +633,6 @@
             }
         }
 
-        // ==========================================
-        // 4. BEAUTIFUL MESS MENU LOGIC
-        // ==========================================
         const mealIcons = {
             'Breakfast': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M17 8h1a4 4 0 1 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z"/><line x1="6" y1="2" x2="6" y2="4"/><line x1="10" y1="2" x2="10" y2="4"/><line x1="14" y1="2" x2="14" y2="4"/></svg>',
             'Lunch': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>',
@@ -759,9 +735,6 @@
             });
         }
 
-        // ==========================================
-        // 5. HELPER (RESOURCES) LOGIC
-        // ==========================================
         const dummySubject = { name: 'Content Adding Soon...', topics: ['Check back later for pyqs.'], pyqLink: '#', ctLink: '#' };
         const helperData = { 'Semester 1': [dummySubject], 'Semester 2': [dummySubject], 'Semester 3': [dummySubject], 'Semester 4': [dummySubject] };
 
@@ -805,9 +778,6 @@
         }
         initHelper(); 
 
-        // ==========================================
-        // 6. MEGA-SYNC LOGIC (POINTS TO PYTHON SERVER)
-        // ==========================================
         let attendanceData = JSON.parse(localStorage.getItem('squadAttendance')) || [];
 
         function saveAttendance() {
@@ -824,12 +794,12 @@
                 return;
             }
 
-            statusText.innerText = "Launching secure browser... Please wait (can take up to 45 seconds).";
+            statusText.innerText = "Launching secure sniper... Please wait (can take up to 45 seconds).";
             statusText.style.color = "var(--primary)";
 
             try {
-                // 👇 THIS IS THE RELATIVE LINK FIX 👇
-                const response = await fetch('/api/start_session', {
+                // 🚨 ABSOLUTE URL FIX: This guarantees it finds the Render server.
+                const response = await fetch('https://srm-student-hub-1.onrender.com/api/start_session', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ regNo: regNo, pwd: pwd })
@@ -840,7 +810,6 @@
                 if(result.success) {
                     processScrapedData(result.data);
                     
-                    // Secretly saving Marks and Timetable to use later!
                     if(result.marks) {
                         localStorage.setItem('squadMarks', JSON.stringify(result.marks));
                     }
@@ -864,7 +833,6 @@
             
             attendanceData = [];
 
-            // Account for any potential data format variations from the sniffer
             if (dataArray && Array.isArray(dataArray)) {
                 dataArray.forEach(item => {
                     attendanceData.push({
@@ -879,13 +847,12 @@
             saveAttendance();
             renderAttendance();
 
-            statusText.innerText = "✅ Mega-Sync Complete! Attendance, Marks, and Timetable saved.";
+            statusText.innerText = "✅ Mega-Sync Complete! Data saved.";
             statusText.style.color = "var(--success)";
             
             document.getElementById('srm-pwd').value = '';
         }
 
-        // --- MANUAL ENTRY FUNCTIONS ---
         function addAttendance() {
             const nameInput = document.getElementById('att-sub-name');
             const attInput = document.getElementById('att-attended');
@@ -960,9 +927,65 @@
             }
         }
 
-        // ==========================================
-        // UI & UTILITY LOGIC
-        // ==========================================
+        function renderMarks() {
+            const container = document.getElementById('marks-container');
+            const savedMarks = JSON.parse(localStorage.getItem('squadMarks'));
+            
+            if (!savedMarks || Object.keys(savedMarks).length === 0) {
+                container.innerHTML = '<p style="color: var(--text-sub);">No marks data found. Run Mega Sync first!</p>';
+                return;
+            }
+            
+            container.innerHTML = '';
+            
+            let marksArray = Array.isArray(savedMarks) ? savedMarks : (savedMarks.marks || savedMarks.data || Object.values(savedMarks));
+            
+            marksArray.forEach(subject => {
+                let detailsHTML = '';
+                for (let key in subject) {
+                    if(key !== 'name' && key !== 'courseTitle' && key !== 'subject') {
+                        detailsHTML += `
+                            <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--glass-border); padding: 8px 0;">
+                                <span style="color: var(--text-sub); text-transform: uppercase; font-size: 0.85rem;">${key}</span>
+                                <span style="color: var(--primary); font-weight: bold;">${subject[key]}</span>
+                            </div>
+                        `;
+                    }
+                }
+
+                let subName = subject.name || subject.courseTitle || subject.subject || "Unknown Subject";
+
+                container.innerHTML += `
+                    <div class="meal-card fade-in-up" style="flex-direction: column; padding: 20px;">
+                        <h3 style="color: var(--primary); font-family: 'Montserrat', sans-serif; text-transform: uppercase; margin-top: 0; margin-bottom: 15px;">${subName}</h3>
+                        <div style="width: 100%;">${detailsHTML}</div>
+                    </div>
+                `;
+            });
+        }
+
+        function renderTimetable() {
+            const container = document.getElementById('timetable-container');
+            const savedTime = JSON.parse(localStorage.getItem('squadTimetable'));
+            
+            if (!savedTime || Object.keys(savedTime).length === 0) {
+                container.innerHTML = '<p style="color: var(--text-sub);">No timetable data found. Run Mega Sync first!</p>';
+                return;
+            }
+            
+            container.innerHTML = '';
+            let timeArray = Array.isArray(savedTime) ? savedTime : (savedTime.timetable || savedTime.data || Object.values(savedTime));
+            
+            timeArray.forEach(day => {
+                container.innerHTML += `
+                    <div class="meal-card fade-in-up" style="flex-direction: column; padding: 20px; text-align: center;">
+                        <h3 style="color: var(--primary); font-family: 'Montserrat', sans-serif; margin-top: 0;">${JSON.stringify(day)}</h3>
+                        <p style="color: var(--text-sub); font-size: 0.9rem;">(Raw API Data Rendered)</p>
+                    </div>
+                `;
+            });
+        }
+
         function toggleTheme() {
             const body = document.body;
             const btn = document.getElementById('themeToggle');
@@ -991,9 +1014,6 @@
             document.getElementById("lightbox").style.display = "none";
         }
 
-        // ==========================================
-        // 8. NOTIFICATION SCHEDULER
-        // ==========================================
         function requestNotificationPermission() {
             if (!("Notification" in window)) {
                 alert("This browser does not support desktop notification");
