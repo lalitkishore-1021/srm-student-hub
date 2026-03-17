@@ -820,16 +820,16 @@
             const statusText = document.getElementById('sync-status');
             
             if(!regNo || !pwd) {
-                alert("Please enter NetID/Email and Password.");
+                alert("Please enter Registration Number and Password.");
                 return;
             }
 
-            statusText.innerText = "Sniffing data from portal... Please wait (can take up to 45 seconds).";
+            statusText.innerText = "Launching secure browser... Please wait (can take up to 45 seconds).";
             statusText.style.color = "var(--primary)";
 
             try {
-                // Correctly pointing to the Python start_session endpoint!
-                const response = await fetch(`${BACKEND_URL}/api/start_session`, {
+                // 👇 THIS IS THE RELATIVE LINK FIX 👇
+                const response = await fetch('/api/start_session', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ regNo: regNo, pwd: pwd })
@@ -854,7 +854,7 @@
                 }
             } catch (err) {
                 console.error(err);
-                statusText.innerText = "Failed to connect. Please make sure the Python server is running on Render.";
+                statusText.innerText = "Failed to connect to the Python server. Please try again.";
                 statusText.style.color = "var(--danger)";
             }
         }
