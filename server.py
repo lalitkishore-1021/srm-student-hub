@@ -34,18 +34,16 @@ def scrape_academia_worker(reg_no, pwd, out_queue):
         print(f"[{reg_no}] 1. Loading Academia Login Page...")
         try:
             page.goto("https://academia.srmist.edu.in/", wait_until="commit", timeout=60000)
-            page.wait_for_timeout(5000) # Wait for Zoho redirect and render
+            page.wait_for_timeout(5000)
         except Exception as e:
             out_queue.put({'success': False, 'error': f'Academia page failed to load: {str(e)}'})
             return
 
         def find_in_frames(selector, filter_text=None, filter_not_text=None):
-            """Helper to search the main page and all iframes for a locator"""
             loc = page.locator(selector)
             if filter_text: loc = loc.filter(has_text=re.compile(filter_text, re.IGNORECASE))
             if filter_not_text: loc = loc.filter(has_not_text=re.compile(filter_not_text, re.IGNORECASE))
             if loc.count() > 0: return loc.first
-
             for frame in page.frames:
                 try:
                     loc = frame.locator(selector)
@@ -58,14 +56,12 @@ def scrape_academia_worker(reg_no, pwd, out_queue):
         print(f"[{reg_no}] 2. Entering Email...")
         try:
             email_input = find_in_frames('input[type="email"], input[type="text"], input[name="LOGIN_ID"]', filter_not_text="hidden")
-            if not email_input: raise Exception("Could not find the Email input box in any iframe.")
-            
+            if not email_input: raise Exception("Could not find Email box.")
             email_input.fill(reg_no, force=True)
             
             next_btn = find_in_frames('button, input[type="submit"]', filter_text="next|continue")
             if next_btn: next_btn.click(force=True, timeout=5000)
             else: page.keyboard.press("Enter")
-            
         except Exception as e:
             out_queue.put({'success': False, 'error': f'Failed to enter Email: {str(e)}'})
             return
@@ -73,22 +69,20 @@ def scrape_academia_worker(reg_no, pwd, out_queue):
         print(f"[{reg_no}] 3. Entering Password...")
         try:
             pwd_input = None
-            for _ in range(15): # Max 15 seconds
+            for _ in range(15): 
                 pwd_input = find_in_frames('input[type="password"], input[name="PASSWORD"]')
                 if pwd_input: break
                 page.wait_for_timeout(1000)
                 
-            if not pwd_input: raise Exception("Could not find the Password input box in any iframe after waiting.")
+            if not pwd_input: raise Exception("Could not find Password box.")
             
             pwd_input.fill("") 
             pwd_input.type(pwd, delay=50) 
-            
             page.wait_for_timeout(1000) 
             
             submit_btn = find_in_frames('button, input[type="submit"]', filter_text="sign in|login|submit|verify")
             if submit_btn: submit_btn.click(force=True, timeout=5000)
             else: page.keyboard.press("Enter")
-            
             page.wait_for_timeout(5000) 
         except Exception as e:
             out_queue.put({'success': False, 'error': f'Failed to enter Password: {str(e)}'})
@@ -98,89 +92,88 @@ def scrape_academia_worker(reg_no, pwd, out_queue):
         try:
             terminate_btn = page.locator('button, a').filter(has_text=re.compile(r"terminate all session|terminate", re.IGNORECASE)).first
             if terminate_btn.count() > 0 and terminate_btn.is_visible(timeout=3000):
-                print(f"[{reg_no}]   Session blocked! Clicking Terminate All Sessions...")
+                print(f"[{reg_no}] Session blocked! Clicking Terminate All Sessions...")
                 terminate_btn.click(force=True)
                 page.wait_for_timeout(5000) 
         except: pass 
 
-        print(f"[{reg_no}] 5. Navigating to My_Attendance Dashboard...")
+        # 🚨 THE HARD RELOAD BYPASS 🚨
+        print(f"[{reg_no}] 5. Teleporting and forcing Hard Reload to My_Attendance...")
         try:
-            page.goto("https://academia.srmist.edu.in/#Page:My_Attendance", wait_until="commit", timeout=60000)
-            print(f"[{reg_no}]   Waiting 15 seconds for Zoho iframes to render data...")
-            page.wait_for_timeout(15000)
+            page.goto("https://academia.srmist.edu.in/#Page:My_Attendance", wait_until="commit")
+            # Force Zoho to read the hash by reloading the page
+            page.reload(wait_until="commit") 
+            page.wait_for_timeout(15000) # Give the tables plenty of time to render
         except Exception as e:
-            out_queue.put({'success': False, 'error': f'Failed to load My_Attendance hash: {str(e)}'})
-            return
+            print(f"[{reg_no}] Warning during teleport: {str(e)}")
 
-        # 🚨 THE NEW JAVASCRIPT X-RAY PARSER 🚨
-        print(f"[{reg_no}] 6. Extracting exact tables using JavaScript X-Ray...")
+        print(f"[{reg_no}] 6. Extracting all tables from all frames...")
+        all_tables_data = []
+        for frame in page.frames:
+            try:
+                tables = frame.evaluate("""() => {
+                    let all = [];
+                    document.querySelectorAll('table').forEach(t => {
+                        let rows = [];
+                        t.querySelectorAll('tr').forEach(tr => {
+                            let row = [];
+                            tr.querySelectorAll('td, th').forEach(td => {
+                                row.push(td.innerText.trim());
+                            });
+                            if (row.length > 0) rows.push(row);
+                        });
+                        if (rows.length > 1) all.push(rows);
+                    });
+                    return all;
+                }""")
+                if tables: all_tables_data.extend(tables)
+            except: pass
+
+        print(f"[{reg_no}] 7. Parsing the extracted tables...")
         parsed_data = [] 
         parsed_marks = []
         
-        for frame in page.frames:
-            try:
-                extracted = frame.evaluate("""() => {
-                    let result = { att: [], mrk: [] };
-                    let tables = Array.from(document.querySelectorAll('table'));
-                    
-                    tables.forEach(table => {
-                        let text = table.innerText;
-                        
-                        // Parse Attendance Table
-                        if (text.includes('Hours Conducted') && text.includes('Attn %')) {
-                            let rows = Array.from(table.querySelectorAll('tr'));
-                            rows.forEach(row => {
-                                let cells = Array.from(row.querySelectorAll('td'));
-                                if (cells.length >= 8) {
-                                    result.att.push({
-                                        code: cells[0].innerText.trim(),
-                                        title: cells[1].innerText.trim(),
-                                        conducted: parseInt(cells[6].innerText.trim()) || 0,
-                                        absent: parseInt(cells[7].innerText.trim()) || 0
-                                    });
-                                }
-                            });
-                        }
-                        
-                        // Parse Marks Table
-                        else if (text.includes('Test Performance')) {
-                            let rows = Array.from(table.querySelectorAll('tr'));
-                            rows.forEach(row => {
-                                let cells = Array.from(row.querySelectorAll('td'));
-                                if (cells.length >= 3) {
-                                    // Replace newlines with dividers so it looks clean on the phone
-                                    result.mrk.push({
-                                        code: cells[0].innerText.trim(),
-                                        type: cells[1].innerText.trim(),
-                                        scores: cells[2].innerText.trim().replace(/\\n/g, '  |  ')
-                                    });
-                                }
-                            });
-                        }
-                    });
-                    return result;
-                }""")
-                
-                if extracted and (extracted['att'] or extracted['mrk']):
-                    for item in extracted['att']:
-                        clean_title = item['title'].split('\n')[0][:30]
-                        parsed_data.append({
-                            "courseTitle": f"{item['code']} - {clean_title}...",
-                            "attended": item['conducted'] - item['absent'],
-                            "total": item['conducted']
-                        })
-                        
-                    for item in extracted['mrk']:
-                        if "Course Code" in item['code']: continue # Skip the header row
-                        parsed_marks.append({
-                            "courseTitle": f"{item['code']} ({item['type']})",
-                            "Test Performance": item['scores']
-                        })
-            except: pass
+        for table in all_tables_data:
+            # Check the table headers to identify it
+            header_text = " ".join(table[0]).lower()
+            if len(table) > 1: header_text += " " + " ".join(table[1]).lower()
 
+            if "hours conducted" in header_text and "attn" in header_text:
+                for row in table:
+                    if len(row) >= 9:
+                        if "Course Code" in row[0]: continue
+                        try:
+                            parsed_data.append({
+                                "courseTitle": f"{row[0]} - {row[1][:25]}...",
+                                "attended": int(row[6]) - int(row[7]),
+                                "total": int(row[6])
+                            })
+                        except: pass
+                        
+            elif "test performance" in header_text or "internal" in header_text:
+                for row in table:
+                    if len(row) >= 3:
+                        if "Course Code" in row[0]: continue
+                        parsed_marks.append({
+                            "courseTitle": f"{row[0]} ({row[1]})",
+                            "Test Performance": row[2].replace('\n', ' | ')
+                        })
+
+        # 🚨 BULLETPROOF FAILSAFE: DUMP RAW TEXT IF PARSING FAILS 🚨
         if not parsed_data and not parsed_marks:
-             out_queue.put({'success': False, 'error': 'Scraper reached the dashboard, but the tables were empty or blocked.'})
-             return
+            if all_tables_data:
+                out_queue.put({
+                    'success': True, 
+                    'data': [], 
+                    'marks': [
+                        {"courseTitle": "PARSING FAILED", "Internal Note": "Please screenshot this data!"},
+                        {"RAW TABLES": str(all_tables_data)[:2000]}
+                    ],
+                    'timetable': []
+                })
+            else:
+                out_queue.put({'success': False, 'error': 'Reached dashboard, but no tables were found in any iframe. Try syncing again.'})
+            return
 
         out_queue.put({
             'success': True, 
