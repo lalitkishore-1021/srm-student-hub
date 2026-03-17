@@ -1,5 +1,5 @@
 // Change this version number (e.g., v3 to v4) EVERY TIME you make a big update!
-const CACHE_NAME = 'srm-hub-v3'; 
+const CACHE_NAME = 'srm-hub-v4'; 
 const urlsToCache = [
   './index.html',
   './images/app-icon.svg'
