@@ -2,6 +2,7 @@ import time
 import threading
 import queue
 import os
+import re
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 from playwright.sync_api import sync_playwright
@@ -9,16 +10,16 @@ from playwright.sync_api import sync_playwright
 app = Flask(__name__, static_folder='.')
 CORS(app)
 
-def scrape_academia_worker(email, pwd, out_queue):
+def scrape_academia_worker(reg_no, pwd, out_queue):
     p = None
     browser = None
     try:
         p = sync_playwright().start()
-        print(f"[{email}] Launching Official Academia Sniper...")
+        print(f"[{reg_no}] Launching Academia Sniper...")
         
         browser = p.chromium.launch(
             headless=True,
-            args=['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-gpu']
+            args=['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
         )
         
         context = browser.new_context(
@@ -26,131 +27,170 @@ def scrape_academia_worker(email, pwd, out_queue):
             viewport={'width': 1280, 'height': 720}
         )
         page = context.new_page()
-        page.set_default_timeout(60000)
+        page.set_default_timeout(90000)
 
-        print(f"[{email}] 1. Navigating to Academia...")
+        if "@" not in reg_no: reg_no += "@srmist.edu.in"
+
+        print(f"[{reg_no}] 1. Loading Academia Login Page...")
         try:
-            page.goto("https://academia.srmist.edu.in/", wait_until="commit", timeout=45000)
-            page.wait_for_timeout(8000) # Give Zoho iframe time to render
+            page.goto("https://academia.srmist.edu.in/", wait_until="commit", timeout=60000)
+            page.wait_for_timeout(5000) # Wait for Zoho redirect and render
         except Exception as e:
-            print(f"[{email}] Page load warning, pushing through: {str(e)}")
-        
-        # 🚨 THE X-RAY IFRAME SCANNER FOR EMAIL 🚨
-        print(f"[{email}] 2. Entering Email (Scanning Iframes)...")
-        email_found = False
-        email_selectors = ['input[id="login_id"]', 'input[type="email"]', 'input[placeholder*="Email" i]']
-        
-        for selector in email_selectors:
-            if email_found: break
-            # 1. Check main page
-            if page.locator(selector).count() > 0:
-                page.locator(selector).first.fill(email, force=True)
-                page.locator(selector).first.press("Enter")
-                email_found = True
-                break
-            # 2. Check ALL hidden iframes
-            for frame in page.frames:
-                if frame.locator(selector).count() > 0:
-                    frame.locator(selector).first.fill(email, force=True)
-                    frame.locator(selector).first.press("Enter")
-                    email_found = True
-                    break
-
-        if not email_found:
-            out_queue.put({'success': False, 'error': 'Could not find the Zoho Email box inside the iframes.'})
+            out_queue.put({'success': False, 'error': f'Academia page failed to load: {str(e)}'})
             return
+
+        def find_in_frames(selector, filter_text=None, filter_not_text=None):
+            """Helper to search the main page and all iframes for a locator"""
+            loc = page.locator(selector)
+            if filter_text: loc = loc.filter(has_text=re.compile(filter_text, re.IGNORECASE))
+            if filter_not_text: loc = loc.filter(has_not_text=re.compile(filter_not_text, re.IGNORECASE))
+            if loc.count() > 0: return loc.first
+
+            for frame in page.frames:
+                try:
+                    loc = frame.locator(selector)
+                    if filter_text: loc = loc.filter(has_text=re.compile(filter_text, re.IGNORECASE))
+                    if filter_not_text: loc = loc.filter(has_not_text=re.compile(filter_not_text, re.IGNORECASE))
+                    if loc.count() > 0: return loc.first
+                except: continue
+            return None
             
-        page.wait_for_timeout(5000) # Wait for password box animation
-
-        # 🚨 THE X-RAY IFRAME SCANNER FOR PASSWORD 🚨
-        print(f"[{email}] 3. Entering Password (Scanning Iframes)...")
-        pwd_found = False
-        pwd_selectors = ['input[type="password"]', 'input[id="password"]', 'input[placeholder*="Password" i]']
-        
-        for selector in pwd_selectors:
-            if pwd_found: break
-            if page.locator(selector).count() > 0:
-                page.locator(selector).first.fill(pwd, force=True)
-                page.locator(selector).first.press("Enter")
-                pwd_found = True
-                break
-            for frame in page.frames:
-                if frame.locator(selector).count() > 0:
-                    frame.locator(selector).first.fill(pwd, force=True)
-                    frame.locator(selector).first.press("Enter")
-                    pwd_found = True
-                    break
-                    
-        if not pwd_found:
-            out_queue.put({'success': False, 'error': 'Could not find the Zoho Password box.'})
+        print(f"[{reg_no}] 2. Entering Email...")
+        try:
+            email_input = find_in_frames('input[type="email"], input[type="text"], input[name="LOGIN_ID"]', filter_not_text="hidden")
+            if not email_input: raise Exception("Could not find the Email input box in any iframe.")
+            
+            email_input.fill(reg_no, force=True)
+            
+            next_btn = find_in_frames('button, input[type="submit"]', filter_text="next|continue")
+            if next_btn: next_btn.click(force=True, timeout=5000)
+            else: page.keyboard.press("Enter")
+            
+        except Exception as e:
+            out_queue.put({'success': False, 'error': f'Failed to enter Email: {str(e)}'})
             return
 
-        print(f"[{email}] 4. Checking for 'Terminate All Sessions' limit...")
-        page.wait_for_timeout(6000)
+        print(f"[{reg_no}] 3. Entering Password...")
+        try:
+            pwd_input = None
+            for _ in range(15): # Max 15 seconds
+                pwd_input = find_in_frames('input[type="password"], input[name="PASSWORD"]')
+                if pwd_input: break
+                page.wait_for_timeout(1000)
+                
+            if not pwd_input: raise Exception("Could not find the Password input box in any iframe after waiting.")
+            
+            pwd_input.fill("") 
+            pwd_input.type(pwd, delay=50) 
+            
+            page.wait_for_timeout(1000) 
+            
+            submit_btn = find_in_frames('button, input[type="submit"]', filter_text="sign in|login|submit|verify")
+            if submit_btn: submit_btn.click(force=True, timeout=5000)
+            else: page.keyboard.press("Enter")
+            
+            page.wait_for_timeout(5000) 
+        except Exception as e:
+            out_queue.put({'success': False, 'error': f'Failed to enter Password: {str(e)}'})
+            return
+
+        print(f"[{reg_no}] 4. Checking for Session Limit Blocker...")
+        try:
+            terminate_btn = page.locator('button, a').filter(has_text=re.compile(r"terminate all session|terminate", re.IGNORECASE)).first
+            if terminate_btn.count() > 0 and terminate_btn.is_visible(timeout=3000):
+                print(f"[{reg_no}]   Session blocked! Clicking Terminate All Sessions...")
+                terminate_btn.click(force=True)
+                page.wait_for_timeout(5000) 
+        except: pass 
+
+        print(f"[{reg_no}] 5. Navigating to My_Attendance Dashboard...")
+        try:
+            page.goto("https://academia.srmist.edu.in/#Page:My_Attendance", wait_until="commit", timeout=60000)
+            print(f"[{reg_no}]   Waiting 15 seconds for Zoho iframes to render data...")
+            page.wait_for_timeout(15000)
+        except Exception as e:
+            out_queue.put({'success': False, 'error': f'Failed to load My_Attendance hash: {str(e)}'})
+            return
+
+        # 🚨 THE NEW JAVASCRIPT X-RAY PARSER 🚨
+        print(f"[{reg_no}] 6. Extracting exact tables using JavaScript X-Ray...")
+        parsed_data = [] 
+        parsed_marks = []
         
-        try:
-            # Also checking iframes for the Terminate button just in case!
-            term_clicked = False
-            if page.locator('text="Terminate All Sessions"').count() > 0:
-                page.locator('text="Terminate All Sessions"').first.click(force=True)
-                term_clicked = True
-            else:
-                for frame in page.frames:
-                    if frame.locator('text="Terminate All Sessions"').count() > 0:
-                        frame.locator('text="Terminate All Sessions"').first.click(force=True)
-                        term_clicked = True
-                        break
-            if term_clicked:
-                print(f"[{email}] Limit exceeded found! Terminated old sessions.")
-                page.wait_for_timeout(6000)
-            else:
-                print(f"[{email}] No session limits detected.")
-        except Exception as e:
-            print(f"[{email}] Terminate check error: {str(e)}")
-
-        print(f"[{email}] 5. Waiting for main dashboard to load...")
-        page.wait_for_timeout(10000)
-
-        print(f"[{email}] 6. Teleporting to My_Attendance page...")
-        try:
-            page.goto("https://academia.srmist.edu.in/#Page:My_Attendance", wait_until="commit", timeout=45000)
-            page.wait_for_timeout(10000) # Give Zoho tables 10 full seconds to render
-        except Exception as e:
-            print(f"[{email}] Warning during teleport: {str(e)}")
-
-        print(f"[{email}] 7. Scanning all frames for data tables...")
-        all_tables_data = []
         for frame in page.frames:
             try:
-                frame_data = frame.evaluate("""() => {
+                extracted = frame.evaluate("""() => {
+                    let result = { att: [], mrk: [] };
                     let tables = Array.from(document.querySelectorAll('table'));
-                    let extracted = [];
+                    
                     tables.forEach(table => {
-                        let rows = Array.from(table.querySelectorAll('tr'));
-                        let tableData = rows.map(tr => {
-                            let cells = Array.from(tr.querySelectorAll('td, th'));
-                            return cells.map(cell => cell.innerText.trim()).filter(text => text !== '');
-                        }).filter(row => row.length > 0);
-                        if(tableData.length > 1) extracted.push(tableData);
+                        let text = table.innerText;
+                        
+                        // Parse Attendance Table
+                        if (text.includes('Hours Conducted') && text.includes('Attn %')) {
+                            let rows = Array.from(table.querySelectorAll('tr'));
+                            rows.forEach(row => {
+                                let cells = Array.from(row.querySelectorAll('td'));
+                                if (cells.length >= 8) {
+                                    result.att.push({
+                                        code: cells[0].innerText.trim(),
+                                        title: cells[1].innerText.trim(),
+                                        conducted: parseInt(cells[6].innerText.trim()) || 0,
+                                        absent: parseInt(cells[7].innerText.trim()) || 0
+                                    });
+                                }
+                            });
+                        }
+                        
+                        // Parse Marks Table
+                        else if (text.includes('Test Performance')) {
+                            let rows = Array.from(table.querySelectorAll('tr'));
+                            rows.forEach(row => {
+                                let cells = Array.from(row.querySelectorAll('td'));
+                                if (cells.length >= 3) {
+                                    // Replace newlines with dividers so it looks clean on the phone
+                                    result.mrk.push({
+                                        code: cells[0].innerText.trim(),
+                                        type: cells[1].innerText.trim(),
+                                        scores: cells[2].innerText.trim().replace(/\\n/g, '  |  ')
+                                    });
+                                }
+                            });
+                        }
                     });
-                    return extracted;
+                    return result;
                 }""")
-                if frame_data:
-                    all_tables_data.extend(frame_data)
+                
+                if extracted and (extracted['att'] or extracted['mrk']):
+                    for item in extracted['att']:
+                        clean_title = item['title'].split('\n')[0][:30]
+                        parsed_data.append({
+                            "courseTitle": f"{item['code']} - {clean_title}...",
+                            "attended": item['conducted'] - item['absent'],
+                            "total": item['conducted']
+                        })
+                        
+                    for item in extracted['mrk']:
+                        if "Course Code" in item['code']: continue # Skip the header row
+                        parsed_marks.append({
+                            "courseTitle": f"{item['code']} ({item['type']})",
+                            "Test Performance": item['scores']
+                        })
             except: pass
 
-        if all_tables_data:
-            out_queue.put({
-                'success': True, 
-                'data': [], 
-                'marks': [{'Academia Raw Data': 'Check below'}, {'Raw': all_tables_data}],
-                'timetable': []
-            })
-        else:
-            out_queue.put({'success': False, 'error': 'Logged in successfully, but could not read the data tables.'})
+        if not parsed_data and not parsed_marks:
+             out_queue.put({'success': False, 'error': 'Scraper reached the dashboard, but the tables were empty or blocked.'})
+             return
+
+        out_queue.put({
+            'success': True, 
+            'data': parsed_data,
+            'marks': parsed_marks,
+            'timetable': []
+        })
 
     except Exception as e:
-        out_queue.put({'success': False, 'error': f"Academia Error: {str(e)}"})
+        out_queue.put({'success': False, 'error': f"Unexpected Playwright Error: {str(e)}"})
     finally:
         if browser: browser.close()
         if p: p.stop()
@@ -165,7 +205,7 @@ def start_session():
         result = out_queue.get(timeout=110)
         return jsonify(result)
     except queue.Empty:
-        return jsonify({'success': False, 'error': 'Server Timeout. Academia took too long to load.'})
+        return jsonify({'success': False, 'error': 'Server Timeout. Academia took too long to respond.'})
 
 @app.route('/')
 def serve_index(): return send_from_directory('.', 'index.html')
