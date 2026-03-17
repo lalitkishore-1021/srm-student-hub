@@ -1,93 +1,102 @@
 import time
 import threading
 import queue
+import os
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 from playwright.sync_api import sync_playwright
 
-# THIS WAS MISSING! Render needs this line to start.
+# Initialize Flask
 app = Flask(__name__, static_folder='.')
 CORS(app)
 
-def scrape_vercel_worker(reg_no, pwd, out_queue):
+# ---------------------------------------------------------
+# 1. THE GRADEX SNIPER ROBOT
+# ---------------------------------------------------------
+def scrape_gradex_worker(reg_no, pwd, out_queue):
     p = None
     browser = None
     try:
         p = sync_playwright().start()
-        print(f"[{reg_no}] Launching Stealth Sniffer...")
+        print(f"[{reg_no}] Launching GradeX Sniper...")
         
         browser = p.chromium.launch(
             headless=True,
-            args=['--no-sandbox', '--disable-setuid-sandbox', '--disable-gpu', '--single-process']
+            args=['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-gpu', '--single-process']
         )
         
-        # 🚨 STEALTH MODE: Disguise the robot as a real human using Google Chrome
+        # Pretend to be a Pixel 7 phone to match your screenshot layout
         context = browser.new_context(
-            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
+            user_agent="Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Mobile Safari/537.36",
+            viewport={'width': 390, 'height': 844}
         )
         page = context.new_page()
 
         intercepted_data = {'attendance': None, 'marks': None, 'timetable': None, 'raw': []}
 
+        # Sniff JSON responses from GradeX
         def handle_response(response):
             try:
                 if response.request.resource_type in ["fetch", "xhr"] and response.status == 200:
                     json_data = response.json()
                     url_str = response.url.lower()
-                    
                     intercepted_data['raw'].append(json_data)
                     
                     if "attendance" in url_str: intercepted_data['attendance'] = json_data
                     elif "mark" in url_str: intercepted_data['marks'] = json_data
-                    elif "time" in url_str or "schedule" in url_str: intercepted_data['timetable'] = json_data
-                    elif "login" in url_str or "auth" in url_str: 
-                        intercepted_data['login_api'] = json_data
+                    elif "schedule" in url_str or "time" in url_str: intercepted_data['timetable'] = json_data
             except: pass
 
         page.on("response", handle_response)
         
-        # Block heavy files to save RAM
-        page.route("**/*", lambda route: route.abort() if route.request.resource_type in ["image", "media", "font"] else route.continue_())
+        # 🚨 THE IMAGE FIX: Block external GradeX images but ALLOW your local images
+        def handle_route(route):
+            rt = route.request.resource_type
+            url = route.request.url
+            if rt in ["media", "font"]:
+                route.abort()
+            elif rt == "image" and "gradex" in url:
+                route.abort() # Block GradeX's heavy images
+            else:
+                route.continue_() # Allow your STEP class images
+
+        page.route("**/*", handle_route)
         
-        page.goto("https://console-x-academia.vercel.app/")
+        print(f"[{reg_no}] Navigating to GradeX...")
+        page.goto("https://gradex.bond/", wait_until="domcontentloaded")
         page.wait_for_timeout(3000)
         
         if "@" not in reg_no: reg_no += "@srmist.edu.in"
             
-        print(f"[{reg_no}] Injecting credentials smartly...")
-        
-        # Super robust login logic
+        # Login Logic
         page.locator('input').first.fill(reg_no)
         page.locator('input[type="password"]').first.fill(pwd)
+        page.keyboard.press("Enter")
         
-        # Click the button AND press Enter just to be 100% sure
-        try:
-            page.locator('button').first.click(timeout=2000)
-        except:
-            page.keyboard.press("Enter")
-        
-        print(f"[{reg_no}] Submitted. Waiting for API data...")
-        page.wait_for_timeout(8000) # Give the Vercel app time to respond
-        
-        # Try to extract the data
-        att_data = intercepted_data['attendance']
-        marks_data = intercepted_data['marks']
-        time_data = intercepted_data['timetable']
-        
-        if not att_data and 'login_api' in intercepted_data:
-            api_res = intercepted_data['login_api']
-            if isinstance(api_res, dict):
-                att_data = api_res.get('attendance', api_res.get('data', None))
-                marks_data = api_res.get('marks')
-                time_data = api_res.get('timetable')
+        print(f"[{reg_no}] Logged in. Clearing popups...")
+        page.wait_for_timeout(6000) 
+        page.keyboard.press("Escape") # Close any WhatsApp popups
 
-        if not att_data and len(intercepted_data['raw']) > 0:
+        # 🚨 Force-Click Nav Tabs (Bypasses invisible popups)
+        print(f"[{reg_no}] Intercepting API data...")
+        try:
+            page.locator('text="Attendance"').first.evaluate("node => node.click()")
+            page.wait_for_timeout(2000)
+            page.locator('text="Marks"').first.evaluate("node => node.click()")
+            page.wait_for_timeout(2000)
+        except: pass
+        
+        att_data = intercepted_data['attendance']
+        
+        # Fallback if specific route wasn't found
+        if not att_data:
             for item in intercepted_data['raw']:
-                if isinstance(item, dict) and ('attendance' in str(item).lower() or 'present' in str(item).lower()):
+                if isinstance(item, dict) and ('attendance' in str(item).lower()):
                     att_data = item
                     break
 
         if att_data:
+            # Format correction
             if isinstance(att_data, dict):
                 if 'attendance' in att_data: att_data = att_data['attendance']
                 elif 'data' in att_data: att_data = att_data['data']
@@ -95,11 +104,11 @@ def scrape_vercel_worker(reg_no, pwd, out_queue):
             out_queue.put({
                 'success': True, 
                 'data': att_data,
-                'marks': marks_data,
-                'timetable': time_data
+                'marks': intercepted_data.get('marks'),
+                'timetable': intercepted_data.get('timetable')
             })
         else:
-            out_queue.put({'success': False, 'error': 'Incorrect Password or Vercel App blocked the connection.'})
+            out_queue.put({'success': False, 'error': 'Failed to sniff data. Check credentials.'})
 
     except Exception as e:
         out_queue.put({'success': False, 'error': str(e)})
@@ -107,23 +116,33 @@ def scrape_vercel_worker(reg_no, pwd, out_queue):
         if browser: browser.close()
         if p: p.stop()
 
+# ---------------------------------------------------------
+# 2. FLASK ROUTES
+# ---------------------------------------------------------
+
 @app.route('/api/start_session', methods=['POST'])
 def start_session():
     data = request.json
     out_queue = queue.Queue()
-    t = threading.Thread(target=scrape_vercel_worker, args=(data.get('regNo'), data.get('pwd'), out_queue))
+    t = threading.Thread(target=scrape_gradex_worker, args=(data.get('regNo'), data.get('pwd'), out_queue))
     t.start()
     try:
         result = out_queue.get(timeout=60)
-        if result.get('success'): return jsonify(result)
-        return jsonify({'success': False, 'error': result.get('error')})
+        return jsonify(result)
     except queue.Empty:
-        return jsonify({'success': False, 'error': 'Timeout waiting for API.'})
+        return jsonify({'success': False, 'error': 'Server Timeout.'})
 
+# 🚨 THE FRONTEND FIX: Serve your website and images
 @app.route('/')
-def serve_index(): return send_from_directory('.', 'index.html')
+def serve_index():
+    return send_from_directory('.', 'index.html')
 
-@app.route('/<path:filename>')
-def serve_static(filename): return send_from_directory('.', filename)
+@app.route('/<path:path>')
+def serve_static(path):
+    # This serves everything (images, manifest, css) automatically
+    return send_from_directory('.', path)
 
-if __name__ == '__main__': app.run(host='0.0.0.0', port=5000)
+if __name__ == '__main__':
+    # Get port from environment for Render
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port)
