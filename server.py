@@ -28,61 +28,70 @@ def scrape_academia_worker(email, pwd, out_queue):
         page = context.new_page()
         page.set_default_timeout(60000)
 
-        # Block heavy assets for speed
-        page.route("**/*", lambda route: route.abort() if route.request.resource_type in ["image", "media", "font"] else route.continue_())
+        # Removed the image blocker so Zoho doesn't think we are a bot!
 
         print(f"[{email}] 1. Navigating to Academia...")
-        page.goto("https://academia.srmist.edu.in/", wait_until="domcontentloaded")
-        page.wait_for_timeout(3000)
+        try:
+            # wait_until="commit" stops it from infinitely loading if Zoho is slow
+            page.goto("https://academia.srmist.edu.in/", wait_until="commit", timeout=45000)
+            page.wait_for_timeout(8000) # Give Zoho time to render the login box
+        except Exception as e:
+            print(f"[{email}] Page load warning, pushing through: {str(e)}")
         
         print(f"[{email}] 2. Entering Email...")
-        # Zoho login boxes
-        page.wait_for_selector('input[id="login_id"], input[type="email"]', timeout=15000)
-        page.locator('input[id="login_id"], input[type="email"]').first.fill(email)
-        
         try:
-            page.locator('button:has-text("Next"), button[id="nextbtn"]').first.click()
-        except:
-            page.keyboard.press("Enter")
+            page.wait_for_selector('input[id="login_id"], input[type="email"]', timeout=15000)
+            page.locator('input[id="login_id"], input[type="email"]').first.fill(email, force=True)
             
-        page.wait_for_timeout(3000)
+            try:
+                page.locator('button:has-text("Next"), button[id="nextbtn"]').first.click(force=True, timeout=5000)
+            except:
+                page.keyboard.press("Enter")
+        except Exception as e:
+            out_queue.put({'success': False, 'error': 'Could not find the Zoho Email box.'})
+            return
+            
+        page.wait_for_timeout(5000)
 
         print(f"[{email}] 3. Entering Password...")
-        page.wait_for_selector('input[type="password"], input[id="password"]', timeout=10000)
-        page.locator('input[type="password"], input[id="password"]').first.fill(pwd)
-        
         try:
-            page.locator('button:has-text("Sign in"), button[id="nextbtn"]').first.click()
-        except:
-            page.keyboard.press("Enter")
+            page.wait_for_selector('input[type="password"], input[id="password"]', timeout=15000)
+            page.locator('input[type="password"], input[id="password"]').first.fill(pwd, force=True)
+            
+            try:
+                page.locator('button:has-text("Sign in"), button[id="nextbtn"]').first.click(force=True, timeout=5000)
+            except:
+                page.keyboard.press("Enter")
+        except Exception as e:
+            out_queue.put({'success': False, 'error': 'Could not find the Zoho Password box. Check your email.'})
+            return
 
         print(f"[{email}] 4. Checking for 'Terminate All Sessions' limit...")
-        page.wait_for_timeout(5000)
+        page.wait_for_timeout(6000)
         
         try:
-            # Look for the exact button in your screenshot
-            terminate_btn = page.locator('text="Terminate All Sessions"').first
+            terminate_btn = page.locator('text="Terminate All Sessions", button:has-text("Terminate")').first
             if terminate_btn.is_visible(timeout=5000):
                 print(f"[{email}] Limit exceeded found! Terminating old sessions...")
-                terminate_btn.click()
-                page.wait_for_timeout(5000)
+                terminate_btn.click(force=True)
+                page.wait_for_timeout(6000)
         except:
             print(f"[{email}] No session limits detected, proceeding.")
 
         print(f"[{email}] 5. Waiting for main dashboard to load...")
-        page.wait_for_timeout(8000)
+        page.wait_for_timeout(10000)
 
         print(f"[{email}] 6. Teleporting to My_Attendance page...")
-        page.goto("https://academia.srmist.edu.in/#Page:My_Attendance", wait_until="domcontentloaded")
-        page.wait_for_timeout(8000) # Give Zoho tables time to render
+        try:
+            page.goto("https://academia.srmist.edu.in/#Page:My_Attendance", wait_until="commit", timeout=45000)
+            page.wait_for_timeout(10000) # Give Zoho tables 10 full seconds to render
+        except Exception as e:
+            print(f"[{email}] Warning during teleport: {str(e)}")
 
         print(f"[{email}] 7. Scanning all frames for data tables...")
-        
-        # Academia hides data inside iframes. We must search all frames.
         all_tables_data = []
         for frame in page.frames:
             try:
-                # Scrape generic table text
                 frame_data = frame.evaluate("""() => {
                     let tables = Array.from(document.querySelectorAll('table'));
                     let extracted = [];
@@ -101,11 +110,10 @@ def scrape_academia_worker(email, pwd, out_queue):
             except: pass
 
         if all_tables_data:
-            # We are sending the raw extracted tables to 'marks' so we can see what Academia outputs
             out_queue.put({
                 'success': True, 
-                'data': [], # Blank for now until we parse the raw data
-                'marks': [{'Academia Raw Data': 'Scroll down to see the extracted tables'}, {'Raw': all_tables_data}],
+                'data': [], 
+                'marks': [{'Academia Raw Data': 'Check below'}, {'Raw': all_tables_data}],
                 'timetable': []
             })
         else:
@@ -121,7 +129,6 @@ def scrape_academia_worker(email, pwd, out_queue):
 def start_session():
     data = request.json
     out_queue = queue.Queue()
-    # Note: frontend still sends regNo and pwd, so we use regNo as the email
     t = threading.Thread(target=scrape_academia_worker, args=(data.get('regNo'), data.get('pwd'), out_queue))
     t.start()
     try:
