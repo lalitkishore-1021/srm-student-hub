@@ -1,3 +1,18 @@
+import time
+import threading
+import queue
+import os
+from flask import Flask, request, jsonify, send_from_directory
+from flask_cors import CORS
+from playwright.sync_api import sync_playwright
+
+# THIS IS THE LINE RENDER WAS LOOKING FOR!
+app = Flask(__name__, static_folder='.')
+CORS(app)
+
+# ---------------------------------------------------------
+# 1. THE GRADEX SNIPER ROBOT (WITH 90-SEC TIMEOUT)
+# ---------------------------------------------------------
 def scrape_gradex_worker(reg_no, pwd, out_queue):
     p = None
     browser = None
@@ -97,3 +112,32 @@ def scrape_gradex_worker(reg_no, pwd, out_queue):
     finally:
         if browser: browser.close()
         if p: p.stop()
+
+# ---------------------------------------------------------
+# 2. FLASK ROUTES
+# ---------------------------------------------------------
+
+@app.route('/api/start_session', methods=['POST'])
+def start_session():
+    data = request.json
+    out_queue = queue.Queue()
+    t = threading.Thread(target=scrape_gradex_worker, args=(data.get('regNo'), data.get('pwd'), out_queue))
+    t.start()
+    try:
+        # Give Flask up to 100 seconds to wait for Playwright
+        result = out_queue.get(timeout=100)
+        return jsonify(result)
+    except queue.Empty:
+        return jsonify({'success': False, 'error': 'Server Timeout. GradeX is taking too long.'})
+
+@app.route('/')
+def serve_index():
+    return send_from_directory('.', 'index.html')
+
+@app.route('/<path:path>')
+def serve_static(path):
+    return send_from_directory('.', path)
+
+if __name__ == '__main__':
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port)
