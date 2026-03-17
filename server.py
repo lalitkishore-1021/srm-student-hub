@@ -9,16 +9,16 @@ from playwright.sync_api import sync_playwright
 app = Flask(__name__, static_folder='.')
 CORS(app)
 
-def scrape_gradex_worker(reg_no, pwd, out_queue):
+def scrape_academia_worker(email, pwd, out_queue):
     p = None
     browser = None
     try:
         p = sync_playwright().start()
-        print(f"[{reg_no}] Launching GradeX Sniper...")
+        print(f"[{email}] Launching Official Academia Sniper...")
         
         browser = p.chromium.launch(
             headless=True,
-            args=['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-gpu', '--single-process']
+            args=['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-gpu']
         )
         
         context = browser.new_context(
@@ -26,123 +26,93 @@ def scrape_gradex_worker(reg_no, pwd, out_queue):
             viewport={'width': 1280, 'height': 720}
         )
         page = context.new_page()
-        page.set_default_timeout(90000)
+        page.set_default_timeout(60000)
 
-        intercepted_data = {'attendance': None, 'marks': None, 'timetable': None, 'raw': []}
+        # Block heavy assets for speed
+        page.route("**/*", lambda route: route.abort() if route.request.resource_type in ["image", "media", "font"] else route.continue_())
 
-        def handle_response(response):
+        print(f"[{email}] 1. Navigating to Academia...")
+        page.goto("https://academia.srmist.edu.in/", wait_until="domcontentloaded")
+        page.wait_for_timeout(3000)
+        
+        print(f"[{email}] 2. Entering Email...")
+        # Zoho login boxes
+        page.wait_for_selector('input[id="login_id"], input[type="email"]', timeout=15000)
+        page.locator('input[id="login_id"], input[type="email"]').first.fill(email)
+        
+        try:
+            page.locator('button:has-text("Next"), button[id="nextbtn"]').first.click()
+        except:
+            page.keyboard.press("Enter")
+            
+        page.wait_for_timeout(3000)
+
+        print(f"[{email}] 3. Entering Password...")
+        page.wait_for_selector('input[type="password"], input[id="password"]', timeout=10000)
+        page.locator('input[type="password"], input[id="password"]').first.fill(pwd)
+        
+        try:
+            page.locator('button:has-text("Sign in"), button[id="nextbtn"]').first.click()
+        except:
+            page.keyboard.press("Enter")
+
+        print(f"[{email}] 4. Checking for 'Terminate All Sessions' limit...")
+        page.wait_for_timeout(5000)
+        
+        try:
+            # Look for the exact button in your screenshot
+            terminate_btn = page.locator('text="Terminate All Sessions"').first
+            if terminate_btn.is_visible(timeout=5000):
+                print(f"[{email}] Limit exceeded found! Terminating old sessions...")
+                terminate_btn.click()
+                page.wait_for_timeout(5000)
+        except:
+            print(f"[{email}] No session limits detected, proceeding.")
+
+        print(f"[{email}] 5. Waiting for main dashboard to load...")
+        page.wait_for_timeout(8000)
+
+        print(f"[{email}] 6. Teleporting to My_Attendance page...")
+        page.goto("https://academia.srmist.edu.in/#Page:My_Attendance", wait_until="domcontentloaded")
+        page.wait_for_timeout(8000) # Give Zoho tables time to render
+
+        print(f"[{email}] 7. Scanning all frames for data tables...")
+        
+        # Academia hides data inside iframes. We must search all frames.
+        all_tables_data = []
+        for frame in page.frames:
             try:
-                if response.request.resource_type in ["fetch", "xhr"] and response.status == 200:
-                    json_data = response.json()
-                    url_str = response.url.lower()
-                    intercepted_data['raw'].append(json_data)
-                    
-                    if "attendance" in url_str: intercepted_data['attendance'] = json_data
-                    elif "mark" in url_str: intercepted_data['marks'] = json_data
-                    elif "schedule" in url_str or "time" in url_str: intercepted_data['timetable'] = json_data
+                # Scrape generic table text
+                frame_data = frame.evaluate("""() => {
+                    let tables = Array.from(document.querySelectorAll('table'));
+                    let extracted = [];
+                    tables.forEach(table => {
+                        let rows = Array.from(table.querySelectorAll('tr'));
+                        let tableData = rows.map(tr => {
+                            let cells = Array.from(tr.querySelectorAll('td, th'));
+                            return cells.map(cell => cell.innerText.trim()).filter(text => text !== '');
+                        }).filter(row => row.length > 0);
+                        if(tableData.length > 1) extracted.push(tableData);
+                    });
+                    return extracted;
+                }""")
+                if frame_data:
+                    all_tables_data.extend(frame_data)
             except: pass
 
-        page.on("response", handle_response)
-        
-        def handle_route(route):
-            rt = route.request.resource_type
-            url = route.request.url
-            if rt in ["media", "font"] or ("image" == rt and "gradex" in url):
-                route.abort() 
-            else:
-                route.continue_()
-
-        page.route("**/*", handle_route)
-
-        # 🚨 THE POPUP KILLER FUNCTION 🚨
-        def kill_popup():
-            print(f"[{reg_no}] Attempting to kill popup...")
-            try:
-                page.locator('text="Maybe later"').first.click(timeout=3000)
-            except: pass
-            
-            try:
-                # Click the top left empty space to click OUTSIDE the popup
-                page.mouse.click(10, 10)
-            except: pass
-            page.wait_for_timeout(1500)
-
-        print(f"[{reg_no}] 1. Loading Home Page and waiting 15s for animation...")
-        try:
-            page.goto("https://gradex.bond/", wait_until="domcontentloaded", timeout=60000)
-            page.wait_for_timeout(15000) # Let the animation finish
-        except Exception:
-            out_queue.put({'success': False, 'error': 'GradeX home page failed to load.'})
-            return
-            
-        print(f"[{reg_no}] 2. Killing First WhatsApp Popup...")
-        kill_popup()
-            
-        print(f"[{reg_no}] 3. Clicking 'Login to SRM' button...")
-        try:
-            page.locator('text="Login to SRM"').last.click(force=True, timeout=5000)
-            page.wait_for_timeout(3000) # wait for login boxes to appear
-        except Exception:
-            out_queue.put({'success': False, 'error': 'Could not find the "Login to SRM" button.'})
-            return
-
-        if "@" not in reg_no: reg_no += "@srmist.edu.in"
-            
-        print(f"[{reg_no}] 4. Entering credentials into the boxes...")
-        try:
-            page.wait_for_selector('input', timeout=15000)
-            
-            inputs = page.locator('input')
-            inputs.nth(0).fill(reg_no, force=True)
-            inputs.nth(1).fill(pwd, force=True)
-            
-            try:
-                page.locator('button:has-text("CONNECT")').first.click(force=True, timeout=3000)
-            except:
-                page.keyboard.press("Enter")
-        except Exception as e:
-            out_queue.put({'success': False, 'error': 'Could not find the USER ID or PASSWORD boxes.'})
-            return
-        
-        print(f"[{reg_no}] 5. Waiting for dashboard to load (10s)...")
-        page.wait_for_timeout(10000) 
-        
-        print(f"[{reg_no}] 6. Killing Second WhatsApp Popup on Dashboard...")
-        kill_popup() # 🚨 RUNNING IT AGAIN HERE! 🚨
-
-        print(f"[{reg_no}] 7. Clicking Navigation Tabs to sniff API...")
-        try:
-            page.locator('text="Attendance"').first.evaluate("node => node.click()", timeout=5000)
-            page.wait_for_timeout(3000)
-            page.locator('text="Marks"').first.evaluate("node => node.click()", timeout=5000)
-            page.wait_for_timeout(3000)
-        except Exception:
-            print(f"[{reg_no}] Could not click tabs automatically.")
-        
-        att_data = intercepted_data['attendance']
-        
-        if not att_data:
-            for item in intercepted_data['raw']:
-                if isinstance(item, dict) and ('attendance' in str(item).lower()):
-                    att_data = item
-                    break
-
-        if att_data:
-            if isinstance(att_data, dict):
-                if 'attendance' in att_data: att_data = att_data['attendance']
-                elif 'data' in att_data: att_data = att_data['data']
-
+        if all_tables_data:
+            # We are sending the raw extracted tables to 'marks' so we can see what Academia outputs
             out_queue.put({
                 'success': True, 
-                'data': att_data,
-                'marks': intercepted_data.get('marks'),
-                'timetable': intercepted_data.get('timetable')
+                'data': [], # Blank for now until we parse the raw data
+                'marks': [{'Academia Raw Data': 'Scroll down to see the extracted tables'}, {'Raw': all_tables_data}],
+                'timetable': []
             })
         else:
-            out_queue.put({'success': False, 'error': 'Logged in successfully, but no data was received. GradeX API might be empty.'})
+            out_queue.put({'success': False, 'error': 'Logged in successfully, but could not read the data tables.'})
 
     except Exception as e:
-        out_queue.put({'success': False, 'error': f"Unexpected Error: {str(e)}"})
+        out_queue.put({'success': False, 'error': f"Academia Error: {str(e)}"})
     finally:
         if browser: browser.close()
         if p: p.stop()
@@ -151,13 +121,14 @@ def scrape_gradex_worker(reg_no, pwd, out_queue):
 def start_session():
     data = request.json
     out_queue = queue.Queue()
-    t = threading.Thread(target=scrape_gradex_worker, args=(data.get('regNo'), data.get('pwd'), out_queue))
+    # Note: frontend still sends regNo and pwd, so we use regNo as the email
+    t = threading.Thread(target=scrape_academia_worker, args=(data.get('regNo'), data.get('pwd'), out_queue))
     t.start()
     try:
         result = out_queue.get(timeout=110)
         return jsonify(result)
     except queue.Empty:
-        return jsonify({'success': False, 'error': 'Server Timeout. GradeX took too long to respond.'})
+        return jsonify({'success': False, 'error': 'Server Timeout. Academia took too long to load.'})
 
 @app.route('/')
 def serve_index(): return send_from_directory('.', 'index.html')
@@ -167,4 +138,3 @@ def serve_static(path): return send_from_directory('.', path)
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)
-    \
