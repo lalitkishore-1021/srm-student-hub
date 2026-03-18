@@ -38,16 +38,31 @@
         }
 
         body { font-family: 'Open Sans', sans-serif; background: radial-gradient(circle at top center, var(--bg-start) 0%, var(--bg-end) 100%); color: var(--text-main); margin: 0; padding: 0; overflow-x: hidden; min-height: 100vh; transition: background 0.5s ease, color 0.5s ease; }
+        
+        /* Top Left Global Sync Button */
+        .top-left-sync-btn {
+            position: fixed; top: 20px; left: 20px; z-index: 1000; opacity: 0;
+            background: var(--glass); border: 1px solid var(--primary); color: var(--primary);
+            padding: 10px 20px; border-radius: 30px; cursor: pointer;
+            font-family: 'Montserrat', sans-serif; font-weight: bold; font-size: 0.9rem;
+            display: flex; align-items: center; gap: 8px; backdrop-filter: blur(10px);
+            box-shadow: 0 4px 15px rgba(255, 170, 0, 0.2); transition: all 0.3s ease;
+        }
+        .top-left-sync-btn:hover { background: var(--primary); color: #000; transform: translateY(-2px); box-shadow: 0 6px 20px rgba(255, 170, 0, 0.4); }
+        .top-left-sync-btn svg { width: 18px; height: 18px; }
+
         .btn-container { position: fixed; top: 20px; right: 20px; display: flex; gap: 12px; z-index: 1000; opacity: 0; transition: opacity 0.5s ease; }
         .icon-btn { background: var(--glass); border: 1px solid var(--glass-border); color: var(--text-main); width: 45px; height: 45px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 1.2rem; cursor: pointer; backdrop-filter: blur(10px); box-shadow: 0 4px 10px var(--shadow); transition: all 0.3s ease; text-decoration: none; }
         .icon-btn:hover { transform: scale(1.1) translateY(-3px); border-color: var(--primary); color: var(--primary); }
         .icon-btn svg { width: 20px; height: 20px; fill: currentColor; transition: fill 0.3s ease; }
+        
         #splash-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: var(--splash-bg); z-index: 2000; display: flex; flex-direction: column; justify-content: center; align-items: center; transition: opacity 0.8s ease-in-out, transform 1s cubic-bezier(0.16, 1, 0.3, 1), visibility 1s, background-color 0.5s ease; }
         .css-loader { width: 60px; height: 60px; border-radius: 50%; border: 4px solid var(--glass-border); border-top-color: var(--primary); animation: spin 1s linear infinite; margin-bottom: 20px; box-shadow: 0 0 20px rgba(255, 170, 0, 0.2); }
         @keyframes spin { 100% { transform: rotate(360deg); } }
         .splash-text { font-family: 'Montserrat', sans-serif; color: var(--primary); letter-spacing: 6px; font-size: 1rem; font-weight: 900; text-transform: uppercase; animation: pulse-text 1.5s infinite alternate; }
         @keyframes pulse-text { 0% { opacity: 0.5; filter: blur(1px); } 100% { opacity: 1; filter: blur(0px); text-shadow: 0 0 10px rgba(255, 170, 0, 0.8); } }
         .zoom-out { transform: scale(1.5); opacity: 0; visibility: hidden; pointer-events: none; }
+        
         #main-content { padding: 80px 20px 60px; text-align: center; opacity: 0; transform: scale(0.95); transition: all 1.2s cubic-bezier(0.16, 1, 0.3, 1); width: 100%; box-sizing: border-box;}
         .content-visible { opacity: 1 !important; transform: scale(1) !important; }
         .app-view { display: none; max-width: 1200px; margin: 0 auto; text-align: center; }
@@ -55,9 +70,11 @@
         .site-header { display: flex; flex-direction: column; align-items: center; margin-bottom: 40px; }
         .main-logo { width: 90px; height: 90px; margin-bottom: 15px; cursor: pointer; filter: drop-shadow(0 0 15px rgba(255, 170, 0, 0.5)); transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
         .main-logo:hover { transform: scale(1.15) rotate(5deg); filter: drop-shadow(0 0 25px rgba(255, 170, 0, 0.8)); }
+        
         h1 { font-family: 'Montserrat', sans-serif; font-weight: 900; text-transform: uppercase; font-size: clamp(2.5rem, 8vw, 4.5rem); background: linear-gradient(to right, #ffaa00, #ffdd00, #ffaa00); background-size: 200% auto; -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; color: transparent; margin-bottom: 10px; animation: shine 4s linear infinite; }
         @keyframes shine { to { background-position: 200% center; } }
         .subtitle { color: var(--text-sub); font-size: 1.1rem; margin-bottom: 30px; letter-spacing: 1px; transition: color 0.5s ease;}
+        
         .gallery-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 40px; max-width: 1200px; margin: 0 auto; }
         .image-card { background: var(--glass); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); padding: 15px; border-radius: 20px; border: 1px solid var(--glass-border); box-shadow: 0 15px 35px var(--shadow); transition: all 0.4s ease; }
         .image-card:hover { transform: translateY(-12px) scale(1.02); border-color: var(--primary); box-shadow: 0 20px 40px rgba(255, 170, 0, 0.15); }
@@ -70,25 +87,48 @@
         .project-icon { width: 80px; height: 80px; stroke: var(--primary); filter: drop-shadow(0 0 10px rgba(255, 170, 0, 0.4)); transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
         .project-card:hover .project-cover { background: linear-gradient(135deg, rgba(255, 170, 0, 0.2) 0%, rgba(0, 0, 0, 0.6) 100%); }
         .project-card:hover .project-icon { transform: scale(1.2); filter: drop-shadow(0 0 20px rgba(255, 170, 0, 0.8)); }
+        
         .back-btn { background: var(--glass); border: 1px solid var(--glass-border); color: var(--text-main); padding: 10px 25px; border-radius: 30px; font-family: 'Montserrat', sans-serif; font-weight: bold; cursor: pointer; margin-bottom: 40px; transition: all 0.3s ease; font-size: 1rem; display: inline-block; }
         .back-btn:hover { border-color: var(--primary); color: var(--primary); transform: translateX(-5px); }
         .gallery-title { font-family: 'Montserrat', sans-serif; font-size: 2rem; color: var(--text-main); margin-bottom: 40px; text-transform: uppercase;}
         .fade-in-up { animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
         @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        
+        /* Forms & Inputs */
         .form-row { display: grid; grid-template-columns: 2fr 1fr 1fr auto; gap: 15px; margin-bottom: 15px; align-items: center; }
         @media (max-width: 600px) { .form-row { grid-template-columns: 1fr; gap: 10px; border-bottom: 1px solid var(--glass-border); padding-bottom: 15px;} }
         input, select { background: rgba(0,0,0,0.2); border: 1px solid var(--glass-border); color: var(--text-main); padding: 12px; border-radius: 8px; font-family: 'Open Sans', sans-serif; width: 100%; box-sizing: border-box; outline: none; transition: border-color 0.3s; }
         body.light-mode input, body.light-mode select { background: rgba(255,255,255,0.8); }
         input:focus, select:focus { border-color: var(--primary); }
         select option { background: var(--bg-end); color: var(--text-main); }
+        
         .action-btn { background: var(--primary); border: none; color: #000; padding: 12px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: all 0.3s; width: 100%; text-transform: uppercase; }
         .action-btn:hover { background: #ffcc00; transform: translateY(-2px); }
         .danger-btn { background: var(--danger); color: white; padding: 12px; border-radius: 8px; cursor: pointer; border: none; font-weight: bold; }
         .result-box { background: var(--glass); border: 1px solid var(--primary); padding: 20px; border-radius: 12px; text-align: center; margin-top: 20px; font-size: 1.5rem; font-weight: bold; color: var(--primary); }
+        
+        /* Dashboard UI Additions for Marks & Attendance */
+        .dashboard-overview { background: linear-gradient(135deg, rgba(255, 170, 0, 0.2) 0%, rgba(0, 0, 0, 0.4) 100%); border: 1px solid var(--primary); box-shadow: 0 10px 30px rgba(255, 170, 0, 0.15); border-radius: 20px; padding: 24px; margin-bottom: 24px; text-align: center; }
+        .overview-title { font-size: 12px; color: var(--text-sub); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 10px; font-family: 'Montserrat', sans-serif; }
+        .overview-percent { font-size: 48px; font-family: 'Montserrat', sans-serif; font-weight: 900; margin: 0 0 20px 0; color: var(--text-main); text-shadow: 0 0 20px rgba(255, 170, 0, 0.5); }
+        .overview-stats { display: flex; justify-content: space-between; background: rgba(0, 0, 0, 0.3); padding: 15px; border-radius: 12px; border: 1px solid var(--glass-border); }
+        .stat-item { width: 33%; }
+        .stat-item h4 { margin: 0; font-size: 20px; color: var(--primary); font-family: 'Montserrat', sans-serif; }
+        .stat-item p { margin: 5px 0 0 0; font-size: 11px; color: var(--text-sub); text-transform: uppercase; }
+        
+        .progress-container { width: 100%; height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; margin: 15px 0; overflow: hidden; }
+        .progress-fill { height: 100%; border-radius: 3px; transition: width 1s cubic-bezier(0.16, 1, 0.3, 1); }
+        .test-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .test-info h4 { margin: 0 0 4px 0; font-size: 14px; color: var(--text-main); font-family: 'Montserrat', sans-serif; }
+        .test-info p { margin: 0; font-size: 12px; color: var(--text-sub); }
+        .test-badge { background-color: transparent; border: 1px solid; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: bold; }
+
+        /* General UI Elements */
         .tab-container { display: flex; overflow-x: auto; gap: 10px; margin-bottom: 30px; padding-bottom: 10px; scroll-behavior: smooth; }
         .tab-container::-webkit-scrollbar { display: none; } 
         .tab-btn { background: var(--glass); border: 1px solid var(--glass-border); color: var(--text-main); padding: 12px 25px; border-radius: 30px; cursor: pointer; white-space: nowrap; transition: 0.3s; font-weight: bold; font-family: 'Montserrat', sans-serif; text-transform: uppercase; font-size: 0.85rem;}
         .tab-btn.active, .tab-btn:hover { background: var(--primary); color: #000; border-color: var(--primary); box-shadow: 0 0 15px rgba(255, 170, 0, 0.4);}
+        
         .meal-card { display: flex; gap: 20px; background: var(--glass); padding: 25px; border-radius: 16px; border: 1px solid var(--glass-border); margin-bottom: 20px; transition: transform 0.3s, border-color 0.3s; align-items: flex-start; text-align: left; }
         .meal-card:hover { transform: translateY(-5px); border-color: var(--primary); box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
         .meal-icon-box { background: linear-gradient(135deg, rgba(255, 170, 0, 0.2) 0%, rgba(0, 0, 0, 0.2) 100%); border: 1px solid var(--primary); padding: 15px; border-radius: 50%; display: flex; justify-content: center; align-items: center; color: var(--primary); flex-shrink: 0; box-shadow: inset 0 0 10px rgba(255,170,0,0.1); }
@@ -96,43 +136,38 @@
         .meal-content { flex-grow: 1; text-align: left; }
         .meal-content h3 { margin: 0 0 10px 0; color: var(--text-main); font-size: 1.4rem; font-family: 'Montserrat', sans-serif; text-transform: uppercase; letter-spacing: 1px; }
         .meal-content p { margin: 0; color: var(--text-sub); line-height: 1.8; font-size: 1.05rem; }
+        
         .special-badge { display: inline-block; background: linear-gradient(135deg, #ff4444 0%, #cc0000 100%); color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: bold; margin-top: 10px; letter-spacing: 1px; box-shadow: 0 4px 10px rgba(255, 68, 68, 0.3); text-transform: uppercase; font-family: 'Montserrat', sans-serif; }
+        
         details { background: var(--glass); border: 1px solid var(--glass-border); border-radius: 8px; margin-bottom: 10px; }
         summary { padding: 15px; cursor: pointer; font-weight: bold; color: var(--primary); list-style: none; outline: none; }
         summary::-webkit-details-marker { display: none; }
         .details-content { padding: 15px; border-top: 1px solid var(--glass-border); color: var(--text-sub); text-align: left;}
         .details-content ul { margin: 0; padding-left: 20px; }
         .details-content li { margin-bottom: 8px; }
+        
         .stat-text { color: var(--text-sub); font-size: 0.9rem; margin-top: 5px; }
         .good-attendance { color: var(--success); }
         .bad-attendance { color: var(--danger); }
+        
         .footer { margin-top: 80px; padding: 40px 20px; border-top: 1px solid var(--glass-border); display: flex; flex-direction: column; align-items: center; gap: 20px; transition: border-color 0.5s ease;}
         .view-counter-box { background: var(--glass); border: 1px solid var(--glass-border); padding: 15px 30px; border-radius: 50px; display: flex; align-items: center; gap: 15px; box-shadow: 0 0 20px var(--shadow); transition: all 0.5s ease; }
         .view-counter-text { font-family: 'Montserrat', sans-serif; font-size: 0.9rem; color: var(--text-sub); font-weight: 700; letter-spacing: 1px; transition: color 0.5s ease;}
         .developer-credit { color: var(--text-sub); font-size: 0.85rem; letter-spacing: 2px; transition: color 0.5s ease;}
         .developer-credit strong { color: var(--primary); }
+        
         .lightbox { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.98); z-index: 3000; justify-content: center; align-items: center; backdrop-filter: blur(10px); }
         .lightbox img { max-width: 85%; max-height: 85%; border-radius: 10px; border: 1px solid #333; }
         .close-btn { position: absolute; top: 30px; right: 40px; color: #fff; font-size: 50px; cursor: pointer; transition: color 0.3s;}
         .close-btn:hover { color: var(--primary); }
         
-        .video-container {
-            position: relative;
-            padding-bottom: 56.25%; 
-            height: 0;
-            overflow: hidden;
-            border-radius: 12px;
-            margin-bottom: 15px;
-            border: 1px solid var(--glass-border);
-        }
-        .video-container iframe {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            border: 0;
-        }
+        .video-container { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: 12px; margin-bottom: 15px; border: 1px solid var(--glass-border); }
+        .video-container iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0; }
+
+        /* Sync Modal Dialog */
+        .sync-modal-content { background: var(--bg-start); border: 1px solid var(--primary); border-radius: 20px; padding: 30px; max-width: 400px; width: 90%; text-align: center; position: relative; box-shadow: 0 20px 50px rgba(0,0,0,0.8); }
+        .sync-modal-content h3 { font-family: 'Montserrat', sans-serif; color: var(--primary); text-transform: uppercase; margin-top: 0; }
+        .sync-modal-content p { color: var(--text-sub); font-size: 0.9rem; margin-bottom: 20px; }
     </style>
 </head>
 <body>
@@ -142,12 +177,17 @@
         <div class="splash-text">Loading Hub...</div>
     </div>
 
+    <button id="globalSyncBtn" class="top-left-sync-btn" onclick="openSyncModal()">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+        Log In & Sync
+    </button>
+
     <div class="btn-container" id="navButtons">
         <button id="notifyBtn" class="icon-btn" onclick="requestNotificationPermission()" title="Enable Notifications">🔔</button>
         <a href="https://www.instagram.com/lalit._.kishore?igsh=ZDVsOTIzaGxiY2I1" target="_blank" class="icon-btn" title="Instagram">
             <svg viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.85s-.011 3.585-.069 4.85c-.148 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07s-3.584-.012-4.85-.07c-3.26-.148-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.85s.012-3.584.07-4.85c.148-3.204 1.671-4.771 4.919-4.919 1.266-.057 1.645-.069 4.85-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
         </a>
-        <a href="https://www.linkedin.com/in/balagalalitkishore?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=android_app" target="_blank" class="icon-btn" title="LinkedIn">
+        <a href="https://www.linkedin.com/in/balagalalitkishore" target="_blank" class="icon-btn" title="LinkedIn">
             <svg viewBox="0 0 24 24"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg>
         </a>
         <a href="https://github.com/lalitkishore-1021" target="_blank" class="icon-btn" title="GitHub">
@@ -265,30 +305,31 @@
             <div class="view-header">
                 <button class="back-btn" onclick="switchView('projects-view')">&#8592; Back to Home</button>
                 <h2 class="gallery-title">Marks Tracker</h2>
-                <p class="subtitle" style="margin-bottom: 20px;">Sync from the Attendance Tracker to load your marks automatically.</p>
+                <p class="subtitle" style="margin-bottom: 20px;">Use the top-left 'Log In & Sync' button to fetch your marks.</p>
             </div>
+            
             <div id="marks-no-data" class="image-card" style="max-width: 600px; margin: 0 auto; padding: 40px; cursor: default; transform: none;">
                 <div class="meal-icon-box" style="width: 60px; height: 60px; margin: 0 auto 20px auto; border-radius: 50%;">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 35px; height: 35px;"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
                 </div>
                 <h3 style="color: var(--primary); margin-bottom: 15px; font-family: 'Montserrat', sans-serif; text-transform: uppercase;">No Marks Data Yet</h3>
-                <p style="color: var(--text-sub); line-height: 1.6; font-size: 1.1rem;">Use the <strong style="color:var(--primary);">Attendance Tracker → Live Portal Sync</strong> to fetch your marks automatically from the academia portal.</p>
+                <p style="color: var(--text-sub); line-height: 1.6; font-size: 1.1rem;">Click the <strong style="color:var(--primary);">Log In & Sync</strong> button at the top left of your screen to pull your marks directly from Academia.</p>
             </div>
-            <div id="marks-list" style="max-width: 900px; margin: 0 auto; display: none;"></div>
+            
+            <div id="marks-list" style="max-width: 600px; margin: 0 auto; display: none;"></div>
         </div>
 
         <div id="timetable-view" class="app-view">
             <div class="view-header">
                 <button class="back-btn" onclick="switchView('projects-view')">&#8592; Back to Home</button>
                 <h2 class="gallery-title">Time Table</h2>
-                <p class="subtitle" style="margin-bottom: 20px;">Sync from the Attendance Tracker to load your schedule automatically.</p>
+                <p class="subtitle" style="margin-bottom: 20px;">Use the top-left 'Log In & Sync' button to load your schedule.</p>
             </div>
             <div id="timetable-no-data" class="image-card" style="max-width: 600px; margin: 0 auto; padding: 40px; cursor: default; transform: none;">
                 <div class="meal-icon-box" style="width: 60px; height: 60px; margin: 0 auto 20px auto; border-radius: 50%;">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 35px; height: 35px;"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
                 </div>
                 <h3 style="color: var(--primary); margin-bottom: 15px; font-family: 'Montserrat', sans-serif; text-transform: uppercase;">No Timetable Data Yet</h3>
-                <p style="color: var(--text-sub); line-height: 1.6; font-size: 1.1rem;">Use the <strong style="color:var(--primary);">Attendance Tracker → Live Portal Sync</strong> to fetch your timetable automatically from the academia portal.</p>
             </div>
             <div id="timetable-grid" style="max-width: 1100px; margin: 0 auto; display: none;"></div>
         </div>
@@ -357,27 +398,12 @@
                 <p class="subtitle">Target: 75% | Data saves automatically to this device</p>
             </div>
             
-            <div class="image-card" style="max-width: 800px; margin: 0 auto 20px auto; cursor: default; transform: none; border-color: var(--primary); box-shadow: 0 0 20px rgba(255, 170, 0, 0.2);">
-                <h3 style="color: var(--primary); margin-top:0; font-family: 'Montserrat', sans-serif; text-transform: uppercase; text-align: left;">Live Portal Sync</h3>
-                
-                <div id="login-section">
-                    <p style="color: var(--text-sub); text-align: left; margin-bottom: 15px; font-size: 0.9rem;">Auto-fetch your attendance directly from Academia.</p>
-                    <div class="form-row" style="grid-template-columns: 1fr 1fr auto;">
-                        <input type="text" id="srm-reg" placeholder="NetID or Email">
-                        <input type="password" id="srm-pwd" placeholder="Portal Password">
-                        <button class="action-btn" onclick="startLiveSync()">Sync</button>
-                    </div>
-                </div>
-
-                <p id="sync-status" style="color: var(--text-sub); font-size: 0.95rem; margin-top: 15px; font-weight: bold;"></p>
-            </div>
-
-            <div class="image-card" style="max-width: 800px; margin: 0 auto; cursor: default; transform: none;">
-                <h4 style="text-align: left; color: var(--text-sub); margin-bottom: 15px;">Or add manually:</h4>
+            <div class="image-card" style="max-width: 600px; margin: 0 auto; cursor: default; transform: none; padding: 30px;">
+                <h4 style="text-align: left; color: var(--primary); margin-bottom: 15px; font-family: 'Montserrat', sans-serif; text-transform: uppercase;">Manual Entry</h4>
                 <div class="form-row">
                     <input type="text" id="att-sub-name" placeholder="Subject Name">
-                    <input type="number" id="att-attended" placeholder="Attended" min="0">
-                    <input type="number" id="att-total" placeholder="Total" min="1">
+                    <input type="number" id="att-attended" placeholder="Att" min="0">
+                    <input type="number" id="att-total" placeholder="Tot" min="1">
                     <button class="action-btn" onclick="addAttendance()" style="background: var(--glass); color: var(--primary);">Add</button>
                 </div>
                 
@@ -402,6 +428,24 @@
     <div id="lightbox" class="lightbox" onclick="if(event.target === this) closeLightbox()">
         <span class="close-btn" onclick="closeLightbox()">&times;</span>
         <img id="lightbox-img" src="">
+    </div>
+
+    <div id="syncModal" class="lightbox" onclick="if(event.target === this) closeSyncModal()">
+        <div class="sync-modal-content">
+            <span class="close-btn" style="top: 10px; right: 15px; font-size: 30px;" onclick="closeSyncModal()">&times;</span>
+            <div class="meal-icon-box" style="width: 60px; height: 60px; margin: 0 auto 20px auto; border-radius: 50%;">
+                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="width: 30px; height: 30px;"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+            </div>
+            <h3>Live Portal Sync</h3>
+            <p>Connect securely to Academia to auto-fetch your marks and attendance data.</p>
+            
+            <div style="display: flex; flex-direction: column; gap: 15px;">
+                <input type="text" id="srm-reg" placeholder="NetID or Email">
+                <input type="password" id="srm-pwd" placeholder="Portal Password">
+                <button class="action-btn" onclick="startLiveSync()" style="margin-top: 5px;">Sync Now</button>
+            </div>
+            <p id="sync-status" style="font-size: 0.85rem; margin-top: 15px; font-weight: bold;"></p>
+        </div>
     </div>
 
     <script>
@@ -721,6 +765,14 @@
         let attendanceData = JSON.parse(localStorage.getItem('squadAttendance')) || [];
         function saveAttendance() { localStorage.setItem('squadAttendance', JSON.stringify(attendanceData)); }
 
+        // --- Sync Functions ---
+        function openSyncModal() {
+            document.getElementById('syncModal').style.display = 'flex';
+        }
+        function closeSyncModal() {
+            document.getElementById('syncModal').style.display = 'none';
+        }
+
         async function startLiveSync() {
             const regNo = document.getElementById('srm-reg').value.trim();
             const pwd = document.getElementById('srm-pwd').value;
@@ -731,7 +783,7 @@
                 return;
             }
 
-            statusText.innerText = "🔄 Connecting to Official Academia... This is a heavy site, please wait 60-90 seconds.";
+            statusText.innerText = "🔄 Connecting to Academia... Please wait 60-90 seconds.";
             statusText.style.color = "var(--primary)";
 
             try {
@@ -757,15 +809,16 @@
                     renderMarks(marks);
                     renderTimetable(timetable);
 
-                    statusText.innerText = `✅ Sync complete! Check your Marks and Timetable tabs.`;
+                    statusText.innerText = `✅ Sync complete! Check your updated tabs.`;
                     statusText.style.color = "var(--success)";
+                    setTimeout(() => closeSyncModal(), 2000);
                 } else {
-                    statusText.innerText = "❌ Error: " + (result.error || "Unknown error from server.");
+                    statusText.innerText = "❌ Error: " + (result.error || "Unknown error.");
                     statusText.style.color = "var(--danger)";
                 }
             } catch (err) {
                 console.error("Sync error:", err);
-                statusText.innerText = "❌ Could not connect to backend. Make sure your Render server is running.";
+                statusText.innerText = "❌ Could not connect to backend server.";
                 statusText.style.color = "var(--danger)";
             } finally {
                 document.getElementById('srm-pwd').value = '';
@@ -789,6 +842,7 @@
             renderAttendance();
         }
 
+        // --- Brand New Marks UI Engine ---
         function renderMarks(marksArray) {
             const noData = document.getElementById('marks-no-data');
             const list = document.getElementById('marks-list');
@@ -803,26 +857,129 @@
             list.style.display = 'block';
             list.innerHTML = '';
 
+            let grandTotalObtained = 0;
+            let grandTotalMax = 0;
+            let subjectsHTML = '';
+
             marksArray.forEach(item => {
-                const course = item.courseTitle || item.name || item.subject || item.courseName || "Raw Academia Data";
-                const fields = Object.entries(item).filter(([k, v]) => !['coursecode','courseid','id','regNo'].includes(k));
+                const course = item.courseTitle || item.name || item.subject || item.courseName || "Subject";
+                
+                // Find the performance string from the API data
+                let perfString = item['Test Performance'] || item.testPerformance || item.performance || item.marks || "";
+                if (!perfString && typeof item === 'object') {
+                    perfString = Object.values(item).join(' '); // Fallback to stringifying values
+                }
 
-                let detailsHTML = fields.map(([k, v]) => {
-                    let displayVal = v;
-                    if(typeof v === 'object') displayVal = JSON.stringify(v);
-                    return `<div style="display:flex; justify-content:space-between; padding: 8px 0; border-bottom: 1px solid var(--glass-border);">
+                let subjectMax = 0;
+                let subjectObtained = 0;
+                let testsHtml = '';
+
+                // Regex parser to find patterns like: "FT-II/15.00 | 12.20"
+                const regex = /([A-Za-z0-9-]+)\/([0-9.]+)\s*\|\s*([0-9.]+)/g;
+                let match;
+                
+                while ((match = regex.exec(perfString)) !== null) {
+                    const testName = match[1];
+                    const max = parseFloat(match[2]);
+                    const obtained = parseFloat(match[3]);
+                    
+                    subjectMax += max;
+                    subjectObtained += obtained;
+
+                    const percent = max > 0 ? Math.round((obtained / max) * 100) : 0;
+                    
+                    let badgeColor = "var(--success)"; 
+                    let badgeBorder = "rgba(0, 204, 102, 0.4)";
+                    if(percent < 50) { badgeColor = "var(--danger)"; badgeBorder = "rgba(255, 68, 68, 0.4)"; }
+                    else if(percent < 75) { badgeColor = "var(--primary)"; badgeBorder = "rgba(255, 170, 0, 0.4)"; }
+
+                    testsHtml += `
+                        <div class="test-row">
+                            <div class="test-info">
+                                <h4>${testName}</h4>
+                                <p>${obtained} / ${max} marks</p>
+                            </div>
+                            <div class="test-badge" style="color: ${badgeColor}; border-color: ${badgeBorder};">${percent}%</div>
+                        </div>
+                    `;
+                }
+
+                // Fallback UI if regex fails to find matches
+                if (testsHtml === '') {
+                    const fields = Object.entries(item).filter(([k, v]) => !['coursecode','courseid','id','regNo','courseTitle','CourseTitle'].includes(k));
+                    testsHtml = fields.map(([k, v]) => {
+                        let displayVal = v;
+                        if(typeof v === 'object') displayVal = JSON.stringify(v);
+                        return `
+                            <div style="display:flex; justify-content:space-between; padding: 8px 0; border-bottom: 1px solid var(--glass-border);">
                                 <span style="color:var(--text-sub); text-transform: capitalize;">${k}</span>
-                                <span style="color:var(--primary); font-weight: bold; font-size:0.85rem; max-width:60%; word-wrap:break-word; text-align:right;">${displayVal}</span>
+                                <span style="color:var(--primary); font-weight: bold; font-size:0.85rem; text-align:right;">${displayVal}</span>
                             </div>`;
-                }).join('');
+                    }).join('');
+                }
 
-                list.innerHTML += `
-                    <div class="meal-card fade-in-up" style="flex-direction: column; align-items: flex-start; margin-bottom: 20px;">
-                        <h3 style="margin: 0 0 15px 0; color: var(--primary); font-family: 'Montserrat', sans-serif; text-transform: uppercase; font-size: 1rem;">${course}</h3>
-                        <div style="width:100%;">${detailsHTML}</div>
+                grandTotalMax += subjectMax;
+                grandTotalObtained += subjectObtained;
+
+                let subjectPercent = subjectMax > 0 ? ((subjectObtained / subjectMax) * 100).toFixed(1) : 0;
+
+                subjectsHTML += `
+                    <div class="image-card fade-in-up" style="margin-bottom: 20px; text-align: left; padding: 25px;">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px;">
+                            <div>
+                                <h3 style="margin: 0 0 5px 0; font-size: 1.1rem; color: var(--text-main); font-family: 'Montserrat', sans-serif; text-transform: uppercase;">${course}</h3>
+                                <p style="margin: 0; font-size: 0.8rem; color: var(--primary);">THEORY</p>
+                            </div>
+                            ${subjectMax > 0 ? `
+                            <div style="text-align: right;">
+                                <h2 style="margin: 0; font-size: 1.6rem; color: var(--text-main); font-family: 'Montserrat', sans-serif;">${subjectPercent}%</h2>
+                                <p style="margin: 2px 0 0 0; font-size: 0.8rem; color: var(--text-sub);">${subjectObtained.toFixed(1)} / ${subjectMax}</p>
+                            </div>` : ''}
+                        </div>
+                        
+                        ${subjectMax > 0 ? `
+                        <div class="progress-container">
+                            <div class="progress-fill" style="background: var(--primary); width: ${subjectPercent}%;"></div>
+                        </div>
+                        <div class="overview-title" style="margin: 20px 0 15px 0;">📊 Detailed Performance</div>
+                        ` : ''}
+                        
+                        ${testsHtml}
                     </div>
                 `;
             });
+
+            // Calculate Overall Academic Stats
+            const overallPercent = grandTotalMax > 0 ? ((grandTotalObtained / grandTotalMax) * 100).toFixed(1) : "0.0";
+            const estCGPA = grandTotalMax > 0 ? ((grandTotalObtained / grandTotalMax) * 10).toFixed(2) : "0.00";
+            let grade = "C";
+            if (overallPercent >= 90) grade = "O";
+            else if (overallPercent >= 80) grade = "A+";
+            else if (overallPercent >= 70) grade = "A";
+            else if (overallPercent >= 60) grade = "B+";
+            else if (overallPercent >= 50) grade = "B";
+
+            // Add the Overview Card
+            list.innerHTML = `
+                <div class="dashboard-overview fade-in-up">
+                    <div class="overview-title">Academic Performance</div>
+                    <h1 class="overview-percent">${overallPercent}%</h1>
+                    <div class="overview-stats">
+                        <div class="stat-item">
+                            <h4>${estCGPA}</h4>
+                            <p>Est. CGPA</p>
+                        </div>
+                        <div class="stat-item" style="border-left: 1px solid var(--glass-border); border-right: 1px solid var(--glass-border);">
+                            <h4>${grandTotalObtained.toFixed(1)}</h4>
+                            <p>Score / ${grandTotalMax}</p>
+                        </div>
+                        <div class="stat-item">
+                            <h4>${grade}</h4>
+                            <p>Avg Grade</p>
+                        </div>
+                    </div>
+                </div>
+            ` + subjectsHTML;
         }
 
         function renderTimetable(ttArray) {
@@ -870,6 +1027,7 @@
             renderAttendance();
         }
 
+        // --- Beautiful Attendance Engine ---
         function renderAttendance() {
             const list = document.getElementById('attendance-list');
             list.innerHTML = '';
@@ -880,19 +1038,30 @@
                 grandTotal += item.total;
                 const percentage = item.total === 0 ? 0 : ((item.attended / item.total) * 100).toFixed(1);
                 const isGood = percentage >= 75;
+                const barColor = isGood ? 'var(--success)' : 'var(--danger)';
+                
                 let statusText = isGood 
                     ? `You can safely bunk ${Math.floor((item.attended - (0.75 * item.total)) / 0.75)} classes.`
                     : `Attend ${Math.ceil(((0.75 * item.total) - item.attended) / 0.25)} more classes to hit 75%.`;
 
                 list.innerHTML += `
-                    <div class="meal-card fade-in-up" style="display: flex; justify-content: space-between; align-items: center; padding: 20px; border-radius: 12px; margin-bottom: 15px;">
-                        <div>
-                            <h3 style="margin-bottom: 5px; color: var(--primary); font-family: 'Montserrat', sans-serif; text-transform: uppercase;">${item.name}</h3>
-                            <div style="font-size: 1.5rem; font-weight: bold;" class="${isGood ? 'good-attendance' : 'bad-attendance'}">${percentage}%</div>
-                            <div class="stat-text">${item.attended} / ${item.total} Attended</div>
-                            <div class="stat-text" style="color:var(--text-main); font-weight: bold; margin-top: 8px;">${statusText}</div>
+                    <div class="image-card fade-in-up" style="text-align: left; padding: 25px; margin-bottom: 20px;">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+                            <h3 style="margin: 0; color: var(--text-main); font-family: 'Montserrat', sans-serif; text-transform: uppercase; font-size: 1.1rem; max-width: 70%;">${item.name}</h3>
+                            <div style="font-size: 1.4rem; font-family: 'Montserrat', sans-serif; font-weight: bold; color: ${barColor};">${percentage}%</div>
                         </div>
-                        <button class="danger-btn" onclick="deleteAttendance(${item.id})">Del</button>
+                        
+                        <div class="progress-container">
+                            <div class="progress-fill" style="background: ${barColor}; width: ${percentage}%;"></div>
+                        </div>
+                        
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px;">
+                            <div>
+                                <div class="stat-text" style="color: var(--primary); font-weight: bold;">${item.attended} / ${item.total} Attended</div>
+                                <div class="stat-text" style="color:var(--text-main); margin-top: 5px; font-size: 0.85rem;">${statusText}</div>
+                            </div>
+                            <button class="danger-btn" style="padding: 8px 15px; font-size: 0.85rem; margin-left: 10px;" onclick="deleteAttendance(${item.id})">Drop</button>
+                        </div>
                     </div>
                 `;
             });
@@ -917,6 +1086,7 @@
             document.getElementById('splash-screen').classList.add('zoom-out');
             document.getElementById('main-content').classList.add('content-visible');
             document.getElementById('navButtons').style.opacity = '1';
+            document.querySelector('.top-left-sync-btn').style.opacity = '1';
             setTimeout(() => document.getElementById('splash-screen').style.display = 'none', 1000);
             checkAndScheduleNotifications();
         }, 1200);
