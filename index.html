@@ -223,6 +223,10 @@
         .sync-modal-content { background: var(--bg-start); border: 1px solid var(--primary); border-radius: 20px; padding: 30px; max-width: 400px; width: 90%; text-align: center; position: relative; box-shadow: 0 20px 50px rgba(0,0,0,0.8); }
         .sync-modal-content h3 { font-family: 'Montserrat', sans-serif; color: var(--primary); text-transform: uppercase; margin-top: 0; }
         .sync-modal-content p { color: var(--text-sub); font-size: 0.9rem; margin-bottom: 20px; }
+        
+        .batch-toggle { display: inline-flex; background: rgba(0,0,0,0.5); border-radius: 20px; padding: 4px; margin-bottom: 20px; border: 1px solid var(--glass-border); width: 100%;}
+        .batch-btn { flex: 1; padding: 10px 16px; border-radius: 16px; font-size: 0.85rem; font-weight: bold; cursor: pointer; color: var(--text-sub); transition: 0.3s; }
+        .batch-btn.active { background: var(--card-bg); color: var(--text-main); box-shadow: 0 2px 8px rgba(0,0,0,0.5); border: 1px solid var(--primary); }
     </style>
 </head>
 <body>
@@ -286,9 +290,9 @@
                             </div>
                         </div>
                         <div class="id-details">
-                            <span><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/></svg> B.Tech</span>
-                            <span><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg> CS AIML</span>
-                            <span><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg> Semester 2</span>
+                            <span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/></svg> B.Tech</span>
+                            <span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg> CS AIML</span>
+                            <span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg> Semester 2</span>
                         </div>
                     </div>
 
@@ -302,7 +306,7 @@
                             <div class="stat-label">Courses</div>
                         </div>
                         <div class="stat-box">
-                            <div class="stat-val orange" id="home-credit-val">-</div>
+                            <div class="stat-val orange" id="home-credit-val">21</div>
                             <div class="stat-label">Credits</div>
                         </div>
                     </div>
@@ -311,39 +315,22 @@
 
             <h3 class="section-title">Quick Actions</h3>
             <div class="quick-actions-grid">
-                
                 <div class="action-card" onclick="openProject('oopsBanner')">
                     <div class="action-icon"><svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></div>
-                    <div>
-                        <h4 class="action-title">Step Class</h4>
-                        <p class="action-sub">View OOPs banners & projects</p>
-                    </div>
+                    <div><h4 class="action-title">Step Class</h4><p class="action-sub">View OOPs banners & projects</p></div>
                 </div>
-
                 <div class="action-card" onclick="openTodayMessMenu()">
                     <div class="action-icon"><svg viewBox="0 0 24 24"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/></svg></div>
-                    <div>
-                        <h4 class="action-title">Mess Menu</h4>
-                        <p class="action-sub">Today's hostel food schedule</p>
-                    </div>
+                    <div><h4 class="action-title">Mess Menu</h4><p class="action-sub">Today's hostel food schedule</p></div>
                 </div>
-
                 <div class="action-card" onclick="switchView('helper-view')">
                     <div class="action-icon"><svg viewBox="0 0 24 24"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg></div>
-                    <div>
-                        <h4 class="action-title">Study Helper</h4>
-                        <p class="action-sub">Notes, PYQs & Materials</p>
-                    </div>
+                    <div><h4 class="action-title">Study Helper</h4><p class="action-sub">Notes, PYQs & Materials</p></div>
                 </div>
-
                 <div class="action-card" onclick="switchView('cgpa-view')">
                     <div class="action-icon"><svg viewBox="0 0 24 24"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="16" y1="14" x2="16" y2="14.01"/><line x1="12" y1="14" x2="12" y2="14.01"/><line x1="8" y1="14" x2="8" y2="14.01"/></svg></div>
-                    <div>
-                        <h4 class="action-title">CGPA Calculator</h4>
-                        <p class="action-sub">Estimate your grades</p>
-                    </div>
+                    <div><h4 class="action-title">CGPA Calculator</h4><p class="action-sub">Estimate your grades</p></div>
                 </div>
-
             </div>
 
             <div id="advisors-section" style="display: none;">
@@ -356,7 +343,6 @@
                     <button class="btn-primary" style="background: rgba(255,255,255,0.05); color: var(--text-main);">📞 Call Advisor</button>
                 </div>
             </div>
-
         </div>
 
         <div id="gallery-view" class="app-view">
@@ -480,10 +466,7 @@
                 <span class="view-counter-text">SQUAD PAGE VIEWS:</span>
                 <img src="https://api.visitorbadge.io/api/visitors?path=step-code-squad.lalit.gallery&labelColor=%23000000&countColor=%23ffaa00&style=plastic" alt="View Counter">
             </div>
-            
-            <div class="developer-credit">
-                DESIGNED & CODED BY &bull; <strong>LALIT KISHORE</strong>
-            </div>
+            <div class="developer-credit">DESIGNED & CODED BY &bull; <strong>LALIT KISHORE</strong></div>
         </footer>
     </div>
 
@@ -520,6 +503,11 @@
             <h3>Live Portal Sync</h3>
             <p>Connect securely to Academia to auto-fetch your data.</p>
             
+            <div class="batch-toggle">
+                <div class="batch-btn active" onclick="toggleBatch(this, 1)">Batch 1</div>
+                <div class="batch-btn" onclick="toggleBatch(this, 2)">Batch 2</div>
+            </div>
+
             <div style="display: flex; flex-direction: column; gap: 15px;">
                 <input type="text" id="srm-reg" class="modal-input" placeholder="NetID or Email" style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; padding: 15px; border-radius: 12px;">
                 <input type="password" id="srm-pwd" class="modal-input" placeholder="Portal Password" style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; padding: 15px; border-radius: 12px;">
@@ -537,9 +525,7 @@
 
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('sw.js')
-                .then(reg => console.log('Service Worker Registered!', reg))
-                .catch(err => console.log('Service Worker Failed:', err));
+                navigator.serviceWorker.register('sw.js').catch(err => console.log('SW Failed:', err));
             });
         }
 
@@ -575,33 +561,12 @@
             }
         }
 
-        // PROJECT DATA & GALLERY
         const projectsDatabase = {
-            'oopsBanner': {
-                title: 'OOPS Banner App',
-                subProjects: [
-                    { id: 'ucsFolder', title: "UC's" },
-                    { id: 'week1Problem', title: 'Week 1 & 2 Problems' },
-                    { id: 'week34Problem', title: 'Week 3 & 4 Problems' },
-                    { id: 'helloAppFolder', title: 'HelloApp UC\'s' }
-                ]
-            },
-            'ucsFolder': {
-                title: "OOPS Banner App UC's", parent: 'oopsBanner',
-                images: [ { src: 'images/oops-banner/uc1.png', label: '1' }, { src: 'images/oops-banner/uc2.png', label: '2' }, { src: 'images/oops-banner/uc3.png', label: '3' }, { src: 'images/oops-banner/uc4.png', label: '4' }, { src: 'images/oops-banner/uc5.png', label: '5' }, { src: 'images/oops-banner/uc6.png', label: '6' }, { src: 'images/oops-banner/uc7.png', label: '7' }, { src: 'images/oops-banner/uc8.png', label: '8' }, { src: 'images/oops-banner/uc9.png', label: '9' }, { src: 'images/oops-banner/uc10.png', label: '10' }, { src: 'images/oops-banner/end.png', label: 'end' } ]
-            },
-            'week1Problem': { 
-                title: 'Week 1 and 2 Problems', parent: 'oopsBanner', 
-                images: [ { src: 'images/oops-banner/Basic-step1.png', label: 'Basic-Step' }, { src: 'images/oops-banner/Basic-step2.png', label: 'Basic-Step' }, { src: 'images/oops-banner/level1.png', label: 'Part 1' }, { src: 'images/oops-banner/level12.png', label: 'Part 2' }, { src: 'images/oops-banner/level13.png', label: 'Part 3' }, { src: 'images/oops-banner/bash.png', label: 'Bash' }, { src: 'images/oops-banner/level21.png', label: 'Part 4' }, { src: 'images/oops-banner/level22.png', label: 'Part 5' }, { src: 'images/oops-banner/level3.png', label: 'Part 6' } ]
-            },
-            'week34Problem': { 
-                title: 'Week 3 and 4 Problems', parent: 'oopsBanner', 
-                images: [ { src: 'images/oops-banner/w31.png', label: 'Step1' }, { src: 'images/oops-banner/w32.png', label: 'Step2' }, { src: 'images/oops-banner/w33.png', label: 'Step3' }, { src: 'images/oops-banner/w34.png', label: 'Step4' }, { src: 'images/oops-banner/w35.png', label: 'Step5' }, { src: 'images/oops-banner/w36.png', label: 'Step6' }, { src: 'images/oops-banner/end.png', label: 'end' } ]
-            },
-            'helloAppFolder': { 
-                title: 'HelloApp UC\'s', parent: 'oopsBanner', video: 'https://www.youtube.com/embed/k8eX_rkQxPk',
-                images: [ { src: 'images/oops-banner/ha1.png', label: 'uc 1 Step 1' }, { src: 'images/oops-banner/ha2.png', label: 'Step 2' }, { src: 'images/oops-banner/ha3.png', label: 'Step 3' }, { src: 'images/oops-banner/ha4.png', label: 'Step 4' }, { src: 'images/oops-banner/ha5.png', label: 'uc 2 Step 5' }, { src: 'images/oops-banner/ha6.png', label: 'Step 6' }, { src: 'images/oops-banner/end.png', label: 'end' } ]
-            }
+            'oopsBanner': { title: 'OOPS Banner App', subProjects: [ { id: 'ucsFolder', title: "UC's" }, { id: 'week1Problem', title: 'Week 1 & 2 Problems' }, { id: 'week34Problem', title: 'Week 3 & 4 Problems' }, { id: 'helloAppFolder', title: 'HelloApp UC\'s' } ] },
+            'ucsFolder': { title: "OOPS Banner App UC's", parent: 'oopsBanner', images: [ { src: 'images/oops-banner/uc1.png', label: '1' }, { src: 'images/oops-banner/uc2.png', label: '2' }, { src: 'images/oops-banner/uc3.png', label: '3' }, { src: 'images/oops-banner/uc4.png', label: '4' }, { src: 'images/oops-banner/uc5.png', label: '5' }, { src: 'images/oops-banner/uc6.png', label: '6' }, { src: 'images/oops-banner/uc7.png', label: '7' }, { src: 'images/oops-banner/uc8.png', label: '8' }, { src: 'images/oops-banner/uc9.png', label: '9' }, { src: 'images/oops-banner/uc10.png', label: '10' }, { src: 'images/oops-banner/end.png', label: 'end' } ] },
+            'week1Problem': { title: 'Week 1 and 2 Problems', parent: 'oopsBanner', images: [ { src: 'images/oops-banner/Basic-step1.png', label: 'Basic-Step' }, { src: 'images/oops-banner/Basic-step2.png', label: 'Basic-Step' }, { src: 'images/oops-banner/level1.png', label: 'Part 1' }, { src: 'images/oops-banner/level12.png', label: 'Part 2' }, { src: 'images/oops-banner/level13.png', label: 'Part 3' }, { src: 'images/oops-banner/bash.png', label: 'Bash' }, { src: 'images/oops-banner/level21.png', label: 'Part 4' }, { src: 'images/oops-banner/level22.png', label: 'Part 5' }, { src: 'images/oops-banner/level3.png', label: 'Part 6' } ] },
+            'week34Problem': { title: 'Week 3 and 4 Problems', parent: 'oopsBanner', images: [ { src: 'images/oops-banner/w31.png', label: 'Step1' }, { src: 'images/oops-banner/w32.png', label: 'Step2' }, { src: 'images/oops-banner/w33.png', label: 'Step3' }, { src: 'images/oops-banner/w34.png', label: 'Step4' }, { src: 'images/oops-banner/w35.png', label: 'Step5' }, { src: 'images/oops-banner/w36.png', label: 'Step6' }, { src: 'images/oops-banner/end.png', label: 'end' } ] },
+            'helloAppFolder': { title: 'HelloApp UC\'s', parent: 'oopsBanner', video: 'https://www.youtube.com/embed/k8eX_rkQxPk', images: [ { src: 'images/oops-banner/ha1.png', label: 'uc 1 Step 1' }, { src: 'images/oops-banner/ha2.png', label: 'Step 2' }, { src: 'images/oops-banner/ha3.png', label: 'Step 3' }, { src: 'images/oops-banner/ha4.png', label: 'Step 4' }, { src: 'images/oops-banner/ha5.png', label: 'uc 2 Step 5' }, { src: 'images/oops-banner/ha6.png', label: 'Step 6' }, { src: 'images/oops-banner/end.png', label: 'end' } ] }
         };
 
         function openProject(projectId) {
@@ -654,7 +619,7 @@
             }
         }
 
-        // CGPA FUNCTIONS
+        // CGPA
         function addCgpaRow() {
             document.getElementById('cgpa-rows').insertAdjacentHTML('beforeend', `
                 <div class="form-row fade-in-up">
@@ -682,7 +647,7 @@
             else resultBox.innerText = `Your CGPA: ${(totalPoints / totalCredits).toFixed(2)}`;
         }
 
-        // MESS MENU FUNCTIONS (Auto highlights current day!)
+        // MESS MENU
         const mealIcons = {
             'Breakfast': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M17 8h1a4 4 0 1 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z"/><line x1="6" y1="2" x2="6" y2="4"/><line x1="10" y1="2" x2="10" y2="4"/><line x1="14" y1="2" x2="14" y2="4"/></svg>',
             'Lunch': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>',
@@ -731,14 +696,13 @@
             });
         }
 
-        // STUDY HELPER FUNCTIONS
+        // STUDY HELPER
         const helperData = {
             'Semester 1': [{ name: 'Content Adding Soon...', topics: ['Check back later for pyqs.'], pyqLink: '#', ctLink: '#' }],
             'Semester 2': [{ name: 'Content Adding Soon...', topics: ['Check back later for pyqs.'], pyqLink: '#', ctLink: '#' }],
             'Semester 3': [{ name: 'Content Adding Soon...', topics: ['Check back later for pyqs.'], pyqLink: '#', ctLink: '#' }],
             'Semester 4': [{ name: 'Content Adding Soon...', topics: ['Check back later for pyqs.'], pyqLink: '#', ctLink: '#' }]
         };
-
         function initHelper() {
             const semContainer = document.getElementById('helper-semesters');
             for(let i=1; i<=8; i++) {
@@ -774,7 +738,13 @@
         let attendanceData = JSON.parse(localStorage.getItem('squadAttendance')) || [];
         function saveAttendance() { localStorage.setItem('squadAttendance', JSON.stringify(attendanceData)); }
 
-        // --- Live Portal Sync Functions ---
+        let selectedBatch = 1;
+        function toggleBatch(element, batchNum) {
+            document.querySelectorAll('.batch-btn').forEach(btn => btn.classList.remove('active'));
+            element.classList.add('active');
+            selectedBatch = batchNum;
+        }
+
         function openSyncModal() { document.getElementById('syncModal').style.display = 'flex'; }
         function closeSyncModal() { document.getElementById('syncModal').style.display = 'none'; }
 
@@ -792,7 +762,7 @@
                 const response = await fetch(`${BACKEND_URL}/api/start_session`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ regNo: regNo, pwd: pwd })
+                    body: JSON.stringify({ regNo: regNo, pwd: pwd, batch: selectedBatch })
                 });
 
                 if (!response.ok) throw new Error(`Server responded with status ${response.status}`);
@@ -806,16 +776,14 @@
 
                     const att = Array.isArray(result.data) ? result.data : [];
                     const marks = result.marks ? result.marks : [];
-                    
-                    // Backend must map unified timetable slots to student slots before sending!
-                    const timetable = result.timetable ? result.timetable : {}; 
+                    const timetable = result.timetable ? result.timetable : {"1":[],"2":[],"3":[],"4":[],"5":[]}; 
 
                     localStorage.setItem('squadMarks', JSON.stringify(marks));
                     localStorage.setItem('squadTimetable', JSON.stringify(timetable));
 
                     processScrapedData(att);
                     renderMarks(marks);
-                    renderDay(1, document.querySelector('.day-btn')); // Reload Day 1 timetable
+                    setInitialTimetableDay();
 
                     statusText.innerText = `✅ Sync complete! Dashboard Updated.`;
                     statusText.style.color = "var(--success)";
@@ -833,10 +801,13 @@
             }
         }
 
-        // Processing Attendance
         function processScrapedData(dataArray) {
+            if (!Array.isArray(dataArray) || dataArray.length === 0) {
+                renderAttendance();
+                return;
+            }
+            
             attendanceData = [];
-            if (!Array.isArray(dataArray) || dataArray.length === 0) return;
             dataArray.forEach(item => {
                 const name = item.courseTitle || item.name || item.subject || item.courseName || item.title || "Unknown Subject";
                 const attended = parseInt(item.attended || item.present || item.attendedClasses || 0);
@@ -846,10 +817,10 @@
                     attendanceData.push({ id: Date.now() + Math.random(), name, attended, total });
                 }
             });
-            saveAttendance(); renderAttendance();
+            saveAttendance();
+            renderAttendance(); 
         }
 
-        // Marks Engine
         function renderMarks(marksArray) {
             const noData = document.getElementById('marks-no-data');
             const list = document.getElementById('marks-list');
@@ -859,6 +830,7 @@
                 if (list) list.style.display = 'none';
                 return;
             }
+
             if (noData) noData.style.display = 'none';
             list.style.display = 'block'; list.innerHTML = '';
 
@@ -954,11 +926,9 @@
             ` + subjectsHTML;
         }
 
-        // --- NEW TIMETABLE RENDER ENGINE (Day 1 to 5) ---
         function setInitialTimetableDay() {
-            // Find current Day of week to highlight Day 1 to 5
-            let dayIndex = new Date().getDay(); // 0=Sun, 1=Mon...
-            let dayToRender = (dayIndex >= 1 && dayIndex <= 5) ? dayIndex : 1; // Default to Day 1 if weekend
+            let dayIndex = new Date().getDay(); 
+            let dayToRender = (dayIndex >= 1 && dayIndex <= 5) ? dayIndex : 1; 
             const dayBtns = document.querySelectorAll('.tt-day-selector .day-btn');
             if(dayBtns.length > 0 && dayBtns[dayToRender - 1]) {
                 renderDay(dayToRender, dayBtns[dayToRender - 1]);
@@ -972,7 +942,6 @@
             const noData = document.getElementById('timetable-no-data');
             const grid = document.getElementById('timetable-grid');
 
-            // Expecting Backend to send data grouped by day, e.g., { "1": [...classes], "2": [...classes] }
             const ttData = JSON.parse(localStorage.getItem('squadTimetable') || '{}');
             const classesForDay = ttData[dayNumber.toString()];
 
@@ -981,12 +950,9 @@
                 return;
             }
 
-            noData.style.display = 'none';
-            grid.style.display = 'block';
-            grid.innerHTML = '';
+            noData.style.display = 'none'; grid.style.display = 'block'; grid.innerHTML = '';
 
             classesForDay.forEach(cls => {
-                // Expected format from backend: { time: "09:45 - 10:35", subject: "21LEH101T - English", room: "907" }
                 grid.innerHTML += `
                     <div class="tt-card fade-in-up">
                         <div class="tt-time"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> ${cls.time || 'N/A'}</div>
@@ -997,7 +963,6 @@
             });
         }
 
-        // Attendance Tracking Logic
         function addAttendance() {
             const nameInput = document.getElementById('att-sub-name');
             const attInput = document.getElementById('att-attended');
@@ -1034,11 +999,9 @@
                             <h3 style="margin: 0; color: var(--text-main); font-family: 'Montserrat', sans-serif; text-transform: uppercase; font-size: 1.1rem; max-width: 70%;">${item.name}</h3>
                             <div style="font-size: 1.4rem; font-family: 'Montserrat', sans-serif; font-weight: bold; color: ${barColor};">${percentage}%</div>
                         </div>
-                        
                         <div class="progress-container">
                             <div class="progress-fill" style="background: ${barColor}; width: ${percentage}%; box-shadow: 0 0 12px ${barColor};"></div>
                         </div>
-                        
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px;">
                             <div>
                                 <div class="stat-text" style="color: var(--text-main); font-weight: bold;">${item.attended} / ${item.total} Attended</div>
@@ -1052,8 +1015,10 @@
 
             if (isLoggedIn) {
                 const overallPerc = grandTotal > 0 ? ((grandAttended / grandTotal) * 100).toFixed(1) : "0.0";
-                document.getElementById('home-att-val').innerText = overallPerc + "%";
-                document.getElementById('home-course-val').innerText = attendanceData.length;
+                const attEl = document.getElementById('home-att-val');
+                const courseEl = document.getElementById('home-course-val');
+                if (attEl) attEl.innerText = overallPerc + "%";
+                if (courseEl) courseEl.innerText = attendanceData.length;
             }
 
             const overallEl = document.getElementById('overall-attendance');
@@ -1066,8 +1031,13 @@
             }
         }
         
-        // Initial load scripts
-        if (localStorage.getItem('squadMarks')) renderMarks(JSON.parse(localStorage.getItem('squadMarks')));
+        function loadSavedMarksAndTimetable() {
+            const savedMarks = JSON.parse(localStorage.getItem('squadMarks') || '[]');
+            if (savedMarks.length > 0) renderMarks(savedMarks);
+            setInitialTimetableDay(); 
+        }
+        
+        loadSavedMarksAndTimetable();
         renderAttendance();
 
         function toggleTheme() {
@@ -1083,10 +1053,7 @@
             checkAndScheduleNotifications();
         }, 1200);
 
-        function openLightbox(src) {
-            document.getElementById("lightbox").style.display = "flex";
-            document.getElementById("lightbox-img").src = src;
-        }
+        function openLightbox(src) { document.getElementById("lightbox").style.display = "flex"; document.getElementById("lightbox-img").src = src; }
         function closeLightbox() { document.getElementById("lightbox").style.display = "none"; }
 
         function requestNotificationPermission() {
