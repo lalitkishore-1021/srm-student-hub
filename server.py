@@ -10,7 +10,7 @@ from playwright.sync_api import sync_playwright
 app = Flask(__name__, static_folder='.')
 CORS(app)
 
-def scrape_academia_worker(reg_no, pwd, out_queue):
+def scrape_academia_worker(reg_no, pwd, batch, out_queue):
     p = None
     browser = None
     try:
@@ -31,12 +31,11 @@ def scrape_academia_worker(reg_no, pwd, out_queue):
 
         if "@" not in reg_no: reg_no += "@srmist.edu.in"
 
-        print(f"[{reg_no}] 1. Loading Academia Login Page...")
+        print(f"[{reg_no}] 1. Loading Academia...")
         try:
-            page.goto("https://academia.srmist.edu.in/", wait_until="commit", timeout=60000)
-            page.wait_for_timeout(5000)
+            page.goto("https://academia.srmist.edu.in/", wait_until="networkidle", timeout=60000)
         except Exception as e:
-            out_queue.put({'success': False, 'error': f'Academia page failed to load: {str(e)}'})
+            out_queue.put({'success': False, 'error': f'Portal failed to load: {str(e)}'})
             return
 
         def find_in_frames(selector, filter_text=None, filter_not_text=None):
@@ -53,137 +52,204 @@ def scrape_academia_worker(reg_no, pwd, out_queue):
                 except: continue
             return None
             
-        print(f"[{reg_no}] 2. Entering Email...")
+        # Login Logic
         try:
             email_input = find_in_frames('input[type="email"], input[type="text"], input[name="LOGIN_ID"]', filter_not_text="hidden")
-            if not email_input: raise Exception("Could not find Email box.")
+            if not email_input: raise Exception("Email box not found")
             email_input.fill(reg_no, force=True)
             
             next_btn = find_in_frames('button, input[type="submit"]', filter_text="next|continue")
             if next_btn: next_btn.click(force=True, timeout=5000)
             else: page.keyboard.press("Enter")
-        except Exception as e:
-            out_queue.put({'success': False, 'error': f'Failed to enter Email: {str(e)}'})
-            return
 
-        print(f"[{reg_no}] 3. Entering Password...")
-        try:
             pwd_input = None
-            for _ in range(15): 
+            for _ in range(10): 
                 pwd_input = find_in_frames('input[type="password"], input[name="PASSWORD"]')
                 if pwd_input: break
                 page.wait_for_timeout(1000)
                 
-            if not pwd_input: raise Exception("Could not find Password box.")
-            
-            pwd_input.fill("") 
-            pwd_input.type(pwd, delay=50) 
-            page.wait_for_timeout(1000) 
+            if not pwd_input: raise Exception("Password box not found")
+            pwd_input.type(pwd, delay=30) 
             
             submit_btn = find_in_frames('button, input[type="submit"]', filter_text="sign in|login|submit|verify")
             if submit_btn: submit_btn.click(force=True, timeout=5000)
             else: page.keyboard.press("Enter")
             page.wait_for_timeout(5000) 
+
+            terminate_btn = page.locator('button, a').filter(has_text=re.compile(r"terminate", re.IGNORECASE)).first
+            if terminate_btn.count() > 0: terminate_btn.click(force=True); page.wait_for_timeout(4000)
         except Exception as e:
-            out_queue.put({'success': False, 'error': f'Failed to enter Password: {str(e)}'})
+            out_queue.put({'success': False, 'error': f'Auth Failed: {str(e)}'})
             return
 
-        print(f"[{reg_no}] 4. Checking for Session Limit Blocker...")
-        try:
-            terminate_btn = page.locator('button, a').filter(has_text=re.compile(r"terminate all session|terminate", re.IGNORECASE)).first
-            if terminate_btn.count() > 0 and terminate_btn.is_visible(timeout=3000):
-                print(f"[{reg_no}] Session blocked! Clicking Terminate All Sessions...")
-                terminate_btn.click(force=True)
-                page.wait_for_timeout(5000) 
-        except: pass 
-
-        # 🚨 THE HARD RELOAD BYPASS 🚨
-        print(f"[{reg_no}] 5. Teleporting and forcing Hard Reload to My_Attendance...")
-        try:
-            page.goto("https://academia.srmist.edu.in/#Page:My_Attendance", wait_until="commit")
-            # Force Zoho to read the hash by reloading the page
-            page.reload(wait_until="commit") 
-            page.wait_for_timeout(15000) # Give the tables plenty of time to render
-        except Exception as e:
-            print(f"[{reg_no}] Warning during teleport: {str(e)}")
-
-        print(f"[{reg_no}] 6. Extracting all tables from all frames...")
-        all_tables_data = []
-        for frame in page.frames:
+        def get_all_tables():
             try:
-                tables = frame.evaluate("""() => {
-                    let all = [];
-                    document.querySelectorAll('table').forEach(t => {
-                        let rows = [];
-                        t.querySelectorAll('tr').forEach(tr => {
-                            let row = [];
-                            tr.querySelectorAll('td, th').forEach(td => {
-                                row.push(td.innerText.trim());
-                            });
-                            if (row.length > 0) rows.push(row);
-                        });
-                        if (rows.length > 1) all.push(rows);
-                    });
-                    return all;
-                }""")
-                if tables: all_tables_data.extend(tables)
-            except: pass
+                page.wait_for_selector("iframe", timeout=10000)
+            except Exception as e:
+                print("Wait for iframe error:", str(e))
+            all_tables = []
+            for frame in page.frames:
+                try:
+                    tables = frame.evaluate("""() => {
+                        return Array.from(document.querySelectorAll('table')).map(t => 
+                            Array.from(t.querySelectorAll('tr')).map(tr => 
+                                Array.from(tr.querySelectorAll('td, th')).map(td => td.innerText.trim())
+                            ).filter(row => row.length > 0)
+                        ).filter(table => table.length > 0);
+                    }""")
+                    if tables: all_tables.extend(tables)
+                except: pass
+            return all_tables
 
-        print(f"[{reg_no}] 7. Parsing the extracted tables...")
-        parsed_data = [] 
+        def get_col_index(headers, *keywords):
+            for i, h in enumerate(headers):
+                h_lower = str(h).lower()
+                if any(kw in h_lower for kw in keywords):
+                    return i
+            return -1
+
+        # --- ATTENDANCE & MARKS ---
+        print(f"[{reg_no}] 5. Scoping Attendance...")
+        page.goto("https://academia.srmist.edu.in/#Page:My_Attendance")
+        page.reload(wait_until="networkidle")
+
+        raw_tables = get_all_tables()
+        parsed_att = []
         parsed_marks = []
-        
-        for table in all_tables_data:
-            # Check the table headers to identify it
-            header_text = " ".join(table[0]).lower()
-            if len(table) > 1: header_text += " " + " ".join(table[1]).lower()
 
-            if "hours conducted" in header_text and "attn" in header_text:
-                for row in table:
-                    if len(row) >= 9:
-                        if "Course Code" in row[0]: continue
-                        try:
-                            parsed_data.append({
-                                "courseTitle": f"{row[0]} - {row[1][:25]}...",
-                                "attended": int(row[6]) - int(row[7]),
-                                "total": int(row[6])
+        for table in raw_tables:
+            if not table: continue
+            headers = [str(h).lower() for h in table[0]]
+            header_str = " ".join(headers)
+
+            # Dynamic Attendance Parsing
+            if "hours conducted" in header_str and "absent" in header_str:
+                try:
+                    idx_code = get_col_index(headers, "code")
+                    idx_title = get_col_index(headers, "title")
+                    idx_cond = get_col_index(headers, "conducted")
+                    idx_abs = get_col_index(headers, "absent")
+                    
+                    if -1 in (idx_code, idx_title, idx_cond, idx_abs): continue
+                    
+                    for row in table[1:]:
+                        if len(row) > max(idx_cond, idx_abs):
+                            cond = int(float(row[idx_cond] or 0))
+                            absent = int(float(row[idx_abs] or 0))
+                            parsed_att.append({
+                                "courseTitle": f"{row[idx_code]} - {row[idx_title][:20]}",
+                                "attended": max(0, cond - absent),
+                                "total": cond
                             })
-                        except: pass
-                        
-            elif "test performance" in header_text or "internal" in header_text:
-                for row in table:
-                    if len(row) >= 3:
-                        if "Course Code" in row[0]: continue
-                        parsed_marks.append({
-                            "courseTitle": f"{row[0]} ({row[1]})",
-                            "Test Performance": row[2].replace('\n', ' | ')
-                        })
+                except Exception as e:
+                    print("Parsing error (Attendance):", str(e))
+                    continue
 
-        # 🚨 BULLETPROOF FAILSAFE: DUMP RAW TEXT IF PARSING FAILS 🚨
-        if not parsed_data and not parsed_marks:
-            if all_tables_data:
-                out_queue.put({
-                    'success': True, 
-                    'data': [], 
-                    'marks': [
-                        {"courseTitle": "PARSING FAILED", "Internal Note": "Please screenshot this data!"},
-                        {"RAW TABLES": str(all_tables_data)[:2000]}
-                    ],
-                    'timetable': []
-                })
-            else:
-                out_queue.put({'success': False, 'error': 'Reached dashboard, but no tables were found in any iframe. Try syncing again.'})
-            return
+            # Dynamic Marks Parsing
+            elif any(kw in header_str for kw in ["test performance", "assessment", "marks", "internal"]):
+                try:
+                    idx_code = get_col_index(headers, "code")
+                    idx_perf = get_col_index(headers, "performance", "assessment", "marks", "internal")
+                    
+                    if idx_code == -1 or idx_perf == -1: continue
+                    
+                    for row in table[1:]:
+                        if len(row) > idx_perf:
+                            parsed_marks.append({
+                                "courseTitle": row[idx_code],
+                                "Test Performance": row[idx_perf].replace('\n', ' | ')
+                            })
+                except Exception as e:
+                    print("Parsing error (Marks):", str(e))
+                    continue
+
+        # --- TIMETABLE STEP 1 (STUDENT SLOTS) ---
+        print(f"[{reg_no}] 6. Scoping Registered Slots...")
+        student_slots = {}
+        page.goto("https://academia.srmist.edu.in/#Page:My_Time_Table_2023_24")
+        
+        slot_tables = get_all_tables()
+        for table in slot_tables:
+            if not table: continue
+            headers = [str(h).lower() for h in table[0]]
+            header_str = " ".join(headers)
+            
+            if "slot" in header_str and "code" in header_str:
+                try:
+                    idx_code = get_col_index(headers, "code")
+                    idx_title = get_col_index(headers, "title")
+                    idx_slot = get_col_index(headers, "slot")
+                    idx_room = get_col_index(headers, "room")
+                    
+                    if -1 in (idx_code, idx_title, idx_slot, idx_room): continue
+                    
+                    for row in table[1:]:
+                        if len(row) > idx_room:
+                            # Refined Regex matching
+                            slots_found = re.findall(r'[A-Z]\d+', row[idx_slot])
+                            for s in slots_found:
+                                student_slots[s] = {
+                                    "subject": f"{row[idx_code]} - {row[idx_title]}",
+                                    "room": row[idx_room]
+                                }
+                except Exception as e:
+                    print("Parsing error (Slots):", str(e))
+                    continue
+
+        # --- TIMETABLE STEP 2 (MASTER TIMINGS) ---
+        print(f"[{reg_no}] 7. Mapping to Master (Batch {batch})...")
+        final_tt = {"1": [], "2": [], "3": [], "4": [], "5": []}
+        page.goto(f"https://academia.srmist.edu.in/#Page:Unified_Time_Table_2025_Batch_{batch}")
+        
+        master_tables = get_all_tables()
+        for table in master_tables:
+            if not table: continue
+            headers = [str(h).lower() for h in table[0]]
+            
+            if "day order" in headers[0] or "day" in headers[0]:
+                time_cols = table[0][1:]
+                for row in table[1:]:
+                    try:
+                        day_match = re.search(r'\d+', row[0])
+                        if not day_match: continue
+                        day_order = day_match.group()
+                        
+                        if day_order in final_tt:
+                            seen_entries = set()
+                            for i, cell in enumerate(row[1:]):
+                                slots_in_cell = re.findall(r'[A-Z]\d+', cell)
+                                for s in slots_in_cell:
+                                    if s in student_slots:
+                                        entry_key = f"{time_cols[i] if i < len(time_cols) else 'N/A'}-{student_slots[s]['subject']}"
+                                        if entry_key not in seen_entries:
+                                            final_tt[day_order].append({
+                                                "time": time_cols[i] if i < len(time_cols) else "N/A",
+                                                "subject": student_slots[s]['subject'],
+                                                "room": student_slots[s]['room']
+                                            })
+                                            seen_entries.add(entry_key)
+                    except Exception as e:
+                        print("Parsing error (Master TT Row):", str(e))
+                        continue
+
+        # Debug Logging for Empty Parsing
+        if not parsed_att and not parsed_marks and not student_slots:
+            try:
+                with open("debug_tables.txt", "w", encoding="utf-8") as f:
+                    f.write("RAW TABLES:\n" + str(raw_tables) + "\n\nSLOT TABLES:\n" + str(slot_tables) + "\n\nMASTER TABLES:\n" + str(master_tables))
+                print(f"[{reg_no}] Empty arrays detected. Saved to debug_tables.txt")
+            except Exception as e:
+                print(f"Failed to write debug file: {str(e)}")
 
         out_queue.put({
             'success': True, 
-            'data': parsed_data,
+            'data': parsed_att,
             'marks': parsed_marks,
-            'timetable': []
+            'timetable': final_tt
         })
 
     except Exception as e:
-        out_queue.put({'success': False, 'error': f"Unexpected Playwright Error: {str(e)}"})
+        out_queue.put({'success': False, 'error': f"Scraper Exception: {str(e)}"})
     finally:
         if browser: browser.close()
         if p: p.stop()
@@ -192,13 +258,13 @@ def scrape_academia_worker(reg_no, pwd, out_queue):
 def start_session():
     data = request.json
     out_queue = queue.Queue()
-    t = threading.Thread(target=scrape_academia_worker, args=(data.get('regNo'), data.get('pwd'), out_queue))
+    t = threading.Thread(target=scrape_academia_worker, args=(data.get('regNo'), data.get('pwd'), data.get('batch', 1), out_queue))
     t.start()
     try:
-        result = out_queue.get(timeout=110)
+        result = out_queue.get(timeout=150) 
         return jsonify(result)
     except queue.Empty:
-        return jsonify({'success': False, 'error': 'Server Timeout. Academia took too long to respond.'})
+        return jsonify({'success': False, 'error': 'Server Timeout. Check internet speed.'})
 
 @app.route('/')
 def serve_index(): return send_from_directory('.', 'index.html')
@@ -206,5 +272,4 @@ def serve_index(): return send_from_directory('.', 'index.html')
 def serve_static(path): return send_from_directory('.', path)
 
 if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port)
+    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
