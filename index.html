@@ -44,13 +44,11 @@
 
         body { font-family: 'Open Sans', sans-serif; background: radial-gradient(circle at top center, var(--bg-start) 0%, var(--bg-end) 100%); color: var(--text-main); margin: 0; padding: 0; overflow-x: hidden; min-height: 100vh; transition: background 0.5s ease, color 0.5s ease; -webkit-tap-highlight-color: transparent;}
         
-        /* Socials & Bell Buttons */
         .btn-container { position: fixed; top: 20px; right: 20px; display: flex; gap: 12px; z-index: 1000; opacity: 0; transition: opacity 0.5s ease; }
         .icon-btn { background: var(--glass); border: 1px solid var(--glass-border); color: var(--text-main); width: 45px; height: 45px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 1.2rem; cursor: pointer; backdrop-filter: blur(10px); box-shadow: 0 4px 10px var(--shadow); transition: all 0.3s ease; text-decoration: none; }
         .icon-btn:hover { transform: scale(1.1) translateY(-3px); border-color: var(--primary); color: var(--primary); }
         .icon-btn svg { width: 20px; height: 20px; fill: currentColor; transition: fill 0.3s ease; }
         
-        /* Navigation Bar (Mobile Bottom -> Desktop Side) */
         .app-nav { position: fixed; bottom: 0; left: 0; width: 100%; height: 70px; background: var(--nav-bg); backdrop-filter: blur(15px); border-top: 1px solid var(--glass-border); display: flex; justify-content: space-around; align-items: center; z-index: 1000; padding-bottom: env(safe-area-inset-bottom); }
         .nav-item { display: flex; flex-direction: column; align-items: center; color: var(--text-sub); text-decoration: none; font-size: 0.75rem; font-family: 'Montserrat', sans-serif; font-weight: 700; gap: 5px; cursor: pointer; transition: all 0.3s; width: 60px;}
         .nav-item svg { width: 24px; height: 24px; stroke: currentColor; stroke-width: 2; fill: none; transition: all 0.3s;}
@@ -75,7 +73,6 @@
         .app-view.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* Glowing Header */
         .site-header { display: flex; flex-direction: column; align-items: center; margin-bottom: 40px; }
         .main-logo { width: 90px; height: 90px; margin-bottom: 15px; cursor: pointer; filter: drop-shadow(0 0 15px rgba(255, 170, 0, 0.5)); transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
         .main-logo:hover { transform: scale(1.15) rotate(5deg); filter: drop-shadow(0 0 25px rgba(255, 170, 0, 0.8)); }
@@ -83,7 +80,6 @@
         @keyframes shine { to { background-position: 200% center; } }
         .subtitle { color: var(--text-sub); font-size: 1.1rem; margin-bottom: 30px; letter-spacing: 1px; transition: color 0.5s ease;}
 
-        /* --- HOME DASHBOARD STYLES --- */
         .hero-unauth { text-align: center; padding: 40px 20px; background: linear-gradient(145deg, var(--card-bg), #111); border-radius: 24px; border: 1px dashed var(--primary); position: relative; overflow: hidden; margin-bottom: 30px;}
         .pulse-circle { width: 100px; height: 100px; background: var(--primary-glow); border-radius: 50%; position: absolute; top: -20px; left: -20px; filter: blur(40px); animation: pulse 3s infinite alternate; }
         @keyframes pulse { to { transform: scale(1.5); opacity: 0.5; } }
@@ -114,7 +110,6 @@
         .action-title { font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: 0.95rem; margin: 0; }
         .action-sub { font-size: 0.75rem; color: var(--text-sub); margin: 0; }
 
-        /* Shared Card Styles & Other Views */
         .glass-card { background: var(--card-bg); border: 1px solid var(--glass-border); border-radius: 20px; padding: 20px; margin-bottom: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); transition: transform 0.3s; }
         .gallery-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 40px; max-width: 1200px; margin: 0 auto; }
         .image-card { background: var(--glass); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); padding: 15px; border-radius: 20px; border: 1px solid var(--glass-border); box-shadow: 0 15px 35px var(--shadow); transition: all 0.4s ease; }
@@ -136,7 +131,6 @@
         .fade-in-up { animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
         @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         
-        /* Forms & Inputs */
         .form-row { display: grid; grid-template-columns: 2fr 1fr 1fr auto; gap: 15px; margin-bottom: 15px; align-items: center; }
         @media (max-width: 600px) { .form-row { grid-template-columns: 1fr; gap: 10px; border-bottom: 1px solid var(--glass-border); padding-bottom: 15px;} }
         input, select { background: rgba(0,0,0,0.2); border: 1px solid var(--glass-border); color: var(--text-main); padding: 12px; border-radius: 8px; font-family: 'Open Sans', sans-serif; width: 100%; box-sizing: border-box; outline: none; transition: border-color 0.3s; }
@@ -151,7 +145,6 @@
         .btn-primary:hover { background: #e69900; transform: translateY(-2px); }
         .result-box { background: var(--glass); border: 1px solid var(--primary); padding: 20px; border-radius: 12px; text-align: center; margin-top: 20px; font-size: 1.5rem; font-weight: bold; color: var(--primary); }
 
-        /* Dashboard UI Additions for Marks & Attendance */
         .dashboard-overview { background: linear-gradient(135deg, rgba(255, 170, 0, 0.2) 0%, rgba(0, 0, 0, 0.4) 100%); border: 1px solid var(--primary); box-shadow: 0 10px 30px rgba(255, 170, 0, 0.15); border-radius: 20px; padding: 24px; margin-bottom: 24px; text-align: center; }
         .overview-title { font-size: 12px; color: var(--text-sub); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 10px; font-family: 'Montserrat', sans-serif; }
         .overview-percent { font-size: 48px; font-family: 'Montserrat', sans-serif; font-weight: 900; margin: 0 0 20px 0; color: var(--text-main); text-shadow: 0 0 20px rgba(255, 170, 0, 0.5); }
@@ -167,7 +160,6 @@
         .test-info p { margin: 0; font-size: 12px; color: var(--text-sub); }
         .test-badge { background-color: transparent; border: 1px solid; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: bold; }
 
-        /* General UI Elements */
         .tab-container { display: flex; overflow-x: auto; gap: 10px; margin-bottom: 30px; padding-bottom: 10px; scroll-behavior: smooth; }
         .tab-container::-webkit-scrollbar { display: none; } 
         .tab-btn { background: var(--glass); border: 1px solid var(--glass-border); color: var(--text-main); padding: 12px 25px; border-radius: 30px; cursor: pointer; white-space: nowrap; transition: 0.3s; font-weight: bold; font-family: 'Montserrat', sans-serif; text-transform: uppercase; font-size: 0.85rem;}
@@ -208,7 +200,6 @@
         .video-container { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: 12px; margin-bottom: 15px; border: 1px solid var(--glass-border); }
         .video-container iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0; }
 
-        /* Timetable specific styling */
         .tt-day-selector { display: flex; overflow-x: auto; gap: 10px; margin-bottom: 20px; padding-bottom: 10px; }
         .tt-day-selector::-webkit-scrollbar { display: none; }
         .day-btn { background: var(--card-bg); border: 1px solid var(--glass-border); color: var(--text-sub); padding: 10px 20px; border-radius: 20px; font-weight: bold; cursor: pointer; white-space: nowrap; transition: 0.3s; }
@@ -219,7 +210,6 @@
         .tt-subject { font-family: 'Montserrat', sans-serif; font-size: 1.1rem; font-weight: 700; margin: 0 0 8px 0; }
         .tt-room { font-size: 0.85rem; opacity: 0.8; display: flex; align-items: center; gap: 5px; }
 
-        /* Sync Modal Dialog */
         .sync-modal-content { background: var(--bg-start); border: 1px solid var(--primary); border-radius: 20px; padding: 30px; max-width: 400px; width: 90%; text-align: center; position: relative; box-shadow: 0 20px 50px rgba(0,0,0,0.8); }
         .sync-modal-content h3 { font-family: 'Montserrat', sans-serif; color: var(--primary); text-transform: uppercase; margin-top: 0; }
         .sync-modal-content p { color: var(--text-sub); font-size: 0.9rem; margin-bottom: 20px; }
@@ -738,16 +728,19 @@
         let attendanceData = JSON.parse(localStorage.getItem('squadAttendance')) || [];
         function saveAttendance() { localStorage.setItem('squadAttendance', JSON.stringify(attendanceData)); }
 
-        let selectedBatch = 1;
+        let currentBatch = 1;
+        let timetableData = {};
+        
         function toggleBatch(element, batchNum) {
             document.querySelectorAll('.batch-btn').forEach(btn => btn.classList.remove('active'));
             element.classList.add('active');
-            selectedBatch = batchNum;
+            currentBatch = batchNum;
         }
 
         function openSyncModal() { document.getElementById('syncModal').style.display = 'flex'; }
         function closeSyncModal() { document.getElementById('syncModal').style.display = 'none'; }
 
+        // --- LIVE SYNC CORE ---
         async function startLiveSync() {
             const regNo = document.getElementById('srm-reg').value.trim();
             const pwd = document.getElementById('srm-pwd').value;
@@ -759,41 +752,45 @@
             statusText.style.color = "var(--primary)";
 
             try {
-                const response = await fetch(`${BACKEND_URL}/api/start_session`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ regNo: regNo, pwd: pwd, batch: selectedBatch })
+                const res = await fetch(`${BACKEND_URL}/api/start_session`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        regNo: regNo,
+                        pwd: pwd,
+                        batch: currentBatch
+                    })
                 });
 
-                if (!response.ok) throw new Error(`Server responded with status ${response.status}`);
+                const data = await res.json();
 
-                const result = await response.json();
-
-                if (result.success) {
-                    isLoggedIn = true;
-                    localStorage.setItem('isLoggedIn', 'true');
-                    updateHomeState();
-
-                    const att = Array.isArray(result.data) ? result.data : [];
-                    const marks = result.marks ? result.marks : [];
-                    const timetable = result.timetable ? result.timetable : {"1":[],"2":[],"3":[],"4":[],"5":[]}; 
-
-                    localStorage.setItem('squadMarks', JSON.stringify(marks));
-                    localStorage.setItem('squadTimetable', JSON.stringify(timetable));
-
-                    processScrapedData(att);
-                    renderMarks(marks);
-                    setInitialTimetableDay();
-
-                    statusText.innerText = `✅ Sync complete! Dashboard Updated.`;
-                    statusText.style.color = "var(--success)";
-                    setTimeout(() => closeSyncModal(), 2000);
-                } else {
-                    statusText.innerText = "❌ Error: " + (result.error || "Unknown error.");
+                if (!data.success) {
+                    statusText.innerText = "❌ " + data.error;
                     statusText.style.color = "var(--danger)";
+                    return;
                 }
-            } catch (err) {
-                console.error("Sync error:", err);
+
+                statusText.innerText = "✅ Sync complete! Dashboard Updated.";
+                statusText.style.color = "var(--success)";
+
+                // SAVE LOGIN STATE
+                localStorage.setItem("isLoggedIn", "true");
+                isLoggedIn = true;
+                updateHomeState();
+
+                // SAVE DATA
+                localStorage.setItem('squadMarks', JSON.stringify(data.marks || []));
+                localStorage.setItem('squadTimetable', JSON.stringify(data.timetable || {}));
+
+                // RENDER DATA
+                renderAttendance(data.data || []);
+                renderMarks(data.marks || []);
+                renderTimetable(data.timetable || {});
+
+                setTimeout(() => closeSyncModal(), 2000);
+
+            } catch (e) {
+                console.error("Sync error:", e);
                 statusText.innerText = "❌ Could not connect to backend server.";
                 statusText.style.color = "var(--danger)";
             } finally {
@@ -801,24 +798,72 @@
             }
         }
 
-        function processScrapedData(dataArray) {
-            if (!Array.isArray(dataArray) || dataArray.length === 0) {
-                renderAttendance();
-                return;
-            }
-            
-            attendanceData = [];
-            dataArray.forEach(item => {
-                const name = item.courseTitle || item.name || item.subject || item.courseName || item.title || "Unknown Subject";
-                const attended = parseInt(item.attended || item.present || item.attendedClasses || 0);
-                const total = parseInt(item.total || item.conducted || item.totalClasses || item.totalConducted || 0);
+        // --- RENDER FUNCTIONS ---
+        function renderAttendance(attData) {
+            const list = document.getElementById('attendance-list');
+            list.innerHTML = '';
+            let totalAtt = 0, totalClasses = 0;
 
-                if (name && !isNaN(attended) && !isNaN(total) && total > 0) {
-                    attendanceData.push({ id: Date.now() + Math.random(), name, attended, total });
-                }
+            if (attData && attData.length > 0) {
+                attendanceData = [];
+                attData.forEach(item => {
+                    const name = item.courseTitle || item.name || item.subject || item.courseName || item.title || "Unknown Subject";
+                    const attended = parseInt(item.attended || item.present || item.attendedClasses || 0);
+                    const total = parseInt(item.total || item.conducted || item.totalClasses || item.totalConducted || 0);
+
+                    if (name && !isNaN(attended) && !isNaN(total) && total > 0) {
+                        attendanceData.push({ id: Date.now() + Math.random(), name, attended, total });
+                    }
+                });
+                saveAttendance();
+            }
+
+            attendanceData.forEach(item => {
+                totalAtt += item.attended; totalClasses += item.total;
+                const percentage = item.total === 0 ? 0 : ((item.attended / item.total) * 100).toFixed(1);
+                const isGood = percentage >= 75;
+                const barColor = isGood ? 'var(--success)' : 'var(--danger)';
+                
+                let statusText = isGood 
+                    ? `You can safely bunk ${Math.floor((item.attended - (0.75 * item.total)) / 0.75)} classes.`
+                    : `Attend ${Math.ceil(((0.75 * item.total) - item.attended) / 0.25)} more classes to hit 75%.`;
+
+                list.innerHTML += `
+                    <div class="image-card fade-in-up" style="text-align: left; padding: 25px; margin-bottom: 20px;">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+                            <h3 style="margin: 0; color: var(--text-main); font-family: 'Montserrat', sans-serif; text-transform: uppercase; font-size: 1.1rem; max-width: 70%;">${item.name}</h3>
+                            <div style="font-size: 1.4rem; font-family: 'Montserrat', sans-serif; font-weight: bold; color: ${barColor};">${percentage}%</div>
+                        </div>
+                        <div class="progress-container">
+                            <div class="progress-fill" style="background: ${barColor}; width: ${percentage}%; box-shadow: 0 0 12px ${barColor};"></div>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px;">
+                            <div>
+                                <div class="stat-text" style="color: var(--text-main); font-weight: bold;">${item.attended} / ${item.total} Attended</div>
+                                <div class="stat-text" style="color:var(--text-sub); margin-top: 5px; font-size: 0.85rem;">${statusText}</div>
+                            </div>
+                            <button class="danger-btn" style="padding: 8px 15px; font-size: 0.85rem; margin-left: 10px;" onclick="deleteAttendance(${item.id})">Drop</button>
+                        </div>
+                    </div>
+                `;
             });
-            saveAttendance();
-            renderAttendance(); 
+
+            const overallPerc = totalClasses > 0 ? ((totalAtt / totalClasses) * 100).toFixed(1) : "0.0";
+            
+            if (isLoggedIn) {
+                const attEl = document.getElementById('home-att-val');
+                const courseEl = document.getElementById('home-course-val');
+                if (attEl) attEl.innerText = overallPerc + "%";
+                if (courseEl) courseEl.innerText = attendanceData.length;
+            }
+
+            const overallEl = document.getElementById('overall-attendance');
+            if(totalClasses === 0) {
+                overallEl.innerText = "Overall: 0%"; overallEl.style.color = "var(--primary)";
+            } else {
+                overallEl.innerText = `Overall: ${overallPerc}%`;
+                overallEl.style.color = overallPerc >= 75 ? "var(--success)" : "var(--danger)";
+            }
         }
 
         function renderMarks(marksArray) {
@@ -926,6 +971,23 @@
             ` + subjectsHTML;
         }
 
+        function renderTimetable(data) {
+            timetableData = data || {};
+            const noData = document.getElementById('timetable-no-data');
+            const grid = document.getElementById('timetable-grid');
+
+            if (Object.keys(timetableData).length === 0) {
+                if (noData) noData.style.display = 'block';
+                if (grid) grid.style.display = 'none';
+                return;
+            }
+
+            if (noData) noData.style.display = 'none';
+            if (grid) grid.style.display = 'block';
+
+            setInitialTimetableDay();
+        }
+
         function setInitialTimetableDay() {
             let dayIndex = new Date().getDay(); 
             let dayToRender = (dayIndex >= 1 && dayIndex <= 5) ? dayIndex : 1; 
@@ -939,18 +1001,15 @@
             document.querySelectorAll('.tt-day-selector .day-btn').forEach(btn => btn.classList.remove('active'));
             if(btnElement) btnElement.classList.add('active');
 
-            const noData = document.getElementById('timetable-no-data');
             const grid = document.getElementById('timetable-grid');
+            const classesForDay = timetableData[dayNumber.toString()] || [];
 
-            const ttData = JSON.parse(localStorage.getItem('squadTimetable') || '{}');
-            const classesForDay = ttData[dayNumber.toString()];
+            grid.innerHTML = '';
 
-            if (!classesForDay || !Array.isArray(classesForDay) || classesForDay.length === 0) {
-                noData.style.display = 'block'; grid.style.display = 'none';
+            if (classesForDay.length === 0) {
+                grid.innerHTML = `<div class="image-card" style="text-align:center; padding: 30px;"><h3 style="color:var(--text-sub);">No classes scheduled for Day ${dayNumber}</h3></div>`;
                 return;
             }
-
-            noData.style.display = 'none'; grid.style.display = 'block'; grid.innerHTML = '';
 
             classesForDay.forEach(cls => {
                 grid.innerHTML += `
@@ -978,63 +1037,12 @@
             attendanceData = attendanceData.filter(item => item.id !== id);
             saveAttendance(); renderAttendance();
         }
-
-        function renderAttendance() {
-            const list = document.getElementById('attendance-list'); list.innerHTML = '';
-            let grandAttended = 0, grandTotal = 0;
-
-            attendanceData.forEach(item => {
-                grandAttended += item.attended; grandTotal += item.total;
-                const percentage = item.total === 0 ? 0 : ((item.attended / item.total) * 100).toFixed(1);
-                const isGood = percentage >= 75;
-                const barColor = isGood ? 'var(--success)' : 'var(--danger)';
-                
-                let statusText = isGood 
-                    ? `You can safely bunk ${Math.floor((item.attended - (0.75 * item.total)) / 0.75)} classes.`
-                    : `Attend ${Math.ceil(((0.75 * item.total) - item.attended) / 0.25)} more classes to hit 75%.`;
-
-                list.innerHTML += `
-                    <div class="image-card fade-in-up" style="text-align: left; padding: 25px; margin-bottom: 20px;">
-                        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
-                            <h3 style="margin: 0; color: var(--text-main); font-family: 'Montserrat', sans-serif; text-transform: uppercase; font-size: 1.1rem; max-width: 70%;">${item.name}</h3>
-                            <div style="font-size: 1.4rem; font-family: 'Montserrat', sans-serif; font-weight: bold; color: ${barColor};">${percentage}%</div>
-                        </div>
-                        <div class="progress-container">
-                            <div class="progress-fill" style="background: ${barColor}; width: ${percentage}%; box-shadow: 0 0 12px ${barColor};"></div>
-                        </div>
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px;">
-                            <div>
-                                <div class="stat-text" style="color: var(--text-main); font-weight: bold;">${item.attended} / ${item.total} Attended</div>
-                                <div class="stat-text" style="color:var(--text-sub); margin-top: 5px; font-size: 0.85rem;">${statusText}</div>
-                            </div>
-                            <button class="danger-btn" style="padding: 8px 15px; font-size: 0.85rem; margin-left: 10px;" onclick="deleteAttendance(${item.id})">Drop</button>
-                        </div>
-                    </div>
-                `;
-            });
-
-            if (isLoggedIn) {
-                const overallPerc = grandTotal > 0 ? ((grandAttended / grandTotal) * 100).toFixed(1) : "0.0";
-                const attEl = document.getElementById('home-att-val');
-                const courseEl = document.getElementById('home-course-val');
-                if (attEl) attEl.innerText = overallPerc + "%";
-                if (courseEl) courseEl.innerText = attendanceData.length;
-            }
-
-            const overallEl = document.getElementById('overall-attendance');
-            if(grandTotal === 0) {
-                overallEl.innerText = "Overall: 0%"; overallEl.style.color = "var(--primary)";
-            } else {
-                const overallPerc = ((grandAttended / grandTotal) * 100).toFixed(1);
-                overallEl.innerText = `Overall: ${overallPerc}%`;
-                overallEl.style.color = overallPerc >= 75 ? "var(--success)" : "var(--danger)";
-            }
-        }
         
         function loadSavedMarksAndTimetable() {
             const savedMarks = JSON.parse(localStorage.getItem('squadMarks') || '[]');
+            const savedTT = JSON.parse(localStorage.getItem('squadTimetable') || '{}');
             if (savedMarks.length > 0) renderMarks(savedMarks);
-            setInitialTimetableDay(); 
+            if (Object.keys(savedTT).length > 0) renderTimetable(savedTT);
         }
         
         loadSavedMarksAndTimetable();
