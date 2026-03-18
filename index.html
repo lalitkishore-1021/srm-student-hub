@@ -293,7 +293,7 @@
                             <div class="stat-label">Courses</div>
                         </div>
                         <div class="stat-box">
-                            <div class="stat-val orange" id="home-credit-val">-</div>
+                            <div class="stat-val orange" id="home-credit-val">21</div>
                             <div class="stat-label">Credits</div>
                         </div>
                     </div>
@@ -751,37 +751,41 @@
                     })
                 });
 
-                const data = await res.json();
+                const result = await res.json();
 
-                if (!data.success) {
-                    statusText.innerText = "❌ " + data.error;
+                if (!result.success) {
+                    statusText.innerText = "❌ " + result.error;
                     statusText.style.color = "var(--danger)";
                     return;
                 }
 
-                statusText.innerText = "✅ Success!";
+                statusText.innerText = "✅ Success! Dashboard Updated.";
                 statusText.style.color = "var(--success)";
 
-                // 1. SAVE LOGIN STATE & UPDATE HOME UI
-                localStorage.setItem("isLoggedIn", "true");
+                // 1. UPDATE LOGIN STATE
                 isLoggedIn = true;
+                localStorage.setItem("isLoggedIn", "true");
                 updateHomeState();
 
-                // 2. SAVE DATA TO LOCAL STORAGE
-                localStorage.setItem('squadAttendance', JSON.stringify(data.data || []));
-                localStorage.setItem('squadMarks', JSON.stringify(data.marks || []));
-                localStorage.setItem('squadTimetable', JSON.stringify(data.timetable || {}));
+                // 2. SAVE DATA
+                const att = Array.isArray(result.data) ? result.data : [];
+                const marks = Array.isArray(result.marks) ? result.marks : [];
+                const timetable = result.timetable || {};
+                
+                localStorage.setItem('squadAttendance', JSON.stringify(att));
+                localStorage.setItem('squadMarks', JSON.stringify(marks));
+                localStorage.setItem('squadTimetable', JSON.stringify(timetable));
 
-                // 3. RENDER DATA TO UI
-                renderAttendance(data.data || []);
-                renderMarks(data.marks || []);
-                renderTimetable(data.timetable || {});
+                // 3. RENDER DATA
+                renderAttendance(att);
+                renderMarks(marks);
+                renderTimetable(timetable);
 
                 setTimeout(() => closeSyncModal(), 1500);
 
             } catch (e) {
                 console.error("Sync error:", e);
-                statusText.innerText = "❌ Error reaching backend.";
+                statusText.innerText = "❌ Error reaching backend server.";
                 statusText.style.color = "var(--danger)";
             } finally {
                 document.getElementById('srm-pwd').value = '';
@@ -815,11 +819,12 @@
             
             let totalAtt = 0;
             let totalClasses = 0;
-            attendanceData = attData;
+            attendanceData = attData || []; 
 
-            attData.forEach(sub => {
+            attendanceData.forEach(sub => {
                 let attended = parseInt(sub.attended) || 0;
                 let total = parseInt(sub.total) || 0;
+                let name = sub.courseTitle || sub.name || "Unknown Subject";
                 
                 totalAtt += attended;
                 totalClasses += total;
@@ -835,7 +840,7 @@
                 list.innerHTML += `
                     <div class="image-card fade-in-up" style="text-align: left; padding: 25px; margin-bottom: 20px;">
                         <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
-                            <h3 style="margin: 0; color: var(--text-main); font-family: 'Montserrat', sans-serif; text-transform: uppercase; font-size: 1.1rem; max-width: 70%;">${sub.courseTitle}</h3>
+                            <h3 style="margin: 0; color: var(--text-main); font-family: 'Montserrat', sans-serif; text-transform: uppercase; font-size: 1.1rem; max-width: 70%;">${name}</h3>
                             <div style="font-size: 1.4rem; font-family: 'Montserrat', sans-serif; font-weight: bold; color: ${barColor};">${percentage}%</div>
                         </div>
                         <div class="progress-container">
@@ -852,10 +857,11 @@
                 `;
             });
 
-            const overallEl = document.getElementById('overall-attendance');
+            // Calculate & Update Overalls
             const overallPerc = totalClasses > 0 ? ((totalAtt / totalClasses) * 100).toFixed(1) : "0.0";
+            const overallEl = document.getElementById('overall-attendance');
             
-            if(totalClasses === 0) {
+            if (totalClasses === 0) {
                 overallEl.innerText = "Overall: 0%"; 
                 overallEl.style.color = "var(--primary)";
             } else {
@@ -863,11 +869,12 @@
                 overallEl.style.color = overallPerc >= 75 ? "var(--success)" : "var(--danger)";
             }
 
+            // Update Home Dashboard Stats
             if (isLoggedIn) {
                 const attEl = document.getElementById('home-att-val');
                 const courseEl = document.getElementById('home-course-val');
                 if (attEl) attEl.innerText = overallPerc + "%";
-                if (courseEl) courseEl.innerText = attData.length;
+                if (courseEl) courseEl.innerText = attendanceData.length;
             }
         }
 
@@ -882,28 +889,37 @@
                 return;
             }
 
+            // Hide No Data, Show List
             if (noData) noData.style.display = 'none';
             if (list) list.style.display = 'block'; 
-            
             list.innerHTML = '';
-            let grandTotalObtained = 0; let grandTotalMax = 0; let subjectsHTML = '';
+
+            let grandTotalObtained = 0; 
+            let grandTotalMax = 0; 
+            let subjectsHTML = '';
 
             marksData.forEach(item => {
-                const course = item.courseTitle || item.CourseTitle || item.name || item.subject || "Subject";
-                
-                // Fallback parsing just in case Academia changes header cases
-                let perfString = item['Test Performance'] || item['test performance'] || item.performance || item.marks || "";
+                const course = item.courseTitle || item.CourseTitle || item.name || "Subject";
+                let perfString = item['Test Performance'] || item.performance || item.marks || "";
                 if (!perfString && typeof item === 'object') {
                     perfString = Object.values(item).filter(v => typeof v === 'string').join(' | ');
                 }
 
-                let subjectMax = 0; let subjectObtained = 0; let testsHtml = '';
+                let subjectMax = 0; 
+                let subjectObtained = 0; 
+                let testsHtml = '';
+                
+                // Regex to extract marks
                 const regex = /([A-Za-z0-9-]+)\/([0-9.]+)\s*\|\s*([0-9.]+)/g;
                 let match;
                 
                 while ((match = regex.exec(perfString)) !== null) {
-                    const testName = match[1]; const max = parseFloat(match[2]); const obtained = parseFloat(match[3]);
-                    subjectMax += max; subjectObtained += obtained;
+                    const testName = match[1]; 
+                    const max = parseFloat(match[2]); 
+                    const obtained = parseFloat(match[3]);
+                    
+                    subjectMax += max; 
+                    subjectObtained += obtained;
                     const percent = max > 0 ? Math.round((obtained / max) * 100) : 0;
                     
                     let badgeColor = "var(--success)"; let badgeBorder = "rgba(0, 204, 102, 0.4)";
@@ -924,7 +940,8 @@
                     testsHtml = `<p style="color: var(--text-sub);">${perfString}</p>`;
                 }
 
-                grandTotalMax += subjectMax; grandTotalObtained += subjectObtained;
+                grandTotalMax += subjectMax; 
+                grandTotalObtained += subjectObtained;
                 let subjectPercent = subjectMax > 0 ? ((subjectObtained / subjectMax) * 100).toFixed(1) : 0;
 
                 subjectsHTML += `
@@ -940,7 +957,6 @@
                                 <p style="margin: 2px 0 0 0; font-size: 0.8rem; color: var(--text-sub);">${subjectObtained.toFixed(1)} / ${subjectMax}</p>
                             </div>` : ''}
                         </div>
-                        
                         ${subjectMax > 0 ? `
                         <div class="progress-container">
                             <div class="progress-fill" style="background: var(--primary); width: ${subjectPercent}%;"></div>
@@ -986,6 +1002,7 @@
                 return;
             }
 
+            // Hide No Data, Show Grid
             if (noData) noData.style.display = 'none';
             if (grid) grid.style.display = 'block';
 
@@ -996,14 +1013,17 @@
             let dayIndex = new Date().getDay(); 
             let dayToRender = (dayIndex >= 1 && dayIndex <= 5) ? dayIndex : 1; 
             const dayBtns = document.querySelectorAll('.tt-day-selector .day-btn');
-            if(dayBtns.length > 0 && dayBtns[dayToRender - 1]) {
+            
+            if (dayBtns.length > 0 && dayBtns[dayToRender - 1]) {
                 renderDay(dayToRender, dayBtns[dayToRender - 1]);
+            } else {
+                renderDay(1, null);
             }
         }
 
         function renderDay(dayNumber, btnElement) {
             document.querySelectorAll('.tt-day-selector .day-btn').forEach(btn => btn.classList.remove('active'));
-            if(btnElement) btnElement.classList.add('active');
+            if (btnElement) btnElement.classList.add('active');
 
             const grid = document.getElementById('timetable-grid');
             const classesForDay = timetableData[dayNumber.toString()] || [];
@@ -1025,18 +1045,20 @@
                 `;
             });
         }
-        
-        // ================= INITIALIZATION =================
+
+        // ================= BOOTSTRAP / INITIAL LOAD =================
         function loadSavedData() {
+            updateHomeState();
+            
             const savedAtt = JSON.parse(localStorage.getItem('squadAttendance') || '[]');
             const savedMarks = JSON.parse(localStorage.getItem('squadMarks') || '[]');
             const savedTT = JSON.parse(localStorage.getItem('squadTimetable') || '{}');
             
-            renderAttendance(savedAtt);
-            renderMarks(savedMarks);
-            renderTimetable(savedTT);
+            if (savedAtt.length > 0) renderAttendance(savedAtt);
+            if (savedMarks.length > 0) renderMarks(savedMarks);
+            if (Object.keys(savedTT).length > 0) renderTimetable(savedTT);
         }
-        
+
         loadSavedData();
 
         function toggleTheme() {
