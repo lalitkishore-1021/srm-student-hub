@@ -9,13 +9,16 @@
     <meta name="theme-color" content="#ffaa00">
     <link rel="apple-touch-icon" href="images/app-icon.svg">
     
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;900&family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;700;900&family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
     
     <style>
         :root {
             --primary: #ffaa00;
+            --primary-glow: rgba(255, 170, 0, 0.4);
             --bg-start: #1a1a1a;
             --bg-end: #050505;
+            --card-bg: #1e1e1e;
+            --nav-bg: rgba(20, 20, 20, 0.9);
             --text-main: #ffffff;
             --text-sub: #888888;
             --glass: rgba(255, 255, 255, 0.05);
@@ -29,33 +32,36 @@
         body.light-mode {
             --bg-start: #ffffff;
             --bg-end: #e0e5ec;
+            --card-bg: rgba(255, 255, 255, 0.8);
             --text-main: #121212;
             --text-sub: #555555;
             --glass: rgba(255, 255, 255, 0.6);
             --glass-border: rgba(255, 255, 255, 0.8);
             --shadow: rgba(0, 0, 0, 0.1);
             --splash-bg: #f4f7f6;
+            --nav-bg: rgba(255, 255, 255, 0.9);
         }
 
-        body { font-family: 'Open Sans', sans-serif; background: radial-gradient(circle at top center, var(--bg-start) 0%, var(--bg-end) 100%); color: var(--text-main); margin: 0; padding: 0; overflow-x: hidden; min-height: 100vh; transition: background 0.5s ease, color 0.5s ease; }
+        body { font-family: 'Open Sans', sans-serif; background: radial-gradient(circle at top center, var(--bg-start) 0%, var(--bg-end) 100%); color: var(--text-main); margin: 0; padding: 0; overflow-x: hidden; min-height: 100vh; transition: background 0.5s ease, color 0.5s ease; -webkit-tap-highlight-color: transparent;}
         
-        /* Top Left Global Sync Button */
-        .top-left-sync-btn {
-            position: fixed; top: 20px; left: 20px; z-index: 1000; opacity: 0;
-            background: var(--glass); border: 1px solid var(--primary); color: var(--primary);
-            padding: 10px 20px; border-radius: 30px; cursor: pointer;
-            font-family: 'Montserrat', sans-serif; font-weight: bold; font-size: 0.9rem;
-            display: flex; align-items: center; gap: 8px; backdrop-filter: blur(10px);
-            box-shadow: 0 4px 15px rgba(255, 170, 0, 0.2); transition: all 0.3s ease;
-        }
-        .top-left-sync-btn:hover { background: var(--primary); color: #000; transform: translateY(-2px); box-shadow: 0 6px 20px rgba(255, 170, 0, 0.4); }
-        .top-left-sync-btn svg { width: 18px; height: 18px; }
-
+        /* Socials & Bell Buttons */
         .btn-container { position: fixed; top: 20px; right: 20px; display: flex; gap: 12px; z-index: 1000; opacity: 0; transition: opacity 0.5s ease; }
         .icon-btn { background: var(--glass); border: 1px solid var(--glass-border); color: var(--text-main); width: 45px; height: 45px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 1.2rem; cursor: pointer; backdrop-filter: blur(10px); box-shadow: 0 4px 10px var(--shadow); transition: all 0.3s ease; text-decoration: none; }
         .icon-btn:hover { transform: scale(1.1) translateY(-3px); border-color: var(--primary); color: var(--primary); }
         .icon-btn svg { width: 20px; height: 20px; fill: currentColor; transition: fill 0.3s ease; }
         
+        /* Navigation Bar (Mobile Bottom -> Desktop Side) */
+        .app-nav { position: fixed; bottom: 0; left: 0; width: 100%; height: 70px; background: var(--nav-bg); backdrop-filter: blur(15px); border-top: 1px solid var(--glass-border); display: flex; justify-content: space-around; align-items: center; z-index: 1000; padding-bottom: env(safe-area-inset-bottom); }
+        .nav-item { display: flex; flex-direction: column; align-items: center; color: var(--text-sub); text-decoration: none; font-size: 0.75rem; font-family: 'Montserrat', sans-serif; font-weight: 700; gap: 5px; cursor: pointer; transition: all 0.3s; width: 60px;}
+        .nav-item svg { width: 24px; height: 24px; stroke: currentColor; stroke-width: 2; fill: none; transition: all 0.3s;}
+        .nav-item.active { color: var(--primary); transform: translateY(-3px);}
+        .nav-item.active svg { stroke: var(--primary); filter: drop-shadow(0 0 8px var(--primary-glow)); }
+
+        @media (min-width: 768px) {
+            .app-nav { top: 0; left: 0; width: 90px; height: 100vh; flex-direction: column; justify-content: center; border-top: none; border-right: 1px solid var(--glass-border); padding-bottom: 0; gap: 40px;}
+            #main-content { margin-left: 90px; }
+        }
+
         #splash-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: var(--splash-bg); z-index: 2000; display: flex; flex-direction: column; justify-content: center; align-items: center; transition: opacity 0.8s ease-in-out, transform 1s cubic-bezier(0.16, 1, 0.3, 1), visibility 1s, background-color 0.5s ease; }
         .css-loader { width: 60px; height: 60px; border-radius: 50%; border: 4px solid var(--glass-border); border-top-color: var(--primary); animation: spin 1s linear infinite; margin-bottom: 20px; box-shadow: 0 0 20px rgba(255, 170, 0, 0.2); }
         @keyframes spin { 100% { transform: rotate(360deg); } }
@@ -63,24 +69,60 @@
         @keyframes pulse-text { 0% { opacity: 0.5; filter: blur(1px); } 100% { opacity: 1; filter: blur(0px); text-shadow: 0 0 10px rgba(255, 170, 0, 0.8); } }
         .zoom-out { transform: scale(1.5); opacity: 0; visibility: hidden; pointer-events: none; }
         
-        #main-content { padding: 80px 20px 60px; text-align: center; opacity: 0; transform: scale(0.95); transition: all 1.2s cubic-bezier(0.16, 1, 0.3, 1); width: 100%; box-sizing: border-box;}
+        #main-content { padding: 80px 20px 100px; text-align: center; opacity: 0; transform: scale(0.95); transition: all 1.2s cubic-bezier(0.16, 1, 0.3, 1); width: 100%; max-width: 1200px; margin: 0 auto; box-sizing: border-box;}
         .content-visible { opacity: 1 !important; transform: scale(1) !important; }
-        .app-view { display: none; max-width: 1200px; margin: 0 auto; text-align: center; }
+        .app-view { display: none; animation: fadeIn 0.4s ease forwards; }
         .app-view.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Glowing Header */
         .site-header { display: flex; flex-direction: column; align-items: center; margin-bottom: 40px; }
         .main-logo { width: 90px; height: 90px; margin-bottom: 15px; cursor: pointer; filter: drop-shadow(0 0 15px rgba(255, 170, 0, 0.5)); transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
         .main-logo:hover { transform: scale(1.15) rotate(5deg); filter: drop-shadow(0 0 25px rgba(255, 170, 0, 0.8)); }
-        
         h1 { font-family: 'Montserrat', sans-serif; font-weight: 900; text-transform: uppercase; font-size: clamp(2.5rem, 8vw, 4.5rem); background: linear-gradient(to right, #ffaa00, #ffdd00, #ffaa00); background-size: 200% auto; -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; color: transparent; margin-bottom: 10px; animation: shine 4s linear infinite; }
         @keyframes shine { to { background-position: 200% center; } }
         .subtitle { color: var(--text-sub); font-size: 1.1rem; margin-bottom: 30px; letter-spacing: 1px; transition: color 0.5s ease;}
+
+        /* --- HOME DASHBOARD STYLES --- */
+        .hero-unauth { text-align: center; padding: 40px 20px; background: linear-gradient(145deg, var(--card-bg), #111); border-radius: 24px; border: 1px dashed var(--primary); position: relative; overflow: hidden; margin-bottom: 30px;}
+        .pulse-circle { width: 100px; height: 100px; background: var(--primary-glow); border-radius: 50%; position: absolute; top: -20px; left: -20px; filter: blur(40px); animation: pulse 3s infinite alternate; }
+        @keyframes pulse { to { transform: scale(1.5); opacity: 0.5; } }
         
+        .id-card { background: linear-gradient(135deg, #ffb74d 0%, #f57c00 100%); border-radius: 24px; padding: 25px; color: #000; display: flex; flex-direction: column; gap: 15px; position: relative; overflow: hidden; box-shadow: 0 15px 35px var(--primary-glow); margin-bottom: 20px; text-align: left;}
+        .id-card-top { display: flex; align-items: center; gap: 15px; }
+        .id-avatar { width: 60px; height: 60px; background: rgba(255,255,255,0.3); border-radius: 16px; display: flex; justify-content: center; align-items: center; }
+        .id-name { font-family: 'Montserrat', sans-serif; font-weight: 900; font-size: 1.3rem; margin: 0; text-transform: uppercase;}
+        .id-reg { font-size: 0.9rem; font-weight: 600; opacity: 0.8; margin: 0;}
+        .id-details { display: flex; flex-direction: column; gap: 8px; font-weight: 600; font-size: 0.95rem; margin-top: 10px;}
+        .id-details span { display: flex; align-items: center; gap: 8px; }
+
+        .stats-bar { display: flex; background: var(--card-bg); border-radius: 16px; padding: 15px 0; margin-bottom: 30px; border: 1px solid var(--glass-border); }
+        .stat-box { flex: 1; text-align: center; border-right: 1px solid var(--glass-border); }
+        .stat-box:last-child { border: none; }
+        .stat-val { font-family: 'Montserrat', sans-serif; font-size: 1.5rem; font-weight: 700; color: var(--text-main); }
+        .stat-val.green { color: var(--success); }
+        .stat-val.blue { color: #4fc3f7; }
+        .stat-val.orange { color: var(--primary); }
+        .stat-label { font-size: 0.75rem; color: var(--text-sub); text-transform: uppercase; margin-top: 4px; font-weight: 600; }
+
+        .section-title { font-family: 'Montserrat', sans-serif; font-size: 1.2rem; margin-bottom: 15px; color: var(--text-main); text-align: left; padding-left: 5px;}
+        .quick-actions-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 30px; text-align: left;}
+        .action-card { background: var(--card-bg); border: 1px solid var(--glass-border); padding: 20px; border-radius: 16px; display: flex; flex-direction: column; gap: 10px; cursor: pointer; transition: all 0.3s; text-decoration: none; color: inherit;}
+        .action-card:hover { border-color: var(--primary); background: rgba(255,170,0,0.05); transform: translateY(-3px);}
+        .action-icon { width: 40px; height: 40px; background: rgba(255,255,255,0.05); border-radius: 12px; display: flex; justify-content: center; align-items: center; color: var(--primary); }
+        .action-icon svg { width: 20px; height: 20px; stroke: currentColor; stroke-width: 2; fill: none; }
+        .action-title { font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: 0.95rem; margin: 0; }
+        .action-sub { font-size: 0.75rem; color: var(--text-sub); margin: 0; }
+
+        /* Shared Card Styles & Other Views */
+        .glass-card { background: var(--card-bg); border: 1px solid var(--glass-border); border-radius: 20px; padding: 20px; margin-bottom: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); transition: transform 0.3s; }
         .gallery-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 40px; max-width: 1200px; margin: 0 auto; }
         .image-card { background: var(--glass); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); padding: 15px; border-radius: 20px; border: 1px solid var(--glass-border); box-shadow: 0 15px 35px var(--shadow); transition: all 0.4s ease; }
         .image-card:hover { transform: translateY(-12px) scale(1.02); border-color: var(--primary); box-shadow: 0 20px 40px rgba(255, 170, 0, 0.15); }
         .gallery-item { width: 100%; height: auto; border-radius: 12px; cursor: pointer; filter: brightness(0.8) contrast(1.1); transition: filter 0.4s ease; background-color: transparent; }
         .image-card:hover .gallery-item { filter: brightness(1.1) contrast(1.1); }
         .caption { margin-top: 20px; font-family: 'Montserrat', sans-serif; color: var(--text-main); font-weight: 700; letter-spacing: 1px; transition: color 0.5s ease;}
+        
         .project-card { cursor: pointer; width: 100%; max-width: 400px; margin: 0 auto; box-sizing: border-box; }
         .project-card .caption { font-size: 1.2rem; color: var(--primary); text-transform: uppercase;}
         .project-cover { width: 100%; height: 250px; background: linear-gradient(135deg, rgba(255, 170, 0, 0.1) 0%, rgba(0, 0, 0, 0.4) 100%); border-radius: 12px; display: flex; justify-content: center; align-items: center; border: 1px solid var(--glass-border); box-shadow: inset 0 0 20px rgba(0,0,0,0.5); transition: all 0.4s ease; margin-bottom: 15px; }
@@ -105,8 +147,10 @@
         .action-btn { background: var(--primary); border: none; color: #000; padding: 12px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: all 0.3s; width: 100%; text-transform: uppercase; }
         .action-btn:hover { background: #ffcc00; transform: translateY(-2px); }
         .danger-btn { background: var(--danger); color: white; padding: 12px; border-radius: 8px; cursor: pointer; border: none; font-weight: bold; }
+        .btn-primary { background: var(--primary); color: #000; border: none; padding: 12px 24px; border-radius: 12px; font-family: 'Montserrat', sans-serif; font-weight: 700; cursor: pointer; transition: 0.3s; width: 100%; text-transform: uppercase; }
+        .btn-primary:hover { background: #e69900; transform: translateY(-2px); }
         .result-box { background: var(--glass); border: 1px solid var(--primary); padding: 20px; border-radius: 12px; text-align: center; margin-top: 20px; font-size: 1.5rem; font-weight: bold; color: var(--primary); }
-        
+
         /* Dashboard UI Additions for Marks & Attendance */
         .dashboard-overview { background: linear-gradient(135deg, rgba(255, 170, 0, 0.2) 0%, rgba(0, 0, 0, 0.4) 100%); border: 1px solid var(--primary); box-shadow: 0 10px 30px rgba(255, 170, 0, 0.15); border-radius: 20px; padding: 24px; margin-bottom: 24px; text-align: center; }
         .overview-title { font-size: 12px; color: var(--text-sub); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 10px; font-family: 'Montserrat', sans-serif; }
@@ -117,7 +161,7 @@
         .stat-item p { margin: 5px 0 0 0; font-size: 11px; color: var(--text-sub); text-transform: uppercase; }
         
         .progress-container { width: 100%; height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; margin: 15px 0; overflow: hidden; }
-        .progress-fill { height: 100%; border-radius: 3px; transition: width 1s cubic-bezier(0.16, 1, 0.3, 1); }
+        .progress-fill { height: 100%; border-radius: 3px; transition: width 1s cubic-bezier(0.16, 1, 0.3, 1); box-shadow: 0 0 12px currentColor; }
         .test-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
         .test-info h4 { margin: 0 0 4px 0; font-size: 14px; color: var(--text-main); font-family: 'Montserrat', sans-serif; }
         .test-info p { margin: 0; font-size: 12px; color: var(--text-sub); }
@@ -164,6 +208,17 @@
         .video-container { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: 12px; margin-bottom: 15px; border: 1px solid var(--glass-border); }
         .video-container iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0; }
 
+        /* Timetable specific styling */
+        .tt-day-selector { display: flex; overflow-x: auto; gap: 10px; margin-bottom: 20px; padding-bottom: 10px; }
+        .tt-day-selector::-webkit-scrollbar { display: none; }
+        .day-btn { background: var(--card-bg); border: 1px solid var(--glass-border); color: var(--text-sub); padding: 10px 20px; border-radius: 20px; font-weight: bold; cursor: pointer; white-space: nowrap; transition: 0.3s; }
+        .day-btn.active { background: var(--primary); color: #000; border-color: var(--primary); box-shadow: 0 0 10px rgba(255, 170, 0, 0.4); }
+
+        .tt-card { background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); border-radius: 16px; padding: 20px; margin-bottom: 15px; color: #fff; box-shadow: 0 5px 15px rgba(30, 60, 114, 0.3); text-align: left; border: 1px solid rgba(255,255,255,0.1);}
+        .tt-time { font-size: 0.8rem; opacity: 0.9; margin-bottom: 8px; display: flex; align-items: center; gap: 5px; font-weight: bold; letter-spacing: 1px;}
+        .tt-subject { font-family: 'Montserrat', sans-serif; font-size: 1.1rem; font-weight: 700; margin: 0 0 8px 0; }
+        .tt-room { font-size: 0.85rem; opacity: 0.8; display: flex; align-items: center; gap: 5px; }
+
         /* Sync Modal Dialog */
         .sync-modal-content { background: var(--bg-start); border: 1px solid var(--primary); border-radius: 20px; padding: 30px; max-width: 400px; width: 90%; text-align: center; position: relative; box-shadow: 0 20px 50px rgba(0,0,0,0.8); }
         .sync-modal-content h3 { font-family: 'Montserrat', sans-serif; color: var(--primary); text-transform: uppercase; margin-top: 0; }
@@ -176,11 +231,6 @@
         <div class="css-loader"></div>
         <div class="splash-text">Loading Hub...</div>
     </div>
-
-    <button id="globalSyncBtn" class="top-left-sync-btn" onclick="openSyncModal()">
-        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
-        Log In & Sync
-    </button>
 
     <div class="btn-container" id="navButtons">
         <button id="notifyBtn" class="icon-btn" onclick="requestNotificationPermission()" title="Enable Notifications">🔔</button>
@@ -214,129 +264,104 @@
             <p class="subtitle">Your all-in-one portal for Step Class, CGPA, and more.</p>
         </header>
 
-        <div id="projects-view" class="app-view active">
-            <div class="gallery-container">
+        <div id="home-view" class="app-view active">
+            
+            <div id="auth-section">
+                <div class="hero-unauth" id="unauth-hero">
+                    <div class="pulse-circle"></div>
+                    <h2 style="font-family: 'Montserrat', sans-serif; font-size: 1.8rem; margin: 0 0 10px 0;">Unlock Your Dashboard</h2>
+                    <p style="color: var(--text-sub); font-size: 0.95rem; margin-bottom: 25px;">Sync with Academia to view your attendance, marks, and timetable.</p>
+                    <button class="btn-primary" onclick="openSyncModal()" style="max-width: 200px;">LOG IN & SYNC</button>
+                </div>
+
+                <div id="auth-dashboard" style="display: none;">
+                    <div class="id-card">
+                        <div class="id-card-top">
+                            <div class="id-avatar">
+                                <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                            </div>
+                            <div>
+                                <h2 class="id-name">BALAGA LALIT KISHORE</h2>
+                                <p class="id-reg">RA2511026010324</p>
+                            </div>
+                        </div>
+                        <div class="id-details">
+                            <span><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/></svg> B.Tech</span>
+                            <span><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg> CS AIML</span>
+                            <span><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg> Semester 2</span>
+                        </div>
+                    </div>
+
+                    <div class="stats-bar">
+                        <div class="stat-box">
+                            <div class="stat-val green" id="home-att-val">--%</div>
+                            <div class="stat-label">Attendance</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-val blue" id="home-course-val">-</div>
+                            <div class="stat-label">Courses</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-val orange" id="home-credit-val">-</div>
+                            <div class="stat-label">Credits</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <h3 class="section-title">Quick Actions</h3>
+            <div class="quick-actions-grid">
                 
-                <div class="image-card project-card" onclick="openProject('oopsBanner')">
-                    <div class="project-cover">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="project-icon">
-                            <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
-                            <line x1="8" y1="21" x2="16" y2="21"></line>
-                            <line x1="12" y1="17" x2="12" y2="21"></line>
-                            <polyline points="10 8 8 10 10 12"></polyline>
-                            <polyline points="14 8 16 10 14 12"></polyline>
-                        </svg>
+                <div class="action-card" onclick="openProject('oopsBanner')">
+                    <div class="action-icon"><svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></div>
+                    <div>
+                        <h4 class="action-title">Step Class</h4>
+                        <p class="action-sub">View OOPs banners & projects</p>
                     </div>
-                    <div class="caption">STEP Class Gallery</div>
                 </div>
 
-                <div class="image-card project-card" onclick="openTodayMessMenu()">
-                    <div class="project-cover">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="project-icon">
-                            <path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path>
-                            <path d="M7 2v20"></path>
-                            <path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"></path>
-                        </svg>
+                <div class="action-card" onclick="openTodayMessMenu()">
+                    <div class="action-icon"><svg viewBox="0 0 24 24"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/></svg></div>
+                    <div>
+                        <h4 class="action-title">Mess Menu</h4>
+                        <p class="action-sub">Today's hostel food schedule</p>
                     </div>
-                    <div class="caption">Mess Menu</div>
                 </div>
 
-                <div class="image-card project-card" onclick="switchView('attendance-view'); renderAttendance();">
-                    <div class="project-cover">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="project-icon">
-                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                            <line x1="16" y1="2" x2="16" y2="6"></line>
-                            <line x1="8" y1="2" x2="8" y2="6"></line>
-                            <line x1="3" y1="10" x2="21" y2="10"></line>
-                            <path d="m9 16 2 2 4-4"></path>
-                        </svg>
+                <div class="action-card" onclick="switchView('helper-view')">
+                    <div class="action-icon"><svg viewBox="0 0 24 24"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg></div>
+                    <div>
+                        <h4 class="action-title">Study Helper</h4>
+                        <p class="action-sub">Notes, PYQs & Materials</p>
                     </div>
-                    <div class="caption">Attendance Tracker</div>
                 </div>
 
-                <div class="image-card project-card" onclick="switchView('helper-view')">
-                    <div class="project-cover">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="project-icon">
-                            <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"></path>
-                        </svg>
+                <div class="action-card" onclick="switchView('cgpa-view')">
+                    <div class="action-icon"><svg viewBox="0 0 24 24"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="16" y1="14" x2="16" y2="14.01"/><line x1="12" y1="14" x2="12" y2="14.01"/><line x1="8" y1="14" x2="8" y2="14.01"/></svg></div>
+                    <div>
+                        <h4 class="action-title">CGPA Calculator</h4>
+                        <p class="action-sub">Estimate your grades</p>
                     </div>
-                    <div class="caption">Study Helper</div>
-                </div>
-
-                <div class="image-card project-card" onclick="switchView('marks-view')">
-                    <div class="project-cover">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="project-icon">
-                            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
-                        </svg>
-                    </div>
-                    <div class="caption">Marks Tracker</div>
-                </div>
-
-                <div class="image-card project-card" onclick="switchView('timetable-view')">
-                    <div class="project-cover">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="project-icon">
-                            <circle cx="12" cy="12" r="10"></circle>
-                            <polyline points="12 6 12 12 16 14"></polyline>
-                        </svg>
-                    </div>
-                    <div class="caption">Time Table</div>
-                </div>
-
-                <div class="image-card project-card" onclick="switchView('cgpa-view')">
-                    <div class="project-cover">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="project-icon">
-                            <rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect>
-                            <line x1="8" y1="6" x2="16" y2="6"></line>
-                            <line x1="16" y1="14" x2="16" y2="14.01"></line>
-                            <line x1="12" y1="14" x2="12" y2="14.01"></line>
-                            <line x1="8" y1="14" x2="8" y2="14.01"></line>
-                            <line x1="16" y1="18" x2="16" y2="18.01"></line>
-                            <line x1="12" y1="18" x2="12" y2="18.01"></line>
-                            <line x1="8" y1="18" x2="8" y2="18.01"></line>
-                        </svg>
-                    </div>
-                    <div class="caption">CGPA Calculator</div>
                 </div>
 
             </div>
-        </div>
 
-        <div id="marks-view" class="app-view">
-            <div class="view-header">
-                <button class="back-btn" onclick="switchView('projects-view')">&#8592; Back to Home</button>
-                <h2 class="gallery-title">Marks Tracker</h2>
-                <p class="subtitle" style="margin-bottom: 20px;">Use the top-left 'Log In & Sync' button to fetch your marks.</p>
-            </div>
-            
-            <div id="marks-no-data" class="image-card" style="max-width: 600px; margin: 0 auto; padding: 40px; cursor: default; transform: none;">
-                <div class="meal-icon-box" style="width: 60px; height: 60px; margin: 0 auto 20px auto; border-radius: 50%;">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 35px; height: 35px;"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+            <div id="advisors-section" style="display: none;">
+                <h3 class="section-title">Advisors</h3>
+                <div class="glass-card" style="text-align: left;">
+                    <h5 style="color: var(--primary); margin: 0 0 5px 0; font-size: 0.75rem; text-transform: uppercase;">Faculty Advisor</h5>
+                    <h3 style="margin: 0 0 10px 0; font-size: 1.2rem;">Nithya Devi S M</h3>
+                    <div style="font-size: 0.85rem; color: var(--text-sub); margin-bottom: 5px;">@ nithyads2@srmist.edu.in</div>
+                    <div style="font-size: 0.85rem; color: var(--text-sub); margin-bottom: 15px;">📞 9487634094</div>
+                    <button class="btn-primary" style="background: rgba(255,255,255,0.05); color: var(--text-main);">📞 Call Advisor</button>
                 </div>
-                <h3 style="color: var(--primary); margin-bottom: 15px; font-family: 'Montserrat', sans-serif; text-transform: uppercase;">No Marks Data Yet</h3>
-                <p style="color: var(--text-sub); line-height: 1.6; font-size: 1.1rem;">Click the <strong style="color:var(--primary);">Log In & Sync</strong> button at the top left of your screen to pull your marks directly from Academia.</p>
             </div>
-            
-            <div id="marks-list" style="max-width: 600px; margin: 0 auto; display: none;"></div>
-        </div>
 
-        <div id="timetable-view" class="app-view">
-            <div class="view-header">
-                <button class="back-btn" onclick="switchView('projects-view')">&#8592; Back to Home</button>
-                <h2 class="gallery-title">Time Table</h2>
-                <p class="subtitle" style="margin-bottom: 20px;">Use the top-left 'Log In & Sync' button to load your schedule.</p>
-            </div>
-            <div id="timetable-no-data" class="image-card" style="max-width: 600px; margin: 0 auto; padding: 40px; cursor: default; transform: none;">
-                <div class="meal-icon-box" style="width: 60px; height: 60px; margin: 0 auto 20px auto; border-radius: 50%;">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 35px; height: 35px;"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-                </div>
-                <h3 style="color: var(--primary); margin-bottom: 15px; font-family: 'Montserrat', sans-serif; text-transform: uppercase;">No Timetable Data Yet</h3>
-            </div>
-            <div id="timetable-grid" style="max-width: 1100px; margin: 0 auto; display: none;"></div>
         </div>
 
         <div id="gallery-view" class="app-view">
             <div class="view-header">
-                <button class="back-btn" onclick="switchView('projects-view')">&#8592; Back to Home</button>
+                <button class="back-btn" onclick="switchNav('home-view', document.querySelector('.nav-item'))">&#8592; Back to Home</button>
                 <h2 class="gallery-title" id="dynamic-project-title">Project Name</h2>
             </div>
             <div class="gallery-container" id="dynamic-gallery"></div>
@@ -344,7 +369,7 @@
 
         <div id="cgpa-view" class="app-view">
             <div class="view-header">
-                <button class="back-btn" onclick="switchView('projects-view')">&#8592; Back to Home</button>
+                <button class="back-btn" onclick="switchNav('home-view', document.querySelector('.nav-item'))">&#8592; Back to Home</button>
                 <h2 class="gallery-title">CGPA Calculator</h2>
             </div>
             <div class="image-card" style="max-width: 800px; margin: 0 auto; cursor: default; transform: none;">
@@ -370,7 +395,7 @@
 
         <div id="mess-view" class="app-view">
             <div class="view-header">
-                <button class="back-btn" onclick="switchView('projects-view')">&#8592; Back to Home</button>
+                <button class="back-btn" onclick="switchNav('home-view', document.querySelector('.nav-item'))">&#8592; Back to Home</button>
                 <h2 class="gallery-title">Mess Menu</h2>
                 <p class="subtitle" style="margin-bottom: 20px;">SRMIST Hostel Mess Menu</p>
             </div>
@@ -380,7 +405,7 @@
 
         <div id="helper-view" class="app-view">
             <div class="view-header">
-                <button class="back-btn" onclick="switchView('projects-view')">&#8592; Back to Home</button>
+                <button class="back-btn" onclick="switchNav('home-view', document.querySelector('.nav-item'))">&#8592; Back to Home</button>
                 <h2 class="gallery-title">Study Helper</h2>
             </div>
             <div class="gallery-container" id="helper-semesters"></div>
@@ -393,12 +418,10 @@
 
         <div id="attendance-view" class="app-view">
             <div class="view-header">
-                <button class="back-btn" onclick="switchView('projects-view')">&#8592; Back to Home</button>
-                <h2 class="gallery-title">Mega Sync Tracker</h2>
-                <p class="subtitle">Target: 75% | Data saves automatically to this device</p>
+                <h2 class="gallery-title">Attendance</h2>
             </div>
             
-            <div class="image-card" style="max-width: 600px; margin: 0 auto; cursor: default; transform: none; padding: 30px;">
+            <div class="image-card" style="max-width: 600px; margin: 0 auto 20px; cursor: default; transform: none; padding: 25px;">
                 <h4 style="text-align: left; color: var(--primary); margin-bottom: 15px; font-family: 'Montserrat', sans-serif; text-transform: uppercase;">Manual Entry</h4>
                 <div class="form-row">
                     <input type="text" id="att-sub-name" placeholder="Subject Name">
@@ -406,11 +429,50 @@
                     <input type="number" id="att-total" placeholder="Tot" min="1">
                     <button class="action-btn" onclick="addAttendance()" style="background: var(--glass); color: var(--primary);">Add</button>
                 </div>
-                
-                <div id="overall-attendance" class="result-box" style="margin-bottom: 20px;">Overall: 0%</div>
-                
-                <div id="attendance-list"></div>
             </div>
+            
+            <div id="overall-attendance" class="result-box" style="margin-bottom: 20px; max-width: 600px; margin: 0 auto 20px auto;">Overall: 0%</div>
+            <div id="attendance-list" style="max-width: 600px; margin: 0 auto;"></div>
+        </div>
+
+        <div id="marks-view" class="app-view">
+            <div class="view-header">
+                <h2 class="gallery-title">Marks Tracker</h2>
+            </div>
+            
+            <div id="marks-no-data" class="image-card" style="max-width: 600px; margin: 0 auto; padding: 40px; cursor: default; transform: none;">
+                <div class="meal-icon-box" style="width: 60px; height: 60px; margin: 0 auto 20px auto; border-radius: 50%;">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 35px; height: 35px;"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+                </div>
+                <h3 style="color: var(--primary); margin-bottom: 15px; font-family: 'Montserrat', sans-serif; text-transform: uppercase;">No Marks Data</h3>
+                <p style="color: var(--text-sub); line-height: 1.6; font-size: 1.1rem;">Click <strong style="color:var(--primary);">Log In & Sync</strong> on the Home screen to fetch your marks.</p>
+            </div>
+            
+            <div id="marks-list" style="max-width: 600px; margin: 0 auto; display: none;"></div>
+        </div>
+
+        <div id="timetable-view" class="app-view">
+            <div class="view-header">
+                <h2 class="gallery-title">Time Table</h2>
+            </div>
+
+            <div class="tt-day-selector">
+                <div class="day-btn" onclick="renderDay(1, this)">Day 1</div>
+                <div class="day-btn" onclick="renderDay(2, this)">Day 2</div>
+                <div class="day-btn" onclick="renderDay(3, this)">Day 3</div>
+                <div class="day-btn" onclick="renderDay(4, this)">Day 4</div>
+                <div class="day-btn" onclick="renderDay(5, this)">Day 5</div>
+            </div>
+
+            <div id="timetable-no-data" class="image-card" style="max-width: 600px; margin: 0 auto; padding: 40px; cursor: default; transform: none;">
+                <div class="meal-icon-box" style="width: 60px; height: 60px; margin: 0 auto 20px auto; border-radius: 50%;">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 35px; height: 35px;"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                </div>
+                <h3 style="color: var(--primary); margin-bottom: 15px; font-family: 'Montserrat', sans-serif; text-transform: uppercase;">No Timetable Found</h3>
+                <p style="color: var(--text-sub); line-height: 1.6; font-size: 1.1rem;">Click <strong style="color:var(--primary);">Log In & Sync</strong> on the Home screen to fetch your schedule.</p>
+            </div>
+            
+            <div id="timetable-grid" style="max-width: 600px; margin: 0 auto; display: none;"></div>
         </div>
 
         <footer class="footer">
@@ -425,6 +487,25 @@
         </footer>
     </div>
 
+    <nav class="app-nav">
+        <a class="nav-item active" onclick="switchNav('home-view', this)">
+            <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            <span>Home</span>
+        </a>
+        <a class="nav-item" onclick="switchNav('attendance-view', this)">
+            <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            <span>Attend</span>
+        </a>
+        <a class="nav-item" onclick="switchNav('marks-view', this)">
+            <svg viewBox="0 0 24 24"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-4"/></svg>
+            <span>Marks</span>
+        </a>
+        <a class="nav-item" onclick="switchNav('timetable-view', this); setInitialTimetableDay();">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            <span>Time</span>
+        </a>
+    </nav>
+
     <div id="lightbox" class="lightbox" onclick="if(event.target === this) closeLightbox()">
         <span class="close-btn" onclick="closeLightbox()">&times;</span>
         <img id="lightbox-img" src="">
@@ -437,12 +518,12 @@
                 <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="width: 30px; height: 30px;"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
             </div>
             <h3>Live Portal Sync</h3>
-            <p>Connect securely to Academia to auto-fetch your marks and attendance data.</p>
+            <p>Connect securely to Academia to auto-fetch your data.</p>
             
             <div style="display: flex; flex-direction: column; gap: 15px;">
-                <input type="text" id="srm-reg" placeholder="NetID or Email">
-                <input type="password" id="srm-pwd" placeholder="Portal Password">
-                <button class="action-btn" onclick="startLiveSync()" style="margin-top: 5px;">Sync Now</button>
+                <input type="text" id="srm-reg" class="modal-input" placeholder="NetID or Email" style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; padding: 15px; border-radius: 12px;">
+                <input type="password" id="srm-pwd" class="modal-input" placeholder="Portal Password" style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; padding: 15px; border-radius: 12px;">
+                <button class="action-btn" onclick="startLiveSync()" style="margin-top: 5px;">SYNC NOW</button>
             </div>
             <p id="sync-status" style="font-size: 0.85rem; margin-top: 15px; font-weight: bold;"></p>
         </div>
@@ -450,6 +531,9 @@
 
     <script>
         const BACKEND_URL = 'https://srm-student-hub-1.onrender.com';
+
+        let isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+        updateHomeState();
 
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
@@ -459,52 +543,39 @@
             });
         }
 
-        let deferredPrompt;
-        const installAppBtn = document.getElementById('installAppBtn');
-        const logoInstallTrigger = document.getElementById('logoInstallTrigger');
-
-        window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault();
-            deferredPrompt = e;
-            if (installAppBtn) installAppBtn.style.display = 'flex';
-        });
-
-        async function triggerAppInstall() {
-            if (deferredPrompt) {
-                deferredPrompt.prompt();
-                const { outcome } = await deferredPrompt.userChoice;
-                deferredPrompt = null;
-                if (installAppBtn) installAppBtn.style.display = 'none';
-            } else {
-                alert("To install this app on iOS, tap the 'Share' icon at the bottom of Safari and select 'Add to Home Screen'.");
-            }
-        }
-
-        if (installAppBtn) installAppBtn.addEventListener('click', triggerAppInstall);
-        if (logoInstallTrigger) logoInstallTrigger.addEventListener('click', triggerAppInstall);
-
-        history.replaceState({ viewId: 'projects-view' }, '', '#projects-view');
+        history.replaceState({ viewId: 'home-view' }, '', '#home-view');
 
         function switchView(viewId, pushToHistory = true) {
-            document.querySelectorAll('.app-view').forEach(view => {
-                view.classList.remove('active');
-            });
+            document.querySelectorAll('.app-view').forEach(view => { view.classList.remove('active'); });
             document.getElementById(viewId).classList.add('active');
             window.scrollTo({ top: 0, behavior: 'smooth' });
+            if (pushToHistory) history.pushState({ viewId: viewId }, '', `#${viewId}`);
+        }
 
-            if (pushToHistory) {
-                history.pushState({ viewId: viewId }, '', `#${viewId}`);
-            }
+        function switchNav(viewId, element) {
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            element.classList.add('active');
+            switchView(viewId);
         }
 
         window.addEventListener('popstate', (e) => {
-            if (e.state && e.state.viewId) {
-                switchView(e.state.viewId, false);
-            } else {
-                switchView('projects-view', false);
-            }
+            if (e.state && e.state.viewId) switchView(e.state.viewId, false);
+            else switchView('home-view', false);
         });
 
+        function updateHomeState() {
+            if (isLoggedIn) {
+                document.getElementById('unauth-hero').style.display = 'none';
+                document.getElementById('auth-dashboard').style.display = 'block';
+                document.getElementById('advisors-section').style.display = 'block';
+            } else {
+                document.getElementById('unauth-hero').style.display = 'block';
+                document.getElementById('auth-dashboard').style.display = 'none';
+                document.getElementById('advisors-section').style.display = 'none';
+            }
+        }
+
+        // PROJECT DATA & GALLERY
         const projectsDatabase = {
             'oopsBanner': {
                 title: 'OOPS Banner App',
@@ -516,63 +587,20 @@
                 ]
             },
             'ucsFolder': {
-                title: "OOPS Banner App UC's",
-                parent: 'oopsBanner',
-                images: [
-                    { src: 'images/oops-banner/uc1.png', label: '1' },
-                    { src: 'images/oops-banner/uc2.png', label: '2' },
-                    { src: 'images/oops-banner/uc3.png', label: '3' },
-                    { src: 'images/oops-banner/uc4.png', label: '4' },
-                    { src: 'images/oops-banner/uc5.png', label: '5' },
-                    { src: 'images/oops-banner/uc6.png', label: '6' },
-                    { src: 'images/oops-banner/uc7.png', label: '7' },
-                    { src: 'images/oops-banner/uc8.png', label: '8' },
-                    { src: 'images/oops-banner/uc9.png', label: '9' },
-                    { src: 'images/oops-banner/uc10.png', label: '10' },
-                    { src: 'images/oops-banner/end.png', label: 'end' }
-                ]
+                title: "OOPS Banner App UC's", parent: 'oopsBanner',
+                images: [ { src: 'images/oops-banner/uc1.png', label: '1' }, { src: 'images/oops-banner/uc2.png', label: '2' }, { src: 'images/oops-banner/uc3.png', label: '3' }, { src: 'images/oops-banner/uc4.png', label: '4' }, { src: 'images/oops-banner/uc5.png', label: '5' }, { src: 'images/oops-banner/uc6.png', label: '6' }, { src: 'images/oops-banner/uc7.png', label: '7' }, { src: 'images/oops-banner/uc8.png', label: '8' }, { src: 'images/oops-banner/uc9.png', label: '9' }, { src: 'images/oops-banner/uc10.png', label: '10' }, { src: 'images/oops-banner/end.png', label: 'end' } ]
             },
             'week1Problem': { 
-                title: 'Week 1 and 2 Problems',
-                parent: 'oopsBanner', 
-                images: [
-                    { src: 'images/oops-banner/Basic-step1.png', label: 'Basic-Step' },
-                    { src: 'images/oops-banner/Basic-step2.png', label: 'Basic-Step' },
-                    { src: 'images/oops-banner/level1.png', label: 'Part 1' },
-                    { src: 'images/oops-banner/level12.png', label: 'Part 2' },
-                    { src: 'images/oops-banner/level13.png', label: 'Part 3' },
-                    { src: 'images/oops-banner/bash.png', label: 'Bash' },
-                    { src: 'images/oops-banner/level21.png', label: 'Part 4' },
-                    { src: 'images/oops-banner/level22.png', label: 'Part 5' },
-                    { src: 'images/oops-banner/level3.png', label: 'Part 6' }
-                ]
+                title: 'Week 1 and 2 Problems', parent: 'oopsBanner', 
+                images: [ { src: 'images/oops-banner/Basic-step1.png', label: 'Basic-Step' }, { src: 'images/oops-banner/Basic-step2.png', label: 'Basic-Step' }, { src: 'images/oops-banner/level1.png', label: 'Part 1' }, { src: 'images/oops-banner/level12.png', label: 'Part 2' }, { src: 'images/oops-banner/level13.png', label: 'Part 3' }, { src: 'images/oops-banner/bash.png', label: 'Bash' }, { src: 'images/oops-banner/level21.png', label: 'Part 4' }, { src: 'images/oops-banner/level22.png', label: 'Part 5' }, { src: 'images/oops-banner/level3.png', label: 'Part 6' } ]
             },
             'week34Problem': { 
-                title: 'Week 3 and 4 Problems',
-                parent: 'oopsBanner', 
-                images: [
-                    { src: 'images/oops-banner/w31.png', label: 'Step1' },
-                    { src: 'images/oops-banner/w32.png', label: 'Step2' },
-                    { src: 'images/oops-banner/w33.png', label: 'Step3' },
-                    { src: 'images/oops-banner/w34.png', label: 'Step4' },
-                    { src: 'images/oops-banner/w35.png', label: 'Step5' },
-                    { src: 'images/oops-banner/w36.png', label: 'Step6' },
-                    { src: 'images/oops-banner/end.png', label: 'end' }
-                ]
+                title: 'Week 3 and 4 Problems', parent: 'oopsBanner', 
+                images: [ { src: 'images/oops-banner/w31.png', label: 'Step1' }, { src: 'images/oops-banner/w32.png', label: 'Step2' }, { src: 'images/oops-banner/w33.png', label: 'Step3' }, { src: 'images/oops-banner/w34.png', label: 'Step4' }, { src: 'images/oops-banner/w35.png', label: 'Step5' }, { src: 'images/oops-banner/w36.png', label: 'Step6' }, { src: 'images/oops-banner/end.png', label: 'end' } ]
             },
             'helloAppFolder': { 
-                title: 'HelloApp UC\'s',
-                parent: 'oopsBanner',
-                video: 'https://www.youtube.com/embed/k8eX_rkQxPk',
-                images: [
-                    { src: 'images/oops-banner/ha1.png', label: 'uc 1 Step 1' },
-                    { src: 'images/oops-banner/ha2.png', label: 'Step 2' },
-                    { src: 'images/oops-banner/ha3.png', label: 'Step 3' },
-                    { src: 'images/oops-banner/ha4.png', label: 'Step 4' },
-                    { src: 'images/oops-banner/ha5.png', label: 'uc 2 Step 5' },
-                    { src: 'images/oops-banner/ha6.png', label: 'Step 6' },
-                    { src: 'images/oops-banner/end.png', label: 'end' }
-                ]
+                title: 'HelloApp UC\'s', parent: 'oopsBanner', video: 'https://www.youtube.com/embed/k8eX_rkQxPk',
+                images: [ { src: 'images/oops-banner/ha1.png', label: 'uc 1 Step 1' }, { src: 'images/oops-banner/ha2.png', label: 'Step 2' }, { src: 'images/oops-banner/ha3.png', label: 'Step 3' }, { src: 'images/oops-banner/ha4.png', label: 'Step 4' }, { src: 'images/oops-banner/ha5.png', label: 'uc 2 Step 5' }, { src: 'images/oops-banner/ha6.png', label: 'Step 6' }, { src: 'images/oops-banner/end.png', label: 'end' } ]
             }
         };
 
@@ -580,7 +608,6 @@
             switchView('gallery-view');
             const projectData = projectsDatabase[projectId];
             document.getElementById('dynamic-project-title').innerText = projectData.title;
-            
             const galleryElement = document.getElementById('dynamic-gallery');
             galleryElement.innerHTML = ''; 
             
@@ -589,9 +616,7 @@
                     galleryElement.innerHTML += `
                         <div class="image-card project-card fade-in-up" onclick="openProject('${sub.id}')">
                             <div class="project-cover">
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="project-icon">
-                                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
-                                </svg>
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="project-icon"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
                             </div>
                             <div class="caption">${sub.title}</div>
                         </div>
@@ -602,9 +627,7 @@
             if (projectData.video) {
                 galleryElement.innerHTML += `
                     <div class="image-card fade-in-up" style="grid-column: 1 / -1; max-width: 800px; margin: 0 auto; width: 100%;">
-                        <div class="video-container">
-                            <iframe src="${projectData.video}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-                        </div>
+                        <div class="video-container"><iframe src="${projectData.video}" allowfullscreen></iframe></div>
                         <div class="caption" style="color: var(--primary);">Video Tutorial</div>
                     </div>
                 `;
@@ -626,11 +649,12 @@
                 backBtn.onclick = () => openProject(projectData.parent);
                 backBtn.innerHTML = '&#8592; Back to ' + projectsDatabase[projectData.parent].title;
             } else {
-                backBtn.onclick = () => switchView('projects-view');
+                backBtn.onclick = () => switchNav('home-view', document.querySelector('.nav-item'));
                 backBtn.innerHTML = '&#8592; Back to Home';
             }
         }
 
+        // CGPA FUNCTIONS
         function addCgpaRow() {
             document.getElementById('cgpa-rows').insertAdjacentHTML('beforeend', `
                 <div class="form-row fade-in-up">
@@ -645,31 +669,20 @@
                 </div>
             `);
         }
-
         function calculateCGPA() {
-            const grades = document.querySelectorAll('.cgpa-grade');
-            const credits = document.querySelectorAll('.cgpa-credit');
-            let totalPoints = 0;
-            let totalCredits = 0;
-
+            const grades = document.querySelectorAll('.cgpa-grade'); const credits = document.querySelectorAll('.cgpa-credit');
+            let totalPoints = 0; let totalCredits = 0;
             for(let i = 0; i < grades.length; i++) {
-                let gradeVal = parseFloat(grades[i].value);
-                let creditVal = parseFloat(credits[i].value);
-                if(!isNaN(gradeVal) && !isNaN(creditVal)) {
-                    totalPoints += (gradeVal * creditVal);
-                    totalCredits += creditVal;
-                }
+                let gradeVal = parseFloat(grades[i].value); let creditVal = parseFloat(credits[i].value);
+                if(!isNaN(gradeVal) && !isNaN(creditVal)) { totalPoints += (gradeVal * creditVal); totalCredits += creditVal; }
             }
-
             const resultBox = document.getElementById('cgpa-result');
             resultBox.style.display = 'block';
-            if (totalCredits === 0) {
-                resultBox.innerText = "Please enter valid grades and credits!";
-            } else {
-                resultBox.innerText = `Your CGPA: ${(totalPoints / totalCredits).toFixed(2)}`;
-            }
+            if (totalCredits === 0) resultBox.innerText = "Please enter valid grades and credits!"; 
+            else resultBox.innerText = `Your CGPA: ${(totalPoints / totalCredits).toFixed(2)}`;
         }
 
+        // MESS MENU FUNCTIONS (Auto highlights current day!)
         const mealIcons = {
             'Breakfast': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M17 8h1a4 4 0 1 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z"/><line x1="6" y1="2" x2="6" y2="4"/><line x1="10" y1="2" x2="10" y2="4"/><line x1="14" y1="2" x2="14" y2="4"/></svg>',
             'Lunch': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>',
@@ -694,10 +707,8 @@
         }
 
         function renderMessMenu(selectedDay) {
-            const tabContainer = document.getElementById('mess-tabs');
-            const contentContainer = document.getElementById('mess-content');
-            tabContainer.innerHTML = '';
-            contentContainer.innerHTML = '';
+            const tabContainer = document.getElementById('mess-tabs'); const contentContainer = document.getElementById('mess-content');
+            tabContainer.innerHTML = ''; contentContainer.innerHTML = '';
 
             Object.keys(messMenuData).forEach(day => {
                 const btn = document.createElement('button');
@@ -720,6 +731,7 @@
             });
         }
 
+        // STUDY HELPER FUNCTIONS
         const helperData = {
             'Semester 1': [{ name: 'Content Adding Soon...', topics: ['Check back later for pyqs.'], pyqLink: '#', ctLink: '#' }],
             'Semester 2': [{ name: 'Content Adding Soon...', topics: ['Check back later for pyqs.'], pyqLink: '#', ctLink: '#' }],
@@ -737,15 +749,12 @@
                 `;
             }
         }
-
         function showHelperSubjects(semName) {
             document.getElementById('helper-semesters').style.display = 'none';
             document.getElementById('helper-subjects').style.display = 'block';
             document.getElementById('helper-sem-title').innerText = semName;
-            
             const listContainer = document.getElementById('helper-subject-list');
             listContainer.innerHTML = '';
-
             (helperData[semName] || []).forEach(sub => {
                 listContainer.innerHTML += `
                     <details class="fade-in-up">
@@ -765,23 +774,16 @@
         let attendanceData = JSON.parse(localStorage.getItem('squadAttendance')) || [];
         function saveAttendance() { localStorage.setItem('squadAttendance', JSON.stringify(attendanceData)); }
 
-        // --- Sync Functions ---
-        function openSyncModal() {
-            document.getElementById('syncModal').style.display = 'flex';
-        }
-        function closeSyncModal() {
-            document.getElementById('syncModal').style.display = 'none';
-        }
+        // --- Live Portal Sync Functions ---
+        function openSyncModal() { document.getElementById('syncModal').style.display = 'flex'; }
+        function closeSyncModal() { document.getElementById('syncModal').style.display = 'none'; }
 
         async function startLiveSync() {
             const regNo = document.getElementById('srm-reg').value.trim();
             const pwd = document.getElementById('srm-pwd').value;
             const statusText = document.getElementById('sync-status');
 
-            if (!regNo || !pwd) {
-                alert("Please enter your NetID/Email and Password.");
-                return;
-            }
+            if (!regNo || !pwd) { alert("Please enter your NetID/Email and Password."); return; }
 
             statusText.innerText = "🔄 Connecting to Academia... Please wait 60-90 seconds.";
             statusText.style.color = "var(--primary)";
@@ -798,18 +800,24 @@
                 const result = await response.json();
 
                 if (result.success) {
+                    isLoggedIn = true;
+                    localStorage.setItem('isLoggedIn', 'true');
+                    updateHomeState();
+
                     const att = Array.isArray(result.data) ? result.data : [];
                     const marks = result.marks ? result.marks : [];
-                    const timetable = result.timetable ? result.timetable : [];
+                    
+                    // Backend must map unified timetable slots to student slots before sending!
+                    const timetable = result.timetable ? result.timetable : {}; 
 
                     localStorage.setItem('squadMarks', JSON.stringify(marks));
                     localStorage.setItem('squadTimetable', JSON.stringify(timetable));
 
                     processScrapedData(att);
                     renderMarks(marks);
-                    renderTimetable(timetable);
+                    renderDay(1, document.querySelector('.day-btn')); // Reload Day 1 timetable
 
-                    statusText.innerText = `✅ Sync complete! Check your updated tabs.`;
+                    statusText.innerText = `✅ Sync complete! Dashboard Updated.`;
                     statusText.style.color = "var(--success)";
                     setTimeout(() => closeSyncModal(), 2000);
                 } else {
@@ -825,10 +833,10 @@
             }
         }
 
+        // Processing Attendance
         function processScrapedData(dataArray) {
             attendanceData = [];
             if (!Array.isArray(dataArray) || dataArray.length === 0) return;
-
             dataArray.forEach(item => {
                 const name = item.courseTitle || item.name || item.subject || item.courseName || item.title || "Unknown Subject";
                 const attended = parseInt(item.attended || item.present || item.attendedClasses || 0);
@@ -838,11 +846,10 @@
                     attendanceData.push({ id: Date.now() + Math.random(), name, attended, total });
                 }
             });
-            saveAttendance();
-            renderAttendance();
+            saveAttendance(); renderAttendance();
         }
 
-        // --- Brand New Marks UI Engine ---
+        // Marks Engine
         function renderMarks(marksArray) {
             const noData = document.getElementById('marks-no-data');
             const list = document.getElementById('marks-list');
@@ -852,64 +859,43 @@
                 if (list) list.style.display = 'none';
                 return;
             }
-
             if (noData) noData.style.display = 'none';
-            list.style.display = 'block';
-            list.innerHTML = '';
+            list.style.display = 'block'; list.innerHTML = '';
 
-            let grandTotalObtained = 0;
-            let grandTotalMax = 0;
-            let subjectsHTML = '';
+            let grandTotalObtained = 0; let grandTotalMax = 0; let subjectsHTML = '';
 
             marksArray.forEach(item => {
                 const course = item.courseTitle || item.name || item.subject || item.courseName || "Subject";
-                
-                // Find the performance string from the API data
                 let perfString = item['Test Performance'] || item.testPerformance || item.performance || item.marks || "";
-                if (!perfString && typeof item === 'object') {
-                    perfString = Object.values(item).join(' '); // Fallback to stringifying values
-                }
+                if (!perfString && typeof item === 'object') perfString = Object.values(item).join(' ');
 
-                let subjectMax = 0;
-                let subjectObtained = 0;
-                let testsHtml = '';
-
-                // Regex parser to find patterns like: "FT-II/15.00 | 12.20"
+                let subjectMax = 0; let subjectObtained = 0; let testsHtml = '';
                 const regex = /([A-Za-z0-9-]+)\/([0-9.]+)\s*\|\s*([0-9.]+)/g;
                 let match;
                 
                 while ((match = regex.exec(perfString)) !== null) {
-                    const testName = match[1];
-                    const max = parseFloat(match[2]);
-                    const obtained = parseFloat(match[3]);
-                    
-                    subjectMax += max;
-                    subjectObtained += obtained;
-
+                    const testName = match[1]; const max = parseFloat(match[2]); const obtained = parseFloat(match[3]);
+                    subjectMax += max; subjectObtained += obtained;
                     const percent = max > 0 ? Math.round((obtained / max) * 100) : 0;
                     
-                    let badgeColor = "var(--success)"; 
-                    let badgeBorder = "rgba(0, 204, 102, 0.4)";
+                    let badgeColor = "var(--success)"; let badgeBorder = "rgba(0, 204, 102, 0.4)";
                     if(percent < 50) { badgeColor = "var(--danger)"; badgeBorder = "rgba(255, 68, 68, 0.4)"; }
                     else if(percent < 75) { badgeColor = "var(--primary)"; badgeBorder = "rgba(255, 170, 0, 0.4)"; }
 
                     testsHtml += `
                         <div class="test-row">
                             <div class="test-info">
-                                <h4>${testName}</h4>
-                                <p>${obtained} / ${max} marks</p>
+                                <h4>${testName}</h4><p>${obtained} / ${max} marks</p>
                             </div>
                             <div class="test-badge" style="color: ${badgeColor}; border-color: ${badgeBorder};">${percent}%</div>
                         </div>
                     `;
                 }
 
-                // Fallback UI if regex fails to find matches
                 if (testsHtml === '') {
                     const fields = Object.entries(item).filter(([k, v]) => !['coursecode','courseid','id','regNo','courseTitle','CourseTitle'].includes(k));
                     testsHtml = fields.map(([k, v]) => {
-                        let displayVal = v;
-                        if(typeof v === 'object') displayVal = JSON.stringify(v);
+                        let displayVal = v; if(typeof v === 'object') displayVal = JSON.stringify(v);
                         return `
                             <div style="display:flex; justify-content:space-between; padding: 8px 0; border-bottom: 1px solid var(--glass-border);">
                                 <span style="color:var(--text-sub); text-transform: capitalize;">${k}</span>
@@ -918,9 +904,7 @@
                     }).join('');
                 }
 
-                grandTotalMax += subjectMax;
-                grandTotalObtained += subjectObtained;
-
+                grandTotalMax += subjectMax; grandTotalObtained += subjectObtained;
                 let subjectPercent = subjectMax > 0 ? ((subjectObtained / subjectMax) * 100).toFixed(1) : 0;
 
                 subjectsHTML += `
@@ -943,72 +927,77 @@
                         </div>
                         <div class="overview-title" style="margin: 20px 0 15px 0;">📊 Detailed Performance</div>
                         ` : ''}
-                        
                         ${testsHtml}
                     </div>
                 `;
             });
 
-            // Calculate Overall Academic Stats
             const overallPercent = grandTotalMax > 0 ? ((grandTotalObtained / grandTotalMax) * 100).toFixed(1) : "0.0";
             const estCGPA = grandTotalMax > 0 ? ((grandTotalObtained / grandTotalMax) * 10).toFixed(2) : "0.00";
             let grade = "C";
-            if (overallPercent >= 90) grade = "O";
-            else if (overallPercent >= 80) grade = "A+";
-            else if (overallPercent >= 70) grade = "A";
-            else if (overallPercent >= 60) grade = "B+";
+            if (overallPercent >= 90) grade = "O"; else if (overallPercent >= 80) grade = "A+";
+            else if (overallPercent >= 70) grade = "A"; else if (overallPercent >= 60) grade = "B+";
             else if (overallPercent >= 50) grade = "B";
 
-            // Add the Overview Card
             list.innerHTML = `
                 <div class="dashboard-overview fade-in-up">
                     <div class="overview-title">Academic Performance</div>
                     <h1 class="overview-percent">${overallPercent}%</h1>
                     <div class="overview-stats">
-                        <div class="stat-item">
-                            <h4>${estCGPA}</h4>
-                            <p>Est. CGPA</p>
-                        </div>
+                        <div class="stat-item"><h4>${estCGPA}</h4><p>Est. CGPA</p></div>
                         <div class="stat-item" style="border-left: 1px solid var(--glass-border); border-right: 1px solid var(--glass-border);">
-                            <h4>${grandTotalObtained.toFixed(1)}</h4>
-                            <p>Score / ${grandTotalMax}</p>
+                            <h4>${grandTotalObtained.toFixed(1)}</h4><p>Score / ${grandTotalMax}</p>
                         </div>
-                        <div class="stat-item">
-                            <h4>${grade}</h4>
-                            <p>Avg Grade</p>
-                        </div>
+                        <div class="stat-item"><h4>${grade}</h4><p>Avg Grade</p></div>
                     </div>
                 </div>
             ` + subjectsHTML;
         }
 
-        function renderTimetable(ttArray) {
+        // --- NEW TIMETABLE RENDER ENGINE (Day 1 to 5) ---
+        function setInitialTimetableDay() {
+            // Find current Day of week to highlight Day 1 to 5
+            let dayIndex = new Date().getDay(); // 0=Sun, 1=Mon...
+            let dayToRender = (dayIndex >= 1 && dayIndex <= 5) ? dayIndex : 1; // Default to Day 1 if weekend
+            const dayBtns = document.querySelectorAll('.tt-day-selector .day-btn');
+            if(dayBtns.length > 0 && dayBtns[dayToRender - 1]) {
+                renderDay(dayToRender, dayBtns[dayToRender - 1]);
+            }
+        }
+
+        function renderDay(dayNumber, btnElement) {
+            document.querySelectorAll('.tt-day-selector .day-btn').forEach(btn => btn.classList.remove('active'));
+            if(btnElement) btnElement.classList.add('active');
+
             const noData = document.getElementById('timetable-no-data');
             const grid = document.getElementById('timetable-grid');
 
-            if (!Array.isArray(ttArray) || ttArray.length === 0) {
-                if (noData) noData.style.display = 'block';
-                if (grid) grid.style.display = 'none';
+            // Expecting Backend to send data grouped by day, e.g., { "1": [...classes], "2": [...classes] }
+            const ttData = JSON.parse(localStorage.getItem('squadTimetable') || '{}');
+            const classesForDay = ttData[dayNumber.toString()];
+
+            if (!classesForDay || !Array.isArray(classesForDay) || classesForDay.length === 0) {
+                noData.style.display = 'block'; grid.style.display = 'none';
                 return;
             }
 
-            if (noData) noData.style.display = 'none';
+            noData.style.display = 'none';
             grid.style.display = 'block';
             grid.innerHTML = '';
 
-            ttArray.forEach(item => {
-                grid.innerHTML += `<div class="meal-card fade-in-up"><div style="color:var(--primary);">${JSON.stringify(item)}</div></div>`;
+            classesForDay.forEach(cls => {
+                // Expected format from backend: { time: "09:45 - 10:35", subject: "21LEH101T - English", room: "907" }
+                grid.innerHTML += `
+                    <div class="tt-card fade-in-up">
+                        <div class="tt-time"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> ${cls.time || 'N/A'}</div>
+                        <h3 class="tt-subject">${cls.subject || 'Unknown Subject'}</h3>
+                        <div class="tt-room"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg> ${cls.room || 'Online/Unknown'}</div>
+                    </div>
+                `;
             });
         }
 
-        function loadSavedMarksAndTimetable() {
-            const savedMarks = JSON.parse(localStorage.getItem('squadMarks') || '[]');
-            const savedTimetable = JSON.parse(localStorage.getItem('squadTimetable') || '[]');
-            if (savedMarks.length) renderMarks(savedMarks);
-            if (savedTimetable.length) renderTimetable(savedTimetable);
-        }
-        loadSavedMarksAndTimetable();
-
+        // Attendance Tracking Logic
         function addAttendance() {
             const nameInput = document.getElementById('att-sub-name');
             const attInput = document.getElementById('att-attended');
@@ -1017,25 +1006,20 @@
             
             attendanceData.push({ id: Date.now(), name: nameInput.value, attended: parseInt(attInput.value), total: parseInt(totInput.value) });
             nameInput.value = ''; attInput.value = ''; totInput.value = '';
-            saveAttendance();
-            renderAttendance();
+            saveAttendance(); renderAttendance();
         }
 
         function deleteAttendance(id) {
             attendanceData = attendanceData.filter(item => item.id !== id);
-            saveAttendance();
-            renderAttendance();
+            saveAttendance(); renderAttendance();
         }
 
-        // --- Beautiful Attendance Engine ---
         function renderAttendance() {
-            const list = document.getElementById('attendance-list');
-            list.innerHTML = '';
+            const list = document.getElementById('attendance-list'); list.innerHTML = '';
             let grandAttended = 0, grandTotal = 0;
 
             attendanceData.forEach(item => {
-                grandAttended += item.attended;
-                grandTotal += item.total;
+                grandAttended += item.attended; grandTotal += item.total;
                 const percentage = item.total === 0 ? 0 : ((item.attended / item.total) * 100).toFixed(1);
                 const isGood = percentage >= 75;
                 const barColor = isGood ? 'var(--success)' : 'var(--danger)';
@@ -1052,13 +1036,13 @@
                         </div>
                         
                         <div class="progress-container">
-                            <div class="progress-fill" style="background: ${barColor}; width: ${percentage}%;"></div>
+                            <div class="progress-fill" style="background: ${barColor}; width: ${percentage}%; box-shadow: 0 0 12px ${barColor};"></div>
                         </div>
                         
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px;">
                             <div>
-                                <div class="stat-text" style="color: var(--primary); font-weight: bold;">${item.attended} / ${item.total} Attended</div>
-                                <div class="stat-text" style="color:var(--text-main); margin-top: 5px; font-size: 0.85rem;">${statusText}</div>
+                                <div class="stat-text" style="color: var(--text-main); font-weight: bold;">${item.attended} / ${item.total} Attended</div>
+                                <div class="stat-text" style="color:var(--text-sub); margin-top: 5px; font-size: 0.85rem;">${statusText}</div>
                             </div>
                             <button class="danger-btn" style="padding: 8px 15px; font-size: 0.85rem; margin-left: 10px;" onclick="deleteAttendance(${item.id})">Drop</button>
                         </div>
@@ -1066,16 +1050,25 @@
                 `;
             });
 
+            if (isLoggedIn) {
+                const overallPerc = grandTotal > 0 ? ((grandAttended / grandTotal) * 100).toFixed(1) : "0.0";
+                document.getElementById('home-att-val').innerText = overallPerc + "%";
+                document.getElementById('home-course-val').innerText = attendanceData.length;
+            }
+
             const overallEl = document.getElementById('overall-attendance');
             if(grandTotal === 0) {
-                overallEl.innerText = "Overall: 0%";
-                overallEl.style.color = "var(--primary)";
+                overallEl.innerText = "Overall: 0%"; overallEl.style.color = "var(--primary)";
             } else {
                 const overallPerc = ((grandAttended / grandTotal) * 100).toFixed(1);
                 overallEl.innerText = `Overall: ${overallPerc}%`;
                 overallEl.style.color = overallPerc >= 75 ? "var(--success)" : "var(--danger)";
             }
         }
+        
+        // Initial load scripts
+        if (localStorage.getItem('squadMarks')) renderMarks(JSON.parse(localStorage.getItem('squadMarks')));
+        renderAttendance();
 
         function toggleTheme() {
             document.body.classList.toggle('light-mode');
@@ -1086,7 +1079,6 @@
             document.getElementById('splash-screen').classList.add('zoom-out');
             document.getElementById('main-content').classList.add('content-visible');
             document.getElementById('navButtons').style.opacity = '1';
-            document.querySelector('.top-left-sync-btn').style.opacity = '1';
             setTimeout(() => document.getElementById('splash-screen').style.display = 'none', 1000);
             checkAndScheduleNotifications();
         }, 1200);
