@@ -498,21 +498,24 @@
     </div>
 
     <script>
-        const BACKEND_URL = 'https://srm-student-hub-1.onrender.com';
+const BACKEND_URL = 'https://srm-student-hub-1.onrender.com';
 
         let isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
         let attendanceData = [];
         let timetableData = {};
         let currentBatch = 1;
 
+        // Ensure Home state is correct on load
         updateHomeState();
 
+        // Register Service Worker
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('sw.js').catch(err => console.log('SW Failed:', err));
             });
         }
 
+        // Navigation History
         history.replaceState({ viewId: 'home-view' }, '', '#home-view');
 
         function switchView(viewId, pushToHistory = true) {
@@ -533,6 +536,7 @@
             else switchView('home-view', false);
         });
 
+        // ================= STATE UPDATES =================
         function updateHomeState() {
             if (isLoggedIn) {
                 document.getElementById('unauth-hero').style.display = 'none';
@@ -545,182 +549,6 @@
             }
         }
 
-        // ================= GALLERY & PROJECTS =================
-        const projectsDatabase = {
-            'oopsBanner': { title: 'OOPS Banner App', subProjects: [ { id: 'ucsFolder', title: "UC's" }, { id: 'week1Problem', title: 'Week 1 & 2 Problems' }, { id: 'week34Problem', title: 'Week 3 & 4 Problems' }, { id: 'helloAppFolder', title: 'HelloApp UC\'s' } ] },
-            'ucsFolder': { title: "OOPS Banner App UC's", parent: 'oopsBanner', images: [ { src: 'images/oops-banner/uc1.png', label: '1' }, { src: 'images/oops-banner/uc2.png', label: '2' }, { src: 'images/oops-banner/uc3.png', label: '3' }, { src: 'images/oops-banner/uc4.png', label: '4' }, { src: 'images/oops-banner/uc5.png', label: '5' }, { src: 'images/oops-banner/uc6.png', label: '6' }, { src: 'images/oops-banner/uc7.png', label: '7' }, { src: 'images/oops-banner/uc8.png', label: '8' }, { src: 'images/oops-banner/uc9.png', label: '9' }, { src: 'images/oops-banner/uc10.png', label: '10' }, { src: 'images/oops-banner/end.png', label: 'end' } ] },
-            'week1Problem': { title: 'Week 1 and 2 Problems', parent: 'oopsBanner', images: [ { src: 'images/oops-banner/Basic-step1.png', label: 'Basic-Step' }, { src: 'images/oops-banner/Basic-step2.png', label: 'Basic-Step' }, { src: 'images/oops-banner/level1.png', label: 'Part 1' }, { src: 'images/oops-banner/level12.png', label: 'Part 2' }, { src: 'images/oops-banner/level13.png', label: 'Part 3' }, { src: 'images/oops-banner/bash.png', label: 'Bash' }, { src: 'images/oops-banner/level21.png', label: 'Part 4' }, { src: 'images/oops-banner/level22.png', label: 'Part 5' }, { src: 'images/oops-banner/level3.png', label: 'Part 6' } ] },
-            'week34Problem': { title: 'Week 3 and 4 Problems', parent: 'oopsBanner', images: [ { src: 'images/oops-banner/w31.png', label: 'Step1' }, { src: 'images/oops-banner/w32.png', label: 'Step2' }, { src: 'images/oops-banner/w33.png', label: 'Step3' }, { src: 'images/oops-banner/w34.png', label: 'Step4' }, { src: 'images/oops-banner/w35.png', label: 'Step5' }, { src: 'images/oops-banner/w36.png', label: 'Step6' }, { src: 'images/oops-banner/end.png', label: 'end' } ] },
-            'helloAppFolder': { title: 'HelloApp UC\'s', parent: 'oopsBanner', video: 'https://www.youtube.com/embed/k8eX_rkQxPk', images: [ { src: 'images/oops-banner/ha1.png', label: 'uc 1 Step 1' }, { src: 'images/oops-banner/ha2.png', label: 'Step 2' }, { src: 'images/oops-banner/ha3.png', label: 'Step 3' }, { src: 'images/oops-banner/ha4.png', label: 'Step 4' }, { src: 'images/oops-banner/ha5.png', label: 'uc 2 Step 5' }, { src: 'images/oops-banner/ha6.png', label: 'Step 6' }, { src: 'images/oops-banner/end.png', label: 'end' } ] }
-        };
-
-        function openProject(projectId) {
-            switchView('gallery-view');
-            const projectData = projectsDatabase[projectId];
-            document.getElementById('dynamic-project-title').innerText = projectData.title;
-            const galleryElement = document.getElementById('dynamic-gallery');
-            galleryElement.innerHTML = ''; 
-            
-            if (projectData.subProjects) {
-                projectData.subProjects.forEach(sub => {
-                    galleryElement.innerHTML += `
-                        <div class="image-card project-card fade-in-up" onclick="openProject('${sub.id}')">
-                            <div class="project-cover">
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="project-icon"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
-                            </div>
-                            <div class="caption">${sub.title}</div>
-                        </div>
-                    `;
-                });
-            }
-
-            if (projectData.video) {
-                galleryElement.innerHTML += `
-                    <div class="image-card fade-in-up" style="grid-column: 1 / -1; max-width: 800px; margin: 0 auto; width: 100%;">
-                        <div class="video-container"><iframe src="${projectData.video}" allowfullscreen></iframe></div>
-                        <div class="caption" style="color: var(--primary);">Video Tutorial</div>
-                    </div>
-                `;
-            }
-
-            if (projectData.images) {
-                projectData.images.forEach(imgData => {
-                    galleryElement.innerHTML += `
-                        <div class="image-card fade-in-up">
-                            <img src="${imgData.src}" alt="${imgData.label}" class="gallery-item" onclick="openLightbox(this.src)">
-                            <div class="caption">${imgData.label}</div>
-                        </div>
-                    `;
-                });
-            }
-
-            const backBtn = document.querySelector('#gallery-view .back-btn');
-            if (projectData.parent) {
-                backBtn.onclick = () => openProject(projectData.parent);
-                backBtn.innerHTML = '&#8592; Back to ' + projectsDatabase[projectData.parent].title;
-            } else {
-                backBtn.onclick = () => switchNav('home-view', document.querySelector('.nav-item'));
-                backBtn.innerHTML = '&#8592; Back to Home';
-            }
-        }
-
-        // ================= CGPA CALCULATOR =================
-        function addCgpaRow() {
-            document.getElementById('cgpa-rows').insertAdjacentHTML('beforeend', `
-                <div class="form-row fade-in-up">
-                    <input type="text" placeholder="Subject Name (Optional)">
-                    <select class="cgpa-grade">
-                        <option value="">Grade</option>
-                        <option value="10">O</option><option value="9">A+</option><option value="8">A</option>
-                        <option value="7">B+</option><option value="6">B</option><option value="5">C</option>
-                    </select>
-                    <input type="number" class="cgpa-credit" placeholder="Credits" min="1" max="10">
-                    <button class="danger-btn" onclick="this.parentElement.remove()">X</button>
-                </div>
-            `);
-        }
-        function calculateCGPA() {
-            const grades = document.querySelectorAll('.cgpa-grade'); const credits = document.querySelectorAll('.cgpa-credit');
-            let totalPoints = 0; let totalCredits = 0;
-            for(let i = 0; i < grades.length; i++) {
-                let gradeVal = parseFloat(grades[i].value); let creditVal = parseFloat(credits[i].value);
-                if(!isNaN(gradeVal) && !isNaN(creditVal)) { totalPoints += (gradeVal * creditVal); totalCredits += creditVal; }
-            }
-            const resultBox = document.getElementById('cgpa-result');
-            resultBox.style.display = 'block';
-            if (totalCredits === 0) resultBox.innerText = "Please enter valid grades and credits!"; 
-            else resultBox.innerText = `Your CGPA: ${(totalPoints / totalCredits).toFixed(2)}`;
-        }
-
-        // ================= MESS MENU =================
-        const mealIcons = {
-            'Breakfast': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M17 8h1a4 4 0 1 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z"/><line x1="6" y1="2" x2="6" y2="4"/><line x1="10" y1="2" x2="10" y2="4"/><line x1="14" y1="2" x2="14" y2="4"/></svg>',
-            'Lunch': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>',
-            'Snacks': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M2 21c1.2-1.5 3-2 4-2 1.9 0 2.8.5 4 2 1.2-1.5 3-2 4-2 1.9 0 2.8.5 4 2"/><path d="M3 7a3 3 0 0 1 3-3h12a3 3 0 0 1 3 3v4a7 7 0 0 1-7 7h-4a7 7 0 0 1-7-7z"/></svg>',
-            'Dinner': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>'
-        };
-
-        const messMenuData = {
-            'Monday': { Breakfast: 'Bread, Butter, Jam, Ghee Pongal, Sambar, Coconut Chutney, Vadai, Tea/Coffee/Milk / Boiled Egg (1 Piece), Poori, Potato Masala, Herbal Kanji', Lunch: 'Payasam, Ghee Chappathi, Green Peas Masala, Variety Rice, Steamed Rice, Sambar, Dal Lasooni, Tomato Rasam, Gobi-65 OR Bitter Guard-65, Raw Banana Chops, Millet Kanji, Special Fryums, Butter Milk, Pickle', Snacks: 'Pav Bajji, Tea/Coffee', Dinner: 'Malabar Paratha, Mix Veg Kuruma, Millet Dosa, Idly Podi, Oil, Special Chutney, Steamed Rice, Chilli Sambar, Jeera Dal, Rasam, Aloo Capsicum, Pickle, Fryums, Veg-Salad, Banana, Millet Kanji, *** Dry Fish Gravy ***' },
-            'Tuesday': { Breakfast: 'Bread, Butter, Jam, Idly, Veg Kosthu, Spl Chutney, Poha, Mint Chutney, Tea/Coffee/Milk, Herbal Kanji, Masala Omlet (1 Piece)', Lunch: 'Millet Sweet, Luchi, Kashmiri Dum Aloo, Jeera Pulao, Steamed Rice, Masala Sambar, Bagara Dal, Mix Veg Usili, Pepper Rasam, Lauki Subji, Pickle, Millet Kanji, Butter Milk, Fryums', Snacks: 'Boiled Peanut / Black Channa Sundal, Tea/Coffee', Dinner: 'Chappathi, Aloo Chenna Khurma, Fried Rice / Noodles / Pastha, Manchurian Gravy / Crispy Vegetable, Steamed Rice, Rasam, Dal Fry, Millet Kanji, Pickle, Fryums, Veg-Salad, Milk, Spl Fruits, *** Chicken Gravy ***' },
-            'Wednesday': { Breakfast: 'Bread, Butter, Jam, Millet Dosa, Idly Podi, Oil, Arachivitta Sambar, Chutney, Butter Chappathi, Aloo Rajma Masala, Herbal Kanji, Tea/Coffee/Milk', Lunch: 'Chappathi, Soya Kasa, Suitani Pulao, Steamed Rice, Mysore Dal Fry, Kadi Pakoda, Garlic Rasam, Aloo Palak (or) Aloo Paruval, Yam Mochai Roast, Pickle, Fryums, Millet Kanji, Butter Milk', Snacks: 'Veg Puff / Sweet Bun, Tea/Coffee', Dinner: 'Chappathi, Steamed Rice, Dal Tadka, Chicken Masala / Chilli Chicken (Non-Veg) / Paneer Butter Masala, Rasam, Pickle, Millet Kanji, Fryums, Veg Salad, Milk, Banana, *** Chicken Gravy ***' },
-            'Thursday': { Breakfast: 'Bread, Butter, Jam, Chappathi, Dal Masala, Veg Semiya Kichadi, Coconut Chutney, Boiled Egg (1 Piece), Banana, Herbal Kanji, Tea/Coffee/Milk', Lunch: 'Poori, Aloo Mutar Ghughni, Corn Pulao, Punjabi Dal Tadka, Kadai Vegetable, Steamed Rice, Drumstick Brinjal Sambar, Pineapple Rasam, Beetroot Poriyal, Pickle, Fryums, Millet Kanji, Butter Milk', Snacks: 'Pani Poori (or) Mixture, Tea/Coffee', Dinner: 'Ghee Pulao / Kaji Pulao (Basmati Rice), Chappathi, Rajma Paneer, Steamed Rice, Chole Dal Fry, Rasam, Aloo Peanut Masala, Fryums, Pickle, Veg Salad, Milk, Ice Cream, *** Chicken Gravy ***' },
-            'Friday': { Breakfast: 'Bread, Butter, Jam, Onion Podi Uthappam, Idly Podi, Oil, Chilli Sambar, Kara Chutney, Ghee Chappathi, Muttar Masala, Tea/Coffee/Milk, Boiled Egg (1 Piece), Herbal Kanji', Lunch: 'Spl Dry Jamun / Bread Halwa, Veg Briyani, Mix Raitha, Bisebelabath, Curd Rice, Steamed Rice, Tomato Rasam, Aloo Gobi Adaraki, Moongdal Tadka, Millet Kanji, Pickle, Potato Chips', Snacks: 'Bonda / Sambar Vada, Chutney, Tea/Coffee', Dinner: 'Chole Bhatura, Steamed Rice, Tomato Dal, Veg Upma, Coconut Chutney, Rasam, Cabbage Thoran, Pickle, Fryums, Veg Soup, Banana, Veg Salad, Milk, *** Mutton Gravy ***' },
-            'Saturday': { Breakfast: 'Bread, Butter, Jam, Chappathi, Aloo Meal Maker Kasa, Idiyappam (Lemon or Masala or Coconut Milk), Coconut Chutney, Tea/Coffee/Milk, Boiled Egg (1 Piece), Herbal Kanji', Lunch: 'Butter Roti, Aloo Double Beans Masala, Veg Pulao, Steamed Rice, Dal Makhni, Bhindi Do Pyasa, Parupu Urundai Kuzhambu, Kootu, Jeera Rasam, Pickle, Special Fryums, Millet Kanji, Butter Milk', Snacks: 'Cake (or) Browni, Tea/Coffee', Dinner: 'Sweet, Panjabi Paratha, Rajma Makan Wala, French Fry, Steamed Rice, Mysore Dal Fry, Veg Idly, Idly Podi, Oil, Chutney, Tiffen Sambar, Rasam, Pickle, Fryums, Veg Salad, Milk, Millet Kanji, Special Fruit, *** Fish Gravy ***' },
-            'Sunday': { Breakfast: 'Bread, Butter, Jam, Chole Poori, Veg Upma, Coconut Chutney, Tea/Coffee/Milk, Herbal Kanji', Lunch: 'Chappathi, Chicken (Pepper / Kadai), Paneer Butter Masala (or) Kadai Paneer, Dal Dhadka, Mint Pulao, Steamed Rice, Garlic Rasam, Poriyal, Pickle, Fryums, Butter Milk, Millet Kanji, *** Chicken Gravy ***', Snacks: 'Corn / Bajji, Chutney (OR) Juice, Tea/Coffee', Dinner: 'Variety Stuffing Paratha, Curd, Steamed Rice, Hara Moong Dal Tadka, Kathamba Sambar, Poriyal, Rasam, Pickle, Fryums, Veg Salad, Milk, Ice Cream, Millet Kanji, *** Chicken Gravy ***' }
-        };
-
-        function openTodayMessMenu() {
-            const daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-            switchView('mess-view');
-            renderMessMenu(daysOfWeek[new Date().getDay()]);
-        }
-
-        function renderMessMenu(selectedDay) {
-            const tabContainer = document.getElementById('mess-tabs'); const contentContainer = document.getElementById('mess-content');
-            tabContainer.innerHTML = ''; contentContainer.innerHTML = '';
-
-            Object.keys(messMenuData).forEach(day => {
-                const btn = document.createElement('button');
-                btn.className = `tab-btn ${day === selectedDay ? 'active' : ''}`;
-                btn.innerText = day;
-                btn.onclick = () => renderMessMenu(day);
-                tabContainer.appendChild(btn);
-                if (day === selectedDay) setTimeout(() => btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' }), 150); 
-            });
-
-            Object.entries(messMenuData[selectedDay]).forEach(([time, items]) => {
-                let formattedText = items.split(', ').join(' <span style="color: var(--primary); font-weight: bold; padding: 0 5px;">&bull;</span> ');
-                formattedText = formattedText.replace(/\*\*\*(.*?)\*\*\*/g, '<br><span class="special-badge">🔥 $1 🔥</span>');
-                contentContainer.innerHTML += `
-                    <div class="meal-card fade-in-up" style="display: flex; gap: 20px; align-items: flex-start;">
-                        <div class="meal-icon-box">${mealIcons[time]}</div>
-                        <div class="meal-content"><h3>${time}</h3><p>${formattedText}</p></div>
-                    </div>
-                `;
-            });
-        }
-
-        // ================= STUDY HELPER =================
-        const helperData = {
-            'Semester 1': [{ name: 'Content Adding Soon...', topics: ['Check back later for pyqs.'], pyqLink: '#', ctLink: '#' }],
-            'Semester 2': [{ name: 'Content Adding Soon...', topics: ['Check back later for pyqs.'], pyqLink: '#', ctLink: '#' }],
-            'Semester 3': [{ name: 'Content Adding Soon...', topics: ['Check back later for pyqs.'], pyqLink: '#', ctLink: '#' }],
-            'Semester 4': [{ name: 'Content Adding Soon...', topics: ['Check back later for pyqs.'], pyqLink: '#', ctLink: '#' }]
-        };
-        function initHelper() {
-            const semContainer = document.getElementById('helper-semesters');
-            for(let i=1; i<=8; i++) {
-                semContainer.innerHTML += `
-                    <div class="image-card project-card fade-in-up" onclick="showHelperSubjects('Semester ${i}')">
-                        <div class="project-cover" style="height: 150px;"><h2 style="color: var(--primary); margin:0;">SEM ${i}</h2></div>
-                    </div>
-                `;
-            }
-        }
-        function showHelperSubjects(semName) {
-            document.getElementById('helper-semesters').style.display = 'none';
-            document.getElementById('helper-subjects').style.display = 'block';
-            document.getElementById('helper-sem-title').innerText = semName;
-            const listContainer = document.getElementById('helper-subject-list');
-            listContainer.innerHTML = '';
-            (helperData[semName] || []).forEach(sub => {
-                listContainer.innerHTML += `
-                    <details class="fade-in-up">
-                        <summary>${sub.name} &#9662;</summary>
-                        <div class="details-content">
-                            <strong>Important Topics:</strong>
-                            <ul style="margin-top: 10px; margin-bottom: 15px;">${sub.topics.map(t => `<li>${t}</li>`).join('')}</ul>
-                            <a href="${sub.ctLink}" style="color:var(--primary); text-decoration: none; font-weight: bold;">[ CT Papers ]</a> &nbsp;|&nbsp; 
-                            <a href="${sub.pyqLink}" style="color:var(--primary); text-decoration: none; font-weight: bold;">[ PYQs ]</a>
-                        </div>
-                    </details>
-                `;
-            });
-        }
-        initHelper(); 
-
-        // ================= BACKEND SYNC & API INTEGRATION =================
         function toggleBatch(element, batchNum) {
             document.querySelectorAll('.batch-btn').forEach(btn => btn.classList.remove('active'));
             element.classList.add('active');
@@ -730,6 +558,7 @@
         function openSyncModal() { document.getElementById('syncModal').style.display = 'flex'; }
         function closeSyncModal() { document.getElementById('syncModal').style.display = 'none'; }
 
+        // ================= LIVE SYNC ENGINE =================
         async function startLiveSync() {
             const regNo = document.getElementById('srm-reg').value.trim();
             const pwd = document.getElementById('srm-pwd').value;
@@ -737,29 +566,26 @@
 
             if (!regNo || !pwd) { alert("Please enter your NetID/Email and Password."); return; }
 
-            statusText.innerText = "🔄 Syncing... Please wait 60-90 seconds.";
+            statusText.innerText = "🔄 Syncing... Please wait up to 90 seconds.";
             statusText.style.color = "var(--primary)";
 
             try {
                 const res = await fetch(`${BACKEND_URL}/api/start_session`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        regNo: regNo,
-                        pwd: pwd,
-                        batch: currentBatch
-                    })
+                    body: JSON.stringify({ regNo: regNo, pwd: pwd, batch: currentBatch })
                 });
 
-                const result = await res.json();
+                const data = await res.json();
+                console.log("🔥 FULL API RESPONSE:", data); // PRESS F12 TO CHECK THIS
 
-                if (!result.success) {
-                    statusText.innerText = "❌ " + result.error;
+                if (!data.success) {
+                    statusText.innerText = "❌ " + data.error;
                     statusText.style.color = "var(--danger)";
                     return;
                 }
 
-                statusText.innerText = "✅ Success! Dashboard Updated.";
+                statusText.innerText = "✅ Success! Updating UI...";
                 statusText.style.color = "var(--success)";
 
                 // 1. UPDATE LOGIN STATE
@@ -767,25 +593,31 @@
                 localStorage.setItem("isLoggedIn", "true");
                 updateHomeState();
 
-                // 2. SAVE DATA
-                const att = Array.isArray(result.data) ? result.data : [];
-                const marks = Array.isArray(result.marks) ? result.marks : [];
-                const timetable = result.timetable || {};
-                
-                localStorage.setItem('squadAttendance', JSON.stringify(att));
-                localStorage.setItem('squadMarks', JSON.stringify(marks));
-                localStorage.setItem('squadTimetable', JSON.stringify(timetable));
+                // 2. EXTRACT DATA SAFELY
+                const attList = Array.isArray(data.data) ? data.data : [];
+                const marksList = Array.isArray(data.marks) ? data.marks : [];
+                const ttDict = data.timetable || {};
 
-                // 3. RENDER DATA
-                renderAttendance(att);
-                renderMarks(marks);
-                renderTimetable(timetable);
+                // 3. SAVE TO LOCAL STORAGE
+                localStorage.setItem('squadAttendance', JSON.stringify(attList));
+                localStorage.setItem('squadMarks', JSON.stringify(marksList));
+                localStorage.setItem('squadTimetable', JSON.stringify(ttDict));
+
+                // 4. RENDER UI INDEPENDENTLY (Prevents one crash from breaking everything)
+                try { renderAttendance(attList); } catch(e) { console.error("Attendance Render Error:", e); }
+                try { renderMarks(marksList); } catch(e) { console.error("Marks Render Error:", e); }
+                try { renderTimetable(ttDict); } catch(e) { console.error("Timetable Render Error:", e); }
+
+                // Warn user if backend secretly sent empty arrays despite "success"
+                if (attList.length === 0 && marksList.length === 0) {
+                    console.warn("Backend successfully connected, but returned EMPTY arrays. Check server.py scraper logic.");
+                }
 
                 setTimeout(() => closeSyncModal(), 1500);
 
             } catch (e) {
-                console.error("Sync error:", e);
-                statusText.innerText = "❌ Error reaching backend server.";
+                console.error("Fetch Network Error:", e);
+                statusText.innerText = "❌ Could not connect to backend server.";
                 statusText.style.color = "var(--danger)";
             } finally {
                 document.getElementById('srm-pwd').value = '';
@@ -793,28 +625,9 @@
         }
 
         // ================= ATTENDANCE RENDERER =================
-        function saveAttendance() { localStorage.setItem('squadAttendance', JSON.stringify(attendanceData)); }
-
-        function addAttendance() {
-            const nameInput = document.getElementById('att-sub-name');
-            const attInput = document.getElementById('att-attended');
-            const totInput = document.getElementById('att-total');
-            if(!nameInput.value || !attInput.value || !totInput.value) return alert("Fill all fields");
-            
-            attendanceData.push({ id: Date.now(), courseTitle: nameInput.value, attended: parseInt(attInput.value), total: parseInt(totInput.value) });
-            nameInput.value = ''; attInput.value = ''; totInput.value = '';
-            saveAttendance(); 
-            renderAttendance(attendanceData);
-        }
-
-        function deleteAttendance(id) {
-            attendanceData = attendanceData.filter(item => item.id !== id);
-            saveAttendance(); 
-            renderAttendance(attendanceData);
-        }
-
         function renderAttendance(attData) {
             const list = document.getElementById('attendance-list');
+            if (!list) return;
             list.innerHTML = '';
             
             let totalAtt = 0;
@@ -851,25 +664,26 @@
                                 <div class="stat-text" style="color: var(--text-main); font-weight: bold;">${attended} / ${total} Attended</div>
                                 <div class="stat-text" style="color:var(--text-sub); margin-top: 5px; font-size: 0.85rem;">${statusText}</div>
                             </div>
-                            <button class="danger-btn" style="padding: 8px 15px; font-size: 0.85rem; margin-left: 10px;" onclick="deleteAttendance(${sub.id || Date.now()})">Drop</button>
                         </div>
                     </div>
                 `;
             });
 
-            // Calculate & Update Overalls
+            // Update Overall Stats
             const overallPerc = totalClasses > 0 ? ((totalAtt / totalClasses) * 100).toFixed(1) : "0.0";
             const overallEl = document.getElementById('overall-attendance');
             
-            if (totalClasses === 0) {
-                overallEl.innerText = "Overall: 0%"; 
-                overallEl.style.color = "var(--primary)";
-            } else {
-                overallEl.innerText = `Overall: ${overallPerc}%`;
-                overallEl.style.color = overallPerc >= 75 ? "var(--success)" : "var(--danger)";
+            if (overallEl) {
+                if (totalClasses === 0) {
+                    overallEl.innerText = "Overall: 0%"; 
+                    overallEl.style.color = "var(--primary)";
+                } else {
+                    overallEl.innerText = `Overall: ${overallPerc}%`;
+                    overallEl.style.color = overallPerc >= 75 ? "var(--success)" : "var(--danger)";
+                }
             }
 
-            // Update Home Dashboard Stats
+            // Update Home Dashboard
             if (isLoggedIn) {
                 const attEl = document.getElementById('home-att-val');
                 const courseEl = document.getElementById('home-course-val');
@@ -889,14 +703,11 @@
                 return;
             }
 
-            // Hide No Data, Show List
             if (noData) noData.style.display = 'none';
-            if (list) list.style.display = 'block'; 
-            list.innerHTML = '';
+            if (list) { list.style.display = 'block'; list.innerHTML = ''; }
+            else return;
 
-            let grandTotalObtained = 0; 
-            let grandTotalMax = 0; 
-            let subjectsHTML = '';
+            let grandTotalObtained = 0; let grandTotalMax = 0; let subjectsHTML = '';
 
             marksData.forEach(item => {
                 const course = item.courseTitle || item.CourseTitle || item.name || "Subject";
@@ -905,21 +716,13 @@
                     perfString = Object.values(item).filter(v => typeof v === 'string').join(' | ');
                 }
 
-                let subjectMax = 0; 
-                let subjectObtained = 0; 
-                let testsHtml = '';
-                
-                // Regex to extract marks
+                let subjectMax = 0; let subjectObtained = 0; let testsHtml = '';
                 const regex = /([A-Za-z0-9-]+)\/([0-9.]+)\s*\|\s*([0-9.]+)/g;
                 let match;
                 
                 while ((match = regex.exec(perfString)) !== null) {
-                    const testName = match[1]; 
-                    const max = parseFloat(match[2]); 
-                    const obtained = parseFloat(match[3]);
-                    
-                    subjectMax += max; 
-                    subjectObtained += obtained;
+                    const testName = match[1]; const max = parseFloat(match[2]); const obtained = parseFloat(match[3]);
+                    subjectMax += max; subjectObtained += obtained;
                     const percent = max > 0 ? Math.round((obtained / max) * 100) : 0;
                     
                     let badgeColor = "var(--success)"; let badgeBorder = "rgba(0, 204, 102, 0.4)";
@@ -936,12 +739,9 @@
                     `;
                 }
 
-                if (testsHtml === '') {
-                    testsHtml = `<p style="color: var(--text-sub);">${perfString}</p>`;
-                }
+                if (testsHtml === '') { testsHtml = `<p style="color: var(--text-sub);">${perfString}</p>`; }
 
-                grandTotalMax += subjectMax; 
-                grandTotalObtained += subjectObtained;
+                grandTotalMax += subjectMax; grandTotalObtained += subjectObtained;
                 let subjectPercent = subjectMax > 0 ? ((subjectObtained / subjectMax) * 100).toFixed(1) : 0;
 
                 subjectsHTML += `
@@ -1002,7 +802,6 @@
                 return;
             }
 
-            // Hide No Data, Show Grid
             if (noData) noData.style.display = 'none';
             if (grid) grid.style.display = 'block';
 
@@ -1014,7 +813,7 @@
             let dayToRender = (dayIndex >= 1 && dayIndex <= 5) ? dayIndex : 1; 
             const dayBtns = document.querySelectorAll('.tt-day-selector .day-btn');
             
-            if (dayBtns.length > 0 && dayBtns[dayToRender - 1]) {
+            if(dayBtns.length > 0 && dayBtns[dayToRender - 1]) {
                 renderDay(dayToRender, dayBtns[dayToRender - 1]);
             } else {
                 renderDay(1, null);
@@ -1026,6 +825,7 @@
             if (btnElement) btnElement.classList.add('active');
 
             const grid = document.getElementById('timetable-grid');
+            if (!grid) return;
             const classesForDay = timetableData[dayNumber.toString()] || [];
 
             grid.innerHTML = '';
@@ -1046,10 +846,29 @@
             });
         }
 
+        // ================= MANUAL ENTRY FALLBACK =================
+        function saveAttendance() { localStorage.setItem('squadAttendance', JSON.stringify(attendanceData)); }
+
+        function addAttendance() {
+            const nameInput = document.getElementById('att-sub-name');
+            const attInput = document.getElementById('att-attended');
+            const totInput = document.getElementById('att-total');
+            if(!nameInput.value || !attInput.value || !totInput.value) return alert("Fill all fields");
+            
+            attendanceData.push({ id: Date.now(), courseTitle: nameInput.value, attended: parseInt(attInput.value), total: parseInt(totInput.value) });
+            nameInput.value = ''; attInput.value = ''; totInput.value = '';
+            saveAttendance(); 
+            renderAttendance(attendanceData);
+        }
+
+        function deleteAttendance(id) {
+            attendanceData = attendanceData.filter(item => item.id !== id);
+            saveAttendance(); 
+            renderAttendance(attendanceData);
+        }
+
         // ================= BOOTSTRAP / INITIAL LOAD =================
         function loadSavedData() {
-            updateHomeState();
-            
             const savedAtt = JSON.parse(localStorage.getItem('squadAttendance') || '[]');
             const savedMarks = JSON.parse(localStorage.getItem('squadMarks') || '[]');
             const savedTT = JSON.parse(localStorage.getItem('squadTimetable') || '{}');
@@ -1061,9 +880,189 @@
 
         loadSavedData();
 
+        // ================= UTILITIES =================
         function toggleTheme() {
             document.body.classList.toggle('light-mode');
             document.getElementById('themeToggle').innerText = document.body.classList.contains('light-mode') ? '🌙' : '☀️'; 
+        }
+
+        function openLightbox(src) { document.getElementById("lightbox").style.display = "flex"; document.getElementById("lightbox-img").src = src; }
+        function closeLightbox() { document.getElementById("lightbox").style.display = "none"; }
+
+        // ================= HARDCODED MENU & HELPER DATA =================
+        const messMenuData = {
+            'Monday': { Breakfast: 'Bread, Butter, Jam, Ghee Pongal, Sambar, Coconut Chutney, Vadai, Tea/Coffee/Milk / Boiled Egg (1 Piece), Poori, Potato Masala, Herbal Kanji', Lunch: 'Payasam, Ghee Chappathi, Green Peas Masala, Variety Rice, Steamed Rice, Sambar, Dal Lasooni, Tomato Rasam, Gobi-65 OR Bitter Guard-65, Raw Banana Chops, Millet Kanji, Special Fryums, Butter Milk, Pickle', Snacks: 'Pav Bajji, Tea/Coffee', Dinner: 'Malabar Paratha, Mix Veg Kuruma, Millet Dosa, Idly Podi, Oil, Special Chutney, Steamed Rice, Chilli Sambar, Jeera Dal, Rasam, Aloo Capsicum, Pickle, Fryums, Veg-Salad, Banana, Millet Kanji, *** Dry Fish Gravy ***' },
+            'Tuesday': { Breakfast: 'Bread, Butter, Jam, Idly, Veg Kosthu, Spl Chutney, Poha, Mint Chutney, Tea/Coffee/Milk, Herbal Kanji, Masala Omlet (1 Piece)', Lunch: 'Millet Sweet, Luchi, Kashmiri Dum Aloo, Jeera Pulao, Steamed Rice, Masala Sambar, Bagara Dal, Mix Veg Usili, Pepper Rasam, Lauki Subji, Pickle, Millet Kanji, Butter Milk, Fryums', Snacks: 'Boiled Peanut / Black Channa Sundal, Tea/Coffee', Dinner: 'Chappathi, Aloo Chenna Khurma, Fried Rice / Noodles / Pastha, Manchurian Gravy / Crispy Vegetable, Steamed Rice, Rasam, Dal Fry, Millet Kanji, Pickle, Fryums, Veg-Salad, Milk, Spl Fruits, *** Chicken Gravy ***' },
+            'Wednesday': { Breakfast: 'Bread, Butter, Jam, Millet Dosa, Idly Podi, Oil, Arachivitta Sambar, Chutney, Butter Chappathi, Aloo Rajma Masala, Herbal Kanji, Tea/Coffee/Milk', Lunch: 'Chappathi, Soya Kasa, Suitani Pulao, Steamed Rice, Mysore Dal Fry, Kadi Pakoda, Garlic Rasam, Aloo Palak (or) Aloo Paruval, Yam Mochai Roast, Pickle, Fryums, Millet Kanji, Butter Milk', Snacks: 'Veg Puff / Sweet Bun, Tea/Coffee', Dinner: 'Chappathi, Steamed Rice, Dal Tadka, Chicken Masala / Chilli Chicken (Non-Veg) / Paneer Butter Masala, Rasam, Pickle, Millet Kanji, Fryums, Veg Salad, Milk, Banana, *** Chicken Gravy ***' },
+            'Thursday': { Breakfast: 'Bread, Butter, Jam, Chappathi, Dal Masala, Veg Semiya Kichadi, Coconut Chutney, Boiled Egg (1 Piece), Banana, Herbal Kanji, Tea/Coffee/Milk', Lunch: 'Poori, Aloo Mutar Ghughni, Corn Pulao, Punjabi Dal Tadka, Kadai Vegetable, Steamed Rice, Drumstick Brinjal Sambar, Pineapple Rasam, Beetroot Poriyal, Pickle, Fryums, Millet Kanji, Butter Milk', Snacks: 'Pani Poori (or) Mixture, Tea/Coffee', Dinner: 'Ghee Pulao / Kaji Pulao (Basmati Rice), Chappathi, Rajma Paneer, Steamed Rice, Chole Dal Fry, Rasam, Aloo Peanut Masala, Fryums, Pickle, Veg Salad, Milk, Ice Cream, *** Chicken Gravy ***' },
+            'Friday': { Breakfast: 'Bread, Butter, Jam, Onion Podi Uthappam, Idly Podi, Oil, Chilli Sambar, Kara Chutney, Ghee Chappathi, Muttar Masala, Tea/Coffee/Milk, Boiled Egg (1 Piece), Herbal Kanji', Lunch: 'Spl Dry Jamun / Bread Halwa, Veg Briyani, Mix Raitha, Bisebelabath, Curd Rice, Steamed Rice, Tomato Rasam, Aloo Gobi Adaraki, Moongdal Tadka, Millet Kanji, Pickle, Potato Chips', Snacks: 'Bonda / Sambar Vada, Chutney, Tea/Coffee', Dinner: 'Chole Bhatura, Steamed Rice, Tomato Dal, Veg Upma, Coconut Chutney, Rasam, Cabbage Thoran, Pickle, Fryums, Veg Soup, Banana, Veg Salad, Milk, *** Mutton Gravy ***' },
+            'Saturday': { Breakfast: 'Bread, Butter, Jam, Chappathi, Aloo Meal Maker Kasa, Idiyappam (Lemon or Masala or Coconut Milk), Coconut Chutney, Tea/Coffee/Milk, Boiled Egg (1 Piece), Herbal Kanji', Lunch: 'Butter Roti, Aloo Double Beans Masala, Veg Pulao, Steamed Rice, Dal Makhni, Bhindi Do Pyasa, Parupu Urundai Kuzhambu, Kootu, Jeera Rasam, Pickle, Special Fryums, Millet Kanji, Butter Milk', Snacks: 'Cake (or) Browni, Tea/Coffee', Dinner: 'Sweet, Panjabi Paratha, Rajma Makan Wala, French Fry, Steamed Rice, Mysore Dal Fry, Veg Idly, Idly Podi, Oil, Chutney, Tiffen Sambar, Rasam, Pickle, Fryums, Veg Salad, Milk, Millet Kanji, Special Fruit, *** Fish Gravy ***' },
+            'Sunday': { Breakfast: 'Bread, Butter, Jam, Chole Poori, Veg Upma, Coconut Chutney, Tea/Coffee/Milk, Herbal Kanji', Lunch: 'Chappathi, Chicken (Pepper / Kadai), Paneer Butter Masala (or) Kadai Paneer, Dal Dhadka, Mint Pulao, Steamed Rice, Garlic Rasam, Poriyal, Pickle, Fryums, Butter Milk, Millet Kanji, *** Chicken Gravy ***', Snacks: 'Corn / Bajji, Chutney (OR) Juice, Tea/Coffee', Dinner: 'Variety Stuffing Paratha, Curd, Steamed Rice, Hara Moong Dal Tadka, Kathamba Sambar, Poriyal, Rasam, Pickle, Fryums, Veg Salad, Milk, Ice Cream, Millet Kanji, *** Chicken Gravy ***' }
+        };
+
+        const mealIcons = {
+            'Breakfast': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M17 8h1a4 4 0 1 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z"/><line x1="6" y1="2" x2="6" y2="4"/><line x1="10" y1="2" x2="10" y2="4"/><line x1="14" y1="2" x2="14" y2="4"/></svg>',
+            'Lunch': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>',
+            'Snacks': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M2 21c1.2-1.5 3-2 4-2 1.9 0 2.8.5 4 2 1.2-1.5 3-2 4-2 1.9 0 2.8.5 4 2"/><path d="M3 7a3 3 0 0 1 3-3h12a3 3 0 0 1 3 3v4a7 7 0 0 1-7 7h-4a7 7 0 0 1-7-7z"/></svg>',
+            'Dinner': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>'
+        };
+
+        function openTodayMessMenu() {
+            const daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+            switchView('mess-view');
+            renderMessMenu(daysOfWeek[new Date().getDay()]);
+        }
+
+        function renderMessMenu(selectedDay) {
+            const tabContainer = document.getElementById('mess-tabs'); const contentContainer = document.getElementById('mess-content');
+            tabContainer.innerHTML = ''; contentContainer.innerHTML = '';
+
+            Object.keys(messMenuData).forEach(day => {
+                const btn = document.createElement('button');
+                btn.className = `tab-btn ${day === selectedDay ? 'active' : ''}`;
+                btn.innerText = day;
+                btn.onclick = () => renderMessMenu(day);
+                tabContainer.appendChild(btn);
+                if (day === selectedDay) setTimeout(() => btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' }), 150); 
+            });
+
+            Object.entries(messMenuData[selectedDay]).forEach(([time, items]) => {
+                let formattedText = items.split(', ').join(' <span style="color: var(--primary); font-weight: bold; padding: 0 5px;">&bull;</span> ');
+                formattedText = formattedText.replace(/\*\*\*(.*?)\*\*\*/g, '<br><span class="special-badge">🔥 $1 🔥</span>');
+                contentContainer.innerHTML += `
+                    <div class="meal-card fade-in-up" style="display: flex; gap: 20px; align-items: flex-start;">
+                        <div class="meal-icon-box">${mealIcons[time]}</div>
+                        <div class="meal-content"><h3>${time}</h3><p>${formattedText}</p></div>
+                    </div>
+                `;
+            });
+        }
+
+        function addCgpaRow() {
+            document.getElementById('cgpa-rows').insertAdjacentHTML('beforeend', `
+                <div class="form-row fade-in-up">
+                    <input type="text" placeholder="Subject Name (Optional)">
+                    <select class="cgpa-grade">
+                        <option value="">Grade</option>
+                        <option value="10">O</option><option value="9">A+</option><option value="8">A</option>
+                        <option value="7">B+</option><option value="6">B</option><option value="5">C</option>
+                    </select>
+                    <input type="number" class="cgpa-credit" placeholder="Credits" min="1" max="10">
+                    <button class="danger-btn" onclick="this.parentElement.remove()">X</button>
+                </div>
+            `);
+        }
+
+        function calculateCGPA() {
+            const grades = document.querySelectorAll('.cgpa-grade'); const credits = document.querySelectorAll('.cgpa-credit');
+            let totalPoints = 0; let totalCredits = 0;
+            for(let i = 0; i < grades.length; i++) {
+                let gradeVal = parseFloat(grades[i].value); let creditVal = parseFloat(credits[i].value);
+                if(!isNaN(gradeVal) && !isNaN(creditVal)) { totalPoints += (gradeVal * creditVal); totalCredits += creditVal; }
+            }
+            const resultBox = document.getElementById('cgpa-result');
+            resultBox.style.display = 'block';
+            if (totalCredits === 0) resultBox.innerText = "Please enter valid grades and credits!"; 
+            else resultBox.innerText = `Your CGPA: ${(totalPoints / totalCredits).toFixed(2)}`;
+        }
+
+        const helperData = {
+            'Semester 1': [{ name: 'Content Adding Soon...', topics: ['Check back later for pyqs.'], pyqLink: '#', ctLink: '#' }],
+            'Semester 2': [{ name: 'Content Adding Soon...', topics: ['Check back later for pyqs.'], pyqLink: '#', ctLink: '#' }],
+            'Semester 3': [{ name: 'Content Adding Soon...', topics: ['Check back later for pyqs.'], pyqLink: '#', ctLink: '#' }],
+            'Semester 4': [{ name: 'Content Adding Soon...', topics: ['Check back later for pyqs.'], pyqLink: '#', ctLink: '#' }]
+        };
+
+        function initHelper() {
+            const semContainer = document.getElementById('helper-semesters');
+            for(let i=1; i<=8; i++) {
+                semContainer.innerHTML += `
+                    <div class="image-card project-card fade-in-up" onclick="showHelperSubjects('Semester ${i}')">
+                        <div class="project-cover" style="height: 150px;"><h2 style="color: var(--primary); margin:0;">SEM ${i}</h2></div>
+                    </div>
+                `;
+            }
+        }
+
+        function showHelperSubjects(semName) {
+            document.getElementById('helper-semesters').style.display = 'none';
+            document.getElementById('helper-subjects').style.display = 'block';
+            document.getElementById('helper-sem-title').innerText = semName;
+            const listContainer = document.getElementById('helper-subject-list');
+            listContainer.innerHTML = '';
+            (helperData[semName] || []).forEach(sub => {
+                listContainer.innerHTML += `
+                    <details class="fade-in-up">
+                        <summary>${sub.name} &#9662;</summary>
+                        <div class="details-content">
+                            <strong>Important Topics:</strong>
+                            <ul style="margin-top: 10px; margin-bottom: 15px;">${sub.topics.map(t => `<li>${t}</li>`).join('')}</ul>
+                            <a href="${sub.ctLink}" style="color:var(--primary); text-decoration: none; font-weight: bold;">[ CT Papers ]</a> &nbsp;|&nbsp; 
+                            <a href="${sub.pyqLink}" style="color:var(--primary); text-decoration: none; font-weight: bold;">[ PYQs ]</a>
+                        </div>
+                    </details>
+                `;
+            });
+        }
+        initHelper();
+
+        // Project Gallery Logic
+        const projectsDatabase = {
+            'oopsBanner': { title: 'OOPS Banner App', subProjects: [ { id: 'ucsFolder', title: "UC's" }, { id: 'week1Problem', title: 'Week 1 & 2 Problems' }, { id: 'week34Problem', title: 'Week 3 & 4 Problems' }, { id: 'helloAppFolder', title: 'HelloApp UC\'s' } ] },
+            'ucsFolder': { title: "OOPS Banner App UC's", parent: 'oopsBanner', images: [ { src: 'images/oops-banner/uc1.png', label: '1' }, { src: 'images/oops-banner/uc2.png', label: '2' }, { src: 'images/oops-banner/uc3.png', label: '3' }, { src: 'images/oops-banner/uc4.png', label: '4' }, { src: 'images/oops-banner/uc5.png', label: '5' }, { src: 'images/oops-banner/uc6.png', label: '6' }, { src: 'images/oops-banner/uc7.png', label: '7' }, { src: 'images/oops-banner/uc8.png', label: '8' }, { src: 'images/oops-banner/uc9.png', label: '9' }, { src: 'images/oops-banner/uc10.png', label: '10' }, { src: 'images/oops-banner/end.png', label: 'end' } ] },
+            'week1Problem': { title: 'Week 1 and 2 Problems', parent: 'oopsBanner', images: [ { src: 'images/oops-banner/Basic-step1.png', label: 'Basic-Step' }, { src: 'images/oops-banner/Basic-step2.png', label: 'Basic-Step' }, { src: 'images/oops-banner/level1.png', label: 'Part 1' }, { src: 'images/oops-banner/level12.png', label: 'Part 2' }, { src: 'images/oops-banner/level13.png', label: 'Part 3' }, { src: 'images/oops-banner/bash.png', label: 'Bash' }, { src: 'images/oops-banner/level21.png', label: 'Part 4' }, { src: 'images/oops-banner/level22.png', label: 'Part 5' }, { src: 'images/oops-banner/level3.png', label: 'Part 6' } ] },
+            'week34Problem': { title: 'Week 3 and 4 Problems', parent: 'oopsBanner', images: [ { src: 'images/oops-banner/w31.png', label: 'Step1' }, { src: 'images/oops-banner/w32.png', label: 'Step2' }, { src: 'images/oops-banner/w33.png', label: 'Step3' }, { src: 'images/oops-banner/w34.png', label: 'Step4' }, { src: 'images/oops-banner/w35.png', label: 'Step5' }, { src: 'images/oops-banner/w36.png', label: 'Step6' }, { src: 'images/oops-banner/end.png', label: 'end' } ] },
+            'helloAppFolder': { title: 'HelloApp UC\'s', parent: 'oopsBanner', video: 'https://www.youtube.com/embed/k8eX_rkQxPk', images: [ { src: 'images/oops-banner/ha1.png', label: 'uc 1 Step 1' }, { src: 'images/oops-banner/ha2.png', label: 'Step 2' }, { src: 'images/oops-banner/ha3.png', label: 'Step 3' }, { src: 'images/oops-banner/ha4.png', label: 'Step 4' }, { src: 'images/oops-banner/ha5.png', label: 'uc 2 Step 5' }, { src: 'images/oops-banner/ha6.png', label: 'Step 6' }, { src: 'images/oops-banner/end.png', label: 'end' } ] }
+        };
+
+        function openProject(projectId) {
+            switchView('gallery-view');
+            const projectData = projectsDatabase[projectId];
+            document.getElementById('dynamic-project-title').innerText = projectData.title;
+            const galleryElement = document.getElementById('dynamic-gallery');
+            galleryElement.innerHTML = ''; 
+            
+            if (projectData.subProjects) {
+                projectData.subProjects.forEach(sub => {
+                    galleryElement.innerHTML += `
+                        <div class="image-card project-card fade-in-up" onclick="openProject('${sub.id}')">
+                            <div class="project-cover">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="project-icon"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+                            </div>
+                            <div class="caption">${sub.title}</div>
+                        </div>
+                    `;
+                });
+            }
+
+            if (projectData.video) {
+                galleryElement.innerHTML += `
+                    <div class="image-card fade-in-up" style="grid-column: 1 / -1; max-width: 800px; margin: 0 auto; width: 100%;">
+                        <div class="video-container"><iframe src="${projectData.video}" allowfullscreen></iframe></div>
+                        <div class="caption" style="color: var(--primary);">Video Tutorial</div>
+                    </div>
+                `;
+            }
+
+            if (projectData.images) {
+                projectData.images.forEach(imgData => {
+                    galleryElement.innerHTML += `
+                        <div class="image-card fade-in-up">
+                            <img src="${imgData.src}" alt="${imgData.label}" class="gallery-item" onclick="openLightbox(this.src)">
+                            <div class="caption">${imgData.label}</div>
+                        </div>
+                    `;
+                });
+            }
+
+            const backBtn = document.querySelector('#gallery-view .back-btn');
+            if (projectData.parent) {
+                backBtn.onclick = () => openProject(projectData.parent);
+                backBtn.innerHTML = '&#8592; Back to ' + projectsDatabase[projectData.parent].title;
+            } else {
+                backBtn.onclick = () => switchNav('home-view', document.querySelector('.nav-item'));
+                backBtn.innerHTML = '&#8592; Back to Home';
+            }
         }
 
         setTimeout(() => {
@@ -1071,47 +1070,16 @@
             document.getElementById('main-content').classList.add('content-visible');
             document.getElementById('navButtons').style.opacity = '1';
             setTimeout(() => document.getElementById('splash-screen').style.display = 'none', 1000);
-            checkAndScheduleNotifications();
         }, 1200);
-
-        function openLightbox(src) { document.getElementById("lightbox").style.display = "flex"; document.getElementById("lightbox-img").src = src; }
-        function closeLightbox() { document.getElementById("lightbox").style.display = "none"; }
 
         function requestNotificationPermission() {
             if (!("Notification" in window)) alert("This browser does not support desktop notification");
-            else if (Notification.permission === "granted") { alert("Notifications are already enabled!"); checkAndScheduleNotifications(true); }
+            else if (Notification.permission === "granted") { alert("Notifications are already enabled!"); }
             else if (Notification.permission !== "denied") {
                 Notification.requestPermission().then(permission => {
                     if (permission === "granted") alert("Notifications enabled! You will now receive daily mess updates.");
                 });
             }
-        }
-
-        function triggerLocalNotification(title, body) {
-            if (Notification.permission === 'granted' && navigator.serviceWorker) {
-                navigator.serviceWorker.ready.then(reg => reg.active.postMessage({ type: 'SHOW_NOTIFICATION', title, body }));
-            }
-        }
-
-        function checkAndScheduleNotifications(force = false) {
-            if (Notification.permission !== 'granted') return;
-            const now = new Date(), hours = now.getHours(), minutes = now.getMinutes(), timeFloat = hours + (minutes / 60);
-            const todaysMenu = messMenuData[['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][now.getDay()]];
-            let notifiedEvents = JSON.parse(localStorage.getItem('notifiedEvents') || '{}');
-
-            if (localStorage.getItem('lastNotifiedDate') !== now.toDateString()) {
-                notifiedEvents = { breakfast: false, lunch: false, snacks: false, dinner: false, sleep: false };
-                localStorage.setItem('lastNotifiedDate', now.toDateString());
-            }
-
-            if (timeFloat >= 6.5 && timeFloat < 10 && !notifiedEvents.breakfast) { triggerLocalNotification("Good Morning! ☀️ Breakfast:", todaysMenu.Breakfast); notifiedEvents.breakfast = true; }
-            if (timeFloat >= 11 && timeFloat < 14 && !notifiedEvents.lunch) { triggerLocalNotification("Lunch Time Approaching! 🍛", todaysMenu.Lunch); notifiedEvents.lunch = true; }
-            if (timeFloat >= 15 && timeFloat < 18 && !notifiedEvents.snacks) { triggerLocalNotification("Snack Time! 🥨", todaysMenu.Snacks); notifiedEvents.snacks = true; }
-            if (timeFloat >= 18.5 && timeFloat < 21 && !notifiedEvents.dinner) { triggerLocalNotification("Dinner is served! 🍽️", todaysMenu.Dinner); notifiedEvents.dinner = true; }
-            if (timeFloat >= 22.5 && !notifiedEvents.sleep) { triggerLocalNotification("Time to Sleep! 🌙", "Put the phone away and get some rest for classes tomorrow. 💤"); notifiedEvents.sleep = true; }
-
-            localStorage.setItem('notifiedEvents', JSON.stringify(notifiedEvents));
-            if (force && timeFloat < 6.5) triggerLocalNotification("SRM Hub Active", "Notifications are active. Next alert will be at 6:30 AM! ⏰");
         }
     </script>
 </body>
