@@ -1,5 +1,5 @@
 // Change this version number every time you want to force phones to update!
-const CACHE_NAME = 'srm-hub-v4-super-sync'; 
+const CACHE_NAME = 'srm-hub-v6-cal-timetable'; 
 
 const ASSETS_TO_CACHE = [
     '/',
