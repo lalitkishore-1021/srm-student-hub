@@ -1,16 +1,19 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SRM Student Hub</title>
-    
+
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#ffaa00">
     <link rel="apple-touch-icon" href="images/app-icon.svg">
-    
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;700;900&family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
-    
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;700;900&family=Open+Sans:wght@400;600&display=swap"
+        rel="stylesheet">
+
     <style>
         :root {
             --primary: #ffaa00;
@@ -23,7 +26,7 @@
             --text-sub: #888888;
             --glass: rgba(255, 255, 255, 0.05);
             --glass-border: rgba(255, 255, 255, 0.1);
-            --shadow: rgba(0,0,0,0.5);
+            --shadow: rgba(0, 0, 0, 0.5);
             --splash-bg: #050505;
             --danger: #ff4444;
             --success: #00cc66;
@@ -42,199 +45,1310 @@
             --nav-bg: rgba(255, 255, 255, 0.9);
         }
 
-        body { font-family: 'Open Sans', sans-serif; background: radial-gradient(circle at top center, var(--bg-start) 0%, var(--bg-end) 100%); color: var(--text-main); margin: 0; padding: 0; overflow-x: hidden; min-height: 100vh; transition: background 0.5s ease, color 0.5s ease; -webkit-tap-highlight-color: transparent;}
-        
-        .btn-container { position: fixed; top: 20px; right: 20px; display: flex; gap: 12px; z-index: 1000; opacity: 0; transition: opacity 0.5s ease; }
-        .icon-btn { background: var(--glass); border: 1px solid var(--glass-border); color: var(--text-main); width: 45px; height: 45px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 1.2rem; cursor: pointer; backdrop-filter: blur(10px); box-shadow: 0 4px 10px var(--shadow); transition: all 0.3s ease; text-decoration: none; }
-        .icon-btn:hover { transform: scale(1.1) translateY(-3px); border-color: var(--primary); color: var(--primary); }
-        .icon-btn svg { width: 20px; height: 20px; fill: currentColor; transition: fill 0.3s ease; }
-        
-        .app-nav { position: fixed; bottom: 0; left: 0; width: 100%; height: 70px; background: var(--nav-bg); backdrop-filter: blur(15px); border-top: 1px solid var(--glass-border); display: flex; justify-content: space-around; align-items: center; z-index: 1000; padding-bottom: env(safe-area-inset-bottom); }
-        .nav-item { display: flex; flex-direction: column; align-items: center; color: var(--text-sub); text-decoration: none; font-size: 0.75rem; font-family: 'Montserrat', sans-serif; font-weight: 700; gap: 5px; cursor: pointer; transition: all 0.3s; width: 60px;}
-        .nav-item svg { width: 24px; height: 24px; stroke: currentColor; stroke-width: 2; fill: none; transition: all 0.3s;}
-        .nav-item.active { color: var(--primary); transform: translateY(-3px);}
-        .nav-item.active svg { stroke: var(--primary); filter: drop-shadow(0 0 8px var(--primary-glow)); }
-
-        @media (min-width: 768px) {
-            .app-nav { top: 0; left: 0; width: 90px; height: 100vh; flex-direction: column; justify-content: center; border-top: none; border-right: 1px solid var(--glass-border); padding-bottom: 0; gap: 40px;}
-            #main-content { margin-left: 90px; }
+        body {
+            font-family: 'Open Sans', sans-serif;
+            background: radial-gradient(circle at top center, var(--bg-start) 0%, var(--bg-end) 100%);
+            color: var(--text-main);
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+            min-height: 100vh;
+            transition: background 0.5s ease, color 0.5s ease;
+            -webkit-tap-highlight-color: transparent;
         }
 
-        #splash-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: var(--splash-bg); z-index: 2000; display: flex; flex-direction: column; justify-content: center; align-items: center; transition: opacity 0.8s ease-in-out, transform 1s cubic-bezier(0.16, 1, 0.3, 1), visibility 1s, background-color 0.5s ease; }
-        .css-loader { width: 60px; height: 60px; border-radius: 50%; border: 4px solid var(--glass-border); border-top-color: var(--primary); animation: spin 1s linear infinite; margin-bottom: 20px; box-shadow: 0 0 20px rgba(255, 170, 0, 0.2); }
-        @keyframes spin { 100% { transform: rotate(360deg); } }
-        .splash-text { font-family: 'Montserrat', sans-serif; color: var(--primary); letter-spacing: 6px; font-size: 1rem; font-weight: 900; text-transform: uppercase; animation: pulse-text 1.5s infinite alternate; }
-        @keyframes pulse-text { 0% { opacity: 0.5; filter: blur(1px); } 100% { opacity: 1; filter: blur(0px); text-shadow: 0 0 10px rgba(255, 170, 0, 0.8); } }
-        .zoom-out { transform: scale(1.5); opacity: 0; visibility: hidden; pointer-events: none; }
-        
-        #main-content { padding: 80px 20px 100px; text-align: center; opacity: 0; transform: scale(0.95); transition: all 1.2s cubic-bezier(0.16, 1, 0.3, 1); width: 100%; max-width: 1200px; margin: 0 auto; box-sizing: border-box;}
-        .content-visible { opacity: 1 !important; transform: scale(1) !important; }
-        .app-view { display: none; animation: fadeIn 0.4s ease forwards; }
-        .app-view.active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .btn-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            gap: 12px;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
 
-        .site-header { display: flex; flex-direction: column; align-items: center; margin-bottom: 40px; }
-        .main-logo { width: 90px; height: 90px; margin-bottom: 15px; cursor: pointer; filter: drop-shadow(0 0 15px rgba(255, 170, 0, 0.5)); transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-        .main-logo:hover { transform: scale(1.15) rotate(5deg); filter: drop-shadow(0 0 25px rgba(255, 170, 0, 0.8)); }
-        h1 { font-family: 'Montserrat', sans-serif; font-weight: 900; text-transform: uppercase; font-size: clamp(2.5rem, 8vw, 4.5rem); background: linear-gradient(to right, #ffaa00, #ffdd00, #ffaa00); background-size: 200% auto; -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; color: transparent; margin-bottom: 10px; animation: shine 4s linear infinite; }
-        @keyframes shine { to { background-position: 200% center; } }
-        .subtitle { color: var(--text-sub); font-size: 1.1rem; margin-bottom: 30px; letter-spacing: 1px; transition: color 0.5s ease;}
+        .icon-btn {
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            color: var(--text-main);
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.2rem;
+            cursor: pointer;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 10px var(--shadow);
+            transition: all 0.3s ease;
+            text-decoration: none;
+        }
 
-        .hero-unauth { text-align: center; padding: 40px 20px; background: linear-gradient(145deg, var(--card-bg), #111); border-radius: 24px; border: 1px dashed var(--primary); position: relative; overflow: hidden; margin-bottom: 30px;}
-        .pulse-circle { width: 100px; height: 100px; background: var(--primary-glow); border-radius: 50%; position: absolute; top: -20px; left: -20px; filter: blur(40px); animation: pulse 3s infinite alternate; }
-        @keyframes pulse { to { transform: scale(1.5); opacity: 0.5; } }
-        
-        .id-card { background: linear-gradient(135deg, #ffb74d 0%, #f57c00 100%); border-radius: 24px; padding: 25px; color: #000; display: flex; flex-direction: column; gap: 15px; position: relative; overflow: hidden; box-shadow: 0 15px 35px var(--primary-glow); margin-bottom: 20px; text-align: left;}
-        .id-card-top { display: flex; align-items: center; gap: 15px; }
-        .id-avatar { width: 60px; height: 60px; background: rgba(255,255,255,0.3); border-radius: 16px; display: flex; justify-content: center; align-items: center; }
-        .id-name { font-family: 'Montserrat', sans-serif; font-weight: 900; font-size: 1.3rem; margin: 0; text-transform: uppercase;}
-        .id-reg { font-size: 0.9rem; font-weight: 600; opacity: 0.8; margin: 0;}
-        .id-details { display: flex; flex-direction: column; gap: 8px; font-weight: 600; font-size: 0.95rem; margin-top: 10px;}
-        .id-details span { display: flex; align-items: center; gap: 8px; }
+        .icon-btn:hover {
+            transform: scale(1.1) translateY(-3px);
+            border-color: var(--primary);
+            color: var(--primary);
+        }
 
-        .stats-bar { display: flex; background: var(--card-bg); border-radius: 16px; padding: 15px 0; margin-bottom: 30px; border: 1px solid var(--glass-border); }
-        .stat-box { flex: 1; text-align: center; border-right: 1px solid var(--glass-border); }
-        .stat-box:last-child { border: none; }
-        .stat-val { font-family: 'Montserrat', sans-serif; font-size: 1.5rem; font-weight: 700; color: var(--text-main); }
-        .stat-val.green { color: var(--success); }
-        .stat-val.blue { color: #4fc3f7; }
-        .stat-val.orange { color: var(--primary); }
-        .stat-label { font-size: 0.75rem; color: var(--text-sub); text-transform: uppercase; margin-top: 4px; font-weight: 600; }
+        .icon-btn svg {
+            width: 20px;
+            height: 20px;
+            fill: currentColor;
+            transition: fill 0.3s ease;
+        }
 
-        .section-title { font-family: 'Montserrat', sans-serif; font-size: 1.2rem; margin-bottom: 15px; color: var(--text-main); text-align: left; padding-left: 5px;}
-        .quick-actions-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 30px; text-align: left;}
-        .action-card { background: var(--card-bg); border: 1px solid var(--glass-border); padding: 20px; border-radius: 16px; display: flex; flex-direction: column; gap: 10px; cursor: pointer; transition: all 0.3s; text-decoration: none; color: inherit;}
-        .action-card:hover { border-color: var(--primary); background: rgba(255,170,0,0.05); transform: translateY(-3px);}
-        .action-icon { width: 40px; height: 40px; background: rgba(255,255,255,0.05); border-radius: 12px; display: flex; justify-content: center; align-items: center; color: var(--primary); }
-        .action-icon svg { width: 20px; height: 20px; stroke: currentColor; stroke-width: 2; fill: none; }
-        .action-title { font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: 0.95rem; margin: 0; }
-        .action-sub { font-size: 0.75rem; color: var(--text-sub); margin: 0; }
+        .app-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 70px;
+            background: var(--nav-bg);
+            backdrop-filter: blur(15px);
+            border-top: 1px solid var(--glass-border);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            z-index: 1000;
+            padding-bottom: env(safe-area-inset-bottom);
+        }
 
-        .glass-card { background: var(--card-bg); border: 1px solid var(--glass-border); border-radius: 20px; padding: 20px; margin-bottom: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); transition: transform 0.3s; }
-        .gallery-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 40px; max-width: 1200px; margin: 0 auto; }
-        .image-card { background: var(--glass); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); padding: 15px; border-radius: 20px; border: 1px solid var(--glass-border); box-shadow: 0 15px 35px var(--shadow); transition: all 0.4s ease; }
-        .image-card:hover { transform: translateY(-12px) scale(1.02); border-color: var(--primary); box-shadow: 0 20px 40px rgba(255, 170, 0, 0.15); }
-        .gallery-item { width: 100%; height: auto; border-radius: 12px; cursor: pointer; filter: brightness(0.8) contrast(1.1); transition: filter 0.4s ease; background-color: transparent; }
-        .image-card:hover .gallery-item { filter: brightness(1.1) contrast(1.1); }
-        .caption { margin-top: 20px; font-family: 'Montserrat', sans-serif; color: var(--text-main); font-weight: 700; letter-spacing: 1px; transition: color 0.5s ease;}
-        
-        .project-card { cursor: pointer; width: 100%; max-width: 400px; margin: 0 auto; box-sizing: border-box; }
-        .project-card .caption { font-size: 1.2rem; color: var(--primary); text-transform: uppercase;}
-        .project-cover { width: 100%; height: 250px; background: linear-gradient(135deg, rgba(255, 170, 0, 0.1) 0%, rgba(0, 0, 0, 0.4) 100%); border-radius: 12px; display: flex; justify-content: center; align-items: center; border: 1px solid var(--glass-border); box-shadow: inset 0 0 20px rgba(0,0,0,0.5); transition: all 0.4s ease; margin-bottom: 15px; }
-        .project-icon { width: 80px; height: 80px; stroke: var(--primary); filter: drop-shadow(0 0 10px rgba(255, 170, 0, 0.4)); transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-        .project-card:hover .project-cover { background: linear-gradient(135deg, rgba(255, 170, 0, 0.2) 0%, rgba(0, 0, 0, 0.6) 100%); }
-        .project-card:hover .project-icon { transform: scale(1.2); filter: drop-shadow(0 0 20px rgba(255, 170, 0, 0.8)); }
-        
-        .back-btn { background: var(--glass); border: 1px solid var(--glass-border); color: var(--text-main); padding: 10px 25px; border-radius: 30px; font-family: 'Montserrat', sans-serif; font-weight: bold; cursor: pointer; margin-bottom: 40px; transition: all 0.3s ease; font-size: 1rem; display: inline-block; }
-        .back-btn:hover { border-color: var(--primary); color: var(--primary); transform: translateX(-5px); }
-        .gallery-title { font-family: 'Montserrat', sans-serif; font-size: 2rem; color: var(--text-main); margin-bottom: 40px; text-transform: uppercase;}
-        .fade-in-up { animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-        @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        
-        .form-row { display: grid; grid-template-columns: 2fr 1fr 1fr auto; gap: 15px; margin-bottom: 15px; align-items: center; }
-        @media (max-width: 600px) { .form-row { grid-template-columns: 1fr; gap: 10px; border-bottom: 1px solid var(--glass-border); padding-bottom: 15px;} }
-        input, select { background: rgba(0,0,0,0.2); border: 1px solid var(--glass-border); color: var(--text-main); padding: 12px; border-radius: 8px; font-family: 'Open Sans', sans-serif; width: 100%; box-sizing: border-box; outline: none; transition: border-color 0.3s; }
-        body.light-mode input, body.light-mode select { background: rgba(255,255,255,0.8); }
-        input:focus, select:focus { border-color: var(--primary); }
-        select option { background: var(--bg-end); color: var(--text-main); }
-        
-        .action-btn { background: var(--primary); border: none; color: #000; padding: 12px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: all 0.3s; width: 100%; text-transform: uppercase; }
-        .action-btn:hover { background: #ffcc00; transform: translateY(-2px); }
-        .danger-btn { background: var(--danger); color: white; padding: 12px; border-radius: 8px; cursor: pointer; border: none; font-weight: bold; }
-        .btn-primary { background: var(--primary); color: #000; border: none; padding: 12px 24px; border-radius: 12px; font-family: 'Montserrat', sans-serif; font-weight: 700; cursor: pointer; transition: 0.3s; width: 100%; text-transform: uppercase; }
-        .btn-primary:hover { background: #e69900; transform: translateY(-2px); }
-        .result-box { background: var(--glass); border: 1px solid var(--primary); padding: 20px; border-radius: 12px; text-align: center; margin-top: 20px; font-size: 1.5rem; font-weight: bold; color: var(--primary); }
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: var(--text-sub);
+            text-decoration: none;
+            font-size: 0.75rem;
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 700;
+            gap: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+            width: 60px;
+        }
 
-        .dashboard-overview { background: linear-gradient(135deg, rgba(255, 170, 0, 0.2) 0%, rgba(0, 0, 0, 0.4) 100%); border: 1px solid var(--primary); box-shadow: 0 10px 30px rgba(255, 170, 0, 0.15); border-radius: 20px; padding: 24px; margin-bottom: 24px; text-align: center; }
-        .overview-title { font-size: 12px; color: var(--text-sub); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 10px; font-family: 'Montserrat', sans-serif; }
-        .overview-percent { font-size: 48px; font-family: 'Montserrat', sans-serif; font-weight: 900; margin: 0 0 20px 0; color: var(--text-main); text-shadow: 0 0 20px rgba(255, 170, 0, 0.5); }
-        .overview-stats { display: flex; justify-content: space-between; background: rgba(0, 0, 0, 0.3); padding: 15px; border-radius: 12px; border: 1px solid var(--glass-border); }
-        .stat-item { width: 33%; }
-        .stat-item h4 { margin: 0; font-size: 20px; color: var(--primary); font-family: 'Montserrat', sans-serif; }
-        .stat-item p { margin: 5px 0 0 0; font-size: 11px; color: var(--text-sub); text-transform: uppercase; }
-        
-        .progress-container { width: 100%; height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; margin: 15px 0; overflow: hidden; }
-        .progress-fill { height: 100%; border-radius: 3px; transition: width 1s cubic-bezier(0.16, 1, 0.3, 1); box-shadow: 0 0 12px currentColor; }
-        .test-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-        .test-info h4 { margin: 0 0 4px 0; font-size: 14px; color: var(--text-main); font-family: 'Montserrat', sans-serif; }
-        .test-info p { margin: 0; font-size: 12px; color: var(--text-sub); }
-        .test-badge { background-color: transparent; border: 1px solid; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: bold; }
+        .nav-item svg {
+            width: 24px;
+            height: 24px;
+            stroke: currentColor;
+            stroke-width: 2;
+            fill: none;
+            transition: all 0.3s;
+        }
 
-        .tab-container { display: flex; overflow-x: auto; gap: 10px; margin-bottom: 30px; padding-bottom: 10px; scroll-behavior: smooth; }
-        .tab-container::-webkit-scrollbar { display: none; } 
-        .tab-btn { background: var(--glass); border: 1px solid var(--glass-border); color: var(--text-main); padding: 12px 25px; border-radius: 30px; cursor: pointer; white-space: nowrap; transition: 0.3s; font-weight: bold; font-family: 'Montserrat', sans-serif; text-transform: uppercase; font-size: 0.85rem;}
-        .tab-btn.active, .tab-btn:hover { background: var(--primary); color: #000; border-color: var(--primary); box-shadow: 0 0 15px rgba(255, 170, 0, 0.4);}
-        
-        .meal-card { display: flex; gap: 20px; background: var(--glass); padding: 25px; border-radius: 16px; border: 1px solid var(--glass-border); margin-bottom: 20px; transition: transform 0.3s, border-color 0.3s; align-items: flex-start; text-align: left; }
-        .meal-card:hover { transform: translateY(-5px); border-color: var(--primary); box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
-        .meal-icon-box { background: linear-gradient(135deg, rgba(255, 170, 0, 0.2) 0%, rgba(0, 0, 0, 0.2) 100%); border: 1px solid var(--primary); padding: 15px; border-radius: 50%; display: flex; justify-content: center; align-items: center; color: var(--primary); flex-shrink: 0; box-shadow: inset 0 0 10px rgba(255,170,0,0.1); }
-        .meal-icon-box svg { width: 28px; height: 28px; stroke-width: 2; }
-        .meal-content { flex-grow: 1; text-align: left; }
-        .meal-content h3 { margin: 0 0 10px 0; color: var(--text-main); font-size: 1.4rem; font-family: 'Montserrat', sans-serif; text-transform: uppercase; letter-spacing: 1px; }
-        .meal-content p { margin: 0; color: var(--text-sub); line-height: 1.8; font-size: 1.05rem; }
-        
-        .special-badge { display: inline-block; background: linear-gradient(135deg, #ff4444 0%, #cc0000 100%); color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: bold; margin-top: 10px; letter-spacing: 1px; box-shadow: 0 4px 10px rgba(255, 68, 68, 0.3); text-transform: uppercase; font-family: 'Montserrat', sans-serif; }
-        
-        details { background: var(--glass); border: 1px solid var(--glass-border); border-radius: 8px; margin-bottom: 10px; }
-        summary { padding: 15px; cursor: pointer; font-weight: bold; color: var(--primary); list-style: none; outline: none; }
-        summary::-webkit-details-marker { display: none; }
-        .details-content { padding: 15px; border-top: 1px solid var(--glass-border); color: var(--text-sub); text-align: left;}
-        .details-content ul { margin: 0; padding-left: 20px; }
-        .details-content li { margin-bottom: 8px; }
-        
-        .stat-text { color: var(--text-sub); font-size: 0.9rem; margin-top: 5px; }
-        .good-attendance { color: var(--success); }
-        .bad-attendance { color: var(--danger); }
-        
-        .footer { margin-top: 80px; padding: 40px 20px; border-top: 1px solid var(--glass-border); display: flex; flex-direction: column; align-items: center; gap: 20px; transition: border-color 0.5s ease;}
-        .view-counter-box { background: var(--glass); border: 1px solid var(--glass-border); padding: 15px 30px; border-radius: 50px; display: flex; align-items: center; gap: 15px; box-shadow: 0 0 20px var(--shadow); transition: all 0.5s ease; }
-        .view-counter-text { font-family: 'Montserrat', sans-serif; font-size: 0.9rem; color: var(--text-sub); font-weight: 700; letter-spacing: 1px; transition: color 0.5s ease;}
-        .developer-credit { color: var(--text-sub); font-size: 0.85rem; letter-spacing: 2px; transition: color 0.5s ease;}
-        .developer-credit strong { color: var(--primary); }
-        
-        .lightbox { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.98); z-index: 3000; justify-content: center; align-items: center; backdrop-filter: blur(10px); }
-        .lightbox img { max-width: 85%; max-height: 85%; border-radius: 10px; border: 1px solid #333; }
-        .close-btn { position: absolute; top: 30px; right: 40px; color: #fff; font-size: 50px; cursor: pointer; transition: color 0.3s;}
-        .close-btn:hover { color: var(--primary); }
-        
-        .video-container { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: 12px; margin-bottom: 15px; border: 1px solid var(--glass-border); }
-        .video-container iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0; }
+        .nav-item.active {
+            color: var(--primary);
+            transform: translateY(-3px);
+        }
 
-        .tt-day-selector { display: flex; overflow-x: auto; gap: 10px; margin-bottom: 20px; padding-bottom: 10px; }
-        .tt-day-selector::-webkit-scrollbar { display: none; }
-        .day-btn { background: var(--card-bg); border: 1px solid var(--glass-border); color: var(--text-sub); padding: 10px 20px; border-radius: 20px; font-weight: bold; cursor: pointer; white-space: nowrap; transition: 0.3s; }
-        .day-btn.active { background: var(--primary); color: #000; border-color: var(--primary); box-shadow: 0 0 10px rgba(255, 170, 0, 0.4); }
+        .nav-item.active svg {
+            stroke: var(--primary);
+            filter: drop-shadow(0 0 8px var(--primary-glow));
+        }
 
-        .tt-card { background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); border-radius: 16px; padding: 20px; margin-bottom: 15px; color: #fff; box-shadow: 0 5px 15px rgba(30, 60, 114, 0.3); text-align: left; border: 1px solid rgba(255,255,255,0.1); position: relative; overflow: hidden;}
-        .tt-time { font-size: 0.8rem; opacity: 0.9; margin-bottom: 8px; display: flex; align-items: center; gap: 5px; font-weight: bold; letter-spacing: 1px;}
-        .tt-subject { font-family: 'Montserrat', sans-serif; font-size: 1.1rem; font-weight: 700; margin: 0 0 8px 0; }
-        .tt-room { font-size: 0.85rem; opacity: 0.8; display: flex; align-items: center; gap: 5px; }
+        @media (min-width: 768px) {
+            .app-nav {
+                top: 0;
+                left: 0;
+                width: 90px;
+                height: 100vh;
+                flex-direction: column;
+                justify-content: center;
+                border-top: none;
+                border-right: 1px solid var(--glass-border);
+                padding-bottom: 0;
+                gap: 40px;
+            }
+
+            #main-content {
+                margin-left: 90px;
+            }
+        }
+
+        #splash-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--splash-bg);
+            z-index: 2000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            transition: opacity 0.8s ease-in-out, transform 1s cubic-bezier(0.16, 1, 0.3, 1), visibility 1s, background-color 0.5s ease;
+        }
+
+        .css-loader {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            border: 4px solid var(--glass-border);
+            border-top-color: var(--primary);
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+            box-shadow: 0 0 20px rgba(255, 170, 0, 0.2);
+        }
+
+        @keyframes spin {
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .splash-text {
+            font-family: 'Montserrat', sans-serif;
+            color: var(--primary);
+            letter-spacing: 6px;
+            font-size: 1rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            animation: pulse-text 1.5s infinite alternate;
+        }
+
+        @keyframes pulse-text {
+            0% {
+                opacity: 0.5;
+                filter: blur(1px);
+            }
+
+            100% {
+                opacity: 1;
+                filter: blur(0px);
+                text-shadow: 0 0 10px rgba(255, 170, 0, 0.8);
+            }
+        }
+
+        .zoom-out {
+            transform: scale(1.5);
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        #main-content {
+            padding: 80px 20px 100px;
+            text-align: center;
+            opacity: 0;
+            transform: scale(0.95);
+            transition: all 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            box-sizing: border-box;
+        }
+
+        .content-visible {
+            opacity: 1 !important;
+            transform: scale(1) !important;
+        }
+
+        .app-view {
+            display: none;
+            animation: fadeIn 0.4s ease forwards;
+        }
+
+        .app-view.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .site-header {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 40px;
+        }
+
+        .main-logo {
+            width: 90px;
+            height: 90px;
+            margin-bottom: 15px;
+            cursor: pointer;
+            filter: drop-shadow(0 0 15px rgba(255, 170, 0, 0.5));
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .main-logo:hover {
+            transform: scale(1.15) rotate(5deg);
+            filter: drop-shadow(0 0 25px rgba(255, 170, 0, 0.8));
+        }
+
+        h1 {
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 900;
+            text-transform: uppercase;
+            font-size: clamp(2.5rem, 8vw, 4.5rem);
+            background: linear-gradient(to right, #ffaa00, #ffdd00, #ffaa00);
+            background-size: 200% auto;
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            color: transparent;
+            margin-bottom: 10px;
+            animation: shine 4s linear infinite;
+        }
+
+        @keyframes shine {
+            to {
+                background-position: 200% center;
+            }
+        }
+
+        .subtitle {
+            color: var(--text-sub);
+            font-size: 1.1rem;
+            margin-bottom: 30px;
+            letter-spacing: 1px;
+            transition: color 0.5s ease;
+        }
+
+        .hero-unauth {
+            text-align: center;
+            padding: 40px 20px;
+            background: linear-gradient(145deg, var(--card-bg), #111);
+            border-radius: 24px;
+            border: 1px dashed var(--primary);
+            position: relative;
+            overflow: hidden;
+            margin-bottom: 30px;
+        }
+
+        .pulse-circle {
+            width: 100px;
+            height: 100px;
+            background: var(--primary-glow);
+            border-radius: 50%;
+            position: absolute;
+            top: -20px;
+            left: -20px;
+            filter: blur(40px);
+            animation: pulse 3s infinite alternate;
+        }
+
+        @keyframes pulse {
+            to {
+                transform: scale(1.5);
+                opacity: 0.5;
+            }
+        }
+
+        .id-card {
+            background: linear-gradient(135deg, #ffb74d 0%, #f57c00 100%);
+            border-radius: 24px;
+            padding: 25px;
+            color: #000;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 15px 35px var(--primary-glow);
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .id-card-top {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .id-avatar {
+            width: 60px;
+            height: 60px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 16px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .id-name {
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 900;
+            font-size: 1.3rem;
+            margin: 0;
+            text-transform: uppercase;
+        }
+
+        .id-reg {
+            font-size: 0.9rem;
+            font-weight: 600;
+            opacity: 0.8;
+            margin: 0;
+        }
+
+        .id-details {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            margin-top: 10px;
+        }
+
+        .id-details span {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .stats-bar {
+            display: flex;
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 15px 0;
+            margin-bottom: 30px;
+            border: 1px solid var(--glass-border);
+        }
+
+        .stat-box {
+            flex: 1;
+            text-align: center;
+            border-right: 1px solid var(--glass-border);
+        }
+
+        .stat-box:last-child {
+            border: none;
+        }
+
+        .stat-val {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        .stat-val.green {
+            color: var(--success);
+        }
+
+        .stat-val.blue {
+            color: #4fc3f7;
+        }
+
+        .stat-val.orange {
+            color: var(--primary);
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: var(--text-sub);
+            text-transform: uppercase;
+            margin-top: 4px;
+            font-weight: 600;
+        }
+
+        .section-title {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 1.2rem;
+            margin-bottom: 15px;
+            color: var(--text-main);
+            text-align: left;
+            padding-left: 5px;
+        }
+
+        .quick-actions-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-bottom: 30px;
+            text-align: left;
+        }
+
+        .action-card {
+            background: var(--card-bg);
+            border: 1px solid var(--glass-border);
+            padding: 20px;
+            border-radius: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .action-card:hover {
+            border-color: var(--primary);
+            background: rgba(255, 170, 0, 0.05);
+            transform: translateY(-3px);
+        }
+
+        .action-icon {
+            width: 40px;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: var(--primary);
+        }
+
+        .action-icon svg {
+            width: 20px;
+            height: 20px;
+            stroke: currentColor;
+            stroke-width: 2;
+            fill: none;
+        }
+
+        .action-title {
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 700;
+            font-size: 0.95rem;
+            margin: 0;
+        }
+
+        .action-sub {
+            font-size: 0.75rem;
+            color: var(--text-sub);
+            margin: 0;
+        }
+
+        .glass-card {
+            background: var(--card-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            transition: transform 0.3s;
+        }
+
+        .gallery-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 40px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .image-card {
+            background: var(--glass);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            padding: 15px;
+            border-radius: 20px;
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 15px 35px var(--shadow);
+            transition: all 0.4s ease;
+        }
+
+        .image-card:hover {
+            transform: translateY(-12px) scale(1.02);
+            border-color: var(--primary);
+            box-shadow: 0 20px 40px rgba(255, 170, 0, 0.15);
+        }
+
+        .gallery-item {
+            width: 100%;
+            height: auto;
+            border-radius: 12px;
+            cursor: pointer;
+            filter: brightness(0.8) contrast(1.1);
+            transition: filter 0.4s ease;
+            background-color: transparent;
+        }
+
+        .image-card:hover .gallery-item {
+            filter: brightness(1.1) contrast(1.1);
+        }
+
+        .caption {
+            margin-top: 20px;
+            font-family: 'Montserrat', sans-serif;
+            color: var(--text-main);
+            font-weight: 700;
+            letter-spacing: 1px;
+            transition: color 0.5s ease;
+        }
+
+        .project-card {
+            cursor: pointer;
+            width: 100%;
+            max-width: 400px;
+            margin: 0 auto;
+            box-sizing: border-box;
+        }
+
+        .project-card .caption {
+            font-size: 1.2rem;
+            color: var(--primary);
+            text-transform: uppercase;
+        }
+
+        .project-cover {
+            width: 100%;
+            height: 250px;
+            background: linear-gradient(135deg, rgba(255, 170, 0, 0.1) 0%, rgba(0, 0, 0, 0.4) 100%);
+            border-radius: 12px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border: 1px solid var(--glass-border);
+            box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.5);
+            transition: all 0.4s ease;
+            margin-bottom: 15px;
+        }
+
+        .project-icon {
+            width: 80px;
+            height: 80px;
+            stroke: var(--primary);
+            filter: drop-shadow(0 0 10px rgba(255, 170, 0, 0.4));
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .project-card:hover .project-cover {
+            background: linear-gradient(135deg, rgba(255, 170, 0, 0.2) 0%, rgba(0, 0, 0, 0.6) 100%);
+        }
+
+        .project-card:hover .project-icon {
+            transform: scale(1.2);
+            filter: drop-shadow(0 0 20px rgba(255, 170, 0, 0.8));
+        }
+
+        .back-btn {
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            color: var(--text-main);
+            padding: 10px 25px;
+            border-radius: 30px;
+            font-family: 'Montserrat', sans-serif;
+            font-weight: bold;
+            cursor: pointer;
+            margin-bottom: 40px;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+            display: inline-block;
+        }
+
+        .back-btn:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+            transform: translateX(-5px);
+        }
+
+        .gallery-title {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 2rem;
+            color: var(--text-main);
+            margin-bottom: 40px;
+            text-transform: uppercase;
+        }
+
+        .fade-in-up {
+            animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr auto;
+            gap: 15px;
+            margin-bottom: 15px;
+            align-items: center;
+        }
+
+        @media (max-width: 600px) {
+            .form-row {
+                grid-template-columns: 1fr;
+                gap: 10px;
+                border-bottom: 1px solid var(--glass-border);
+                padding-bottom: 15px;
+            }
+        }
+
+        input,
+        select {
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--glass-border);
+            color: var(--text-main);
+            padding: 12px;
+            border-radius: 8px;
+            font-family: 'Open Sans', sans-serif;
+            width: 100%;
+            box-sizing: border-box;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        body.light-mode input,
+        body.light-mode select {
+            background: rgba(255, 255, 255, 0.8);
+        }
+
+        input:focus,
+        select:focus {
+            border-color: var(--primary);
+        }
+
+        select option {
+            background: var(--bg-end);
+            color: var(--text-main);
+        }
+
+        .action-btn {
+            background: var(--primary);
+            border: none;
+            color: #000;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            width: 100%;
+            text-transform: uppercase;
+        }
+
+        .action-btn:hover {
+            background: #ffcc00;
+            transform: translateY(-2px);
+        }
+
+        .danger-btn {
+            background: var(--danger);
+            color: white;
+            padding: 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            border: none;
+            font-weight: bold;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: #000;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.3s;
+            width: 100%;
+            text-transform: uppercase;
+        }
+
+        .btn-primary:hover {
+            background: #e69900;
+            transform: translateY(-2px);
+        }
+
+        .result-box {
+            background: var(--glass);
+            border: 1px solid var(--primary);
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            margin-top: 20px;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--primary);
+        }
+
+        .dashboard-overview {
+            background: linear-gradient(135deg, rgba(255, 170, 0, 0.2) 0%, rgba(0, 0, 0, 0.4) 100%);
+            border: 1px solid var(--primary);
+            box-shadow: 0 10px 30px rgba(255, 170, 0, 0.15);
+            border-radius: 20px;
+            padding: 24px;
+            margin-bottom: 24px;
+            text-align: center;
+        }
+
+        .overview-title {
+            font-size: 12px;
+            color: var(--text-sub);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 10px;
+            font-family: 'Montserrat', sans-serif;
+        }
+
+        .overview-percent {
+            font-size: 48px;
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 900;
+            margin: 0 0 20px 0;
+            color: var(--text-main);
+            text-shadow: 0 0 20px rgba(255, 170, 0, 0.5);
+        }
+
+        .overview-stats {
+            display: flex;
+            justify-content: space-between;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 12px;
+            border: 1px solid var(--glass-border);
+        }
+
+        .stat-item {
+            width: 33%;
+        }
+
+        .stat-item h4 {
+            margin: 0;
+            font-size: 20px;
+            color: var(--primary);
+            font-family: 'Montserrat', sans-serif;
+        }
+
+        .stat-item p {
+            margin: 5px 0 0 0;
+            font-size: 11px;
+            color: var(--text-sub);
+            text-transform: uppercase;
+        }
+
+        .progress-container {
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            margin: 15px 0;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 1s cubic-bezier(0.16, 1, 0.3, 1);
+            box-shadow: 0 0 12px currentColor;
+        }
+
+        .test-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .test-info h4 {
+            margin: 0 0 4px 0;
+            font-size: 14px;
+            color: var(--text-main);
+            font-family: 'Montserrat', sans-serif;
+        }
+
+        .test-info p {
+            margin: 0;
+            font-size: 12px;
+            color: var(--text-sub);
+        }
+
+        .test-badge {
+            background-color: transparent;
+            border: 1px solid;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .tab-container {
+            display: flex;
+            overflow-x: auto;
+            gap: 10px;
+            margin-bottom: 30px;
+            padding-bottom: 10px;
+            scroll-behavior: smooth;
+        }
+
+        .tab-container::-webkit-scrollbar {
+            display: none;
+        }
+
+        .tab-btn {
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            color: var(--text-main);
+            padding: 12px 25px;
+            border-radius: 30px;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: 0.3s;
+            font-weight: bold;
+            font-family: 'Montserrat', sans-serif;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+        }
+
+        .tab-btn.active,
+        .tab-btn:hover {
+            background: var(--primary);
+            color: #000;
+            border-color: var(--primary);
+            box-shadow: 0 0 15px rgba(255, 170, 0, 0.4);
+        }
+
+        .meal-card {
+            display: flex;
+            gap: 20px;
+            background: var(--glass);
+            padding: 25px;
+            border-radius: 16px;
+            border: 1px solid var(--glass-border);
+            margin-bottom: 20px;
+            transition: transform 0.3s, border-color 0.3s;
+            align-items: flex-start;
+            text-align: left;
+        }
+
+        .meal-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--primary);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+        }
+
+        .meal-icon-box {
+            background: linear-gradient(135deg, rgba(255, 170, 0, 0.2) 0%, rgba(0, 0, 0, 0.2) 100%);
+            border: 1px solid var(--primary);
+            padding: 15px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: var(--primary);
+            flex-shrink: 0;
+            box-shadow: inset 0 0 10px rgba(255, 170, 0, 0.1);
+        }
+
+        .meal-icon-box svg {
+            width: 28px;
+            height: 28px;
+            stroke-width: 2;
+        }
+
+        .meal-content {
+            flex-grow: 1;
+            text-align: left;
+        }
+
+        .meal-content h3 {
+            margin: 0 0 10px 0;
+            color: var(--text-main);
+            font-size: 1.4rem;
+            font-family: 'Montserrat', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .meal-content p {
+            margin: 0;
+            color: var(--text-sub);
+            line-height: 1.8;
+            font-size: 1.05rem;
+        }
+
+        .special-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #ff4444 0%, #cc0000 100%);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            margin-top: 10px;
+            letter-spacing: 1px;
+            box-shadow: 0 4px 10px rgba(255, 68, 68, 0.3);
+            text-transform: uppercase;
+            font-family: 'Montserrat', sans-serif;
+        }
+
+        details {
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+
+        summary {
+            padding: 15px;
+            cursor: pointer;
+            font-weight: bold;
+            color: var(--primary);
+            list-style: none;
+            outline: none;
+        }
+
+        summary::-webkit-details-marker {
+            display: none;
+        }
+
+        .details-content {
+            padding: 15px;
+            border-top: 1px solid var(--glass-border);
+            color: var(--text-sub);
+            text-align: left;
+        }
+
+        .details-content ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+
+        .details-content li {
+            margin-bottom: 8px;
+        }
+
+        .stat-text {
+            color: var(--text-sub);
+            font-size: 0.9rem;
+            margin-top: 5px;
+        }
+
+        .good-attendance {
+            color: var(--success);
+        }
+
+        .bad-attendance {
+            color: var(--danger);
+        }
+
+        .footer {
+            margin-top: 80px;
+            padding: 40px 20px;
+            border-top: 1px solid var(--glass-border);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            transition: border-color 0.5s ease;
+        }
+
+        .view-counter-box {
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            padding: 15px 30px;
+            border-radius: 50px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            box-shadow: 0 0 20px var(--shadow);
+            transition: all 0.5s ease;
+        }
+
+        .view-counter-text {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 0.9rem;
+            color: var(--text-sub);
+            font-weight: 700;
+            letter-spacing: 1px;
+            transition: color 0.5s ease;
+        }
+
+        .developer-credit {
+            color: var(--text-sub);
+            font-size: 0.85rem;
+            letter-spacing: 2px;
+            transition: color 0.5s ease;
+        }
+
+        .developer-credit strong {
+            color: var(--primary);
+        }
+
+        .lightbox {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.98);
+            z-index: 3000;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(10px);
+        }
+
+        .lightbox img {
+            max-width: 85%;
+            max-height: 85%;
+            border-radius: 10px;
+            border: 1px solid #333;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 30px;
+            right: 40px;
+            color: #fff;
+            font-size: 50px;
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+
+        .close-btn:hover {
+            color: var(--primary);
+        }
+
+        .video-container {
+            position: relative;
+            padding-bottom: 56.25%;
+            height: 0;
+            overflow: hidden;
+            border-radius: 12px;
+            margin-bottom: 15px;
+            border: 1px solid var(--glass-border);
+        }
+
+        .video-container iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: 0;
+        }
+
+        .tt-day-selector {
+            display: flex;
+            overflow-x: auto;
+            gap: 10px;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+        }
+
+        .tt-day-selector::-webkit-scrollbar {
+            display: none;
+        }
+
+        .day-btn {
+            background: var(--card-bg);
+            border: 1px solid var(--glass-border);
+            color: var(--text-sub);
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-weight: bold;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: 0.3s;
+        }
+
+        .day-btn.active {
+            background: var(--primary);
+            color: #000;
+            border-color: var(--primary);
+            box-shadow: 0 0 10px rgba(255, 170, 0, 0.4);
+        }
+
+        .tt-card {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 15px;
+            color: #fff;
+            box-shadow: 0 5px 15px rgba(30, 60, 114, 0.3);
+            text-align: left;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .tt-time {
+            font-size: 0.8rem;
+            opacity: 0.9;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+
+        .tt-subject {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin: 0 0 8px 0;
+        }
+
+        .tt-room {
+            font-size: 0.85rem;
+            opacity: 0.8;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
 
         /* Auto-Highlighting Classes */
-        .active-highlight { border: 2px solid var(--primary) !important; box-shadow: 0 0 20px var(--primary-glow) !important; transform: scale(1.02); }
-        .active-badge { background: var(--primary); color: #000; padding: 2px 8px; border-radius: 12px; font-size: 0.7rem; font-weight: bold; margin-left: 10px; animation: pulse-text 1.5s infinite alternate; }
+        .active-highlight {
+            border: 2px solid var(--primary) !important;
+            box-shadow: 0 0 20px var(--primary-glow) !important;
+            transform: scale(1.02);
+        }
 
-        .sync-modal-content { background: var(--bg-start); border: 1px solid var(--primary); border-radius: 20px; padding: 30px; max-width: 400px; width: 90%; text-align: center; position: relative; box-shadow: 0 20px 50px rgba(0,0,0,0.8); }
-        .sync-modal-content h3 { font-family: 'Montserrat', sans-serif; color: var(--primary); text-transform: uppercase; margin-top: 0; }
-        .sync-modal-content p { color: var(--text-sub); font-size: 0.9rem; margin-bottom: 20px; }
-        
-        .batch-toggle { display: inline-flex; background: rgba(0,0,0,0.5); border-radius: 20px; padding: 4px; margin-bottom: 20px; border: 1px solid var(--glass-border); width: 100%;}
-        .batch-btn { flex: 1; padding: 10px 16px; border-radius: 16px; font-size: 0.85rem; font-weight: bold; cursor: pointer; color: var(--text-sub); transition: 0.3s; }
-        .batch-btn.active { background: var(--card-bg); color: var(--text-main); box-shadow: 0 2px 8px rgba(0,0,0,0.5); border: 1px solid var(--primary); }
-        
+        .active-badge {
+            background: var(--primary);
+            color: #000;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            font-weight: bold;
+            margin-left: 10px;
+            animation: pulse-text 1.5s infinite alternate;
+        }
+
+        .sync-modal-content {
+            background: var(--bg-start);
+            border: 1px solid var(--primary);
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+            position: relative;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8);
+        }
+
+        .sync-modal-content h3 {
+            font-family: 'Montserrat', sans-serif;
+            color: var(--primary);
+            text-transform: uppercase;
+            margin-top: 0;
+        }
+
+        .sync-modal-content p {
+            color: var(--text-sub);
+            font-size: 0.9rem;
+            margin-bottom: 20px;
+        }
+
+        .batch-toggle {
+            display: inline-flex;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 20px;
+            padding: 4px;
+            margin-bottom: 20px;
+            border: 1px solid var(--glass-border);
+            width: 100%;
+        }
+
+        .batch-btn {
+            flex: 1;
+            padding: 10px 16px;
+            border-radius: 16px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            cursor: pointer;
+            color: var(--text-sub);
+            transition: 0.3s;
+        }
+
+        .batch-btn.active {
+            background: var(--card-bg);
+            color: var(--text-main);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--primary);
+        }
+
         /* Calendar Styles */
-        .cal-header { font-family: 'Montserrat', sans-serif; font-weight: bold; color: var(--text-sub); text-align: center; font-size: 0.8rem; padding-bottom: 10px; text-transform: uppercase; }
-        #calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; text-align: center; }
-        .cal-day { padding: 12px 5px; background: rgba(0,0,0,0.2); border-radius: 8px; border: 1px solid var(--glass-border); font-weight: bold; cursor: pointer; transition: all 0.3s ease; }
-        .cal-day:hover { background: rgba(255,170,0,0.1); border-color: var(--primary); transform: scale(1.05); }
-        .cal-day.empty { background: transparent; border: none; cursor: default; box-shadow: none; pointer-events: none;}
-        .cal-day.today { background: var(--primary); color: #000; box-shadow: 0 0 10px rgba(255, 170, 0, 0.5); }
-        .planner-holiday { border: 2px solid #00cc66 !important; box-shadow: 0 0 10px rgba(0, 204, 102, 0.5) !important; animation: pulse-green 2s infinite alternate; }
-        .planner-day-order { border: 2px solid #bf5af2 !important; box-shadow: 0 0 10px rgba(191, 90, 242, 0.5) !important; animation: pulse-purple 2s infinite alternate; }
-        @keyframes pulse-green { to { filter: drop-shadow(0 0 8px rgba(0, 204, 102, 0.8)); } }
-        @keyframes pulse-purple { to { filter: drop-shadow(0 0 8px rgba(191, 90, 242, 0.8)); } }
+        .cal-header {
+            font-family: 'Montserrat', sans-serif;
+            font-weight: bold;
+            color: var(--text-sub);
+            text-align: center;
+            font-size: 0.8rem;
+            padding-bottom: 10px;
+            text-transform: uppercase;
+        }
+
+        #calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 8px;
+            text-align: center;
+        }
+
+        .cal-day {
+            padding: 12px 5px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            border: 1px solid var(--glass-border);
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .cal-day:hover {
+            background: rgba(255, 170, 0, 0.1);
+            border-color: var(--primary);
+            transform: scale(1.05);
+        }
+
+        .cal-day.empty {
+            background: transparent;
+            border: none;
+            cursor: default;
+            box-shadow: none;
+            pointer-events: none;
+        }
+
+        .cal-day.today {
+            background: var(--primary);
+            color: #000;
+            box-shadow: 0 0 10px rgba(255, 170, 0, 0.5);
+        }
+
+        .planner-holiday {
+            border: 2px solid #00cc66 !important;
+            box-shadow: 0 0 10px rgba(0, 204, 102, 0.5) !important;
+            animation: pulse-green 2s infinite alternate;
+        }
+
+        .planner-day-order {
+            border: 2px solid #bf5af2 !important;
+            box-shadow: 0 0 10px rgba(191, 90, 242, 0.5) !important;
+            animation: pulse-purple 2s infinite alternate;
+        }
+
+        @keyframes pulse-green {
+            to {
+                filter: drop-shadow(0 0 8px rgba(0, 204, 102, 0.8));
+            }
+        }
+
+        @keyframes pulse-purple {
+            to {
+                filter: drop-shadow(0 0 8px rgba(191, 90, 242, 0.8));
+            }
+        }
     </style>
 </head>
+
 <body>
 
     <div id="splash-screen">
@@ -243,29 +1357,51 @@
     </div>
 
     <div class="btn-container" id="navButtons">
-        <button id="reSyncBtn" class="icon-btn" onclick="openSyncModal()" title="Sync Academia Data" style="color: var(--primary); border-color: var(--primary);">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M2.13 15.57a9 9 0 1 0 3.1-8.54L2 9M2.5 22v-6h6M21.87 8.43a9 9 0 1 0-3.1 8.54l3.23-1.97"/></svg>
+        <button id="reSyncBtn" class="icon-btn" onclick="openSyncModal()" title="Sync Academia Data"
+            style="color: var(--primary); border-color: var(--primary);">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round">
+                <path
+                    d="M21.5 2v6h-6M2.13 15.57a9 9 0 1 0 3.1-8.54L2 9M2.5 22v-6h6M21.87 8.43a9 9 0 1 0-3.1 8.54l3.23-1.97" />
+            </svg>
         </button>
-        <button id="notifyBtn" class="icon-btn" onclick="requestNotificationPermission()" title="Enable Notifications">🔔</button>
-        <a href="https://www.instagram.com/lalit._.kishore" target="_blank" class="icon-btn" title="Instagram"><svg viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.85s-.011 3.585-.069 4.85c-.148 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07s-3.584-.012-4.85-.07c-3.26-.148-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.85s.012-3.584.07-4.85c.148-3.204 1.671-4.771 4.919-4.919 1.266-.057 1.645-.069 4.85-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg></a>
-        <a href="https://www.linkedin.com/in/balagalalitkishore" target="_blank" class="icon-btn" title="LinkedIn"><svg viewBox="0 0 24 24"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg></a>
-        <a href="https://github.com/lalitkishore-1021" target="_blank" class="icon-btn" title="GitHub"><svg viewBox="0 0 24 24"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg></a>
+        <button id="notifyBtn" class="icon-btn" onclick="requestNotificationPermission()"
+            title="Enable Notifications">🔔</button>
+        <a href="https://www.instagram.com/lalit._.kishore" target="_blank" class="icon-btn" title="Instagram"><svg
+                viewBox="0 0 24 24">
+                <path
+                    d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.85s-.011 3.585-.069 4.85c-.148 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07s-3.584-.012-4.85-.07c-3.26-.148-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.85s.012-3.584.07-4.85c.148-3.204 1.671-4.771 4.919-4.919 1.266-.057 1.645-.069 4.85-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
+            </svg></a>
+        <a href="https://www.linkedin.com/in/balagalalitkishore" target="_blank" class="icon-btn" title="LinkedIn"><svg
+                viewBox="0 0 24 24">
+                <path
+                    d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z" />
+            </svg></a>
+        <a href="https://github.com/lalitkishore-1021" target="_blank" class="icon-btn" title="GitHub"><svg
+                viewBox="0 0 24 24">
+                <path
+                    d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
+            </svg></a>
         <button id="themeToggle" class="icon-btn" onclick="toggleTheme()" title="Toggle Light/Dark Mode">☀️</button>
     </div>
 
     <div id="main-content">
-        
+
         <header class="site-header">
-            <svg id="logoInstallTrigger" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" class="main-logo" title="Click to Install App">
+            <svg id="logoInstallTrigger" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" class="main-logo"
+                title="Click to Install App">
                 <defs>
                     <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
                         <stop offset="0%" stop-color="#ffaa00" />
                         <stop offset="100%" stop-color="#ffdd00" />
                     </linearGradient>
                 </defs>
-                <path d="M 30 20 L 10 50 L 30 80" fill="none" stroke="url(#logoGradient)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
-                <path d="M 70 20 L 90 50 L 70 80" fill="none" stroke="url(#logoGradient)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
-                <path d="M 35 65 L 45 65 L 45 50 L 55 50 L 55 35 L 65 35" fill="none" stroke="#ffffff" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M 30 20 L 10 50 L 30 80" fill="none" stroke="url(#logoGradient)" stroke-width="8"
+                    stroke-linecap="round" stroke-linejoin="round" />
+                <path d="M 70 20 L 90 50 L 70 80" fill="none" stroke="url(#logoGradient)" stroke-width="8"
+                    stroke-linecap="round" stroke-linejoin="round" />
+                <path d="M 35 65 L 45 65 L 45 50 L 55 50 L 55 35 L 65 35" fill="none" stroke="#ffffff" stroke-width="8"
+                    stroke-linecap="round" stroke-linejoin="round" />
             </svg>
             <h1>SRM Student Hub</h1>
             <p class="subtitle">Your all-in-one portal for Step Class, CGPA, and more.</p>
@@ -275,16 +1411,23 @@
             <div id="auth-section">
                 <div class="hero-unauth" id="unauth-hero">
                     <div class="pulse-circle"></div>
-                    <h2 style="font-family: 'Montserrat', sans-serif; font-size: 1.8rem; margin: 0 0 10px 0;">Unlock Your Dashboard</h2>
-                    <p style="color: var(--text-sub); font-size: 0.95rem; margin-bottom: 25px;">Sync with Academia to view your attendance, marks, and timetable.</p>
-                    <button class="btn-primary" onclick="openSyncModal()" style="max-width: 200px;">LOG IN & SYNC</button>
+                    <h2 style="font-family: 'Montserrat', sans-serif; font-size: 1.8rem; margin: 0 0 10px 0;">Unlock
+                        Your Dashboard</h2>
+                    <p style="color: var(--text-sub); font-size: 0.95rem; margin-bottom: 25px;">Sync with Academia to
+                        view your attendance, marks, and timetable.</p>
+                    <button class="btn-primary" onclick="openSyncModal()" style="max-width: 200px;">LOG IN &
+                        SYNC</button>
                 </div>
 
                 <div id="auth-dashboard" style="display: none;">
                     <div class="id-card">
                         <div class="id-card-top">
                             <div class="id-avatar">
-                                <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                                <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                                    <circle cx="12" cy="7" r="4" />
+                                </svg>
                             </div>
                             <div>
                                 <h2 class="id-name">BALAGA LALIT KISHORE</h2>
@@ -292,9 +1435,21 @@
                             </div>
                         </div>
                         <div class="id-details">
-                            <span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/></svg> B.Tech</span>
-                            <span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg> CS AIML</span>
-                            <span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg> Semester 2</span>
+                            <span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+                                </svg> B.Tech</span>
+                            <span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                                    <line x1="3" y1="9" x2="21" y2="9" />
+                                    <line x1="9" y1="21" x2="9" y2="9" />
+                                </svg> CS AIML</span>
+                            <span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+                                    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+                                </svg> Semester 2</span>
                         </div>
                     </div>
                     <div class="stats-bar">
@@ -317,38 +1472,82 @@
             <h3 class="section-title">Quick Actions</h3>
             <div class="quick-actions-grid">
                 <div class="action-card" onclick="openProject('oopsBanner')">
-                    <div class="action-icon"><svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></div>
-                    <div><h4 class="action-title">Step Class</h4><p class="action-sub">View OOPs banners & projects</p></div>
+                    <div class="action-icon"><svg viewBox="0 0 24 24">
+                            <rect x="2" y="3" width="20" height="14" rx="2" />
+                            <line x1="8" y1="21" x2="16" y2="21" />
+                            <line x1="12" y1="17" x2="12" y2="21" />
+                        </svg></div>
+                    <div>
+                        <h4 class="action-title">Step Class</h4>
+                        <p class="action-sub">View OOPs banners & projects</p>
+                    </div>
                 </div>
                 <div class="action-card" onclick="openTodayMessMenu()">
-                    <div class="action-icon"><svg viewBox="0 0 24 24"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/></svg></div>
-                    <div><h4 class="action-title">Mess Menu</h4><p class="action-sub">Today's hostel food schedule</p></div>
+                    <div class="action-icon"><svg viewBox="0 0 24 24">
+                            <path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2" />
+                            <path d="M7 2v20" />
+                            <path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7" />
+                        </svg></div>
+                    <div>
+                        <h4 class="action-title">Mess Menu</h4>
+                        <p class="action-sub">Today's hostel food schedule</p>
+                    </div>
                 </div>
                 <div class="action-card" onclick="switchView('helper-view')">
-                    <div class="action-icon"><svg viewBox="0 0 24 24"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg></div>
-                    <div><h4 class="action-title">Study Helper</h4><p class="action-sub">Notes, PYQs & Materials</p></div>
+                    <div class="action-icon"><svg viewBox="0 0 24 24">
+                            <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20" />
+                        </svg></div>
+                    <div>
+                        <h4 class="action-title">Study Helper</h4>
+                        <p class="action-sub">Notes, PYQs & Materials</p>
+                    </div>
                 </div>
                 <div class="action-card" onclick="switchView('cgpa-view')">
-                    <div class="action-icon"><svg viewBox="0 0 24 24"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="16" y1="14" x2="16" y2="14.01"/><line x1="12" y1="14" x2="12" y2="14.01"/><line x1="8" y1="14" x2="8" y2="14.01"/></svg></div>
-                    <div><h4 class="action-title">CGPA Calculator</h4><p class="action-sub">Estimate your grades</p></div>
+                    <div class="action-icon"><svg viewBox="0 0 24 24">
+                            <rect x="4" y="2" width="16" height="20" rx="2" />
+                            <line x1="8" y1="6" x2="16" y2="6" />
+                            <line x1="16" y1="14" x2="16" y2="14.01" />
+                            <line x1="12" y1="14" x2="12" y2="14.01" />
+                            <line x1="8" y1="14" x2="8" y2="14.01" />
+                        </svg></div>
+                    <div>
+                        <h4 class="action-title">CGPA Calculator</h4>
+                        <p class="action-sub">Estimate your grades</p>
+                    </div>
+                </div>
+                <div class="action-card" id="installQuickActionBtn" style="display: none;" onclick="openInstallModal()">
+                    <div class="action-icon"><svg fill="none" stroke="currentColor" stroke-width="2"
+                            viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                        </svg></div>
+                    <div>
+                        <h4 class="action-title">Install App</h4>
+                        <p class="action-sub">Add to Home Screen</p>
+                    </div>
                 </div>
             </div>
 
             <div id="advisors-section" style="display: none;">
                 <h3 class="section-title">Advisors</h3>
                 <div class="glass-card" style="text-align: left;">
-                    <h5 style="color: var(--primary); margin: 0 0 5px 0; font-size: 0.75rem; text-transform: uppercase;">Faculty Advisor</h5>
+                    <h5
+                        style="color: var(--primary); margin: 0 0 5px 0; font-size: 0.75rem; text-transform: uppercase;">
+                        Faculty Advisor</h5>
                     <h3 style="margin: 0 0 10px 0; font-size: 1.2rem;">Nithya Devi S M</h3>
-                    <div style="font-size: 0.85rem; color: var(--text-sub); margin-bottom: 5px;">@ nithyads2@srmist.edu.in</div>
+                    <div style="font-size: 0.85rem; color: var(--text-sub); margin-bottom: 5px;">@
+                        nithyads2@srmist.edu.in</div>
                     <div style="font-size: 0.85rem; color: var(--text-sub); margin-bottom: 15px;">📞 9487634094</div>
-                    <button class="btn-primary" style="background: rgba(255,255,255,0.05); color: var(--text-main);">📞 Call Advisor</button>
+                    <button class="btn-primary" style="background: rgba(255,255,255,0.05); color: var(--text-main);">📞
+                        Call Advisor</button>
                 </div>
             </div>
         </div>
 
         <div id="gallery-view" class="app-view">
             <div class="view-header">
-                <button class="back-btn" onclick="switchNav('home-view', document.querySelector('.nav-item'))">&#8592; Back to Home</button>
+                <button class="back-btn" onclick="switchNav('home-view', document.querySelector('.nav-item'))">&#8592;
+                    Back to Home</button>
                 <h2 class="gallery-title" id="dynamic-project-title">Project Name</h2>
             </div>
             <div class="gallery-container" id="dynamic-gallery"></div>
@@ -356,7 +1555,8 @@
 
         <div id="cgpa-view" class="app-view">
             <div class="view-header">
-                <button class="back-btn" onclick="switchNav('home-view', document.querySelector('.nav-item'))">&#8592; Back to Home</button>
+                <button class="back-btn" onclick="switchNav('home-view', document.querySelector('.nav-item'))">&#8592;
+                    Back to Home</button>
                 <h2 class="gallery-title">CGPA Calculator</h2>
             </div>
             <div class="image-card" style="max-width: 800px; margin: 0 auto; cursor: default; transform: none;">
@@ -365,15 +1565,20 @@
                         <input type="text" placeholder="Subject Name (Optional)">
                         <select class="cgpa-grade">
                             <option value="">Grade</option>
-                            <option value="10">O</option><option value="9">A+</option><option value="8">A</option>
-                            <option value="7">B+</option><option value="6">B</option><option value="5">C</option>
+                            <option value="10">O</option>
+                            <option value="9">A+</option>
+                            <option value="8">A</option>
+                            <option value="7">B+</option>
+                            <option value="6">B</option>
+                            <option value="5">C</option>
                         </select>
                         <input type="number" class="cgpa-credit" placeholder="Credits" min="1" max="10">
                         <button class="danger-btn" onclick="this.parentElement.remove()">X</button>
                     </div>
                 </div>
                 <div style="display: flex; gap: 15px; margin-top: 20px;">
-                    <button class="action-btn" style="background: var(--glass); color: var(--primary);" onclick="addCgpaRow()">+ Add Subject</button>
+                    <button class="action-btn" style="background: var(--glass); color: var(--primary);"
+                        onclick="addCgpaRow()">+ Add Subject</button>
                     <button class="action-btn" onclick="calculateCGPA()">Calculate CGPA</button>
                 </div>
                 <div id="cgpa-result" class="result-box" style="display: none;"></div>
@@ -382,7 +1587,8 @@
 
         <div id="mess-view" class="app-view">
             <div class="view-header">
-                <button class="back-btn" onclick="switchNav('home-view', document.querySelector('.nav-item'))">&#8592; Back to Home</button>
+                <button class="back-btn" onclick="switchNav('home-view', document.querySelector('.nav-item'))">&#8592;
+                    Back to Home</button>
                 <h2 class="gallery-title">Mess Menu</h2>
                 <p class="subtitle" style="margin-bottom: 20px;">SRMIST Hostel Mess Menu</p>
             </div>
@@ -392,12 +1598,15 @@
 
         <div id="helper-view" class="app-view">
             <div class="view-header">
-                <button class="back-btn" onclick="switchNav('home-view', document.querySelector('.nav-item'))">&#8592; Back to Home</button>
+                <button class="back-btn" onclick="switchNav('home-view', document.querySelector('.nav-item'))">&#8592;
+                    Back to Home</button>
                 <h2 class="gallery-title">Study Helper</h2>
             </div>
             <div class="gallery-container" id="helper-semesters"></div>
             <div id="helper-subjects" style="display: none; max-width: 800px; margin: 0 auto;">
-                <button class="back-btn" onclick="document.getElementById('helper-subjects').style.display='none'; document.getElementById('helper-semesters').style.display='grid';">&#8592; Back to Semesters</button>
+                <button class="back-btn"
+                    onclick="document.getElementById('helper-subjects').style.display='none'; document.getElementById('helper-semesters').style.display='grid';">&#8592;
+                    Back to Semesters</button>
                 <h3 style="color: var(--primary); text-align: center; margin-bottom: 20px;" id="helper-sem-title"></h3>
                 <div id="helper-subject-list"></div>
             </div>
@@ -407,16 +1616,21 @@
             <div class="view-header">
                 <h2 class="gallery-title">Attendance</h2>
             </div>
-            <div class="image-card" style="max-width: 600px; margin: 0 auto 20px; cursor: default; transform: none; padding: 25px;">
-                <h4 style="text-align: left; color: var(--primary); margin-bottom: 15px; font-family: 'Montserrat', sans-serif; text-transform: uppercase;">Manual Entry</h4>
+            <div class="image-card"
+                style="max-width: 600px; margin: 0 auto 20px; cursor: default; transform: none; padding: 25px;">
+                <h4
+                    style="text-align: left; color: var(--primary); margin-bottom: 15px; font-family: 'Montserrat', sans-serif; text-transform: uppercase;">
+                    Manual Entry</h4>
                 <div class="form-row">
                     <input type="text" id="att-sub-name" placeholder="Subject Name">
                     <input type="number" id="att-attended" placeholder="Att" min="0">
                     <input type="number" id="att-total" placeholder="Tot" min="1">
-                    <button class="action-btn" onclick="addAttendance()" style="background: var(--glass); color: var(--primary);">Add</button>
+                    <button class="action-btn" onclick="addAttendance()"
+                        style="background: var(--glass); color: var(--primary);">Add</button>
                 </div>
             </div>
-            <div id="overall-attendance" class="result-box" style="margin-bottom: 20px; max-width: 600px; margin: 0 auto 20px auto;">Overall: 0%</div>
+            <div id="overall-attendance" class="result-box"
+                style="margin-bottom: 20px; max-width: 600px; margin: 0 auto 20px auto;">Overall: 0%</div>
             <div id="attendance-list" style="max-width: 600px; margin: 0 auto;"></div>
         </div>
 
@@ -424,31 +1638,49 @@
             <div class="view-header">
                 <h2 class="gallery-title">Marks Tracker</h2>
             </div>
-            <div id="marks-no-data" class="image-card" style="max-width: 600px; margin: 0 auto; padding: 40px; cursor: default; transform: none;">
-                <div class="meal-icon-box" style="width: 60px; height: 60px; margin: 0 auto 20px auto; border-radius: 50%;">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 35px; height: 35px;"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+            <div id="marks-no-data" class="image-card"
+                style="max-width: 600px; margin: 0 auto; padding: 40px; cursor: default; transform: none;">
+                <div class="meal-icon-box"
+                    style="width: 60px; height: 60px; margin: 0 auto 20px auto; border-radius: 50%;">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                        style="width: 35px; height: 35px;">
+                        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                    </svg>
                 </div>
-                <h3 style="color: var(--primary); margin-bottom: 15px; font-family: 'Montserrat', sans-serif; text-transform: uppercase;">No Marks Data</h3>
-                <p style="color: var(--text-sub); line-height: 1.6; font-size: 1.1rem;">Click the <strong style="color:var(--primary);">Sync Button</strong> in the top right to fetch your marks.</p>
+                <h3
+                    style="color: var(--primary); margin-bottom: 15px; font-family: 'Montserrat', sans-serif; text-transform: uppercase;">
+                    No Marks Data</h3>
+                <p style="color: var(--text-sub); line-height: 1.6; font-size: 1.1rem;">Click the <strong
+                        style="color:var(--primary);">Sync Button</strong> in the top right to fetch your marks.</p>
             </div>
             <div id="marks-list" style="max-width: 600px; margin: 0 auto; display: none;"></div>
         </div>
 
         <div id="calendar-view" class="app-view">
-            <div class="view-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <div class="view-header"
+                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                 <button class="icon-btn" style="position: static;" onclick="changeMonth(-1)">❮</button>
                 <h2 class="gallery-title" id="calendar-month-year" style="margin: 0;">Month 2026</h2>
                 <button class="icon-btn" style="position: static;" onclick="changeMonth(1)">❯</button>
             </div>
-            
-            <div class="image-card" style="padding: 15px; margin-bottom: 20px; text-align: left; cursor: default; transform: none; max-width: 600px; margin-left: auto; margin-right: auto;">
+
+            <div class="image-card"
+                style="padding: 15px; margin-bottom: 20px; text-align: left; cursor: default; transform: none; max-width: 600px; margin-left: auto; margin-right: auto;">
                 <div id="calendar-grid">
-                    <div class="cal-header">Sun</div><div class="cal-header">Mon</div><div class="cal-header">Tue</div><div class="cal-header">Wed</div><div class="cal-header">Thu</div><div class="cal-header">Fri</div><div class="cal-header">Sat</div>
+                    <div class="cal-header">Sun</div>
+                    <div class="cal-header">Mon</div>
+                    <div class="cal-header">Tue</div>
+                    <div class="cal-header">Wed</div>
+                    <div class="cal-header">Thu</div>
+                    <div class="cal-header">Fri</div>
+                    <div class="cal-header">Sat</div>
                     <!-- Days will be generated by JS -->
                 </div>
             </div>
 
-            <div class="image-card" id="cal-event-details" style="display: none; text-align: left; cursor: default; transform: none; max-width: 600px; margin-left: auto; margin-right: auto;">
+            <div class="image-card" id="cal-event-details"
+                style="display: none; text-align: left; cursor: default; transform: none; max-width: 600px; margin-left: auto; margin-right: auto;">
                 <h3 style="color: var(--primary); margin-top: 0;" id="event-date-title">Date</h3>
                 <p id="event-desc" style="color: var(--text-main); font-size: 1.1rem; line-height: 1.6;"></p>
             </div>
@@ -465,12 +1697,22 @@
                 <div class="day-btn" onclick="renderDay(4, this)">Day 4</div>
                 <div class="day-btn" onclick="renderDay(5, this)">Day 5</div>
             </div>
-            <div id="timetable-no-data" class="image-card" style="max-width: 600px; margin: 0 auto; padding: 40px; cursor: default; transform: none;">
-                <div class="meal-icon-box" style="width: 60px; height: 60px; margin: 0 auto 20px auto; border-radius: 50%;">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 35px; height: 35px;"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+            <div id="timetable-no-data" class="image-card"
+                style="max-width: 600px; margin: 0 auto; padding: 40px; cursor: default; transform: none;">
+                <div class="meal-icon-box"
+                    style="width: 60px; height: 60px; margin: 0 auto 20px auto; border-radius: 50%;">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                        style="width: 35px; height: 35px;">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <polyline points="12 6 12 12 16 14"></polyline>
+                    </svg>
                 </div>
-                <h3 style="color: var(--primary); margin-bottom: 15px; font-family: 'Montserrat', sans-serif; text-transform: uppercase;">No Timetable Found</h3>
-                <p style="color: var(--text-sub); line-height: 1.6; font-size: 1.1rem;">If you are Batch 2, change the Batch setting in the Sync Menu and fetch your schedule.</p>
+                <h3
+                    style="color: var(--primary); margin-bottom: 15px; font-family: 'Montserrat', sans-serif; text-transform: uppercase;">
+                    No Timetable Found</h3>
+                <p style="color: var(--text-sub); line-height: 1.6; font-size: 1.1rem;">If you are Batch 2, change the
+                    Batch setting in the Sync Menu and fetch your schedule.</p>
             </div>
             <div id="timetable-grid" style="max-width: 600px; margin: 0 auto; display: none;"></div>
         </div>
@@ -478,30 +1720,51 @@
         <footer class="footer">
             <div class="view-counter-box">
                 <span class="view-counter-text">SQUAD PAGE VIEWS:</span>
-                <img src="https://api.visitorbadge.io/api/visitors?path=step-code-squad.lalit.gallery&labelColor=%23000000&countColor=%23ffaa00&style=plastic" alt="View Counter">
+                <img src="https://api.visitorbadge.io/api/visitors?path=step-code-squad.lalit.gallery&labelColor=%23000000&countColor=%23ffaa00&style=plastic"
+                    alt="View Counter">
             </div>
             <div class="developer-credit">DESIGNED & CODED BY &bull; <strong>LALIT KISHORE</strong></div>
         </footer>
     </div>
     <nav class="app-nav">
         <a class="nav-item active" onclick="switchNav('home-view', this)">
-            <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            <svg viewBox="0 0 24 24">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                <polyline points="9 22 9 12 15 12 15 22" />
+            </svg>
             <span>Home</span>
         </a>
         <a class="nav-item" onclick="switchNav('attendance-view', this)">
-            <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            <svg viewBox="0 0 24 24">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                <circle cx="9" cy="7" r="4" />
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+            </svg>
             <span>Attend</span>
         </a>
         <a class="nav-item" onclick="switchNav('marks-view', this)">
-            <svg viewBox="0 0 24 24"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-4"/></svg>
+            <svg viewBox="0 0 24 24">
+                <path d="M18 20V10" />
+                <path d="M12 20V4" />
+                <path d="M6 20v-4" />
+            </svg>
             <span>Marks</span>
         </a>
         <a class="nav-item" onclick="switchNav('calendar-view', this); renderCalendar();">
-            <svg viewBox="0 0 24 24" stroke="currentColor"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            <svg viewBox="0 0 24 24" stroke="currentColor">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                <line x1="16" y1="2" x2="16" y2="6" />
+                <line x1="8" y1="2" x2="8" y2="6" />
+                <line x1="3" y1="10" x2="21" y2="10" />
+            </svg>
             <span>Plan</span>
         </a>
         <a class="nav-item" onclick="switchNav('timetable-view', this); setInitialTimetableDay();">
-            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            <svg viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="10" />
+                <polyline points="12 6 12 12 16 14" />
+            </svg>
             <span>Time</span>
         </a>
     </nav>
@@ -513,24 +1776,53 @@
 
     <div id="syncModal" class="lightbox" onclick="if(event.target === this) closeSyncModal()">
         <div class="sync-modal-content">
-            <span class="close-btn" style="top: 10px; right: 15px; font-size: 30px;" onclick="closeSyncModal()">&times;</span>
+            <span class="close-btn" style="top: 10px; right: 15px; font-size: 30px;"
+                onclick="closeSyncModal()">&times;</span>
             <div class="meal-icon-box" style="width: 60px; height: 60px; margin: 0 auto 20px auto; border-radius: 50%;">
-                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="width: 30px; height: 30px;"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"
+                    style="width: 30px; height: 30px;">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15">
+                    </path>
+                </svg>
             </div>
             <h3>Live Portal Sync</h3>
             <p>Connect securely to Academia to auto-fetch your data.</p>
-            
+
             <div class="batch-toggle">
                 <div class="batch-btn active" onclick="toggleBatch(this, 1)">Batch 1</div>
                 <div class="batch-btn" onclick="toggleBatch(this, 2)">Batch 2</div>
             </div>
 
             <div style="display: flex; flex-direction: column; gap: 15px;">
-                <input type="text" id="srm-reg" class="modal-input" placeholder="NetID or Email" style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; padding: 15px; border-radius: 12px;">
-                <input type="password" id="srm-pwd" class="modal-input" placeholder="Portal Password" style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; padding: 15px; border-radius: 12px;">
+                <input type="text" id="srm-reg" class="modal-input" placeholder="NetID or Email"
+                    style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; padding: 15px; border-radius: 12px;">
+                <input type="password" id="srm-pwd" class="modal-input" placeholder="Portal Password"
+                    style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; padding: 15px; border-radius: 12px;">
                 <button class="action-btn" onclick="startLiveSync()" style="margin-top: 5px;">SYNC NOW</button>
             </div>
             <p id="sync-status" style="font-size: 0.85rem; margin-top: 15px; font-weight: bold;"></p>
+        </div>
+    </div>
+
+    <div id="installModal" class="lightbox" onclick="if(event.target === this) closeInstallModal()">
+        <div class="sync-modal-content">
+            <span class="close-btn" style="top: 10px; right: 15px; font-size: 30px;"
+                onclick="closeInstallModal()">&times;</span>
+            <div class="meal-icon-box"
+                style="width: 60px; height: 60px; margin: 0 auto 20px auto; border-radius: 50%; color: var(--primary);">
+                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"
+                    style="width: 30px; height: 30px;">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                </svg>
+            </div>
+            <h3>Install SRM Hub</h3>
+            <p>Add SRM Hub to your home screen for quick offline access and push notifications!</p>
+            <button class="btn-primary" onclick="installApp()" style="margin-top: 15px;">INSTALL APP</button>
+            <button class="action-btn" onclick="closeInstallModal()"
+                style="margin-top: 10px; background: rgba(255,255,255,0.05); color: var(--text-main);">Maybe
+                Later</button>
         </div>
     </div>
 
@@ -541,7 +1833,48 @@
         let attendanceData = [];
         let timetableData = {};
         let currentBatch = 1;
-        
+
+        // ================= PWA INSTALLATION =================
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            const installBtn = document.getElementById('installQuickActionBtn');
+            if (installBtn) installBtn.style.display = 'flex';
+
+            if (localStorage.getItem('installDismissed') !== 'true') {
+                setTimeout(openInstallModal, 2000);
+            }
+        });
+
+        window.addEventListener('appinstalled', () => {
+            const installBtn = document.getElementById('installQuickActionBtn');
+            if (installBtn) installBtn.style.display = 'none';
+        });
+
+        const logoTrigger = document.getElementById('logoInstallTrigger');
+        if (logoTrigger) {
+            logoTrigger.addEventListener('click', () => {
+                if (deferredPrompt) openInstallModal();
+                else alert("App is already installed or browser doesn't support installation.");
+            });
+        }
+
+        function openInstallModal() { document.getElementById('installModal').style.display = 'flex'; }
+        function closeInstallModal() {
+            document.getElementById('installModal').style.display = 'none';
+            localStorage.setItem('installDismissed', 'true');
+        }
+
+        async function installApp() {
+            if (deferredPrompt) {
+                closeInstallModal();
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                if (outcome === 'accepted') deferredPrompt = null;
+            }
+        }
+
         let currentCalDate = new Date();
         const srmPlanner = {
             "2026-01-01": { type: "Holiday", title: "New Year's Day - Holiday" },
@@ -565,22 +1898,22 @@
         };
 
         // Auto-generate accurate Day Orders for 2026 Even Semester
-        const startDate = new Date("2026-01-08");
-        const endDate = new Date("2026-05-06");
+        const endDate = new Date(2026, 4, 6); // May 6th, 2026
         const holidays = ["2026-01-14", "2026-01-15", "2026-01-16", "2026-01-26", "2026-02-10", "2026-03-04", "2026-03-19", "2026-03-31", "2026-04-03", "2026-04-14", "2026-05-01"];
-        
+
         let dOrder = 1;
-        for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
-            // Adjust offset to get local YYYY-MM-DD reliably
-            let curISOTime = new Date(d.getTime() - (d.getTimezoneOffset() * 60000)).toISOString().slice(0, 10);
-            
+        // Strictly deterministic integer loop completely avoiding Javascript DST / Timezone manipulation infinite loops!
+        for (let i = 0; i < 150; i++) {
+            let d = new Date(2026, 0, 8 + i); // Jan 8th 2026 + i days
+            if (d > endDate) break;
+
+            let curISOTime = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, '0') + "-" + String(d.getDate()).padStart(2, '0');
             let dayOfWeek = d.getDay();
+
             if (dayOfWeek !== 0 && dayOfWeek !== 6 && !holidays.includes(curISOTime)) {
-                // If it's a weekday and not a holiday, assign day order
-                // Keep any existing events (like Commencement) and just add the Day Order logic
                 let existingTitle = srmPlanner[curISOTime] ? srmPlanner[curISOTime].title + ` (Day Order ${dOrder})` : `Regular Day Order ${dOrder}`;
                 srmPlanner[curISOTime] = { type: "Day Order", value: dOrder, title: existingTitle };
-                
+
                 dOrder = dOrder === 5 ? 1 : dOrder + 1;
             }
         }
@@ -633,7 +1966,7 @@
             const savedAtt = JSON.parse(localStorage.getItem('squadAttendance') || '[]');
             const savedMarks = JSON.parse(localStorage.getItem('squadMarks') || '[]');
             const savedTT = JSON.parse(localStorage.getItem('squadTimetable') || '{}');
-            
+
             renderAttendance(savedAtt);
             renderMarks(savedMarks);
             renderTimetable(savedTT);
@@ -654,9 +1987,9 @@
             const pwd = document.getElementById('srm-pwd').value;
             const statusText = document.getElementById('sync-status');
 
-            if (!regNo || !pwd) { 
-                alert("Please enter your NetID/Email and Password."); 
-                return; 
+            if (!regNo || !pwd) {
+                alert("Please enter your NetID/Email and Password.");
+                return;
             }
 
             statusText.innerText = "🔄 Syncing with Academia... This takes up to 90 seconds.";
@@ -692,9 +2025,9 @@
                 localStorage.setItem('squadMarks', JSON.stringify(marksList));
                 localStorage.setItem('squadTimetable', JSON.stringify(ttDict));
 
-                try { renderAttendance(attList); } catch(e) { console.error("Attendance Render Error:", e); }
-                try { renderMarks(marksList); } catch(e) { console.error("Marks Render Error:", e); }
-                try { renderTimetable(ttDict); } catch(e) { console.error("Timetable Render Error:", e); }
+                try { renderAttendance(attList); } catch (e) { console.error("Attendance Render Error:", e); }
+                try { renderMarks(marksList); } catch (e) { console.error("Marks Render Error:", e); }
+                try { renderTimetable(ttDict); } catch (e) { console.error("Timetable Render Error:", e); }
 
                 setTimeout(() => closeSyncModal(), 1500);
 
@@ -713,42 +2046,42 @@
             const nameInput = document.getElementById('att-sub-name');
             const attInput = document.getElementById('att-attended');
             const totInput = document.getElementById('att-total');
-            if(!nameInput.value || !attInput.value || !totInput.value) return alert("Fill all fields");
-            
+            if (!nameInput.value || !attInput.value || !totInput.value) return alert("Fill all fields");
+
             attendanceData.push({ id: Date.now(), courseTitle: nameInput.value, attended: parseInt(attInput.value), total: parseInt(totInput.value) });
             nameInput.value = ''; attInput.value = ''; totInput.value = '';
-            saveAttendance(); 
+            saveAttendance();
             renderAttendance(attendanceData);
         }
 
         function deleteAttendance(id) {
             attendanceData = attendanceData.filter(item => item.id !== id);
-            saveAttendance(); 
+            saveAttendance();
             renderAttendance(attendanceData);
         }
 
         function renderAttendance(attData) {
             const list = document.getElementById('attendance-list');
             if (!list) return;
-            
+
             list.innerHTML = '';
             let totalAtt = 0;
             let totalClasses = 0;
-            attendanceData = attData || []; 
+            attendanceData = attData || [];
 
             attendanceData.forEach(sub => {
                 let attended = parseInt(sub.attended) || 0;
                 let total = parseInt(sub.total) || 0;
                 let name = sub.courseTitle || sub.name || "Unknown Subject";
-                
+
                 totalAtt += attended;
                 totalClasses += total;
-                
+
                 const percentage = total === 0 ? 0 : ((attended / total) * 100).toFixed(1);
                 const isGood = percentage >= 75;
                 const barColor = isGood ? 'var(--success)' : 'var(--danger)';
-                
-                let statusText = isGood 
+
+                let statusText = isGood
                     ? `You can safely bunk ${Math.floor((attended - (0.75 * total)) / 0.75)} classes.`
                     : `Attend ${Math.ceil(((0.75 * total) - attended) / 0.25)} more classes to hit 75%.`;
 
@@ -774,10 +2107,10 @@
 
             const overallPerc = totalClasses > 0 ? ((totalAtt / totalClasses) * 100).toFixed(1) : "0.0";
             const overallEl = document.getElementById('overall-attendance');
-            
+
             if (overallEl) {
                 if (totalClasses === 0) {
-                    overallEl.innerText = "Overall: 0%"; 
+                    overallEl.innerText = "Overall: 0%";
                     overallEl.style.color = "var(--primary)";
                 } else {
                     overallEl.innerText = `Overall: ${overallPerc}%`;
@@ -807,7 +2140,7 @@
             }
 
             noData.style.display = 'none';
-            list.style.display = 'block'; 
+            list.style.display = 'block';
             list.innerHTML = '';
 
             let grandTotalObtained = 0; let grandTotalMax = 0; let subjectsHTML = '';
@@ -815,7 +2148,7 @@
             marksData.forEach(item => {
                 const course = item.courseTitle || item.CourseTitle || item.name || "Subject";
                 let perfString = item['Test Performance'] || item.performance || item.marks || "";
-                
+
                 if (!perfString && typeof item === 'object') {
                     perfString = Object.values(item).filter(v => typeof v === 'string').join(' | ');
                 }
@@ -823,15 +2156,15 @@
                 let subjectMax = 0; let subjectObtained = 0; let testsHtml = '';
                 const regex = /([A-Za-z0-9-]+)\/([0-9.]+)\s*\|\s*([0-9.]+)/g;
                 let match;
-                
+
                 while ((match = regex.exec(perfString)) !== null) {
                     const testName = match[1]; const max = parseFloat(match[2]); const obtained = parseFloat(match[3]);
                     subjectMax += max; subjectObtained += obtained;
                     const percent = max > 0 ? Math.round((obtained / max) * 100) : 0;
-                    
+
                     let badgeColor = "var(--success)"; let badgeBorder = "rgba(0, 204, 102, 0.4)";
-                    if(percent < 50) { badgeColor = "var(--danger)"; badgeBorder = "rgba(255, 68, 68, 0.4)"; }
-                    else if(percent < 75) { badgeColor = "var(--primary)"; badgeBorder = "rgba(255, 170, 0, 0.4)"; }
+                    if (percent < 50) { badgeColor = "var(--danger)"; badgeBorder = "rgba(255, 68, 68, 0.4)"; }
+                    else if (percent < 75) { badgeColor = "var(--primary)"; badgeBorder = "rgba(255, 170, 0, 0.4)"; }
 
                     testsHtml += `
                         <div class="test-row">
@@ -898,12 +2231,12 @@
 
         // ================= TIMETABLE RENDERER =================
         function isClassActive(timeStr) {
-            if(!timeStr || !timeStr.includes('-')) return false;
+            if (!timeStr || !timeStr.includes('-')) return false;
             try {
                 let [startStr, endStr] = timeStr.split('-');
                 let parseT = (t) => {
                     let [h, m] = t.trim().split(':').map(Number);
-                    if(h >= 1 && h <= 7) h += 12; // PM adjustment
+                    if (h >= 1 && h <= 7) h += 12; // PM adjustment
                     return h * 60 + m;
                 };
                 let startMins = parseT(startStr);
@@ -911,12 +2244,12 @@
                 let now = new Date();
                 let currentMins = now.getHours() * 60 + now.getMinutes();
                 return currentMins >= startMins && currentMins <= endMins;
-            } catch(e) { return false; }
+            } catch (e) { return false; }
         }
 
         function renderTimetable(ttData) {
             timetableData = ttData || {};
-            
+
             const noData = document.getElementById('timetable-no-data');
             const grid = document.getElementById('timetable-grid');
 
@@ -950,15 +2283,15 @@
             let todayLocal = new Date();
             let tzoffset = todayLocal.getTimezoneOffset() * 60000;
             let localISOTime = (new Date(todayLocal - tzoffset)).toISOString().slice(0, 10);
-            
+
             let dayToRender = 1;
             if (srmPlanner[localISOTime] && srmPlanner[localISOTime].type === "Day Order") {
                 dayToRender = srmPlanner[localISOTime].value;
             } else {
-                let dayIndex = todayLocal.getDay(); 
+                let dayIndex = todayLocal.getDay();
                 dayToRender = (dayIndex >= 1 && dayIndex <= 5) ? dayIndex : 1;
             }
-            
+
             const dayBtns = document.querySelectorAll('.tt-day-selector .day-btn');
             if (dayBtns.length > 0 && dayBtns[dayToRender - 1]) {
                 renderDay(dayToRender, dayBtns[dayToRender - 1]);
@@ -985,7 +2318,7 @@
             // Remove duplicates and fallback "Period" classes if real times exist
             let normalizeStr = (s) => String(s || '').replace(/\s+/g, ' ').trim().toLowerCase();
             let realSubjects = new Set(classesForDay.filter(c => !String(c.time).toLowerCase().includes('period')).map(c => normalizeStr(c.subject)));
-            
+
             let deduplicated = classesForDay.filter(c => {
                 let isPeriod = String(c.time).toLowerCase().includes('period');
                 if (isPeriod && realSubjects.has(normalizeStr(c.subject))) return false;
@@ -1013,7 +2346,7 @@
                         return;
                     }
                 }
-                mergedClasses.push({...cls});
+                mergedClasses.push({ ...cls });
             });
 
             mergedClasses.forEach(cls => {
@@ -1034,53 +2367,53 @@
         // ================= CALENDAR LOGIC =================
         function renderCalendar() {
             const grid = document.getElementById('calendar-grid');
-            if(!grid) return;
-            
+            if (!grid) return;
+
             const year = currentCalDate.getFullYear();
             const month = currentCalDate.getMonth();
             const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
             document.getElementById('calendar-month-year').innerText = `${monthNames[month]} ${year}`;
-            
+
             grid.innerHTML = '<div class="cal-header">Sun</div><div class="cal-header">Mon</div><div class="cal-header">Tue</div><div class="cal-header">Wed</div><div class="cal-header">Thu</div><div class="cal-header">Fri</div><div class="cal-header">Sat</div>';
-            
+
             const firstDay = new Date(year, month, 1).getDay();
             const daysInMonth = new Date(year, month + 1, 0).getDate();
-            for(let i=0; i<firstDay; i++) { grid.innerHTML += '<div class="cal-day empty"></div>'; }
-            
+            for (let i = 0; i < firstDay; i++) { grid.innerHTML += '<div class="cal-day empty"></div>'; }
+
             let todayLocal = new Date();
             let tzoffset = todayLocal.getTimezoneOffset() * 60000;
             let todayISOTime = (new Date(todayLocal - tzoffset)).toISOString().slice(0, 10);
-            
-            for(let i=1; i<=daysInMonth; i++) {
+
+            for (let i = 1; i <= daysInMonth; i++) {
                 let d = new Date(year, month, i);
                 let dateStr = (new Date(d - tzoffset)).toISOString().slice(0, 10);
                 let extraClass = '';
-                if(dateStr === todayISOTime) extraClass += ' today';
-                
+                if (dateStr === todayISOTime) extraClass += ' today';
+
                 let plan = srmPlanner[dateStr];
-                if(plan) {
-                    if(plan.type === 'Holiday') extraClass += ' planner-holiday';
-                    else if(plan.type === 'Day Order') extraClass += ' planner-day-order';
+                if (plan) {
+                    if (plan.type === 'Holiday') extraClass += ' planner-holiday';
+                    else if (plan.type === 'Day Order') extraClass += ' planner-day-order';
                 }
                 grid.innerHTML += `<div class="cal-day ${extraClass}" onclick="showEventDetails('${dateStr}')">${i}</div>`;
             }
         }
-        
+
         function changeMonth(dir) {
             currentCalDate.setMonth(currentCalDate.getMonth() + dir);
             renderCalendar();
         }
-        
+
         function showEventDetails(dateStr) {
             const card = document.getElementById('cal-event-details');
             card.style.display = 'block';
             card.style.animation = 'none';
             card.offsetHeight; /* trigger reflow */
             card.style.animation = 'fadeInUp 0.4s ease forwards';
-            
+
             document.getElementById('event-date-title').innerText = new Date(dateStr).toDateString();
             let plan = srmPlanner[dateStr];
-            if(plan) {
+            if (plan) {
                 let badge = plan.type === 'Holiday' ? '<span class="special-badge" style="background: linear-gradient(135deg, #00cc66, #00994d);">Holiday</span>' : `<span class="special-badge" style="background: linear-gradient(135deg, #bf5af2, #9432c7); text-transform: uppercase;">Day Order ${plan.value}</span>`;
                 document.getElementById('event-desc').innerHTML = `${badge} <br><br> ${plan.title || 'No additional details.'}`;
             } else {
@@ -1090,11 +2423,11 @@
 
         // ================= GALLERY & PROJECTS =================
         const projectsDatabase = {
-            'oopsBanner': { title: 'OOPS Banner App', subProjects: [ { id: 'ucsFolder', title: "UC's" }, { id: 'week1Problem', title: 'Week 1 & 2 Problems' }, { id: 'week34Problem', title: 'Week 3 & 4 Problems' }, { id: 'helloAppFolder', title: 'HelloApp UC\'s' } ] },
-            'ucsFolder': { title: "OOPS Banner App UC's", parent: 'oopsBanner', images: [ { src: 'images/oops-banner/uc1.png', label: '1' }, { src: 'images/oops-banner/uc2.png', label: '2' }, { src: 'images/oops-banner/uc3.png', label: '3' }, { src: 'images/oops-banner/uc4.png', label: '4' }, { src: 'images/oops-banner/uc5.png', label: '5' }, { src: 'images/oops-banner/uc6.png', label: '6' }, { src: 'images/oops-banner/uc7.png', label: '7' }, { src: 'images/oops-banner/uc8.png', label: '8' }, { src: 'images/oops-banner/uc9.png', label: '9' }, { src: 'images/oops-banner/uc10.png', label: '10' }, { src: 'images/oops-banner/end.png', label: 'end' } ] },
-            'week1Problem': { title: 'Week 1 and 2 Problems', parent: 'oopsBanner', images: [ { src: 'images/oops-banner/Basic-step1.png', label: 'Basic-Step' }, { src: 'images/oops-banner/Basic-step2.png', label: 'Basic-Step' }, { src: 'images/oops-banner/level1.png', label: 'Part 1' }, { src: 'images/oops-banner/level12.png', label: 'Part 2' }, { src: 'images/oops-banner/level13.png', label: 'Part 3' }, { src: 'images/oops-banner/bash.png', label: 'Bash' }, { src: 'images/oops-banner/level21.png', label: 'Part 4' }, { src: 'images/oops-banner/level22.png', label: 'Part 5' }, { src: 'images/oops-banner/level3.png', label: 'Part 6' } ] },
-            'week34Problem': { title: 'Week 3 and 4 Problems', parent: 'oopsBanner', images: [ { src: 'images/oops-banner/w31.png', label: 'Step1' }, { src: 'images/oops-banner/w32.png', label: 'Step2' }, { src: 'images/oops-banner/w33.png', label: 'Step3' }, { src: 'images/oops-banner/w34.png', label: 'Step4' }, { src: 'images/oops-banner/w35.png', label: 'Step5' }, { src: 'images/oops-banner/w36.png', label: 'Step6' }, { src: 'images/oops-banner/end.png', label: 'end' } ] },
-            'helloAppFolder': { title: 'HelloApp UC\'s', parent: 'oopsBanner', video: 'https://www.youtube.com/embed/k8eX_rkQxPk', images: [ { src: 'images/oops-banner/ha1.png', label: 'uc 1 Step 1' }, { src: 'images/oops-banner/ha2.png', label: 'Step 2' }, { src: 'images/oops-banner/ha3.png', label: 'Step 3' }, { src: 'images/oops-banner/ha4.png', label: 'Step 4' }, { src: 'images/oops-banner/ha5.png', label: 'uc 2 Step 5' }, { src: 'images/oops-banner/ha6.png', label: 'Step 6' }, { src: 'images/oops-banner/end.png', label: 'end' } ] }
+            'oopsBanner': { title: 'OOPS Banner App', subProjects: [{ id: 'ucsFolder', title: "UC's" }, { id: 'week1Problem', title: 'Week 1 & 2 Problems' }, { id: 'week34Problem', title: 'Week 3 & 4 Problems' }, { id: 'helloAppFolder', title: 'HelloApp UC\'s' }] },
+            'ucsFolder': { title: "OOPS Banner App UC's", parent: 'oopsBanner', images: [{ src: 'images/oops-banner/uc1.png', label: '1' }, { src: 'images/oops-banner/uc2.png', label: '2' }, { src: 'images/oops-banner/uc3.png', label: '3' }, { src: 'images/oops-banner/uc4.png', label: '4' }, { src: 'images/oops-banner/uc5.png', label: '5' }, { src: 'images/oops-banner/uc6.png', label: '6' }, { src: 'images/oops-banner/uc7.png', label: '7' }, { src: 'images/oops-banner/uc8.png', label: '8' }, { src: 'images/oops-banner/uc9.png', label: '9' }, { src: 'images/oops-banner/uc10.png', label: '10' }, { src: 'images/oops-banner/end.png', label: 'end' }] },
+            'week1Problem': { title: 'Week 1 and 2 Problems', parent: 'oopsBanner', images: [{ src: 'images/oops-banner/Basic-step1.png', label: 'Basic-Step' }, { src: 'images/oops-banner/Basic-step2.png', label: 'Basic-Step' }, { src: 'images/oops-banner/level1.png', label: 'Part 1' }, { src: 'images/oops-banner/level12.png', label: 'Part 2' }, { src: 'images/oops-banner/level13.png', label: 'Part 3' }, { src: 'images/oops-banner/bash.png', label: 'Bash' }, { src: 'images/oops-banner/level21.png', label: 'Part 4' }, { src: 'images/oops-banner/level22.png', label: 'Part 5' }, { src: 'images/oops-banner/level3.png', label: 'Part 6' }] },
+            'week34Problem': { title: 'Week 3 and 4 Problems', parent: 'oopsBanner', images: [{ src: 'images/oops-banner/w31.png', label: 'Step1' }, { src: 'images/oops-banner/w32.png', label: 'Step2' }, { src: 'images/oops-banner/w33.png', label: 'Step3' }, { src: 'images/oops-banner/w34.png', label: 'Step4' }, { src: 'images/oops-banner/w35.png', label: 'Step5' }, { src: 'images/oops-banner/w36.png', label: 'Step6' }, { src: 'images/oops-banner/end.png', label: 'end' }] },
+            'helloAppFolder': { title: 'HelloApp UC\'s', parent: 'oopsBanner', video: 'https://www.youtube.com/embed/k8eX_rkQxPk', images: [{ src: 'images/oops-banner/ha1.png', label: 'uc 1 Step 1' }, { src: 'images/oops-banner/ha2.png', label: 'Step 2' }, { src: 'images/oops-banner/ha3.png', label: 'Step 3' }, { src: 'images/oops-banner/ha4.png', label: 'Step 4' }, { src: 'images/oops-banner/ha5.png', label: 'uc 2 Step 5' }, { src: 'images/oops-banner/ha6.png', label: 'Step 6' }, { src: 'images/oops-banner/end.png', label: 'end' }] }
         };
 
         function openProject(projectId) {
@@ -1102,8 +2435,8 @@
             const projectData = projectsDatabase[projectId];
             document.getElementById('dynamic-project-title').innerText = projectData.title;
             const galleryElement = document.getElementById('dynamic-gallery');
-            galleryElement.innerHTML = ''; 
-            
+            galleryElement.innerHTML = '';
+
             if (projectData.subProjects) {
                 projectData.subProjects.forEach(sub => {
                     galleryElement.innerHTML += `
@@ -1165,13 +2498,13 @@
         function calculateCGPA() {
             const grades = document.querySelectorAll('.cgpa-grade'); const credits = document.querySelectorAll('.cgpa-credit');
             let totalPoints = 0; let totalCredits = 0;
-            for(let i = 0; i < grades.length; i++) {
+            for (let i = 0; i < grades.length; i++) {
                 let gradeVal = parseFloat(grades[i].value); let creditVal = parseFloat(credits[i].value);
-                if(!isNaN(gradeVal) && !isNaN(creditVal)) { totalPoints += (gradeVal * creditVal); totalCredits += creditVal; }
+                if (!isNaN(gradeVal) && !isNaN(creditVal)) { totalPoints += (gradeVal * creditVal); totalCredits += creditVal; }
             }
             const resultBox = document.getElementById('cgpa-result');
             resultBox.style.display = 'block';
-            if (totalCredits === 0) resultBox.innerText = "Please enter valid grades and credits!"; 
+            if (totalCredits === 0) resultBox.innerText = "Please enter valid grades and credits!";
             else resultBox.innerText = `Your CGPA: ${(totalPoints / totalCredits).toFixed(2)}`;
         }
 
@@ -1197,7 +2530,7 @@
             const daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
             const todayIndex = new Date().getDay();
             const currentDay = daysOfWeek[todayIndex];
-            
+
             switchView('mess-view');
             renderMessMenu(currentDay);
         }
@@ -1208,12 +2541,12 @@
 
             const currentHr = new Date().getHours();
             let activeMeal = '';
-            if(currentHr < 11) activeMeal = 'Breakfast'; // 0 to 10:59
-            else if(currentHr < 15) activeMeal = 'Lunch'; // 11:00 to 14:59
-            else if(currentHr < 18) activeMeal = 'Snacks'; // 15:00 to 17:59
+            if (currentHr < 11) activeMeal = 'Breakfast'; // 0 to 10:59
+            else if (currentHr < 15) activeMeal = 'Lunch'; // 11:00 to 14:59
+            else if (currentHr < 18) activeMeal = 'Snacks'; // 15:00 to 17:59
             else activeMeal = 'Dinner'; // 18:00 onwards
 
-            const isToday = new Date().getDay() === ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'].indexOf(selectedDay);
+            const isToday = new Date().getDay() === ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].indexOf(selectedDay);
 
             Object.keys(messMenuData).forEach(day => {
                 const btn = document.createElement('button');
@@ -1221,13 +2554,13 @@
                 btn.innerText = day;
                 btn.onclick = () => renderMessMenu(day);
                 tabContainer.appendChild(btn);
-                if (day === selectedDay) setTimeout(() => btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' }), 150); 
+                if (day === selectedDay) setTimeout(() => btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' }), 150);
             });
 
             Object.entries(messMenuData[selectedDay]).forEach(([time, items]) => {
                 let formattedText = items.split(', ').join(' <span style="color: var(--primary); font-weight: bold; padding: 0 5px;">&bull;</span> ');
                 formattedText = formattedText.replace(/\*\*\*(.*?)\*\*\*/g, '<br><span class="special-badge">🔥 $1 🔥</span>');
-                
+
                 let highlightClass = (isToday && time === activeMeal) ? 'active-highlight' : '';
                 let badge = (isToday && time === activeMeal) ? '<span class="active-badge">NOW SERVING</span>' : '';
 
@@ -1249,7 +2582,7 @@
         };
         function initHelper() {
             const semContainer = document.getElementById('helper-semesters');
-            for(let i=1; i<=8; i++) {
+            for (let i = 1; i <= 8; i++) {
                 semContainer.innerHTML += `
                     <div class="image-card project-card fade-in-up" onclick="showHelperSubjects('Semester ${i}')">
                         <div class="project-cover" style="height: 150px;"><h2 style="color: var(--primary); margin:0;">SEM ${i}</h2></div>
@@ -1277,39 +2610,39 @@
                 `;
             });
         }
-        initHelper(); 
+        initHelper();
 
         // ================= UTILITIES & HELPERS =================
         function updateLiveHighlighting() {
-            if(document.getElementById('timetable-view').classList.contains('active')) {
+            if (document.getElementById('timetable-view').classList.contains('active')) {
                 const dayBtns = document.querySelectorAll('.tt-day-selector .day-btn');
                 let activeBtn = null; let activeDay = 1;
-                dayBtns.forEach((btn, idx) => { if(btn.classList.contains('active')) { activeBtn = btn; activeDay = idx + 1; } });
-                
+                dayBtns.forEach((btn, idx) => { if (btn.classList.contains('active')) { activeBtn = btn; activeDay = idx + 1; } });
+
                 let todayLocal = new Date();
                 let tzoffset = todayLocal.getTimezoneOffset() * 60000;
                 let localISOTime = (new Date(todayLocal - tzoffset)).toISOString().slice(0, 10);
-                
+
                 let expectedDay = todayLocal.getDay();
                 if (srmPlanner[localISOTime] && srmPlanner[localISOTime].type === "Day Order") {
                     expectedDay = srmPlanner[localISOTime].value;
                 }
-                
+
                 // Only re-refresh the UI if we're currently on today's active schedule
-                if(activeDay == expectedDay || (activeDay == todayLocal.getDay())) {
-                    renderDay(activeDay, activeBtn); 
+                if (activeDay == expectedDay || (activeDay == todayLocal.getDay())) {
+                    renderDay(activeDay, activeBtn);
                 }
             }
-            if(document.getElementById('mess-view').classList.contains('active')) {
+            if (document.getElementById('mess-view').classList.contains('active')) {
                 const messBtns = document.querySelectorAll('#mess-tabs .tab-btn');
-                messBtns.forEach(btn => { if(btn.classList.contains('active')) renderMessMenu(btn.innerText); });
+                messBtns.forEach(btn => { if (btn.classList.contains('active')) renderMessMenu(btn.innerText); });
             }
         }
         setInterval(updateLiveHighlighting, 60000);
 
         function toggleTheme() {
             document.body.classList.toggle('light-mode');
-            document.getElementById('themeToggle').innerText = document.body.classList.contains('light-mode') ? '🌙' : '☀️'; 
+            document.getElementById('themeToggle').innerText = document.body.classList.contains('light-mode') ? '🌙' : '☀️';
         }
 
         setTimeout(() => {
@@ -1342,7 +2675,7 @@
         function checkAndScheduleNotifications(force = false) {
             if (Notification.permission !== 'granted') return;
             const now = new Date(), hours = now.getHours(), minutes = now.getMinutes(), timeFloat = hours + (minutes / 60);
-            const todaysMenu = messMenuData[['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][now.getDay()]];
+            const todaysMenu = messMenuData[['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][now.getDay()]];
             let notifiedEvents = JSON.parse(localStorage.getItem('notifiedEvents') || '{}');
 
             if (localStorage.getItem('lastNotifiedDate') !== now.toDateString()) {
@@ -1361,4 +2694,5 @@
         }
     </script>
 </body>
+
 </html>
