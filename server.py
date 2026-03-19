@@ -111,7 +111,9 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
         # --- ATTENDANCE & MARKS ---
         print(f"[{reg_no}] 5. Scoping Attendance...")
         page.goto("https://academia.srmist.edu.in/#Page:My_Attendance")
+        page.wait_for_timeout(3000)
         page.reload(wait_until="networkidle")
+        page.wait_for_timeout(5000)
 
         raw_tables = get_all_tables()
         parsed_att = []
@@ -166,7 +168,9 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
         # --- TIMETABLE STEP 1 (STUDENT SLOTS) ---
         print(f"[{reg_no}] 6. Scoping Registered Slots...")
         student_slots = {}
-        page.goto("https://academia.srmist.edu.in/#Page:My_Time_Table_2023_24")
+        # Changed 2023_24 to 2024_25 for current academic year
+        page.goto("https://academia.srmist.edu.in/#Page:My_Time_Table_2024_25")
+        page.wait_for_timeout(5000)
         
         slot_tables = get_all_tables()
         for table in slot_tables:
@@ -200,6 +204,7 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
         print(f"[{reg_no}] 7. Mapping to Master (Batch {batch})...")
         final_tt = {"1": [], "2": [], "3": [], "4": [], "5": []}
         page.goto(f"https://academia.srmist.edu.in/#Page:Unified_Time_Table_2025_Batch_{batch}")
+        page.wait_for_timeout(5000)
         
         master_tables = get_all_tables()
         for table in master_tables:
