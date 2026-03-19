@@ -168,8 +168,8 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
         # --- TIMETABLE STEP 1 (STUDENT SLOTS) ---
         print(f"[{reg_no}] 6. Scoping Registered Slots...")
         student_slots = {}
-        # Changed 2023_24 to 2024_25 for current academic year
-        page.goto("https://academia.srmist.edu.in/#Page:My_Time_Table_2024_25")
+        # Reverted 2024_25 back to 2023_24 based on Academia's weird hardcoded URL hash
+        page.goto("https://academia.srmist.edu.in/#Page:My_Time_Table_2023_24")
         page.wait_for_timeout(5000)
         
         slot_tables = get_all_tables()
@@ -189,8 +189,8 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
                     
                     for row in table[1:]:
                         if len(row) > idx_room:
-                            # Refined Regex matching
-                            slots_found = re.findall(r'[A-Z]\d+', row[idx_slot])
+                            # Refined Regex matching (matches A, P49, PT2, etc)
+                            slots_found = re.findall(r'\b[A-Z]{1,2}\d*\b', row[idx_slot])
                             for s in slots_found:
                                 student_slots[s] = {
                                     "subject": f"{row[idx_code]} - {row[idx_title]}",
@@ -209,11 +209,32 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
         master_tables = get_all_tables()
         for table in master_tables:
             if not table: continue
-            headers = [str(h).lower() for h in table[0]]
             
-            if "day order" in headers[0] or "day" in headers[0]:
-                time_cols = table[0][1:]
-                for row in table[1:]:
+            time_cols = []
+            from_row = []
+            to_row = []
+            start_row = -1
+            
+            for r_idx, row in enumerate(table):
+                first_cell = str(row[0]).lower().replace('\n', ' ').strip()
+                
+                if first_cell == "from": from_row = row[1:]
+                elif first_cell == "to": to_row = row[1:]
+                elif "from" in first_cell and "to" in first_cell:
+                    time_cols = [str(c).replace('\n', ' ') for c in row[1:]]
+                elif "hour" in first_cell or "order" in first_cell:
+                    if not time_cols and not from_row:
+                        time_cols = [str(c).replace('\n', ' ') for c in row[1:]]
+                elif "day" in first_cell and any(str(i) in first_cell for i in range(1, 6)):
+                    start_row = r_idx
+                    break
+                    
+            if not time_cols and from_row and to_row:
+                for f, t in zip(from_row, to_row):
+                    time_cols.append(f"{f} - {t}")
+                    
+            if start_row != -1:
+                for row in table[start_row:]:
                     try:
                         day_match = re.search(r'\d+', row[0])
                         if not day_match: continue
@@ -222,13 +243,16 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
                         if day_order in final_tt:
                             seen_entries = set()
                             for i, cell in enumerate(row[1:]):
-                                slots_in_cell = re.findall(r'[A-Z]\d+', cell)
+                                slots_in_cell = re.findall(r'\b[A-Z]{1,2}\d*\b', cell)
                                 for s in slots_in_cell:
                                     if s in student_slots:
-                                        entry_key = f"{time_cols[i] if i < len(time_cols) else 'N/A'}-{student_slots[s]['subject']}"
+                                        t_str = time_cols[i] if i < len(time_cols) else f"Period {i+1}"
+                                        t_str = re.sub(r'\s+', ' ', t_str).strip()
+                                        
+                                        entry_key = f"{t_str}-{student_slots[s]['subject']}"
                                         if entry_key not in seen_entries:
                                             final_tt[day_order].append({
-                                                "time": time_cols[i] if i < len(time_cols) else "N/A",
+                                                "time": t_str,
                                                 "subject": student_slots[s]['subject'],
                                                 "room": student_slots[s]['room']
                                             })
