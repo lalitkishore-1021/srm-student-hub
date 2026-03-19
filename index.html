@@ -684,71 +684,33 @@ function renderAttendance(attData) {
 
 // ================= MARKS RENDERER =================
 function renderMarks(marksData) {
-    console.log("Rendering Marks. Items:", marksData.length);
-    const noData = document.getElementById('marks-no-data');
-    const list = document.getElementById('marks-list');
+    console.log("Rendering Marks:", marksData);
 
-    if (!list || !noData) {
-        console.error("Marks DOM elements not found!");
-        return;
-    }
+    const list = document.getElementById('marks-list');
+    const noData = document.getElementById('marks-no-data');
+
+    if (!list || !noData) return;
+
+    list.innerHTML = '';
 
     if (!marksData || marksData.length === 0) {
-        console.log("No marks data, showing fallback UI.");
         noData.style.display = 'block';
         list.style.display = 'none';
         return;
     }
 
-    // EXPLICITLY SHOW THE LIST
     noData.style.display = 'none';
-    list.style.display = 'block'; 
-    list.innerHTML = '';
+    list.style.display = 'block';
 
-    let grandTotalObtained = 0; 
-    let grandTotalMax = 0; 
-    let subjectsHTML = '';
-
-    marksData.forEach(item => {
-        const course = item.courseTitle || item.CourseTitle || item.name || "Subject";
-        let perfString = item['Test Performance'] || item.performance || item.marks || "";
-        
-        // Failsafe for nested object structures
-        if (!perfString && typeof item === 'object') {
-            perfString = Object.values(item).filter(v => typeof v === 'string').join(' | ');
-        }
-
-        let subjectMax = 0; 
-        let subjectObtained = 0; 
-        let testsHtml = '';
-        
-        // Standard Academia Format: "FT-II/15.00 | 12.20"
-        const regex = /([A-Za-z0-9-]+)\/([0-9.]+)\s*\|\s*([0-9.]+)/g;
-        let match;
-        
-        while ((match = regex.exec(perfString)) !== null) {
-            const testName = match[1]; 
-            const max = parseFloat(match[2]); 
-            const obtained = parseFloat(match[3]);
-            
-            subjectMax += max; 
-            subjectObtained += obtained;
-            const percent = max > 0 ? Math.round((obtained / max) * 100) : 0;
-            
-            let badgeColor = "var(--success)"; let badgeBorder = "rgba(0, 204, 102, 0.4)";
-            if(percent < 50) { badgeColor = "var(--danger)"; badgeBorder = "rgba(255, 68, 68, 0.4)"; }
-            else if(percent < 75) { badgeColor = "var(--primary)"; badgeBorder = "rgba(255, 170, 0, 0.4)"; }
-
-            testsHtml += `
-                <div class="test-row">
-                    <div class="test-info">
-                        <h4>${testName}</h4><p>${obtained} / ${max} marks</p>
-                    </div>
-                    <div class="test-badge" style="color: ${badgeColor}; border-color: ${badgeBorder};">${percent}%</div>
-                </div>
-            `;
-        }
-
+    marksData.forEach(m => {
+        list.innerHTML += `
+            <div class="image-card" style="text-align:left; padding:20px; margin-bottom:15px;">
+                <h3 style="margin:0; font-size:1rem;">${m.courseTitle}</h3>
+                <p style="color: var(--primary); margin-top:8px;">${m["Test Performance"]}</p>
+            </div>
+        `;
+    });
+}
         if (testsHtml === '') {
             testsHtml = `<p style="color: var(--text-sub); margin-top: 15px;">${perfString}</p>`;
         }
@@ -805,68 +767,26 @@ function renderMarks(marksData) {
 
 // ================= TIMETABLE RENDERER =================
 function renderTimetable(ttData) {
-    console.log("Rendering Timetable Data:", ttData);
-    timetableData = ttData || {};
-    
-    const noData = document.getElementById('timetable-no-data');
-    const grid = document.getElementById('timetable-grid');
+    console.log("Rendering Timetable:", ttData);
 
-    if (!noData || !grid) {
-        console.error("Timetable DOM elements not found!");
-        return;
-    }
+    const grid = document.getElementById('timetable-grid');
+    const noData = document.getElementById('timetable-no-data');
+
+    if (!grid || !noData) return;
+
+    timetableData = ttData || {};
 
     if (Object.keys(timetableData).length === 0) {
-        console.log("No timetable data found, showing fallback UI.");
         noData.style.display = 'block';
         grid.style.display = 'none';
         return;
     }
 
-    // EXPLICITLY SHOW THE GRID
     noData.style.display = 'none';
     grid.style.display = 'block';
 
-    // Auto-select Day 1 or Current Day
-    let dayIndex = new Date().getDay(); 
-    let dayToRender = (dayIndex >= 1 && dayIndex <= 5) ? dayIndex : 1; 
-    const dayBtns = document.querySelectorAll('.tt-day-selector .day-btn');
-    
-    if (dayBtns.length > 0 && dayBtns[dayToRender - 1]) {
-        renderDay(dayToRender, dayBtns[dayToRender - 1]);
-    } else {
-        renderDay(1, null);
-    }
+    renderDay(1); // default
 }
-
-function renderDay(dayNumber, btnElement) {
-    // Highlight Active Button
-    document.querySelectorAll('.tt-day-selector .day-btn').forEach(btn => btn.classList.remove('active'));
-    if (btnElement) btnElement.classList.add('active');
-
-    const grid = document.getElementById('timetable-grid');
-    if (!grid) return;
-
-    // Fetch classes for specific day from the Global Dictionary
-    const classesForDay = timetableData[dayNumber.toString()] || [];
-    grid.innerHTML = '';
-
-    if (classesForDay.length === 0) {
-        grid.innerHTML = `<div class="image-card" style="text-align:center; padding: 30px;"><h3 style="color:var(--text-sub);">No classes scheduled for Day ${dayNumber}</h3></div>`;
-        return;
-    }
-
-    classesForDay.forEach(cls => {
-        grid.innerHTML += `
-            <div class="tt-card fade-in-up">
-                <div class="tt-time"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> ${cls.time || 'N/A'}</div>
-                <h3 class="tt-subject">${cls.subject || 'Unknown Subject'}</h3>
-                <div class="tt-room"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg> ${cls.room || 'Online/Unknown'}</div>
-            </div>
-        `;
-    });
-}
-
 // ================= NAVIGATION LOGIC =================
 function switchView(viewId, pushToHistory = true) {
     document.querySelectorAll('.app-view').forEach(view => { view.classList.remove('active'); });
