@@ -205,10 +205,14 @@
         .day-btn { background: var(--card-bg); border: 1px solid var(--glass-border); color: var(--text-sub); padding: 10px 20px; border-radius: 20px; font-weight: bold; cursor: pointer; white-space: nowrap; transition: 0.3s; }
         .day-btn.active { background: var(--primary); color: #000; border-color: var(--primary); box-shadow: 0 0 10px rgba(255, 170, 0, 0.4); }
 
-        .tt-card { background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); border-radius: 16px; padding: 20px; margin-bottom: 15px; color: #fff; box-shadow: 0 5px 15px rgba(30, 60, 114, 0.3); text-align: left; border: 1px solid rgba(255,255,255,0.1);}
+        .tt-card { background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); border-radius: 16px; padding: 20px; margin-bottom: 15px; color: #fff; box-shadow: 0 5px 15px rgba(30, 60, 114, 0.3); text-align: left; border: 1px solid rgba(255,255,255,0.1); position: relative; overflow: hidden;}
         .tt-time { font-size: 0.8rem; opacity: 0.9; margin-bottom: 8px; display: flex; align-items: center; gap: 5px; font-weight: bold; letter-spacing: 1px;}
         .tt-subject { font-family: 'Montserrat', sans-serif; font-size: 1.1rem; font-weight: 700; margin: 0 0 8px 0; }
         .tt-room { font-size: 0.85rem; opacity: 0.8; display: flex; align-items: center; gap: 5px; }
+
+        /* Auto-Highlighting Classes */
+        .active-highlight { border: 2px solid var(--primary) !important; box-shadow: 0 0 20px var(--primary-glow) !important; transform: scale(1.02); }
+        .active-badge { background: var(--primary); color: #000; padding: 2px 8px; border-radius: 12px; font-size: 0.7rem; font-weight: bold; margin-left: 10px; animation: pulse-text 1.5s infinite alternate; }
 
         .sync-modal-content { background: var(--bg-start); border: 1px solid var(--primary); border-radius: 20px; padding: 30px; max-width: 400px; width: 90%; text-align: center; position: relative; box-shadow: 0 20px 50px rgba(0,0,0,0.8); }
         .sync-modal-content h3 { font-family: 'Montserrat', sans-serif; color: var(--primary); text-transform: uppercase; margin-top: 0; }
@@ -814,6 +818,23 @@
         }
 
         // ================= TIMETABLE RENDERER =================
+        function isClassActive(timeStr) {
+            if(!timeStr || !timeStr.includes('-')) return false;
+            try {
+                let [startStr, endStr] = timeStr.split('-');
+                let parseT = (t) => {
+                    let [h, m] = t.trim().split(':').map(Number);
+                    if(h >= 1 && h <= 7) h += 12; // PM adjustment
+                    return h * 60 + m;
+                };
+                let startMins = parseT(startStr);
+                let endMins = parseT(endStr);
+                let now = new Date();
+                let currentMins = now.getHours() * 60 + now.getMinutes();
+                return currentMins >= startMins && currentMins <= endMins;
+            } catch(e) { return false; }
+        }
+
         function renderTimetable(ttData) {
             timetableData = ttData || {};
             
@@ -873,10 +894,29 @@
                 return;
             }
 
+            // GROUPING LOGIC FOR IDENTICAL BACK-TO-BACK CLASSES
+            let mergedClasses = [];
             classesForDay.forEach(cls => {
+                if (mergedClasses.length > 0) {
+                    let last = mergedClasses[mergedClasses.length - 1];
+                    if (last.subject === cls.subject && last.room === cls.room) {
+                        let start1 = last.time.split('-')[0]?.trim() || last.time;
+                        let end2 = cls.time.split('-')[1]?.trim() || cls.time.replace('Period ', '');
+                        last.time = `${start1} - ${end2}`;
+                        return;
+                    }
+                }
+                mergedClasses.push({...cls});
+            });
+
+            mergedClasses.forEach(cls => {
+                let isActive = isClassActive(cls.time) && dayNumber == new Date().getDay();
+                let activeClass = isActive ? 'active-highlight' : '';
+                let badge = isActive ? '<span class="active-badge">HAPPENING NOW</span>' : '';
+
                 grid.innerHTML += `
-                    <div class="tt-card fade-in-up">
-                        <div class="tt-time"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> ${cls.time || 'N/A'}</div>
+                    <div class="tt-card fade-in-up ${activeClass}">
+                        <div class="tt-time"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> ${cls.time || 'N/A'} ${badge}</div>
                         <h3 class="tt-subject">${cls.subject || 'Unknown Subject'}</h3>
                         <div class="tt-room"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg> ${cls.room || 'Online/Unknown'}</div>
                     </div>
@@ -991,13 +1031,25 @@
 
         function openTodayMessMenu() {
             const daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+            const todayIndex = new Date().getDay();
+            const currentDay = daysOfWeek[todayIndex];
+            
             switchView('mess-view');
-            renderMessMenu(daysOfWeek[new Date().getDay()]);
+            renderMessMenu(currentDay);
         }
 
         function renderMessMenu(selectedDay) {
             const tabContainer = document.getElementById('mess-tabs'); const contentContainer = document.getElementById('mess-content');
             tabContainer.innerHTML = ''; contentContainer.innerHTML = '';
+
+            const currentHr = new Date().getHours();
+            let activeMeal = '';
+            if(currentHr < 11) activeMeal = 'Breakfast';
+            else if(currentHr < 15) activeMeal = 'Lunch';
+            else if(currentHr < 18) activeMeal = 'Snacks';
+            else activeMeal = 'Dinner';
+
+            const isToday = new Date().getDay() === ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'].indexOf(selectedDay);
 
             Object.keys(messMenuData).forEach(day => {
                 const btn = document.createElement('button');
@@ -1011,10 +1063,14 @@
             Object.entries(messMenuData[selectedDay]).forEach(([time, items]) => {
                 let formattedText = items.split(', ').join(' <span style="color: var(--primary); font-weight: bold; padding: 0 5px;">&bull;</span> ');
                 formattedText = formattedText.replace(/\*\*\*(.*?)\*\*\*/g, '<br><span class="special-badge">🔥 $1 🔥</span>');
+                
+                let highlightClass = (isToday && time === activeMeal) ? 'active-highlight' : '';
+                let badge = (isToday && time === activeMeal) ? '<span class="active-badge">NOW SERVING</span>' : '';
+
                 contentContainer.innerHTML += `
-                    <div class="meal-card fade-in-up" style="display: flex; gap: 20px; align-items: flex-start;">
+                    <div class="meal-card fade-in-up ${highlightClass}" style="display: flex; gap: 20px; align-items: flex-start;">
                         <div class="meal-icon-box">${mealIcons[time]}</div>
-                        <div class="meal-content"><h3>${time}</h3><p>${formattedText}</p></div>
+                        <div class="meal-content"><h3>${time} ${badge}</h3><p>${formattedText}</p></div>
                     </div>
                 `;
             });
