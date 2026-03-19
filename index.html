@@ -983,16 +983,21 @@
             }
 
             // Remove duplicates and fallback "Period" classes if real times exist
-            let uniqueSet = new Set();
-            let uniqueClasses = classesForDay.filter(c => {
-                let str = `${c.time}|${c.subject}|${c.room}`;
-                if (uniqueSet.has(str)) return false;
-                uniqueSet.add(str);
+            let normalizeStr = (s) => String(s || '').replace(/\s+/g, ' ').trim().toLowerCase();
+            let realSubjects = new Set(classesForDay.filter(c => !String(c.time).toLowerCase().includes('period')).map(c => normalizeStr(c.subject)));
+            
+            let deduplicated = classesForDay.filter(c => {
+                let isPeriod = String(c.time).toLowerCase().includes('period');
+                if (isPeriod && realSubjects.has(normalizeStr(c.subject))) return false;
                 return true;
             });
-            let realSubjects = new Set(uniqueClasses.filter(c => !String(c.time).includes('Period')).map(c => c.subject));
-            let deduplicated = uniqueClasses.filter(c => {
-                if (String(c.time).includes('Period') && realSubjects.has(c.subject)) return false;
+
+            // Enforce exact uniqueness
+            let uniqueSet = new Set();
+            deduplicated = deduplicated.filter(c => {
+                let str = `${c.time}|${normalizeStr(c.subject)}`;
+                if (uniqueSet.has(str)) return false;
+                uniqueSet.add(str);
                 return true;
             });
 
@@ -1001,9 +1006,9 @@
             deduplicated.forEach(cls => {
                 if (mergedClasses.length > 0) {
                     let last = mergedClasses[mergedClasses.length - 1];
-                    if (last.subject === cls.subject && last.room === cls.room) {
+                    if (normalizeStr(last.subject) === normalizeStr(cls.subject) && last.room === cls.room) {
                         let start1 = String(last.time).split('-')[0]?.trim() || last.time;
-                        let end2 = String(cls.time).split('-')[1]?.trim() || String(cls.time).replace('Period ', '');
+                        let end2 = String(cls.time).split('-')[1]?.trim() || String(cls.time).replace(/Period/i, '').trim();
                         last.time = `${start1} - ${end2}`;
                         return;
                     }
@@ -1203,10 +1208,10 @@
 
             const currentHr = new Date().getHours();
             let activeMeal = '';
-            if(currentHr <= 10) activeMeal = 'Breakfast';
-            else if(currentHr >= 12 && currentHr < 15) activeMeal = 'Lunch';
-            else if(currentHr >= 16 && currentHr < 18) activeMeal = 'Snacks';
-            else if(currentHr >= 19) activeMeal = 'Dinner';
+            if(currentHr < 11) activeMeal = 'Breakfast'; // 0 to 10:59
+            else if(currentHr < 15) activeMeal = 'Lunch'; // 11:00 to 14:59
+            else if(currentHr < 18) activeMeal = 'Snacks'; // 15:00 to 17:59
+            else activeMeal = 'Dinner'; // 18:00 onwards
 
             const isToday = new Date().getDay() === ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'].indexOf(selectedDay);
 
