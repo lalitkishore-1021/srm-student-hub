@@ -1,5 +1,5 @@
 // Change this version number every time you want to force phones to update!
-const CACHE_NAME = 'srm-hub-v9-install-btn'; 
+const CACHE_NAME = 'srm-hub-v10-profile-sync'; 
 
 const ASSETS_TO_CACHE = [
     '/',
