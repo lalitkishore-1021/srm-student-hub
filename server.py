@@ -119,6 +119,26 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
         parsed_att = []
         parsed_marks = []
 
+        # Profile Extraction
+        profile_data = {
+            "name": "STUDENT",
+            "regNo": reg_no.split('@')[0].upper(),
+            "course": "B.Tech",
+            "semester": "Current"
+        }
+        for table in raw_tables:
+            if not table: continue
+            for row in table:
+                if len(row) >= 2:
+                    k = str(row[0]).strip().lower()
+                    v = str(row[1]).strip()
+                    if k == "name" or "student name" in k or "name of" in k:
+                        profile_data["name"] = v
+                    elif "program" in k or "course" in k or "degree" in k:
+                        profile_data["course"] = v[:35]
+                    elif "semester" in k:
+                        profile_data["semester"] = v
+
         for table in raw_tables:
             if not table: continue
             headers = [str(h).lower() for h in table[0]]
@@ -272,6 +292,7 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
 
         out_queue.put({
             'success': True, 
+            'profile': profile_data,
             'data': parsed_att,
             'marks': parsed_marks,
             'timetable': final_tt
