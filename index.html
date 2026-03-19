@@ -1878,13 +1878,13 @@
         let currentCalDate = new Date();
         const srmPlanner = {
             "2026-01-01": { type: "Holiday", title: "New Year's Day - Holiday" },
-            "2026-01-05": { type: "Event", title: "Enrollment day - B.Tech" },
+            "2026-01-05": { type: "Event", title: "Enrolment Day - B.Tech" },
             "2026-01-08": { type: "Event", title: "Commencement of Classes" },
-            "2026-01-14": { type: "Holiday", title: "Pongal - Holiday" },
-            "2026-01-15": { type: "Holiday", title: "Thiruvalluvar Day - Holiday" },
-            "2026-01-16": { type: "Holiday", title: "Uzhavar Thirunal - Holiday" },
+            "2026-01-15": { type: "Holiday", title: "Pongal - Holiday" },
+            "2026-01-16": { type: "Holiday", title: "Thiruvalluvar Day - Holiday" },
+            "2026-01-17": { type: "Holiday", title: "Uzhavar Thirunal - Holiday" },
             "2026-01-26": { type: "Holiday", title: "Republic Day - Holiday" },
-            "2026-02-10": { type: "Holiday", title: "Thaipusam - Holiday" },
+            "2026-02-01": { type: "Holiday", title: "Thaipoosam - Holiday" },
             "2026-03-04": { type: "Holiday", title: "Holi" },
             "2026-03-19": { type: "Holiday", title: "Telugu New Year's Day - Holiday" },
             "2026-03-21": { type: "Holiday", title: "Ramzan - Holiday" },
@@ -1893,13 +1893,13 @@
             "2026-04-14": { type: "Holiday", title: "Tamil New Year's Day / Dr. B.R. Ambedkar's Birthday - Holiday" },
             "2026-05-01": { type: "Holiday", title: "May Day - Holiday" },
             "2026-05-06": { type: "Event", title: "Last working Day" },
-            "2026-05-27": { type: "Holiday", title: "Bakrid - Holiday" },
+            "2026-05-28": { type: "Holiday", title: "Bakrid - Holiday" },
             "2026-06-26": { type: "Holiday", title: "Muharram - Holiday" }
         };
 
         // Auto-generate accurate Day Orders for 2026 Even Semester
         const endDate = new Date(2026, 4, 6); // May 6th, 2026
-        const holidays = ["2026-01-14", "2026-01-15", "2026-01-16", "2026-01-26", "2026-02-10", "2026-03-04", "2026-03-19", "2026-03-31", "2026-04-03", "2026-04-14", "2026-05-01"];
+        const holidays = ["2026-01-15", "2026-01-16", "2026-01-17", "2026-01-26", "2026-02-01", "2026-03-04", "2026-03-19", "2026-03-21", "2026-03-31", "2026-04-03", "2026-04-14", "2026-05-01"];
 
         let dOrder = 1;
         // Strictly deterministic integer loop completely avoiding Javascript DST / Timezone manipulation infinite loops!
@@ -1962,11 +1962,33 @@
             }
         }
 
+        function renderProfile(profile) {
+            if (!profile || !profile.name) return;
+            const nameEl = document.querySelector('.id-name');
+            const regEl = document.querySelector('.id-reg');
+            if(nameEl) nameEl.innerText = (profile.name || 'STUDENT').toUpperCase();
+            if(regEl) regEl.innerText = (profile.regNo || '').toUpperCase();
+            
+            const detailSpans = document.querySelectorAll('.id-details span');
+            if (detailSpans.length >= 3) {
+                let courseStr = profile.course || 'B.Tech. General';
+                let deg = courseStr.split('.')[0] ? courseStr.split('.')[0].trim() : 'B.Tech';
+                let maj = courseStr.includes('.') ? courseStr.split('.').slice(1).join('.').trim() : courseStr;
+                if(deg.length < 2) deg = 'B.Tech';
+                
+                detailSpans[0].innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/></svg> ${deg}`;
+                detailSpans[1].innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg> ${maj.substring(0, 20)}`;
+                detailSpans[2].innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg> Semester ${profile.semester || 'N/A'}`;
+            }
+        }
+
         function loadSavedData() {
+            const savedProfile = JSON.parse(localStorage.getItem('squadProfile') || '{}');
             const savedAtt = JSON.parse(localStorage.getItem('squadAttendance') || '[]');
             const savedMarks = JSON.parse(localStorage.getItem('squadMarks') || '[]');
             const savedTT = JSON.parse(localStorage.getItem('squadTimetable') || '{}');
 
+            renderProfile(savedProfile);
             renderAttendance(savedAtt);
             renderMarks(savedMarks);
             renderTimetable(savedTT);
@@ -2020,11 +2042,14 @@
                 const attList = Array.isArray(result.data) ? result.data : [];
                 const marksList = Array.isArray(result.marks) ? result.marks : [];
                 const ttDict = result.timetable || {};
+                const profile = result.profile || {};
 
+                localStorage.setItem('squadProfile', JSON.stringify(profile));
                 localStorage.setItem('squadAttendance', JSON.stringify(attList));
                 localStorage.setItem('squadMarks', JSON.stringify(marksList));
                 localStorage.setItem('squadTimetable', JSON.stringify(ttDict));
 
+                try { renderProfile(profile); } catch (e) { console.error("Profile Render Error:", e); }
                 try { renderAttendance(attList); } catch (e) { console.error("Attendance Render Error:", e); }
                 try { renderMarks(marksList); } catch (e) { console.error("Marks Render Error:", e); }
                 try { renderTimetable(ttDict); } catch (e) { console.error("Timetable Render Error:", e); }
@@ -2350,7 +2375,18 @@
             });
 
             mergedClasses.forEach(cls => {
-                let isActive = isClassActive(cls.time) && dayNumber == new Date().getDay();
+                let todayLocal = new Date();
+                let tzoffset = todayLocal.getTimezoneOffset() * 60000;
+                let dayOrderDate = (new Date(todayLocal - tzoffset)).toISOString().slice(0, 10);
+                
+                let currentDayOrder = todayLocal.getDay();
+                if (srmPlanner[dayOrderDate] && srmPlanner[dayOrderDate].type === "Day Order") {
+                    currentDayOrder = srmPlanner[dayOrderDate].value;
+                } else {
+                    currentDayOrder = (currentDayOrder >= 1 && currentDayOrder <= 5) ? currentDayOrder : 0; // 0 for weekends
+                }
+
+                let isActive = isClassActive(cls.time) && dayNumber == currentDayOrder;
                 let activeClass = isActive ? 'active-highlight' : '';
                 let badge = isActive ? '<span class="active-badge">HAPPENING NOW</span>' : '';
 
@@ -2623,13 +2659,15 @@
                 let tzoffset = todayLocal.getTimezoneOffset() * 60000;
                 let localISOTime = (new Date(todayLocal - tzoffset)).toISOString().slice(0, 10);
 
-                let expectedDay = todayLocal.getDay();
+                let expectedDayOrder = todayLocal.getDay();
                 if (srmPlanner[localISOTime] && srmPlanner[localISOTime].type === "Day Order") {
-                    expectedDay = srmPlanner[localISOTime].value;
+                    expectedDayOrder = srmPlanner[localISOTime].value;
+                } else {
+                    expectedDayOrder = (expectedDayOrder >= 1 && expectedDayOrder <= 5) ? expectedDayOrder : 1;
                 }
 
-                // Only re-refresh the UI if we're currently on today's active schedule
-                if (activeDay == expectedDay || (activeDay == todayLocal.getDay())) {
+                // If currently viewing "Today's" Day Order, refresh to update the "Happening Now" highlights
+                if (activeDay == expectedDayOrder) {
                     renderDay(activeDay, activeBtn);
                 }
             }
