@@ -1966,16 +1966,16 @@
             if (!profile || !profile.name) return;
             const nameEl = document.querySelector('.id-name');
             const regEl = document.querySelector('.id-reg');
-            if(nameEl) nameEl.innerText = (profile.name || 'STUDENT').toUpperCase();
-            if(regEl) regEl.innerText = (profile.regNo || '').toUpperCase();
-            
+            if (nameEl) nameEl.innerText = (profile.name || 'STUDENT').toUpperCase();
+            if (regEl) regEl.innerText = (profile.regNo || '').toUpperCase();
+
             const detailSpans = document.querySelectorAll('.id-details span');
             if (detailSpans.length >= 3) {
                 let courseStr = profile.course || 'B.Tech. General';
                 let deg = courseStr.split('.')[0] ? courseStr.split('.')[0].trim() : 'B.Tech';
                 let maj = courseStr.includes('.') ? courseStr.split('.').slice(1).join('.').trim() : courseStr;
-                if(deg.length < 2) deg = 'B.Tech';
-                
+                if (deg.length < 2) deg = 'B.Tech';
+
                 detailSpans[0].innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/></svg> ${deg}`;
                 detailSpans[1].innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg> ${maj.substring(0, 20)}`;
                 detailSpans[2].innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg> Semester ${profile.semester || 'N/A'}`;
@@ -2225,7 +2225,7 @@
                         <div class="progress-container">
                             <div class="progress-fill" style="background: var(--primary); width: ${subjectPercent}%;"></div>
                         </div>
-                        <div class="overview-title" style="margin: 20px 0 15px 0;">📊 Detailed Performance</div>
+                        <div class="overview-title" style="margin: 20px 0 15px 0;"> Detailed Performance</div>
                         ` : ''}
                         ${testsHtml}
                     </div>
@@ -2378,7 +2378,7 @@
                 let todayLocal = new Date();
                 let tzoffset = todayLocal.getTimezoneOffset() * 60000;
                 let dayOrderDate = (new Date(todayLocal - tzoffset)).toISOString().slice(0, 10);
-                
+
                 let currentDayOrder = todayLocal.getDay();
                 if (srmPlanner[dayOrderDate] && srmPlanner[dayOrderDate].type === "Day Order") {
                     currentDayOrder = srmPlanner[dayOrderDate].value;
