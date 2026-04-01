@@ -4033,73 +4033,7 @@
             }
         }
 
-        // ============ PREMIUM PWA LOGIC ============
-        let deferredPrompt;
-        window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault();
-            deferredPrompt = e;
-            console.log('Capture beforeinstallprompt');
-        });
 
-        async function installPWA() {
-            if (!deferredPrompt) {
-                // If on iOS or prompt not available
-                alert('To install: Tap the "Share" icon in your browser and select "Add to Home Screen"');
-                document.getElementById('installModal').style.display = 'none';
-                return;
-            }
-            deferredPrompt.prompt();
-            const { outcome } = await deferredPrompt.userChoice;
-            if (outcome === 'accepted') {
-                console.log('User accepted the install prompt');
-                localStorage.setItem('pwaInstalled', 'true');
-            }
-            deferredPrompt = null;
-            document.getElementById('installModal').style.display = 'none';
-        }
-
-        function requestNotif() {
-            if ('Notification' in window) {
-                Notification.requestPermission().then(permission => {
-                    if (permission === 'granted') {
-                        new Notification('SRM Student Hub', {
-                            body: 'Nice! You will now receive important updates.',
-                            icon: '/images/app-icon.svg'
-                        });
-                        localStorage.setItem('notifAllowed', 'true');
-                    }
-                    document.getElementById('notificationModal').style.display = 'none';
-                });
-            }
-        }
-
-        function closePWA(id) {
-            document.getElementById(id).style.display = 'none';
-            // Set timestamp to not bug them for another 24 hours
-            localStorage.setItem(id + '_dismissed', Date.now());
-        }
-
-        function checkPWAPrompts() {
-            const now = Date.now();
-            const waitTime = 24 * 60 * 60 * 1000; // 24 hours
-
-            // Install Prompt
-            if (!window.matchMedia('(display-mode: standalone)').matches && !localStorage.getItem('pwaInstalled')) {
-                const lastDismissed = localStorage.getItem('installModal_dismissed');
-                if (!lastDismissed || (now - lastDismissed > waitTime)) {
-                    document.getElementById('installModal').style.display = 'flex';
-                    return; // Show one at a time
-                }
-            }
-
-            // Notification Prompt
-            if ('Notification' in window && Notification.permission === 'default') {
-                const lastDismissed = localStorage.getItem('notificationModal_dismissed');
-                if (!lastDismissed || (now - lastDismissed > waitTime)) {
-                    document.getElementById('notificationModal').style.display = 'flex';
-                }
-            }
-        }
 
         // ============ CGPA TARGET PREDICTOR ============
         function calculateTargetCGPA() {

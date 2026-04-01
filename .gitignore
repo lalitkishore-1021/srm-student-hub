@@ -1,0 +1,23 @@
+# Local SQLite database (production uses PostgreSQL on Render)
+hub.db
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Virtual environments
+venv/
+env/
+.env
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# Pyright / IDE config
+Pyrightconfig.json
+
+# Temp files
+temp.js
+*.tmp
