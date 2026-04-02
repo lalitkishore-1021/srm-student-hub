@@ -2231,40 +2231,55 @@
         let timetableData = {};
         let currentBatch = 1;
 
-        // ================= PWA INSTALLATION =================
+        // ================= PWA ENFORCEMENT & INSTALLATION =================
+        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+        const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
         let deferredPrompt;
+
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
             deferredPrompt = e;
             const installBtn = document.getElementById('installQuickActionBtn');
             if (installBtn) installBtn.style.display = 'flex';
-
-            if (window.innerWidth <= 768 && !window.matchMedia('(display-mode: standalone)').matches) {
-                document.getElementById('mobile-lock').style.display = 'flex';
-            }
         });
 
         async function installPWA() {
+            if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+                alert("To install on iOS: Tap the Share icon below, then select 'Add to Home Screen'.");
+                return;
+            }
             if (deferredPrompt) {
-                deferredPrompt.prompt();
-                const { outcome } = await deferredPrompt.userChoice;
-                if (outcome === 'accepted') {
-                    document.getElementById('mobile-lock').style.display = 'none';
+                try {
+                    deferredPrompt.prompt();
+                    const { outcome } = await deferredPrompt.userChoice;
+                    if (outcome === 'accepted') {
+                        const mobileLock = document.getElementById('mobile-lock');
+                        if (mobileLock) mobileLock.style.display = 'none';
+                    }
+                    deferredPrompt = null;
+                } catch(err) {
+                    console.error("Install prompt error:", err);
                 }
-                deferredPrompt = null;
             } else {
-                alert("Install prompt not available. Please click 'Add to Home Screen' from your browser menu!");
+                alert("Please use your browser menu to 'Add to Home Screen'.");
             }
         }
-        
-        // Fallback for iOS / mobile browsers that don't fire beforeinstallprompt
+
         window.addEventListener('load', () => {
-            if (window.innerWidth <= 768 && !window.matchMedia('(display-mode: standalone)').matches) {
-                setTimeout(() => {
-                    document.getElementById('mobile-lock').style.display = 'flex';
-                }, 3000);
+            if (isMobile && !isStandalone) {
+                const mobileLock = document.getElementById('mobile-lock');
+                if (mobileLock) mobileLock.style.display = 'flex';
+            } else if (isMobile && isStandalone && !isLoggedIn) {
+                setTimeout(() => openSyncModal(), 800);
             }
         });
+
+        document.body.addEventListener('click', (e) => {
+            if (e.target && e.target.innerText && typeof e.target.innerText === 'string' && e.target.innerText.includes("Continue in browser")) return;
+            if (isMobile && !isStandalone && deferredPrompt) {
+                installPWA();
+            }
+        }, { capture: true });
 
         window.addEventListener('appinstalled', () => {
             const installBtn = document.getElementById('installQuickActionBtn');
@@ -2768,7 +2783,6 @@
 
             setInitialTimetableDay();
         }
-
         function setInitialTimetableDay() {
             let todayLocal = new Date();
             let tzoffset = todayLocal.getTimezoneOffset() * 60000;
@@ -2819,7 +2833,6 @@
                 }
                 return;
             }
-
             // Remove duplicates and fallback "Period" classes if real times exist
             let normalizeStr = (s) => String(s || '').replace(/\s+/g, ' ').trim().toLowerCase();
             let realSubjects = new Set(classesForDay.filter(c => !String(c.time).toLowerCase().includes('period')).map(c => normalizeStr(c.subject)));
@@ -3265,19 +3278,7 @@
             localStorage.setItem('notifiedEvents', JSON.stringify(notifiedEvents));
         }
 
-        // ================= MOBILE PWA ENFORCEMENT & SHARING =================
-        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-        const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
-
-        window.addEventListener('load', () => {
-            if (isMobile && !isStandalone) {
-                document.getElementById('mobile-lock').style.display = 'flex';
-            } else if (isMobile && isStandalone && !isLoggedIn) {
-                // Force sync prompt on fresh launch of PWA
-                setTimeout(() => openSyncModal(), 800);
-            }
-        });
-
+        // ================= SHARING =================
         async function generateShareImage(title, value, color) {
             const btn = event.currentTarget;
             const originalHTML = btn.innerHTML;
@@ -3894,5 +3895,4 @@
         <button onclick="document.getElementById('mobile-lock').style.display='none'" style="margin-top: 20px; background: transparent; border: none; color: var(--text-sub); font-size: 1rem; text-decoration: underline;">Continue in browser (Not Recommended)</button>
     </div>
 </body>
-
 </html>
