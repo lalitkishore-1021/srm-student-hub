@@ -458,6 +458,15 @@ def playwright_worker(session_id, reg_no, pwd, batch, in_queue, out_queue):
 
         end_time = time.time()
         print(f"[{reg_no}] Sync Complete in {round(end_time - start_time, 2)}s.")
+        print(f"[{reg_no}] DEBUG: raw_tables={len(raw_tables)}, slot_tables={len(slot_tables)}, master_tables={len(master_tables)}")
+        print(f"[{reg_no}] DEBUG: parsed_att={len(parsed_att)}, parsed_marks={len(parsed_marks)}")
+        if raw_tables:
+            for i, t in enumerate(raw_tables[:3]):
+                if t: print(f"[{reg_no}] DEBUG: raw_table[{i}] header = {t[0][:5] if t else '?'}")
+        
+        if len(parsed_att) == 0:
+            # Try to find attendance any way - check if any tables have numeric data
+            print(f"[{reg_no}] WARNING: No attendance parsed! Headers found: {[' '.join([str(h) for h in t[0][:4]]) for t in raw_tables if t][:5]}")
 
         out_queue.put({
             'success': True, 
