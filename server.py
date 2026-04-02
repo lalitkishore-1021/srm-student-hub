@@ -218,8 +218,8 @@ def playwright_worker(session_id, reg_no, pwd, in_queue, out_queue):
         
         captcha_input = page.locator('input[placeholder*="captcha" i], input[placeholder*="Captcha" i]').first
         
-        if captcha_input.count() > 0:
-            print(f"[{reg_no}] [Thread] Captcha DETECTED! Taking screenshot...")
+        if captcha_input.count() > 0 and captcha_input.is_visible():
+            print(f"[{reg_no}] [Thread] Captcha DETECTED and visible! Taking screenshot...")
             captcha_img = page.locator('img[src*="captcha" i], img[id*="captcha" i]').first
             if captcha_img.count() == 0:
                 captcha_img = captcha_input.locator("xpath=..").locator("xpath=..")
