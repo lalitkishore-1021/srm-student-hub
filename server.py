@@ -266,15 +266,28 @@ def playwright_worker(session_id, reg_no, pwd, batch, in_queue, out_queue):
             if submit_btn: submit_btn.click(force=True, timeout=5000)
             else: page.keyboard.press("Enter")
             
-            # Wait for dashboard indicators
+            # Wait a moment for either dashboard or "Terminate All Sessions" page
+            page.wait_for_timeout(3000)
+            
+            # Handle "Maximum concurrent sessions" page - MUST click Terminate All Sessions
+            try:
+                terminate_btn = page.wait_for_selector(
+                    "button:has-text('Terminate'), a:has-text('Terminate'), input[value*='Terminate']",
+                    timeout=8000
+                )
+                if terminate_btn:
+                    print(f"[{reg_no}] 'Terminate All Sessions' page detected! Clicking...")
+                    terminate_btn.click(force=True)
+                    page.wait_for_timeout(4000)  # Wait for redirect back to portal
+                    print(f"[{reg_no}] Sessions terminated. Continuing...")
+            except:
+                print(f"[{reg_no}] No 'Terminate All Sessions' page - good, continuing...")
+            
+            # Wait for dashboard to finish loading
             try:
                 page.wait_for_load_state("networkidle", timeout=15000)
             except: pass
-            
-            terminate_btn = page.locator('button, a').filter(has_text=re.compile(r"terminate", re.IGNORECASE)).first
-            if terminate_btn.count() > 0: 
-                terminate_btn.click(force=True)
-                page.wait_for_timeout(2000)
+
         except Exception as e:
             out_queue.put({'success': False, 'error': f'Auth Failed: {str(e)}'})
             return
