@@ -138,110 +138,6 @@
             transition: fill 0.3s ease;
         }
 
-        /* Premium PWA Modals */
-        .pwa-modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.85);
-            backdrop-filter: blur(10px);
-            z-index: 9999;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-            box-sizing: border-box;
-            animation: fadeIn 0.3s ease;
-        }
-
-        .pwa-modal-content {
-            background: linear-gradient(145deg, #1e1e1e, #121212);
-            border: 1px solid var(--primary);
-            border-radius: 24px;
-            padding: 30px;
-            max-width: 400px;
-            width: 100%;
-            text-align: center;
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), 0 0 30px var(--primary-glow);
-            position: relative;
-            transform: scale(0.9);
-            animation: modalScale 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-        }
-
-        @keyframes modalScale {
-            to { transform: scale(1); }
-        }
-
-        .pwa-icon-glow {
-            width: 80px;
-            height: 80px;
-            background: var(--primary-glow);
-            border-radius: 20px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            margin: 0 auto 20px;
-            box-shadow: 0 0 20px var(--primary-glow);
-        }
-
-        .pwa-icon-glow svg {
-            width: 40px;
-            height: 40px;
-            stroke: var(--primary);
-        }
-
-        .pwa-title {
-            font-family: 'Montserrat', sans-serif;
-            font-size: 1.5rem;
-            font-weight: 900;
-            color: var(--primary);
-            margin-bottom: 15px;
-            text-transform: uppercase;
-        }
-
-        .pwa-text {
-            color: var(--text-sub);
-            font-size: 0.95rem;
-            line-height: 1.5;
-            margin-bottom: 25px;
-        }
-
-        .pwa-btns {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-
-        .pwa-btn-primary {
-            background: var(--primary);
-            color: #000;
-            border: none;
-            padding: 14px;
-            border-radius: 12px;
-            font-weight: 900;
-            font-family: 'Montserrat', sans-serif;
-            cursor: pointer;
-            transition: 0.3s;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .pwa-btn-secondary {
-            background: transparent;
-            color: var(--text-sub);
-            border: 1px solid var(--glass-border);
-            padding: 10px;
-            border-radius: 12px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: 0.3s;
-        }
-
-        .pwa-btn-primary:hover { transform: translateY(-3px); box-shadow: 0 10px 20px var(--primary-glow); }
-        .pwa-btn-secondary:hover { color: #fff; border-color: #fff; }
-
         .app-nav {
             position: fixed;
             bottom: 0;
@@ -1678,14 +1574,6 @@
                 </div>
             </div>
 
-            <!-- DAILY VIBE CHECK POLL -->
-            <div id="daily-poll-container" style="display: none; max-width: 800px; margin: 30px auto; text-align: center; background: rgba(255,170,0,0.05); padding: 25px; border-radius: 20px; border: 1px solid rgba(255,170,0,0.3);">
-                <h3 style="color: var(--primary); font-family: 'Montserrat', sans-serif; text-transform: uppercase; margin-bottom: 5px;">📊 Daily Vibe Check</h3>
-                <p id="poll-question" style="color: var(--text-main); font-size: 1.1rem; margin-bottom: 20px; font-weight: bold;"></p>
-                <div id="poll-options" style="display: flex; flex-direction: column; gap: 10px;"></div>
-                <div id="poll-results" style="display: none; flex-direction: column; gap: 15px;"></div>
-            </div>
-
             <h3 class="section-title">Quick Actions</h3>
             <div class="quick-actions-grid">
                 <div class="action-card" onclick="openProject('oopsBanner')">
@@ -1766,20 +1654,6 @@
                     <div>
                         <h4 class="action-title">Club Radar</h4>
                         <p class="action-sub">Upcoming SRM Events</p>
-                    </div>
-                </div>
-                <div class="action-card" onclick="switchView('placements-view'); loadPlacements();">
-                    <div class="action-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg></div>
-                    <div>
-                        <h4 class="action-title">Placement Radar</h4>
-                        <p class="action-sub">Career drives & tips</p>
-                    </div>
-                </div>
-                <div class="action-card" onclick="switchView('lostfound-view'); loadLostFound();">
-                    <div class="action-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg></div>
-                    <div>
-                        <h4 class="action-title">Lost & Found</h4>
-                        <p class="action-sub">Find your belongings</p>
                     </div>
                 </div>
                 <div class="action-card" onclick="switchView('cgpa-view')">
@@ -1909,10 +1783,9 @@
                 <p class="subtitle" style="margin-bottom: 20px;">Anonymous Confessions, Questions & Thoughts</p>
             </div>
 
-            <div style="max-width: 600px; margin: 0 auto 30px auto; display: flex; gap: 10px; align-items: center;">
-                <input id="wall-input" type="text" placeholder="Write something anonymously..." 
-                    style="flex: 1; min-width: 0; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.2); color: #fff; caret-color: #fff; font-size: 1rem; font-family: inherit; padding: 14px 18px; border-radius: 30px; outline: none; box-sizing: border-box;">
-                <button onclick="submitWall()" style="width: auto; flex-shrink: 0; background: var(--primary); border: none; color: #000; padding: 14px 24px; border-radius: 30px; font-weight: bold; font-size: 0.95rem; cursor: pointer; text-transform: uppercase; transition: 0.3s; white-space: nowrap;">Post</button>
+            <div style="max-width: 600px; margin: 0 auto 30px auto; display: flex; gap: 10px;">
+                <input id="wall-input" type="text" placeholder="Write something anonymously..." style="flex: 1; background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; padding: 15px; border-radius: 30px;">
+                <button class="action-btn" onclick="submitWall()" style="margin: 0; padding: 0 25px; border-radius: 30px;">Post</button>
             </div>
             <p id="wall-status" style="font-size: 0.85rem; font-weight: bold; text-align: center; color: var(--danger);"></p>
 
@@ -1947,30 +1820,6 @@
             <div id="events-list" style="max-width: 800px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px;"></div>
         </div>
 
-        <div id="placements-view" class="app-view">
-            <div class="view-header">
-                <button class="back-btn" onclick="switchNav('home-view', document.querySelector('.nav-item'))">&#8592; Back to Home</button>
-                <h2 class="gallery-title">Placement Radar 💼</h2>
-                <p class="subtitle" style="margin-bottom: 20px;">Latest recruitment news and experiences</p>
-            </div>
-            <div style="text-align: center; margin-bottom: 30px;">
-                <button class="action-btn" onclick="document.getElementById('placementSubmitModal').style.display='flex';" style="background: linear-gradient(135deg, #2a5298, #1e3c72); color: #fff; font-weight: 900; font-size: 1rem; padding: 14px 30px; border-radius: 30px; text-transform: uppercase;">+ Post News</button>
-            </div>
-            <div id="placements-list" style="max-width: 800px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px;"></div>
-        </div>
-
-        <div id="lostfound-view" class="app-view">
-            <div class="view-header">
-                <button class="back-btn" onclick="switchNav('home-view', document.querySelector('.nav-item'))">&#8592; Back to Home</button>
-                <h2 class="gallery-title">Lost & Found 🔍</h2>
-                <p class="subtitle" style="margin-bottom: 20px;">Helping SRMites recover belongings</p>
-            </div>
-            <div style="text-align: center; margin-bottom: 30px;">
-                <button class="action-btn" onclick="document.getElementById('lostFoundSubmitModal').style.display='flex';" style="background: linear-gradient(135deg, #ffaa00, #ff8800); color: #000; font-weight: 900; font-size: 1rem; padding: 14px 30px; border-radius: 30px;">+ Report Item</button>
-            </div>
-            <div id="lostfound-list" style="max-width: 800px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px;"></div>
-        </div>
-
         <div id="cgpa-view" class="app-view">
             <div class="view-header">
                 <button class="back-btn" onclick="switchNav('home-view', document.querySelector('.nav-item'))">&#8592;
@@ -2000,19 +1849,6 @@
                     <button class="action-btn" onclick="calculateCGPA()">Calculate CGPA</button>
                 </div>
                 <div id="cgpa-result" class="result-box" style="display: none;"></div>
-            </div>
-
-            <div class="image-card" style="max-width: 800px; margin: 20px auto 30px; cursor: default; transform: none; background: rgba(230,0,115,0.05); border: 1px solid rgba(230,0,115,0.3);">
-                <h3 style="color: #ff3399; font-family: 'Montserrat', sans-serif; text-transform: uppercase; margin-bottom: 15px;">🎯 Target CGPA Predictor</h3>
-                <p style="color: var(--text-sub); font-size: 0.9rem; margin-bottom: 20px;">Find out exactly what SGPA you need this semester to hit your target CGPA!</p>
-                <div style="display: flex; flex-direction: column; gap: 12px;">
-                    <input type="number" id="pred-current-cgpa" class="modal-input" placeholder="Current CGPA (e.g. 8.4)" step="0.01" style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; padding: 13px; border-radius: 12px;">
-                    <input type="number" id="pred-current-credits" class="modal-input" placeholder="Total Credits Earned So Far (e.g. 60)" style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; padding: 13px; border-radius: 12px;">
-                    <input type="number" id="pred-this-sem-credits" class="modal-input" placeholder="Credits This Semester (e.g. 23)" style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; padding: 13px; border-radius: 12px;">
-                    <input type="number" id="pred-target-cgpa" class="modal-input" placeholder="Target CGPA (e.g. 9.0)" step="0.01" style="background: rgba(0,0,0,0.3); border: 1px dashed #ff3399; color: #fff; padding: 13px; border-radius: 12px;">
-                    <button class="action-btn" onclick="calculateTargetCGPA()" style="background: linear-gradient(135deg, #e60073, #ff3399); color: white; margin-top: 10px;">Predict Required SGPA</button>
-                </div>
-                <div id="pred-result" class="result-box" style="display: none; border-color: #ff3399; color: #ff3399;"></div>
             </div>
         </div>
 
@@ -2267,43 +2103,8 @@
                 <p id="ph-status" style="font-size: 0.85rem; font-weight: bold; text-align: center; min-height: 20px;"></p>
             </div>
         </div>
-        <img id="lightbox-img" src="" style="display:none;">
     </div>
-
-    <!-- Premium PWA Modals -->
-    <div id="installModal" class="pwa-modal" onclick="if(event.target===this) closePWA('installModal')">
-        <div class="pwa-modal-content">
-            <div class="pwa-icon-glow">
-                <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                    <polyline points="7 10 12 15 17 10"></polyline>
-                    <line x1="12" y1="15" x2="12" y2="3"></line>
-                </svg>
-            </div>
-            <div class="pwa-title">Install SRM Hub</div>
-            <div class="pwa-text">Get one-tap access to your attendance, grades, and campus wall directly from your home screen. Works offline and hides browser bars!</div>
-            <div class="pwa-btns">
-                <button class="pwa-btn-primary" onclick="installPWA()">Install Now</button>
-                <button class="pwa-btn-secondary" onclick="closePWA('installModal')">Maybe Later</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="notificationModal" class="pwa-modal" onclick="if(event.target===this) closePWA('notificationModal')">
-        <div class="pwa-modal-content">
-            <div class="pwa-icon-glow">
-                <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
-                    <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
-                </svg>
-            </div>
-            <div class="pwa-title">Enable Alerts</div>
-            <div class="pwa-text">Receive real-time updates when your attendance changes, new products enter the marketplace, or important campus events are posted.</div>
-            <div class="pwa-btns">
-                <button class="pwa-btn-primary" onclick="requestNotif()">Turn On</button>
-                <button class="pwa-btn-secondary" onclick="closePWA('notificationModal')">Not Now</button>
-            </div>
-        </div>
+        <img id="lightbox-img" src="">
     </div>
 
     <!-- MARKETPLACE SUBMIT MODAL -->
@@ -2324,8 +2125,8 @@
                 <input type="text" id="market-price" class="modal-input" placeholder="Price (e.g. ₹500 or Free)" style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; padding: 13px; border-radius: 12px;">
                 <input id="market-phone" class="modal-input" placeholder="WhatsApp Number *" style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; padding: 13px; border-radius: 12px;">
                 <label for="market-image-file" style="background: rgba(0,0,0,0.3); border: 1px dashed var(--glass-border); color: #fff; padding: 13px; border-radius: 12px; cursor: pointer; text-align: center;">
-                    <span id="market-file-label">📷 Click to select a photo from your device (Max 5MB)</span>
-                    <input type="file" id="market-image-file" accept="image/*" style="display: none;" onchange="document.getElementById('market-file-label').innerText = '✅ Photo Selected: ' + this.files[0].name;">
+                    📷 Click to select a photo from your device (Max 5MB)
+                    <input type="file" id="market-image-file" accept="image/*" style="display: none;" onchange="this.parentElement.innerHTML = '✅ Photo Selected: ' + this.files[0].name + '<input type=\\\'file\\\' id=\\\'market-image-file\\\' accept=\\\'image/*\\\' style=\\\'display: none;\\\'>'; document.getElementById('market-image-file').files = this.files;">
                 </label>
                 <button class="action-btn" onclick="submitMarketItem()" style="margin-top: 5px;">POST ITEM</button>
                 <p id="market-status" style="font-size: 0.85rem; font-weight: bold; text-align: center; min-height: 20px;"></p>
@@ -2361,48 +2162,11 @@
                 <input type="date" id="event-date" class="modal-input" style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; padding: 13px; border-radius: 12px; font-family: inherit;">
                 <input id="event-link" class="modal-input" placeholder="Registration Link (optional)" style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; padding: 13px; border-radius: 12px;">
                 <label for="event-image-file" style="background: rgba(0,0,0,0.3); border: 1px dashed #e60073; color: #fff; padding: 13px; border-radius: 12px; cursor: pointer; text-align: center;">
-                    <span id="event-file-label">🖼️ Click to upload Event Poster from device</span>
-                    <input type="file" id="event-image-file" accept="image/*" style="display: none;" onchange="document.getElementById('event-file-label').innerText = '✅ Poster Selected: ' + this.files[0].name;">
+                    🖼️ Click to upload Event Poster from device
+                    <input type="file" id="event-image-file" accept="image/*" style="display: none;" onchange="this.parentElement.innerHTML = '✅ Poster Selected: ' + this.files[0].name + '<input type=\\\'file\\\' id=\\\'event-image-file\\\' accept=\\\'image/*\\\' style=\\\'display: none;\\\'>'; document.getElementById('event-image-file').files = this.files;">
                 </label>
                 <button class="action-btn" onclick="submitEvent()" style="margin-top: 5px; background: #e60073; color: white;">POST EVENT</button>
                 <p id="event-status" style="font-size: 0.85rem; font-weight: bold; text-align: center; min-height: 20px;"></p>
-            </div>
-        </div>
-    </div>
-
-    <!-- PLACEMENT SUBMIT MODAL -->
-    <div id="placementSubmitModal" class="lightbox" onclick="if(event.target===this) document.getElementById('placementSubmitModal').style.display='none'">
-        <div class="sync-modal-content">
-            <span class="close-btn" style="top:10px;right:15px;font-size:30px;" onclick="document.getElementById('placementSubmitModal').style.display='none'">&times;</span>
-            <h3 style="color:var(--primary); font-family:'Montserrat',sans-serif; margin-bottom: 20px;">Share Career Info</h3>
-            <div style="display: flex; flex-direction: column; gap: 12px;">
-                <input id="placement-company" class="modal-input" placeholder="Company Name *" style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; padding: 13px; border-radius: 12px;">
-                <input id="placement-role" class="modal-input" placeholder="Job Role / Position" style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; padding: 13px; border-radius: 12px;">
-                <input id="placement-ctc" class="modal-input" placeholder="CTC Package (e.g. 12 LPA)" style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; padding: 13px; border-radius: 12px;">
-                <input type="date" id="placement-date" class="modal-input" style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; padding: 13px; border-radius: 12px; font-family: inherit;">
-                <textarea id="placement-exp" class="modal-input" placeholder="Interview Tips or Experience Notes" rows="4" style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; padding: 13px; border-radius: 12px; resize: none; font-family: inherit;"></textarea>
-                <button class="action-btn" onclick="submitPlacement()" style="margin-top: 5px; background: #2a5298; color: white;">POST UPDATES</button>
-                <p id="placement-status" style="font-size: 0.85rem; font-weight: bold; text-align: center; min-height: 20px;"></p>
-            </div>
-        </div>
-    </div>
-
-    <!-- LOST & FOUND SUBMIT MODAL -->
-    <div id="lostFoundSubmitModal" class="lightbox" onclick="if(event.target===this) document.getElementById('lostFoundSubmitModal').style.display='none'">
-        <div class="sync-modal-content">
-            <span class="close-btn" style="top:10px;right:15px;font-size:30px;" onclick="document.getElementById('lostFoundSubmitModal').style.display='none'">&times;</span>
-            <h3 style="color:var(--primary); font-family:'Montserrat',sans-serif; margin-bottom: 20px;">Lost & Found Report</h3>
-            <div style="display: flex; flex-direction: column; gap: 12px;">
-                <select id="lf-type" class="modal-input" style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; padding: 13px; border-radius: 12px; appearance: none;">
-                    <option value="Lost">I Lost Something</option>
-                    <option value="Found">I Found Something</option>
-                </select>
-                <input id="lf-item" class="modal-input" placeholder="Item Name (e.g. Blue Umbrella) *" style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; padding: 13px; border-radius: 12px;">
-                <input id="lf-loc" class="modal-input" placeholder="Location (e.g. Near UB Canteen) *" style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; padding: 13px; border-radius: 12px;">
-                <textarea id="lf-desc" class="modal-input" placeholder="Additional details..." rows="3" style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; padding: 13px; border-radius: 12px; resize: none; font-family: inherit;"></textarea>
-                <input id="lf-phone" class="modal-input" placeholder="Contact WhatsApp *" style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; padding: 13px; border-radius: 12px;">
-                <button class="action-btn" onclick="submitLostFound()" style="margin-top: 5px;">POST REPORT</button>
-                <p id="lf-status" style="font-size: 0.85rem; font-weight: bold; text-align: center; min-height: 20px;"></p>
             </div>
         </div>
     </div>
@@ -2438,39 +2202,24 @@
         </div>
     </div>
 
-    <!-- Premium PWA Modals -->
-    <div id="installModal" class="pwa-modal" onclick="if(event.target===this) closePWA('installModal')">
-        <div class="pwa-modal-content">
-            <div class="pwa-icon-glow">
-                <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                    <polyline points="7 10 12 15 17 10"></polyline>
-                    <line x1="12" y1="15" x2="12" y2="3"></line>
+    <div id="installModal" class="lightbox" onclick="if(event.target === this) closeInstallModal()">
+        <div class="sync-modal-content">
+            <span class="close-btn" style="top: 10px; right: 15px; font-size: 30px;"
+                onclick="closeInstallModal()">&times;</span>
+            <div class="meal-icon-box"
+                style="width: 60px; height: 60px; margin: 0 auto 20px auto; border-radius: 50%; color: var(--primary);">
+                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"
+                    style="width: 30px; height: 30px;">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
                 </svg>
             </div>
-            <div class="pwa-title">Install SRM Hub</div>
-            <div class="pwa-text">Get one-tap access to your attendance, grades, and campus wall directly from your home screen. Works offline and hides browser bars!</div>
-            <div class="pwa-btns">
-                <button class="pwa-btn-primary" onclick="installPWA()">Install Now</button>
-                <button class="pwa-btn-secondary" onclick="closePWA('installModal')">Maybe Later</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="notificationModal" class="pwa-modal" onclick="if(event.target===this) closePWA('notificationModal')">
-        <div class="pwa-modal-content">
-            <div class="pwa-icon-glow">
-                <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
-                    <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
-                </svg>
-            </div>
-            <div class="pwa-title">Enable Alerts</div>
-            <div class="pwa-text">Receive real-time updates when your attendance changes, new products enter the marketplace, or important campus events are posted.</div>
-            <div class="pwa-btns">
-                <button class="pwa-btn-primary" onclick="requestNotif()">Turn On</button>
-                <button class="pwa-btn-secondary" onclick="closePWA('notificationModal')">Not Now</button>
-            </div>
+            <h3>Install SRM Hub</h3>
+            <p>Add SRM Hub to your home screen for quick offline access and push notifications!</p>
+            <button class="btn-primary" onclick="installApp()" style="margin-top: 15px;">INSTALL APP</button>
+            <button class="action-btn" onclick="closeInstallModal()"
+                style="margin-top: 10px; background: rgba(255,255,255,0.05); color: var(--text-main);">Maybe
+                Later</button>
         </div>
     </div>
 
@@ -2482,66 +2231,66 @@
         let timetableData = {};
         let currentBatch = 1;
 
-        // ================= PWA LOGIC =================
+        // ================= PWA INSTALLATION =================
         let deferredPrompt;
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
             deferredPrompt = e;
-            console.log('Capture beforeinstallprompt');
+            const installBtn = document.getElementById('installQuickActionBtn');
+            if (installBtn) installBtn.style.display = 'flex';
+
+            if (window.innerWidth <= 768 && !window.matchMedia('(display-mode: standalone)').matches) {
+                document.getElementById('mobile-lock').style.display = 'flex';
+            }
         });
 
         async function installPWA() {
-            if (!deferredPrompt) {
-                alert('To install: Tap the "Share" icon in your browser and select "Add to Home Screen"');
-                document.getElementById('installModal').style.display = 'none';
-                return;
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                if (outcome === 'accepted') {
+                    document.getElementById('mobile-lock').style.display = 'none';
+                }
+                deferredPrompt = null;
+            } else {
+                alert("Install prompt not available. Please click 'Add to Home Screen' from your browser menu!");
             }
-            deferredPrompt.prompt();
-            const { outcome } = await deferredPrompt.userChoice;
-            if (outcome === 'accepted') {
-                console.log('User accepted the install prompt');
-                localStorage.setItem('pwaInstalled', 'true');
+        }
+        
+        // Fallback for iOS / mobile browsers that don't fire beforeinstallprompt
+        window.addEventListener('load', () => {
+            if (window.innerWidth <= 768 && !window.matchMedia('(display-mode: standalone)').matches) {
+                setTimeout(() => {
+                    document.getElementById('mobile-lock').style.display = 'flex';
+                }, 3000);
             }
-            deferredPrompt = null;
+        });
+
+        window.addEventListener('appinstalled', () => {
+            const installBtn = document.getElementById('installQuickActionBtn');
+            if (installBtn) installBtn.style.display = 'none';
+        });
+
+        const logoTrigger = document.getElementById('logoInstallTrigger');
+        if (logoTrigger) {
+            logoTrigger.addEventListener('click', () => {
+                if (deferredPrompt) openInstallModal();
+                else alert("App is already installed or browser doesn't support installation.");
+            });
+        }
+
+        function openInstallModal() { document.getElementById('installModal').style.display = 'flex'; }
+        function closeInstallModal() {
             document.getElementById('installModal').style.display = 'none';
+            localStorage.setItem('installDismissed', 'true');
         }
 
-        function requestNotif() {
-            if ('Notification' in window) {
-                Notification.requestPermission().then(permission => {
-                    if (permission === 'granted') {
-                        new Notification('SRM Student Hub', {
-                            body: 'Nice! You will now receive important updates.',
-                            icon: '/images/app-icon.svg'
-                        });
-                    }
-                    document.getElementById('notificationModal').style.display = 'none';
-                });
-            }
-        }
-
-        function closePWA(id) {
-            document.getElementById(id).style.display = 'none';
-            localStorage.setItem(id + '_dismissed', Date.now());
-        }
-
-        function checkPWAPrompts() {
-            const now = Date.now();
-            const waitTime = 24 * 60 * 60 * 1000;
-
-            if (!window.matchMedia('(display-mode: standalone)').matches && !localStorage.getItem('pwaInstalled')) {
-                const lastDismissed = localStorage.getItem('installModal_dismissed');
-                if (!lastDismissed || (now - lastDismissed > waitTime)) {
-                    document.getElementById('installModal').style.display = 'flex';
-                    return;
-                }
-            }
-
-            if ('Notification' in window && Notification.permission === 'default') {
-                const lastDismissed = localStorage.getItem('notificationModal_dismissed');
-                if (!lastDismissed || (now - lastDismissed > waitTime)) {
-                    document.getElementById('notificationModal').style.display = 'flex';
-                }
+        async function installApp() {
+            if (deferredPrompt) {
+                closeInstallModal();
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                if (outcome === 'accepted') deferredPrompt = null;
             }
         }
 
@@ -2591,7 +2340,6 @@
         // ================= INITIALIZATION =================
         updateHomeState();
         loadSavedData();
-        loadPoll();
 
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
@@ -2613,7 +2361,6 @@
             document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
             element.classList.add('active');
             switchView(viewId);
-            setTimeout(checkPWAPrompts, 500); // Trigger PWA prompts on navigation
         }
 
         window.addEventListener('popstate', (e) => {
@@ -2666,9 +2413,7 @@
             renderTimetable(savedTT);
         }
 
-        // ================= LIVE SYNC API CALL (POLLING) =================
-        let activePollingInterval = null;
-
+        // ================= LIVE SYNC API CALL =================
         function toggleBatch(element, batchNum) {
             document.querySelectorAll('.batch-btn').forEach(btn => btn.classList.remove('active'));
             element.classList.add('active');
@@ -2688,89 +2433,52 @@
                 return;
             }
 
-            statusText.innerText = "🔄 Initializing Auto-Sync...";
+            statusText.innerText = "🔄 Syncing with Academia... This takes up to 90 seconds.";
             statusText.style.color = "var(--primary)";
-            
-            if (activePollingInterval) clearInterval(activePollingInterval);
 
             try {
-                // 1. Kick off the session
                 const res = await fetch(`${BACKEND_URL}/api/start_session`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ regNo: regNo, pwd: pwd, batch: currentBatch })
                 });
 
-                const startData = await res.json();
-                if (!startData.session_id) {
-                    statusText.innerText = "❌ Initialization failed.";
+                const result = await res.json();
+
+                if (!result.success) {
+                    statusText.innerText = "❌ " + result.error;
                     statusText.style.color = "var(--danger)";
                     return;
                 }
-                
-                const sessionId = startData.session_id;
-                
-                // 2. Poll every 3 seconds
-                activePollingInterval = setInterval(async () => {
-                    try {
-                        const statRes = await fetch(`${BACKEND_URL}/api/session_status/${sessionId}`);
-                        const result = await statRes.json();
-                        
-                        if (result.status === 'processing' || result.status === 'pending') {
-                            statusText.innerText += ".";
-                            if (statusText.innerText.length > 50) statusText.innerText = "🔄 Pulling from Academia...";
-                            return; // Wait for next tick
-                        }
-                        
-                        // Terminal state reached
-                        clearInterval(activePollingInterval);
-                        
-                        if (result.status === 'requires_captcha') {
-                            statusText.innerHTML = `⚠️ <b style="color:var(--danger);">Captcha required!</b> Advanced scraping not supported yet.`;
-                            return;
-                        }
-                        
-                        if (!result.success || result.status === 'error') {
-                            statusText.innerText = "❌ " + (result.error || "Scraping Failed");
-                            statusText.style.color = "var(--danger)";
-                            return;
-                        }
 
-                        // Success!
-                        statusText.innerHTML = `✅ Success! Updated in <span style="color:var(--primary)">${result.sync_time || '<30'}s</span>.`;
-                        statusText.style.color = "var(--success)";
+                statusText.innerText = "✅ Success! Dashboard Updated.";
+                statusText.style.color = "var(--success)";
 
-                        isLoggedIn = true;
-                        localStorage.setItem("isLoggedIn", "true");
-                        updateHomeState();
+                isLoggedIn = true;
+                localStorage.setItem("isLoggedIn", "true");
+                updateHomeState();
 
-                        const attList = Array.isArray(result.data) ? result.data : [];
-                        const marksList = Array.isArray(result.marks) ? result.marks : [];
-                        const ttDict = result.timetable || {};
-                        const profile = result.profile || {};
+                const attList = Array.isArray(result.data) ? result.data : [];
+                const marksList = Array.isArray(result.marks) ? result.marks : [];
+                const ttDict = result.timetable || {};
+                const profile = result.profile || {};
 
-                        localStorage.setItem('squadProfile', JSON.stringify(profile));
-                        localStorage.setItem('squadAttendance', JSON.stringify(attList));
-                        localStorage.setItem('squadMarks', JSON.stringify(marksList));
-                        localStorage.setItem('squadTimetable', JSON.stringify(ttDict));
+                localStorage.setItem('squadProfile', JSON.stringify(profile));
+                localStorage.setItem('squadAttendance', JSON.stringify(attList));
+                localStorage.setItem('squadMarks', JSON.stringify(marksList));
+                localStorage.setItem('squadTimetable', JSON.stringify(ttDict));
 
-                        try { renderProfile(profile); } catch (e) {}
-                        try { renderAttendance(attList); } catch (e) {}
-                        try { renderMarks(marksList); } catch (e) {}
-                        try { renderTimetable(ttDict); } catch (e) {}
+                try { renderProfile(profile); } catch (e) { console.error("Profile Render Error:", e); }
+                try { renderAttendance(attList); } catch (e) { console.error("Attendance Render Error:", e); }
+                try { renderMarks(marksList); } catch (e) { console.error("Marks Render Error:", e); }
+                try { renderTimetable(ttDict); } catch (e) { console.error("Timetable Render Error:", e); }
 
-                        setTimeout(() => closeSyncModal(), 1500);
-
-                    } catch (pollErr) {
-                         clearInterval(activePollingInterval);
-                         statusText.innerText = "❌ Disconnected from Server while syncing.";
-                         statusText.style.color = "var(--danger)";
-                    }
-                }, 3000);
+                setTimeout(() => closeSyncModal(), 1500);
 
             } catch (e) {
-                statusText.innerText = "❌ Could not reach backend server.";
+                statusText.innerText = "❌ Could not connect to backend server.";
                 statusText.style.color = "var(--danger)";
+            } finally {
                 document.getElementById('srm-pwd').value = '';
             }
         }
@@ -3820,7 +3528,7 @@
                     <h3 style="color: var(--text-main); margin: 0 0 5px 0; font-size: 1.25rem; font-family: 'Montserrat', sans-serif; padding-right: 80px;">${p.title}</h3>
                     <div style="font-size:0.8rem; color: var(--text-sub); margin-bottom: 12px;">By <b style="color: var(--primary);">${p.seller_name}</b> &bull; ${formatTime}</div>
                     
-                    ${p.image_url ? `<div style="margin-bottom: 15px; border-radius: 12px; overflow: hidden; border: 1px solid var(--glass-border);"><img src="${p.image_url}" alt="${p.title}" style="width: 100%; height: auto; display: block;" onerror="this.parentElement.style.display='none'"></div>` : ''}
+                    ${p.image_url ? `<img src="${p.image_url}" alt="${p.title}" style="max-height: 250px; width: 100%; object-fit: cover; border-radius: 10px; margin-bottom: 15px; border: 1px solid var(--glass-border);" onerror="this.style.display='none'">` : ''}
                     
                     <p style="color: var(--text-sub); font-size: 0.95rem; margin-bottom: 15px; line-height: 1.5;">${p.description || ''}</p>
                     
@@ -3873,9 +3581,8 @@
                 if (result.success) {
                     status.style.color = 'var(--success)'; status.innerText = '✅ Item Posted!';
                     ['market-title','market-desc','market-price','market-phone'].forEach(id => document.getElementById(id).value = '');
-                    document.getElementById('market-image-file').value = '';
-                    const label = document.getElementById('market-file-label');
-                    if(label) label.innerText = '📷 Click to select a photo from your device (Max 5MB)';
+                    const label = document.querySelector('label[for="market-image-file"]');
+                    if(label) label.innerHTML = '📷 Click to select a photo from your device (Max 5MB) <input type="file" id="market-image-file" accept="image/*" style="display: none;">';
                     document.getElementById('market-category').selectedIndex = 0;
                     setTimeout(() => { document.getElementById('marketSubmitModal').style.display = 'none'; loadMarketplace(); }, 1500);
                 } else {
@@ -4057,7 +3764,7 @@
                     
                     return `
                     <div class="image-card fade-in-up" style="transform: none; text-align: left; padding: 0; overflow: hidden; position: relative;">
-                        ${p.image_url ? `<div style="border-bottom: 1px solid var(--glass-border); background: #111;"><img src="${p.image_url}" style="width: 100%; height: auto; display: block;" onerror="this.parentElement.style.display='none'"></div>` : ''}
+                        ${p.image_url ? `<div style="width: 100%; height: 200px; overflow: hidden; background: #111;"><img src="${p.image_url}" style="width: 100%; height: 100%; object-fit: cover; opacity: 0.8;" onerror="this.style.display='none'"></div>` : ''}
                         
                         <div style="padding: 20px;">
                             <span style="background: rgba(230,0,115,0.2); color: #ff3399; font-size: 0.75rem; font-weight: bold; padding: 4px 10px; border-radius: 12px; text-transform: uppercase;">${p.club_name}</span>
@@ -4112,9 +3819,8 @@
                 if (result.success) {
                     status.style.color = 'var(--success)'; status.innerText = '✅ Event Posted!';
                     ['event-club','event-title','event-date','event-link'].forEach(id => document.getElementById(id).value = '');
-                    document.getElementById('event-image-file').value = '';
-                    const label = document.getElementById('event-file-label');
-                    if(label) label.innerText = '🖼️ Click to upload Event Poster from device';
+                    const label = document.querySelector('label[for="event-image-file"]');
+                    if(label) label.innerHTML = '🖼️ Click to upload Event Poster from device <input type="file" id="event-image-file" accept="image/*" style="display: none;">';
                     setTimeout(() => { document.getElementById('eventSubmitModal').style.display = 'none'; loadEvents(); }, 1500);
                 } else { status.style.color = 'var(--danger)'; status.innerText = '❌ ' + result.error; }
             } catch(e) { status.style.color = 'var(--danger)'; status.innerText = '❌ Connection error.'; }
@@ -4156,244 +3862,37 @@
             }
         }
 
-
-
-        // ============ CGPA TARGET PREDICTOR ============
-        function calculateTargetCGPA() {
-            const currentCgpa = parseFloat(document.getElementById('pred-current-cgpa').value);
-            const currentCredits = parseFloat(document.getElementById('pred-current-credits').value);
-            const thisSemCredits = parseFloat(document.getElementById('pred-this-sem-credits').value);
-            const targetCgpa = parseFloat(document.getElementById('pred-target-cgpa').value);
-            const resultBox = document.getElementById('pred-result');
-
-            if (isNaN(currentCgpa) || isNaN(currentCredits) || isNaN(thisSemCredits) || isNaN(targetCgpa)) {
-                resultBox.style.display = 'block';
-                resultBox.style.color = 'var(--danger)';
-                resultBox.innerHTML = '❌ Please fill all fields with valid numbers.';
-                return;
-            }
-
-            const totalCreditsAfterSem = currentCredits + thisSemCredits;
-            const targetTotalPoints = targetCgpa * totalCreditsAfterSem;
-            const currentTotalPoints = currentCgpa * currentCredits;
-            const pointsNeededThisSem = targetTotalPoints - currentTotalPoints;
-            const requiredSgpa = pointsNeededThisSem / thisSemCredits;
-
-            resultBox.style.display = 'block';
-            if (requiredSgpa > 10.0) {
-                resultBox.style.color = 'var(--danger)';
-                resultBox.innerHTML = `⚠️ Mathematically Impossible!<br><span style="font-size: 1rem; color: #fff;">You need an SGPA of <strong>${requiredSgpa.toFixed(2)}</strong>, but the maximum is 10.0. Lower your target slightly!</span>`;
-            } else if (requiredSgpa < 0.0) {
-                resultBox.style.color = 'var(--success)';
-                resultBox.innerHTML = `✅ You're completely safe!<br><span style="font-size: 1rem; color: #fff;">Even if you get 0 SGPA, your CGPA will still be above your target.</span>`;
-            } else {
-                resultBox.style.color = '#ff3399';
-                resultBox.innerHTML = `You need an SGPA of<br><span style="font-size: 2.5rem; font-weight: 900;">${requiredSgpa.toFixed(2)}</span><br><span style="font-size: 1rem; color: #fff;">this semester to reach ${targetCgpa} CGPA.</span>`;
-            }
-        }
-
-        // ================= POLL LOGIC =================
-        let currentPoll = null;
-        async function loadPoll() {
-            const container = document.getElementById('daily-poll-container');
-            const optionsBox = document.getElementById('poll-options');
-            const resultsBox = document.getElementById('poll-results');
-            
-            try {
-                const res = await fetch(`${BACKEND_URL}/api/polls/active`);
-                currentPoll = await res.json();
-                if (!currentPoll) return;
-                
-                document.getElementById('poll-question').innerText = currentPoll.question;
-                const options = JSON.parse(currentPoll.options);
-                const hasVoted = localStorage.getItem(`voted_poll_${currentPoll.id}`);
-                
-                container.style.display = 'block';
-                
-                if (hasVoted) {
-                    showPollResults(options, currentPoll.votes);
-                } else {
-                    optionsBox.innerHTML = options.map((opt, idx) => `
-                        <button class="action-btn" onclick="votePoll(${idx})" style="background: rgba(255,170,0,0.1); border: 1px solid rgba(255,170,0,0.3); color: var(--text-main); text-transform: none; text-align: left; padding: 12px 20px; font-size: 0.95rem;">${opt}</button>
-                    `).join('');
-                    optionsBox.style.display = 'flex';
-                    resultsBox.style.display = 'none';
+        // ============ AUTO-NOTIFICATION PROMPT FOR ALL USERS ============
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                if ('Notification' in window && Notification.permission === 'default') {
+                    Notification.requestPermission().then(permission => {
+                        if (permission === 'granted') {
+                            new Notification('SRM Student Hub 🎓', {
+                                body: 'Notifications enabled! You will get updates on exams and deadlines.',
+                                icon: '/icon-192.png'
+                            });
+                        }
+                    });
                 }
-            } catch (e) { console.error("Poll load failed", e); }
-        }
+            }, 2000); // Ask after 2 sec so the user sees the app first
+        });
 
-        async function votePoll(index) {
-            if (!currentPoll) return;
-            const profile = JSON.parse(localStorage.getItem('squadProfile') || '{}');
-            const net_id = profile.regNo ? profile.regNo.split('@')[0] : 'Anonymous';
-            
-            try {
-                const res = await fetch(`${BACKEND_URL}/api/polls/vote`, {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ poll_id: currentPoll.id, option_index: index, net_id: net_id })
-                });
-                
-                if (res.ok) {
-                    localStorage.setItem(`voted_poll_${currentPoll.id}`, 'true');
-                    loadPoll();
-                } else {
-                    const err = await res.json();
-                    if (err.error === 'Already voted') {
-                         localStorage.setItem(`voted_poll_${currentPoll.id}`, 'true');
-                         loadPoll();
-                    }
-                }
-            } catch (e) { alert("Vote failed. Try again."); }
-        }
-
-        function showPollResults(options, votes = {}) {
-            const resultsBox = document.getElementById('poll-results');
-            const total = Object.values(votes).reduce((a, b) => a + b, 0) || 1;
-            
-            resultsBox.innerHTML = options.map((opt, idx) => {
-                const count = votes[idx] || 0;
-                const perc = Math.round((count / total) * 100);
-                return `
-                    <div style="text-align: left;">
-                        <div style="display: flex; justify-content: space-between; font-size: 0.9rem; margin-bottom: 5px; color: var(--text-sub);">
-                            <span>${opt}</span>
-                            <span>${perc}%</span>
-                        </div>
-                        <div style="width: 100%; height: 8px; background: rgba(255,255,255,0.05); border-radius: 4px; overflow: hidden;">
-                            <div style="width: ${perc}%; height: 100%; background: var(--primary); box-shadow: 0 0 10px var(--primary-glow);"></div>
-                        </div>
-                    </div>
-                `;
-            }).join('') + `<p style="font-size: 0.75rem; color: #888; margin-top: 10px; text-align: center;">Total Votes: ${total}</p>`;
-            
-            document.getElementById('poll-options').style.display = 'none';
-            resultsBox.style.display = 'flex';
-        }
-
-        // ================= PLACEMENTS LOGIC =================
-        async function loadPlacements() {
-            const list = document.getElementById('placements-list');
-            list.innerHTML = '<div class="css-loader" style="margin: 40px auto;"></div>';
-            try {
-                const res = await fetch(`${BACKEND_URL}/api/placements`);
-                const items = await res.json();
-                
-                if (items.length === 0) {
-                    list.innerHTML = `<div class="image-card" style="text-align:center; padding: 40px; color: var(--text-sub);">No placement news yet. Be the first to share!</div>`;
-                    return;
-                }
-                
-                list.innerHTML = items.map(p => `
-                    <div class="image-card fade-in-up" style="transform: none; text-align: left; border-left: 4px solid var(--primary); padding: 25px;">
-                        <div style="display:flex; justify-content: space-between; align-items: flex-start;">
-                            <div>
-                                <h3 style="color: var(--text-main); margin: 0 0 5px 0; font-size: 1.35rem;">${p.company_name}</h3>
-                                <div style="font-size: 0.9rem; color: var(--primary); font-weight: bold; text-transform: uppercase;">${p.role || 'Recruitment Drive'}</div>
-                            </div>
-                            <div style="background: rgba(255,170,0,0.1); color: var(--primary); padding: 5px 12px; border-radius: 8px; font-weight: bold;">${p.ctc || 'CTC TBD'}</div>
-                        </div>
-                        <div style="margin: 15px 0; color: var(--text-sub); line-height: 1.6; font-size: 1rem; background: rgba(255,255,255,0.03); padding: 15px; border-radius: 12px;">
-                            <b>Interview Insights:</b><br>${p.experience || 'No experience notes shared yet.'}
-                        </div>
-                    </div>
-                `).join('');
-            } catch (e) {}
-        }
-
-        async function submitPlacement() {
-            const company = document.getElementById('placement-company').value.trim();
-            const status = document.getElementById('placement-status');
-            if (!company) { status.style.color='var(--danger)'; status.innerText='Company Name is required!'; return; }
-            
-            const profile = JSON.parse(localStorage.getItem('squadProfile') || '{}');
-            const data = {
-                company_name: company,
-                role: document.getElementById('placement-role').value,
-                ctc: document.getElementById('placement-ctc').value,
-                visit_date: document.getElementById('placement-date').value,
-                experience: document.getElementById('placement-exp').value,
-                submitted_by: profile.name || 'Senior',
-                net_id: profile.regNo ? profile.regNo.split('@')[0] : ''
-            };
-            
-            try {
-                const res = await fetch(`${BACKEND_URL}/api/placements/submit`, {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify(data)
-                });
-                if (res.ok) {
-                    status.style.color='#00cc66'; status.innerText='Experience shared successfully!';
-                    setTimeout(() => { document.getElementById('placementSubmitModal').style.display='none'; loadPlacements(); }, 1500);
-                }
-            } catch (e) { status.style.color='var(--danger)'; status.innerText='Submission failed.'; }
-        }
-
-        // ================= LOST & FOUND LOGIC =================
-        async function loadLostFound() {
-            const list = document.getElementById('lostfound-list');
-            list.innerHTML = '<div class="css-loader" style="margin: 40px auto;"></div>';
-            try {
-                const res = await fetch(`${BACKEND_URL}/api/lostfound`);
-                const items = await res.json();
-                
-                if (items.length === 0) {
-                    list.innerHTML = `<div class="image-card" style="text-align:center; padding: 40px; color: var(--text-sub);">No lost/found reports. Everything seems in place!</div>`;
-                    return;
-                }
-                
-                list.innerHTML = items.map(p => {
-                    const phoneWa = p.contact_phone ? p.contact_phone.replace(/\D/g, '') : '';
-                    const waLink = phoneWa ? `https://wa.me/${phoneWa}` : '';
-                    const isLost = p.type === 'Lost';
-                    
-                    return `
-                        <div class="image-card fade-in-up" style="transform: none; text-align: left; padding: 25px; border-left: 4px solid ${isLost ? 'var(--danger)' : '#00cc66'};">
-                            <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                                <span style="background: ${isLost ? 'rgba(255,68,68,0.1)' : 'rgba(0,204,102,0.1)'}; color: ${isLost ? 'var(--danger)' : '#00cc66'}; padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 800; text-transform: uppercase;">${p.type} ITEM</span>
-                            </div>
-                            <h3 style="color: var(--text-main); margin: 0 0 10px 0;">${p.item_name}</h3>
-                            <div style="font-size: 0.9rem; color: var(--primary); margin-bottom: 10px;">📍 <b>Location:</b> ${p.location}</div>
-                            <p style="color: var(--text-sub); font-size: 0.95rem; margin-bottom: 20px;">${p.description || ''}</p>
-                            ${waLink ? `<a href="${waLink}" target="_blank" style="background: #25D366; color: #fff; padding: 10px 20px; border-radius: 10px; text-decoration: none; font-weight: bold; font-size: 0.85rem;">Contact ↗</a>` : ''}
-                        </div>
-                    `;
-                }).join('');
-            } catch (e) {}
-        }
-
-        async function submitLostFound() {
-            const item = document.getElementById('lf-item').value.trim();
-            const location = document.getElementById('lf-loc').value.trim();
-            const phone = document.getElementById('lf-phone').value.trim();
-            const status = document.getElementById('lf-status');
-            
-            if (!item || !location || !phone) { status.style.color='var(--danger)'; status.innerText='Required fields missing!'; return; }
-            
-            const profile = JSON.parse(localStorage.getItem('squadProfile') || '{}');
-            const data = {
-                type: document.getElementById('lf-type').value,
-                item_name: item,
-                location: location,
-                description: document.getElementById('lf-desc').value,
-                contact_phone: phone,
-                net_id: profile.regNo ? profile.regNo.split('@')[0] : 'Student'
-            };
-            
-            try {
-                const res = await fetch(`${BACKEND_URL}/api/lostfound/submit`, {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify(data)
-                });
-                if (res.ok) {
-                    status.style.color='#00cc66'; status.innerText='Report posted successfully!';
-                    setTimeout(() => { document.getElementById('lostFoundSubmitModal').style.display='none'; loadLostFound(); }, 1500);
-                }
-            } catch (e) { status.style.color='var(--danger)'; status.innerText='Post failed.'; }
-        }
 
     </script>
+
+    <div id="mobile-lock" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(5,5,5,0.95); z-index: 9999; flex-direction: column; align-items: center; justify-content: center; padding: 20px; text-align: center;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2" style="width: 60px; height: 60px; margin-bottom: 20px;">
+            <rect x="5" y="2" width="14" height="20" rx="2" ry="2"/>
+            <line x1="12" y1="18" x2="12.01" y2="18"/>
+        </svg>
+        <h1 style="color: var(--text-main); font-size: 1.5rem; margin-bottom: 10px;">Install App</h1>
+        <p style="color: var(--text-sub); margin-bottom: 30px; max-width: 300px;">For the best experience, install the app on your home screen to hide browser bars and use it in fullscreen dark mode.</p>
+        <button class="share-btn" onclick="installPWA()" style="padding: 15px 30px; font-size: 1.2rem; display: flex; align-items: center; justify-content: center; width: 100%; max-width: 300px;">
+            INSTALL NOW
+        </button>
+        <button onclick="document.getElementById('mobile-lock').style.display='none'" style="margin-top: 20px; background: transparent; border: none; color: var(--text-sub); font-size: 1rem; text-decoration: underline;">Continue in browser (Not Recommended)</button>
+    </div>
 </body>
+
 </html>
