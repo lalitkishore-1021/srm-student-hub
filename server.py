@@ -1,4 +1,4 @@
-﻿from flask import Flask, request, jsonify, send_file, send_from_directory
+from flask import Flask, request, jsonify, send_file, send_from_directory
 from flask_cors import CORS
 from playwright.sync_api import sync_playwright
 import time
@@ -185,166 +185,302 @@ active_sessions = {}
 completed_sessions = {}
 session_lock = threading.Lock()
 
-def playwright_worker(session_id, reg_no, pwd, in_queue, out_queue):
+def playwright_worker(session_id, reg_no, pwd, batch, in_queue, out_queue):
     p = None
     browser = None
     start_time = time.time()
     try:
         p = sync_playwright().start()
-        print(f"[{reg_no}] [Thread] Launching Chromium...")
+        print(f"[{reg_no}] Launching Academia Sniper...")
         
-        # ADDED slow_mo=1000 so you can physically watch the actions on your screen
         browser = p.chromium.launch(
-            headless=True, # Changed headless=False to True for stability on server but user initially provided False
-            slow_mo=1000, 
-            args=['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-accelerated-2d-canvas', '--disable-gpu']
+            headless=True,
+            args=[
+                '--no-sandbox', 
+                '--disable-setuid-sandbox', 
+                '--disable-dev-shm-usage',
+                '--disable-accelerated-2d-canvas',
+                '--disable-gpu'
+            ]
         )
         
         context = browser.new_context(
-            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-            viewport={'width': 1920, 'height': 1080}
+            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+            viewport={'width': 1280, 'height': 720}
         )
+        
+        # Main Auth Page
         page = context.new_page()
+        page.set_default_timeout(60000)
 
-        print(f"[{reg_no}] [Thread] Navigating to SRM Portal...")
-        page.goto("https://sp.srmist.edu.in/srmiststudentportal/students/loginManager/youLogin.jsp")
+        if "@" not in reg_no: reg_no += "@srmist.edu.in"
 
-        print(f"[{reg_no}] [Thread] Waiting for login form...")
-        page.wait_for_selector('input[type="text"]', timeout=15000)
-        
-        print(f"[{reg_no}] [Thread] Filling credentials...")
-        page.fill('input[type="text"]', reg_no)
-        page.fill('input[type="password"]', pwd)
-        
-        captcha_input = page.locator('input[placeholder*="captcha" i], input[placeholder*="Captcha" i]').first
-        
-        if captcha_input.count() > 0:
-            print(f"[{reg_no}] [Thread] Captcha DETECTED! Taking screenshot...")
-            captcha_img = page.locator('img[src*="captcha" i], img[id*="captcha" i]').first
-            if captcha_img.count() == 0:
-                captcha_img = captcha_input.locator("xpath=..").locator("xpath=..")
-                if captcha_img.count() == 0:
-                     captcha_img = captcha_input
+        print(f"[{reg_no}] 1. Loading Portal...")
+        page.goto("https://academia.srmist.edu.in/", wait_until="domcontentloaded")
 
-            time.sleep(1) 
-            img_bytes = captcha_img.screenshot()
-            b64_img = base64.b64encode(img_bytes).decode('utf-8')
-            
-            out_queue.put({
-                'requires_captcha': True,
-                'captcha_base64': f"data:image/png;base64,{b64_img}"
-            })
-            
-            print(f"[{reg_no}] [Thread] Sleeping while waiting for user to solve Captcha...")
+        def find_in_frames(selector, filter_text=None, filter_not_text=None, timeout=10000):
             try:
-                user_msg = in_queue.get(timeout=180) 
-            except queue.Empty:
-                print(f"[{reg_no}] [Thread] User took too long to answer Captcha. Dying.")
-                return 
+                # First check main page
+                loc = page.locator(selector)
+                if filter_text: loc = loc.filter(has_text=re.compile(filter_text, re.IGNORECASE))
+                if filter_not_text: loc = loc.filter(has_not_text=re.compile(filter_not_text, re.IGNORECASE))
+                if loc.count() > 0: return loc.first
                 
-            if user_msg.get('action') == 'kill':
-                return
+                # Then check frames
+                for frame in page.frames:
+                    try:
+                        loc = frame.locator(selector)
+                        if filter_text: loc = loc.filter(has_text=re.compile(filter_text, re.IGNORECASE))
+                        if filter_not_text: loc = loc.filter(has_not_text=re.compile(filter_not_text, re.IGNORECASE))
+                        if loc.count() > 0: return loc.first
+                    except: continue
+            except: pass
+            return None
+            
+        # Login Logic (Sequential)
+        try:
+            print(f"[{reg_no}] 2. Entering Credentials...")
+            email_input = None
+            for _ in range(20):
+                email_input = find_in_frames('input[type="email"], input[type="text"], input[name="LOGIN_ID"]', filter_not_text="hidden")
+                if email_input: break
+                page.wait_for_timeout(500)
                 
-            captcha_text = user_msg.get('captcha_text')
-            print(f"[{reg_no}] [Thread] Woke up! User provided CAPTCHA: '{captcha_text}'. Submitting...")
+            if not email_input: raise Exception("Email box not found")
+            email_input.fill(reg_no, force=True)
             
-            captcha_input.fill(captcha_text)
-            captcha_input.press('Enter')
-            
-        else:
-            print(f"[{reg_no}] [Thread] No Captcha needed. Falling back to immediate submission...")
-            page.press('input[type="password"]', 'Enter')
-            out_queue.put({'requires_captcha': False})
+            next_btn = find_in_frames('button, input[type="submit"]', filter_text="next|continue")
+            if next_btn: next_btn.click(force=True, timeout=5000)
+            else: page.keyboard.press("Enter")
 
-        print(f"[{reg_no}] [Thread] Handling the Javascript Redirect Maze...")
-        try:
-            page.wait_for_selector("text=Attendance Details, a:has-text('Attendance Details'), .navbar-brand >> visible=true", timeout=40000)
-        except:
-            print(f"[{reg_no}] Checking for Portal Error messages...")
-            error_el = page.locator("span, td, div", has_text="Invalid").first
-            if error_el.count() > 0:
-                 error_text = error_el.inner_text().strip()
-                 out_queue.put({'success': False, 'error': f'Portal Error: {error_text}'})
-                 return
+            pwd_input = None
+            for _ in range(15): 
+                pwd_input = find_in_frames('input[type="password"], input[name="PASSWORD"]')
+                if pwd_input: break
+                page.wait_for_timeout(500)
+                
+            if not pwd_input: raise Exception("Password box not found")
+            pwd_input.type(pwd, delay=20) 
             
-            # If dashboard didn't load, we still try to navigate directly as a last resort
-            print(f"[{reg_no}] [Thread] Dashboard timeout. Attempting Direct URL Navigation anyway...")
-
-        # ======================================================
-        # UPGRADED: DIRECT URL NAVIGATION FALLBACK
-        # ======================================================
-        print(f"[{reg_no}] [Thread] Navigating to Attendance...")
-        try:
-             # Try clicking the menu button first
-             attendance_link = page.locator("a:has-text('Attendance Details'), #link_8").first
-             attendance_link.click(timeout=10000)
-        except:
-             print(f"[{reg_no}] [Thread] Could not find button. Forcing Direct URL...")
-             # Fallback: Jump directly to the Attendance Report page
-             page.goto("https://sp.srmist.edu.in/srmiststudentportal/students/report/viewAttendance.jsp")
-        
-        print(f"[{reg_no}] [Thread] Waiting for table data...")
-        try:
-            page.wait_for_selector("table, #divMainDetails table", timeout=20000)
-        except:
-            page.screenshot(path=f"debug_playwright_table_{reg_no}.png", full_page=True)
-            out_queue.put({'success': False, 'error': 'Table never loaded. Dashboard might be blocked or session expired.'})
+            submit_btn = find_in_frames('button, input[type="submit"]', filter_text="sign in|login|submit|verify")
+            if submit_btn: submit_btn.click(force=True, timeout=5000)
+            else: page.keyboard.press("Enter")
+            
+            # Wait for dashboard indicators
+            try:
+                page.wait_for_load_state("networkidle", timeout=15000)
+            except: pass
+            
+            terminate_btn = page.locator('button, a').filter(has_text=re.compile(r"terminate", re.IGNORECASE)).first
+            if terminate_btn.count() > 0: 
+                terminate_btn.click(force=True)
+                page.wait_for_timeout(2000)
+        except Exception as e:
+            out_queue.put({'success': False, 'error': f'Auth Failed: {str(e)}'})
             return
 
-        print(f"[{reg_no}] [Thread] Parsing Table Rows...")
-        rows_locator = page.locator("table tr")
-        rows_count = rows_locator.count()
-        live_scraped_data = []
+        print(f"[{reg_no}] 3. Auth OK. Starting Parallel Sync...")
+
+        # PARALLEL FETCHING
+        # Page 1: Attendance & Marks
+        # Page 2: Student Slots
+        # Page 3: Master Timetable
         
-        for idx in range(1, rows_count):
-            cols = rows_locator.nth(idx).locator("td")
-            col_count = cols.count()
-            if col_count >= 6:
-                try:
-                    subject_name_text = cols.nth(1).inner_text().strip()
-                    code_text = cols.nth(0).inner_text().strip()
-                    subject_name = subject_name_text if len(subject_name_text) > 3 else code_text
-                    
-                    max_hours_str = cols.nth(col_count - 4).inner_text().strip()
-                    attended_hours_str = cols.nth(col_count - 3).inner_text().strip()
-                    
-                    if max_hours_str.isdigit() and attended_hours_str.isdigit():
-                        live_scraped_data.append({
-                            'id': int(time.time() * 1000) + idx,
-                            'name': subject_name,
-                            'attended': int(attended_hours_str),
-                            'total': int(max_hours_str)
-                        })
-                except Exception as parse_err:
-                    print(f"Row skipped: {parse_err}")
+        page_att = page # Reuse main page
+        page_slots = context.new_page()
+        page_master = context.new_page()
 
-        if len(live_scraped_data) > 0:
-            print(f"[{reg_no}] [Thread] Scraping successful!")
-            end_time = time.time()
-            out_queue.put({
-                'success': True, 
-                'profile': {"name": "STUDENT", "regNo": reg_no.split('@')[0].upper(), "course": "B.Tech", "semester": "Current"},
-                'data': live_scraped_data,
-                'marks': [],
-                'timetable': {"1": [], "2": [], "3": [], "4": [], "5": []},
-                'sync_time': round(end_time - start_time, 2)
-            })
-        else:
-            out_queue.put({'success': False, 'error': 'Table found, but it appears to be empty.'})
+        # Define targets
+        targets = [
+            {"page": page_att, "url": "https://academia.srmist.edu.in/#Page:My_Attendance"},
+            {"page": page_slots, "url": "https://academia.srmist.edu.in/#Page:My_Time_Table_2023_24"},
+            {"page": page_master, "url": f"https://academia.srmist.edu.in/#Page:Unified_Time_Table_2025_Batch_{batch}"}
+        ]
 
-    except Exception as fn_err:
-        print(f"[{reg_no}] [Thread] Critical failure: {str(fn_err)}")
-        out_queue.put({'success': False, 'error': f'Backend error: {str(fn_err)}'})
+        # Trigger all navigations in parallel
+        for t in targets:
+            t["page"].goto(t["url"], wait_until="domcontentloaded")
+
+        # Function to wait and extract tables from a specific page
+        def extract_from_page(target_page, label):
+            print(f"[{reg_no}] Fetching {label}...")
+            try:
+                # Wait for at least one iframe to appear (Academia uses them for everything)
+                target_page.wait_for_selector("iframe", timeout=20000)
+                # Wait for ZOHO JS to render tables inside iframes
+                target_page.wait_for_timeout(5000)
+                
+                all_tables = []
+                for frame in target_page.frames:
+                    try:
+                        tables = frame.evaluate("""() => {
+                            return Array.from(document.querySelectorAll('table')).map(t => 
+                                Array.from(t.querySelectorAll('tr')).map(tr => {
+                                    let rowArr = [];
+                                    Array.from(tr.querySelectorAll('td, th')).forEach(td => {
+                                        let span = td.colSpan || 1;
+                                        let text = td.innerText.trim();
+                                        for(let i=0; i<span; i++) rowArr.push(text);
+                                    });
+                                    return rowArr;
+                                }).filter(row => row.length > 0)
+                            ).filter(table => table.length > 0);
+                        }""")
+                        if tables: all_tables.extend(tables)
+                    except: pass
+                return all_tables
+            except:
+                print(f"[{reg_no}] Timeout or error fetching {label}")
+                return []
+
+        # Wait for all (manually, as sync_playwright doesn't have an easy gather)
+        # But since they are all in the same context, they load concurrently anyway.
+        raw_tables = extract_from_page(page_att, "Attendance")
+        slot_tables = extract_from_page(page_slots, "Slots")
+        master_tables = extract_from_page(page_master, "Master TT")
+
+        parsed_att = []
+        parsed_marks = []
+        student_slots = {}
+        final_tt = {"1": [], "2": [], "3": [], "4": [], "5": []}
+
+        def get_col_index(headers, *keywords):
+            for i, h in enumerate(headers):
+                h_lower = str(h).lower()
+                if any(kw in h_lower for kw in keywords):
+                    return i
+            return -1
+
+        # Profile & Attendance Parsing
+        profile_data = {"name": "STUDENT", "regNo": reg_no.split('@')[0].upper(), "course": "B.Tech", "semester": "Current"}
+        for table in raw_tables:
+            if not table: continue
+            header_str = " ".join([str(h).lower() for h in table[0]])
+            
+            # Profile Info
+            if any(k in header_str for k in ["name", "course", "program"]):
+                for row in table:
+                    if len(row) >= 2:
+                        for i in range(len(row) - 1):
+                            k = str(row[i]).replace(':', '').strip().lower()
+                            v = str(row[i+1]).replace(':', '').strip()
+                            if "name" in k and not "father" in k and not "mother" in k:
+                                if len(v) > 2 and profile_data["name"] == "STUDENT": profile_data["name"] = v
+                            elif "program" in k or "course" in k or "degree" in k or "branch" in k:
+                                if len(v) > 2: profile_data["course"] = v[:35]
+                            elif "semester" in k:
+                                if len(v) > 0 and len(v) <= 2: profile_data["semester"] = v
+
+            # Attendance Data
+            if "hours conducted" in header_str and "absent" in header_str:
+                headers = [str(h).lower() for h in table[0]]
+                idx_code = get_col_index(headers, "code")
+                idx_title = get_col_index(headers, "title")
+                idx_cond = get_col_index(headers, "conducted")
+                idx_abs = get_col_index(headers, "absent")
+                if -1 not in (idx_code, idx_title, idx_cond, idx_abs):
+                    for row in table[1:]:
+                        if len(row) > max(idx_cond, idx_abs):
+                            cond = int(float(row[idx_cond] or 0))
+                            absent = int(float(row[idx_abs] or 0))
+                            parsed_att.append({
+                                "courseTitle": f"{row[idx_code]} - {row[idx_title][:20]}",
+                                "attended": max(0, cond - absent),
+                                "total": cond
+                            })
+            
+            # Marks Data
+            elif any(kw in header_str for kw in ["test performance", "assessment", "marks", "internal"]):
+                headers = [str(h).lower() for h in table[0]]
+                idx_code = get_col_index(headers, "code")
+                idx_perf = get_col_index(headers, "performance", "assessment", "marks", "internal")
+                if idx_code != -1 and idx_perf != -1:
+                    for row in table[1:]:
+                        if len(row) > idx_perf:
+                            parsed_marks.append({
+                                "courseTitle": row[idx_code],
+                                "Test Performance": row[idx_perf].replace('\n', ' | ')
+                            })
+
+        # Slot Parsing
+        for table in slot_tables:
+            if not table: continue
+            headers = [str(h).lower() for h in table[0]]
+            header_str = " ".join(headers)
+            if "slot" in header_str and "code" in header_str:
+                idx_code = get_col_index(headers, "code")
+                idx_title = get_col_index(headers, "title")
+                idx_slot = get_col_index(headers, "slot")
+                idx_room = get_col_index(headers, "room")
+                if -1 not in (idx_code, idx_title, idx_slot, idx_room):
+                    for row in table[1:]:
+                        if len(row) > idx_room:
+                            slots_found = re.findall(r'\b[A-Z]{1,2}\d*\b', row[idx_slot])
+                            for s in slots_found:
+                                student_slots[s] = {"subject": f"{row[idx_code]} - {row[idx_title]}", "room": row[idx_room]}
+
+        # Master Timetable Parsing
+        for table in master_tables:
+            if not table: continue
+            time_cols = []
+            from_row = []; to_row = []
+            start_row = -1
+            for r_idx, row in enumerate(table):
+                first_cell = str(row[0]).lower().replace('\n', ' ').strip()
+                if "from" in first_cell and "to" not in first_cell: from_row = row[1:]
+                elif "to" in first_cell and "from" not in first_cell: to_row = row[1:]
+                elif "from" in first_cell and "to" in first_cell: time_cols = [str(c).replace('\n', ' ') for c in row[1:]]
+                elif any(x in first_cell for x in ["hour", "order", "time", "period"]):
+                    if not time_cols and not from_row: time_cols = [str(c).replace('\n', ' ') for c in row[1:]]
+                elif "day" in first_cell and any(str(i) in first_cell for i in range(1, 6)):
+                    start_row = r_idx; break
+            if not time_cols and from_row and to_row:
+                for f, t in zip(from_row, to_row): time_cols.append(f"{f} - {t}")
+            if start_row != -1:
+                for row in table[start_row:]:
+                    try:
+                        day_match = re.search(r'\d+', row[0])
+                        if not day_match: continue
+                        day_order = day_match.group()
+                        if day_order in final_tt:
+                            seen_entries = set()
+                            for i, cell in enumerate(row[1:]):
+                                slots_in_cell = re.findall(r'\b[A-Z]{1,2}\d*\b', cell)
+                                for s in slots_in_cell:
+                                    if s in student_slots:
+                                        t_str = time_cols[i] if i < len(time_cols) else f"Period {i+1}"
+                                        t_str = re.sub(r'\s+', ' ', t_str).strip()
+                                        entry_key = f"{t_str}-{student_slots[s]['subject']}"
+                                        if entry_key not in seen_entries:
+                                            final_tt[day_order].append({"time": t_str, "subject": student_slots[s]['subject'], "room": student_slots[s]['room']})
+                                            seen_entries.add(entry_key)
+                    except: continue
+
+        end_time = time.time()
+        print(f"[{reg_no}] Sync Complete in {round(end_time - start_time, 2)}s.")
+
+        out_queue.put({
+            'success': True, 
+            'profile': profile_data,
+            'data': parsed_att,
+            'marks': parsed_marks,
+            'timetable': final_tt,
+            'sync_time': round(end_time - start_time, 2)
+        })
+
+    except Exception as e:
+        print(f"Scraper Exception: {str(e)}")
+        out_queue.put({'success': False, 'error': f"Scraper Exception: {str(e)}"})
     finally:
-        print(f"[{reg_no}] [Thread] Tearing down browser.")
         if browser:
             try: browser.close()
             except: pass
         if p:
             try: p.stop()
             except: pass
-        with session_lock:
-             active_sessions.pop(session_id, None)
+        # NOTE: Do NOT pop active_sessions here - it causes a race condition
+        # where the frontend polls for status right after we pop and gets 404.
+        # The session_status endpoint handles cleanup after delivering results.
 
 @app.route('/api/start_session', methods=['POST'])
 def start_session():
@@ -367,7 +503,8 @@ def start_session():
             'timestamp': time.time()
         }
 
-    t = threading.Thread(target=playwright_worker, args=(session_id, reg_no, pwd, in_queue, out_queue))
+    batch = data.get('batch', 1)
+    t = threading.Thread(target=playwright_worker, args=(session_id, reg_no, pwd, batch, in_queue, out_queue))
     t.daemon = True
     t.start()
     
