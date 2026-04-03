@@ -55,6 +55,9 @@ def init_db():
         cur.execute('''CREATE TABLE IF NOT EXISTS club_events (
             id SERIAL PRIMARY KEY, club_name TEXT NOT NULL, event_title TEXT NOT NULL, event_date TEXT, registration_link TEXT, image_url TEXT,
             created_by TEXT, net_id TEXT, created_at TEXT)''')
+        cur.execute('''CREATE TABLE IF NOT EXISTS lost_found (
+            id SERIAL PRIMARY KEY, title TEXT NOT NULL, description TEXT, category TEXT, location TEXT, image_url TEXT,
+            poster_name TEXT, net_id TEXT, created_at TEXT)''')
     else:
         cur.execute('''CREATE TABLE IF NOT EXISTS students (
             net_id TEXT PRIMARY KEY, name TEXT, register_no TEXT,
@@ -73,6 +76,9 @@ def init_db():
         cur.execute('''CREATE TABLE IF NOT EXISTS club_events (
             id INTEGER PRIMARY KEY AUTOINCREMENT, club_name TEXT NOT NULL, event_title TEXT NOT NULL, event_date TEXT, registration_link TEXT, image_url TEXT,
             created_by TEXT, net_id TEXT, created_at TEXT)''')
+        cur.execute('''CREATE TABLE IF NOT EXISTS lost_found (
+            id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT NOT NULL, description TEXT, category TEXT, location TEXT, image_url TEXT,
+            poster_name TEXT, net_id TEXT, created_at TEXT)''')
     conn.commit()
     cur.close()
     conn.close()
@@ -634,6 +640,42 @@ def submit_marketplace():
 
     return jsonify({'success': True})
 
+# --- MARKETPLACE DELETE (Owner Only) ---
+
+@app.route('/api/marketplace/delete/<int:item_id>', methods=['DELETE'])
+def delete_marketplace(item_id):
+    data = request.json or {}
+    net_id = data.get('net_id', '').lower().strip()
+    if not net_id:
+        return jsonify({'success': False, 'error': 'Authentication required'}), 401
+
+    conn = get_db()
+    cur = conn.cursor()
+    try:
+        if DATABASE_URL:
+            cur.execute("SELECT net_id FROM marketplace WHERE id = %s", (item_id,))
+        else:
+            cur.execute("SELECT net_id FROM marketplace WHERE id = ?", (item_id,))
+        row = cur.fetchone()
+        if not row:
+            return jsonify({'success': False, 'error': 'Item not found'}), 404
+
+        owner_id = (dict(row) if DATABASE_URL else dict(row)).get('net_id', '').lower().strip()
+        if owner_id != net_id:
+            return jsonify({'success': False, 'error': 'You can only delete your own listings'}), 403
+
+        if DATABASE_URL:
+            cur.execute("DELETE FROM marketplace WHERE id = %s", (item_id,))
+        else:
+            cur.execute("DELETE FROM marketplace WHERE id = ?", (item_id,))
+        conn.commit()
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        cur.close()
+        conn.close()
+    return jsonify({'success': True})
+
 # --- CAMPUS WALL ROUTES ---
 
 @app.route('/api/wall', methods=['GET'])
@@ -755,6 +797,42 @@ def submit_cab():
 
     return jsonify({'success': True})
 
+# --- CAB SHARING DELETE (Owner Only) ---
+
+@app.route('/api/cabs/delete/<int:cab_id>', methods=['DELETE'])
+def delete_cab(cab_id):
+    data = request.json or {}
+    net_id = data.get('net_id', '').lower().strip()
+    if not net_id:
+        return jsonify({'success': False, 'error': 'Authentication required'}), 401
+
+    conn = get_db()
+    cur = conn.cursor()
+    try:
+        if DATABASE_URL:
+            cur.execute("SELECT net_id FROM cab_sharing WHERE id = %s", (cab_id,))
+        else:
+            cur.execute("SELECT net_id FROM cab_sharing WHERE id = ?", (cab_id,))
+        row = cur.fetchone()
+        if not row:
+            return jsonify({'success': False, 'error': 'Ride not found'}), 404
+
+        owner_id = (dict(row) if DATABASE_URL else dict(row)).get('net_id', '').lower().strip()
+        if owner_id != net_id:
+            return jsonify({'success': False, 'error': 'You can only delete your own rides'}), 403
+
+        if DATABASE_URL:
+            cur.execute("DELETE FROM cab_sharing WHERE id = %s", (cab_id,))
+        else:
+            cur.execute("DELETE FROM cab_sharing WHERE id = ?", (cab_id,))
+        conn.commit()
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        cur.close()
+        conn.close()
+    return jsonify({'success': True})
+
 # --- EVENTS & CLUB RADAR ROUTES ---
 
 @app.route('/api/events', methods=['GET'])
@@ -809,6 +887,93 @@ def submit_event():
         cur.close()
         conn.close()
 
+    return jsonify({'success': True})
+
+# --- LOST & FOUND ROUTES ---
+
+@app.route('/api/lostfound', methods=['GET'])
+def get_lostfound():
+    conn = get_db()
+    if DATABASE_URL:
+        cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cur.execute("SELECT * FROM lost_found ORDER BY id DESC LIMIT 100")
+        rows = cur.fetchall()
+        items = [dict(row) for row in rows]
+    else:
+        cur = conn.cursor()
+        cur.execute("SELECT * FROM lost_found ORDER BY id DESC LIMIT 100")
+        rows = cur.fetchall()
+        items = [dict(row) for row in rows]
+    cur.close()
+    conn.close()
+    return jsonify(items)
+
+@app.route('/api/lostfound/submit', methods=['POST'])
+def submit_lostfound():
+    data = request.json
+    required = ['title', 'category']
+    if not all(k in data for k in required) or not data['title']:
+        return jsonify({'success': False, 'error': 'Missing required fields'}), 400
+
+    conn = get_db()
+    cur = conn.cursor()
+    now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    try:
+        if DATABASE_URL:
+            cur.execute("""
+                INSERT INTO lost_found (title, description, category, location, image_url, poster_name, net_id, created_at)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+            """, (data.get('title'), data.get('description',''), data.get('category',''),
+                  data.get('location',''), data.get('image_url',''),
+                  data.get('poster_name','Student'), data.get('net_id',''), now_str))
+        else:
+            cur.execute("""
+                INSERT INTO lost_found (title, description, category, location, image_url, poster_name, net_id, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """, (data.get('title'), data.get('description',''), data.get('category',''),
+                  data.get('location',''), data.get('image_url',''),
+                  data.get('poster_name','Student'), data.get('net_id',''), now_str))
+        conn.commit()
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        cur.close()
+        conn.close()
+    return jsonify({'success': True})
+
+@app.route('/api/lostfound/delete/<int:item_id>', methods=['DELETE'])
+def delete_lostfound(item_id):
+    data = request.json or {}
+    net_id = data.get('net_id', '').lower().strip()
+    if not net_id:
+        return jsonify({'success': False, 'error': 'Authentication required'}), 401
+
+    conn = get_db()
+    cur = conn.cursor()
+    try:
+        if DATABASE_URL:
+            cur.execute("SELECT net_id FROM lost_found WHERE id = %s", (item_id,))
+        else:
+            cur.execute("SELECT net_id FROM lost_found WHERE id = ?", (item_id,))
+        row = cur.fetchone()
+        if not row:
+            return jsonify({'success': False, 'error': 'Item not found'}), 404
+
+        owner_id = (dict(row) if DATABASE_URL else dict(row)).get('net_id', '').lower().strip()
+        if owner_id != net_id:
+            return jsonify({'success': False, 'error': 'You can only delete your own posts'}), 403
+
+        if DATABASE_URL:
+            cur.execute("DELETE FROM lost_found WHERE id = %s", (item_id,))
+        else:
+            cur.execute("DELETE FROM lost_found WHERE id = ?", (item_id,))
+        conn.commit()
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        cur.close()
+        conn.close()
     return jsonify({'success': True})
 
 @app.route('/ping')
