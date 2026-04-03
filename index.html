@@ -1574,6 +1574,15 @@
                 </div>
             </div>
 
+            <!-- HOLIDAY BANNER (HOME) -->
+            <div id="home-holiday-banner" class="holiday-banner fade-in-up" style="display: none; align-items: center; justify-content: center; background: linear-gradient(135deg, rgba(255, 170, 0, 0.15), rgba(255, 85, 0, 0.1)); border: 1px solid rgba(255, 170, 0, 0.3); border-radius: 15px; padding: 15px 20px; margin: 0 auto 20px; max-width: 600px; color: var(--text-main); font-family: 'Montserrat', sans-serif; gap: 15px; box-shadow: 0 10px 30px rgba(255,170,0,0.1);">
+                <div style="font-size: 2.2rem; filter: drop-shadow(0 0 10px rgba(255,170,0,0.5));">🌴</div>
+                <div style="text-align: left;">
+                    <h3 style="margin: 0 0 5px; color: var(--primary); font-size: 1.1rem; text-transform: uppercase;">It's a Holiday!</h3>
+                    <p id="home-holiday-name" style="margin: 0; font-size: 0.85rem; color: var(--text-sub);">No classes today. Take a break and recharge.</p>
+                </div>
+            </div>
+
             <h3 class="section-title">Quick Actions</h3>
             <div class="quick-actions-grid">
                 <div class="action-card" onclick="openProject('oopsBanner')">
@@ -1644,6 +1653,16 @@
                     <div>
                         <h4 class="action-title">Cab Sharing</h4>
                         <p class="action-sub">Find travel partners</p>
+                    </div>
+                </div>
+                <div class="action-card" onclick="switchView('lostfound-view'); loadLostFound();">
+                    <div class="action-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg></div>
+                    <div>
+                        <h4 class="action-title">Lost & Found</h4>
+                        <p class="action-sub">Report or find items</p>
                     </div>
                 </div>
                 <div class="action-card" onclick="switchView('events-view'); loadEvents();">
@@ -1783,9 +1802,9 @@
                 <p class="subtitle" style="margin-bottom: 20px;">Anonymous Confessions, Questions & Thoughts</p>
             </div>
 
-            <div style="max-width: 600px; margin: 0 auto 30px auto; display: flex; gap: 10px;">
-                <input id="wall-input" type="text" placeholder="Write something anonymously..." style="flex: 1; background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; padding: 15px; border-radius: 30px;">
-                <button class="action-btn" onclick="submitWall()" style="margin: 0; padding: 0 25px; border-radius: 30px;">Post</button>
+            <div style="max-width: 600px; margin: 0 auto 30px auto; display: flex; flex-direction: column; gap: 12px; align-items: stretch;">
+                <textarea id="wall-input" placeholder="Write something anonymously..." rows="3" style="width: 100%; background: rgba(0,0,0,0.5); border: 1px solid var(--glass-border); color: #fff; padding: 18px; border-radius: 15px; font-family: inherit; font-size: 1.1rem; resize: none; min-height: 80px; max-height: 200px; line-height: 1.5; box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);" oninput="this.style.height='auto'; this.style.height=Math.min(this.scrollHeight,200)+'px';"></textarea>
+                <button class="action-btn" onclick="submitWall()" style="margin: 0; padding: 14px; border-radius: 12px; font-size: 1rem; letter-spacing: 1px; box-shadow: 0 4px 15px rgba(255,170,0,0.3);">Post to Wall</button>
             </div>
             <p id="wall-status" style="font-size: 0.85rem; font-weight: bold; text-align: center; color: var(--danger);"></p>
 
@@ -1804,6 +1823,26 @@
             </div>
 
             <div id="cabs-list" style="max-width: 800px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px;"></div>
+        </div>
+
+        <div id="lostfound-view" class="app-view">
+            <div class="view-header">
+                <button class="back-btn" onclick="switchNav('home-view', document.querySelector('.nav-item'))">&#8592; Back to Home</button>
+                <h2 class="gallery-title">Lost & Found 🔍</h2>
+                <p class="subtitle" style="margin-bottom: 20px;">Report lost items or help reunite found ones</p>
+            </div>
+
+            <div class="tab-container" id="lf-tabs" style="margin-bottom: 20px; flex-wrap: wrap;">
+                <div class="tab-btn active" onclick="switchLFCategory('All', this)">All</div>
+                <div class="tab-btn" onclick="switchLFCategory('Lost', this)">Lost</div>
+                <div class="tab-btn" onclick="switchLFCategory('Found', this)">Found</div>
+            </div>
+
+            <div style="text-align: center; margin-bottom: 30px;">
+                <button class="action-btn" onclick="document.getElementById('lfSubmitModal').style.display='flex'; document.getElementById('lf-status').innerText='';" style="background: linear-gradient(135deg, #e65c00, #f59e0b); color: #fff; font-weight: 900; font-size: 1rem; padding: 14px 30px; border-radius: 30px; box-shadow: 0 10px 20px rgba(230,92,0,0.4); text-transform: uppercase; max-width: 300px; margin: 0 auto;">+ Report Item</button>
+            </div>
+
+            <div id="lf-list" style="max-width: 800px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px;"></div>
         </div>
 
         <div id="events-view" class="app-view">
@@ -1974,11 +2013,11 @@
             </div>
             
             <!-- HOLIDAY BANNER (TIMETABLE) -->
-            <div id="timetable-holiday-banner" class="holiday-banner fade-in-up" style="display: none; align-items: center; justify-content: center; background: linear-gradient(135deg, rgba(255, 170, 0, 0.15), rgba(255, 85, 0, 0.1)); border: 1px solid rgba(255, 170, 0, 0.3); border-radius: 15px; padding: 15px 20px; margin: 0 auto 20px; max-width: 600px; color: var(--text-main); font-family: 'Montserrat', sans-serif; gap: 15px; box-shadow: 0 10px 30px rgba(255,170,0,0.1);">
-                <div style="font-size: 2.2rem; filter: drop-shadow(0 0 10px rgba(255,170,0,0.5));">🌴</div>
-                <div style="text-align: left;">
-                    <h3 style="margin: 0 0 5px; color: var(--primary); font-size: 1.1rem; text-transform: uppercase;">It's a Holiday!</h3>
-                    <p style="margin: 0; font-size: 0.85rem; color: var(--text-sub);">No classes today. Take a break and recharge.</p>
+            <div id="timetable-holiday-banner" class="holiday-banner fade-in-up" style="display: none; align-items: center; justify-content: center; background: linear-gradient(135deg, rgba(255, 170, 0, 0.15), rgba(255, 85, 0, 0.1)); border: 1px solid rgba(255, 170, 0, 0.3); border-radius: 15px; padding: 12px 15px; margin: 0 15px 20px; width: calc(100% - 30px); max-width: 600px; color: var(--text-main); font-family: 'Montserrat', sans-serif; gap: 12px; box-shadow: 0 10px 30px rgba(255,170,0,0.1); box-sizing: border-box;">
+                <div style="font-size: 2rem; filter: drop-shadow(0 0 10px rgba(255,170,0,0.5)); flex-shrink: 0;">🌴</div>
+                <div style="text-align: left; min-width: 0;">
+                    <h3 style="margin: 0 0 5px; color: var(--primary); font-size: 1rem; text-transform: uppercase;">It's a Holiday!</h3>
+                    <p style="margin: 0; font-size: 0.8rem; color: var(--text-sub);">No classes today. Take a break and recharge.</p>
                 </div>
             </div>
             <div class="tt-day-selector">
@@ -2167,6 +2206,30 @@
                 </label>
                 <button class="action-btn" onclick="submitEvent()" style="margin-top: 5px; background: #e60073; color: white;">POST EVENT</button>
                 <p id="event-status" style="font-size: 0.85rem; font-weight: bold; text-align: center; min-height: 20px;"></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- LOST & FOUND SUBMIT MODAL -->
+    <div id="lfSubmitModal" class="lightbox" onclick="if(event.target===this) document.getElementById('lfSubmitModal').style.display='none'">
+        <div class="sync-modal-content">
+            <span class="close-btn" style="top:10px;right:15px;font-size:30px;" onclick="document.getElementById('lfSubmitModal').style.display='none'">&times;</span>
+            <h3 style="color:var(--primary); font-family:'Montserrat',sans-serif; margin-bottom: 20px;">Report Lost / Found Item</h3>
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+                <input id="lf-title" class="modal-input" placeholder="Item Name *" style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; padding: 13px; border-radius: 12px;">
+                <textarea id="lf-desc" class="modal-input" placeholder="Description (color, brand, any details)" rows="3" style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; padding: 13px; border-radius: 12px; resize: none; font-family: inherit;"></textarea>
+                <select id="lf-category" class="modal-input" style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; padding: 13px; border-radius: 12px; appearance: none;">
+                    <option value="" disabled selected>Lost or Found? *</option>
+                    <option value="Lost">I Lost Something</option>
+                    <option value="Found">I Found Something</option>
+                </select>
+                <input id="lf-location" class="modal-input" placeholder="Place / Location (e.g. TP Food Court, Library)" style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; padding: 13px; border-radius: 12px;">
+                <label for="lf-image-file" style="background: rgba(0,0,0,0.3); border: 1px dashed #e65c00; color: #fff; padding: 13px; border-radius: 12px; cursor: pointer; text-align: center;">
+                    📷 Upload a photo of the item
+                    <input type="file" id="lf-image-file" accept="image/*" style="display: none;" onchange="this.parentElement.innerHTML = '✅ Photo Selected: ' + this.files[0].name + '<input type=\\\'file\\\' id=\\\'lf-image-file\\\' accept=\\\'image/*\\\' style=\\\'display: none;\\\'>'; document.getElementById('lf-image-file').files = this.files;">
+                </label>
+                <button class="action-btn" onclick="submitLostFound()" style="margin-top: 5px; background: linear-gradient(135deg, #e65c00, #f59e0b); color: #fff;">REPORT ITEM</button>
+                <p id="lf-status" style="font-size: 0.85rem; font-weight: bold; text-align: center; min-height: 20px;"></p>
             </div>
         </div>
     </div>
@@ -2384,6 +2447,12 @@
         });
 
         // ================= UI STATE MANAGEMENT =================
+        function getCurrentNetId() {
+            const profile = JSON.parse(localStorage.getItem('squadProfile') || '{}');
+            const regNoRaw = document.getElementById('srm-reg')?.value || profile.regNo || '';
+            return (regNoRaw.split('@')[0] || '').toLowerCase();
+        }
+
         function updateHomeState() {
             if (isLoggedIn) {
                 document.getElementById('unauth-hero').style.display = 'none';
@@ -2393,6 +2462,16 @@
                 document.getElementById('unauth-hero').style.display = 'block';
                 document.getElementById('auth-dashboard').style.display = 'none';
                 document.getElementById('advisors-section').style.display = 'none';
+            }
+            // Show holiday banner on home page
+            checkAndShowHolidayBanner('home-holiday-banner');
+            // Update holiday name if available
+            let todayLocal = new Date();
+            let tzoffset = todayLocal.getTimezoneOffset() * 60000;
+            let dateStr = (new Date(todayLocal - tzoffset)).toISOString().slice(0, 10);
+            if (srmPlanner[dateStr] && srmPlanner[dateStr].type === 'Holiday') {
+                let nameEl = document.getElementById('home-holiday-name');
+                if (nameEl) nameEl.textContent = srmPlanner[dateStr].title + ' — No classes today!';
             }
         }
 
@@ -2802,6 +2881,8 @@
             } else {
                 renderDay(1, null);
             }
+            // Always check holiday on timetable view load
+            checkAndShowHolidayBanner('timetable-holiday-banner');
         }
 
         function renderDay(dayNumber, btnElement) {
@@ -3517,10 +3598,12 @@
                 return;
             }
 
+            const myNetId = getCurrentNetId();
             list.innerHTML = filteredItems.map(p => {
                 const phoneWa = p.phone_no ? p.phone_no.replace(/\D/g, '') : '';
                 const waLink = phoneWa ? `https://wa.me/${phoneWa}?text=Hi! I saw your "${p.title}" ad on SRM Student Hub.` : '';
                 const formatTime = p.created_at ? new Date(p.created_at).toLocaleDateString() : '';
+                const isOwner = myNetId && p.net_id && myNetId === (p.net_id || '').toLowerCase();
                 
                 return `
                 <div class="image-card fade-in-up" style="transform: none; text-align: left; position: relative; padding: 20px;">
@@ -3535,7 +3618,10 @@
                     
                     <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--glass-border); padding-top: 15px;">
                         <span style="font-size: 1.2rem; font-weight: 900; color: #62d5ff; font-family: 'Montserrat', sans-serif;">${p.price ? p.price : 'DM for price'}</span>
-                        ${waLink ? `<a href="${waLink}" target="_blank" style="background: #25D366; color: #fff; font-weight: bold; padding: 8px 16px; border-radius: 10px; text-decoration: none; font-size: 0.9rem; display: flex; align-items: center; gap: 8px;"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347zM12 21.826A9.826 9.826 0 1 1 21.826 12 9.837 9.837 0 0 1 12 21.826M12 2C6.477 2 2 6.477 2 12c0 1.761.458 3.425 1.282 4.881L2 22l5.253-1.252A9.974 9.974 0 0 0 12 22c5.523 0 10-4.477 10-10S17.523 2 12 2"/></svg> Contact</a>` : ''}
+                        <div style="display: flex; gap: 8px; align-items: center;">
+                            ${isOwner ? `<button onclick="deleteMarketItem(${p.id})" style="background: rgba(255,68,68,0.15); border: 1px solid rgba(255,68,68,0.4); color: #ff4444; padding: 8px 14px; border-radius: 10px; cursor: pointer; font-weight: bold; font-size: 0.85rem;">🗑️ Delete</button>` : ''}
+                            ${waLink ? `<a href="${waLink}" target="_blank" style="background: #25D366; color: #fff; font-weight: bold; padding: 8px 16px; border-radius: 10px; text-decoration: none; font-size: 0.9rem; display: flex; align-items: center; gap: 8px;"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347zM12 21.826A9.826 9.826 0 1 1 21.826 12 9.837 9.837 0 0 1 12 21.826M12 2C6.477 2 2 6.477 2 12c0 1.761.458 3.425 1.282 4.881L2 22l5.253-1.252A9.974 9.974 0 0 0 12 22c5.523 0 10-4.477 10-10S17.523 2 12 2"/></svg> Contact</a>` : ''}
+                        </div>
                     </div>
                 </div>`;
             }).join('');
@@ -3592,6 +3678,21 @@
             } catch(e) {
                 status.style.color = 'var(--danger)'; status.innerText = '❌ Could not connect to server.';
             }
+        }
+
+        async function deleteMarketItem(id) {
+            if (!confirm('Are you sure you want to delete this listing?')) return;
+            const netId = getCurrentNetId();
+            try {
+                const res = await fetch(`${BACKEND_URL}/api/marketplace/delete/${id}`, {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ net_id: netId })
+                });
+                const result = await res.json();
+                if (result.success) { loadMarketplace(); }
+                else { alert(result.error || 'Could not delete item.'); }
+            } catch(e) { alert('Connection error.'); }
         }
 
         // ============ CAMPUS WALL ============
@@ -3684,10 +3785,12 @@
                     return;
                 }
 
+                const myNetId = getCurrentNetId();
                 list.innerHTML = cabs.map(p => {
                     const phoneWa = p.phone_no ? p.phone_no.replace(/\D/g, '') : '';
                     const waLink = phoneWa ? `https://wa.me/${phoneWa}?text=Hi! I saw your Cab ride to ${p.destination} on SRM Hub.` : '';
                     const formattedDate = new Date(p.travel_date).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+                    const isOwner = myNetId && p.net_id && myNetId === (p.net_id || '').toLowerCase();
                     
                     return `
                     <div class="image-card fade-in-up" style="transform: none; text-align: left; padding: 20px; border-left: 4px solid #00cc66;">
@@ -3698,7 +3801,10 @@
                                 <div style="font-size: 0.9rem; color: var(--text-sub); margin-bottom: 15px;"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 5px;"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg> ${p.spots || 'Spots available'}</div>
                                 <div style="font-size: 0.8rem; color: #888;">Posted by ${p.creator_name || 'Student'}</div>
                             </div>
-                            ${waLink ? `<a href="${waLink}" target="_blank" style="background: #25D366; color: #fff; text-decoration: none; padding: 10px 15px; border-radius: 12px; font-weight: bold; font-size: 0.9rem; white-space: nowrap;">Chat ↗</a>` : ''}
+                            <div style="display: flex; flex-direction: column; gap: 8px; align-items: flex-end;">
+                                ${waLink ? `<a href="${waLink}" target="_blank" style="background: #25D366; color: #fff; text-decoration: none; padding: 10px 15px; border-radius: 12px; font-weight: bold; font-size: 0.9rem; white-space: nowrap;">Chat ↗</a>` : ''}
+                                ${isOwner ? `<button onclick="deleteCab(${p.id})" style="background: rgba(255,68,68,0.15); border: 1px solid rgba(255,68,68,0.4); color: #ff4444; padding: 6px 12px; border-radius: 10px; cursor: pointer; font-weight: bold; font-size: 0.8rem;">🗑️ Delete</button>` : ''}
+                            </div>
                         </div>
                     </div>`;
                 }).join('');
@@ -3861,6 +3967,150 @@
             } catch(e) {
                 status.style.color = 'var(--danger)'; status.innerText = '❌ Could not connect to server.';
             }
+        }
+
+        async function deleteCab(id) {
+            if (!confirm('Are you sure you want to delete this ride?')) return;
+            const netId = getCurrentNetId();
+            try {
+                const res = await fetch(`${BACKEND_URL}/api/cabs/delete/${id}`, {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ net_id: netId })
+                });
+                const result = await res.json();
+                if (result.success) { loadCabs(); }
+                else { alert(result.error || 'Could not delete ride.'); }
+            } catch(e) { alert('Connection error.'); }
+        }
+
+        // ============ LOST & FOUND ============
+        let allLFItems = [];
+        let currentLFCategory = 'All';
+
+        function switchLFCategory(cat, el) {
+            document.querySelectorAll('#lf-tabs .tab-btn').forEach(b => b.classList.remove('active'));
+            el.classList.add('active');
+            currentLFCategory = cat;
+            renderLostFound();
+        }
+
+        async function loadLostFound() {
+            const list = document.getElementById('lf-list');
+            if (!list) return;
+            list.innerHTML = '<div class="css-loader" style="margin: 40px auto;"></div>';
+            try {
+                const res = await fetch(`${BACKEND_URL}/api/lostfound`);
+                allLFItems = await res.json();
+                renderLostFound();
+            } catch (e) {
+                list.innerHTML = `<div class="image-card" style="text-align:center; color: var(--danger); padding: 40px;">Could not load Lost & Found.</div>`;
+            }
+        }
+
+        function renderLostFound() {
+            const list = document.getElementById('lf-list');
+            if (!list) return;
+
+            const filtered = currentLFCategory === 'All' ? allLFItems : allLFItems.filter(i => i.category === currentLFCategory);
+            const myNetId = getCurrentNetId();
+
+            if (filtered.length === 0) {
+                list.innerHTML = `
+                <div class="image-card fade-in-up" style="transform: none; text-align: center; opacity: 0.6; border: 1px dashed var(--glass-border); padding: 35px;">
+                    <h3 style="color: var(--text-sub); margin: 0 0 10px 0; font-style: italic; font-size: 1rem;">No items reported yet.</h3>
+                    <p style="color: var(--text-sub); font-size: 0.85rem; margin: 0;">Click "+ Report Item" to post.</p>
+                </div>`;
+                return;
+            }
+
+            list.innerHTML = filtered.map(p => {
+                const formatTime = p.created_at ? new Date(p.created_at).toLocaleDateString() : '';
+                const isOwner = myNetId && p.net_id && myNetId === (p.net_id || '').toLowerCase();
+                const catColor = p.category === 'Lost' ? '#ff4444' : '#00cc66';
+                const catIcon = p.category === 'Lost' ? '❓' : '✅';
+
+                return `
+                <div class="image-card fade-in-up" style="transform: none; text-align: left; position: relative; padding: 20px; border-left: 4px solid ${catColor};">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+                        <span style="background: ${catColor}22; color: ${catColor}; padding: 4px 12px; border-radius: 8px; font-size: 0.8rem; font-weight: bold; text-transform: uppercase;">${catIcon} ${p.category || 'Item'}</span>
+                        ${isOwner ? `<button onclick="deleteLostFound(${p.id})" style="background: rgba(255,68,68,0.15); border: 1px solid rgba(255,68,68,0.4); color: #ff4444; padding: 5px 12px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.8rem;">🗑️ Delete</button>` : ''}
+                    </div>
+                    
+                    <h3 style="color: var(--text-main); margin: 0 0 5px 0; font-size: 1.2rem; font-family: 'Montserrat', sans-serif;">${p.title}</h3>
+                    <div style="font-size:0.8rem; color: var(--text-sub); margin-bottom: 10px;">By <b style="color: var(--primary);">${p.poster_name}</b> &bull; ${formatTime}</div>
+                    
+                    ${p.location ? `<div style="font-size: 0.85rem; color: var(--primary); margin-bottom: 10px;"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 5px;"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg> ${p.location}</div>` : ''}
+                    
+                    ${p.image_url ? `<img src="${p.image_url}" alt="${p.title}" style="max-height: 250px; width: 100%; object-fit: cover; border-radius: 10px; margin-bottom: 12px; border: 1px solid var(--glass-border);" onerror="this.style.display='none'">` : ''}
+                    
+                    <p style="color: var(--text-sub); font-size: 0.95rem; line-height: 1.5; margin: 0;">${p.description || ''}</p>
+                </div>`;
+            }).join('');
+        }
+
+        async function submitLostFound() {
+            const title = document.getElementById('lf-title').value.trim();
+            const catEl = document.getElementById('lf-category');
+            const category = catEl.options[catEl.selectedIndex].value;
+            const status = document.getElementById('lf-status');
+            const imageFile = document.getElementById('lf-image-file')?.files[0];
+
+            if (!title || !category) {
+                status.style.color = 'var(--danger)'; status.innerText = 'Item name and category are required!';
+                return;
+            }
+
+            const profile = JSON.parse(localStorage.getItem('squadProfile') || '{}');
+            const netId = getCurrentNetId();
+
+            let image_url = '';
+            try {
+                status.style.color = 'var(--primary)'; status.innerText = 'Processing...';
+                if (imageFile) image_url = await compressImage(imageFile);
+            } catch(e) { console.error('Compression failed', e); }
+
+            status.style.color = 'var(--primary)'; status.innerText = 'Posting...';
+            try {
+                const res = await fetch(`${BACKEND_URL}/api/lostfound/submit`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        title, category,
+                        description: document.getElementById('lf-desc').value,
+                        location: document.getElementById('lf-location').value,
+                        image_url: image_url,
+                        poster_name: profile.name || 'Student',
+                        net_id: netId
+                    })
+                });
+                const result = await res.json();
+                if (result.success) {
+                    status.style.color = 'var(--success)'; status.innerText = '✅ Item Reported!';
+                    ['lf-title','lf-desc','lf-location'].forEach(id => document.getElementById(id).value = '');
+                    catEl.selectedIndex = 0;
+                    setTimeout(() => { document.getElementById('lfSubmitModal').style.display = 'none'; loadLostFound(); }, 1500);
+                } else {
+                    status.style.color = 'var(--danger)'; status.innerText = '❌ ' + result.error;
+                }
+            } catch(e) {
+                status.style.color = 'var(--danger)'; status.innerText = '❌ Connection error.';
+            }
+        }
+
+        async function deleteLostFound(id) {
+            if (!confirm('Are you sure you want to delete this report?')) return;
+            const netId = getCurrentNetId();
+            try {
+                const res = await fetch(`${BACKEND_URL}/api/lostfound/delete/${id}`, {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ net_id: netId })
+                });
+                const result = await res.json();
+                if (result.success) { loadLostFound(); }
+                else { alert(result.error || 'Could not delete.'); }
+            } catch(e) { alert('Connection error.'); }
         }
 
         // ============ AUTO-NOTIFICATION PROMPT FOR ALL USERS ============
