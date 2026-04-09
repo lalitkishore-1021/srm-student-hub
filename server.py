@@ -264,32 +264,13 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
                     return i
             return -1
 
-        def wait_until_tables_loaded(required_keywords, max_ms=25000, interval=2000):
-            """Poll until any frame has a table with these header keywords."""
-            elapsed = 0
-            while elapsed < max_ms:
-                tbls = get_all_tables()
-                for t in tbls:
-                    if not t: continue
-                    h = " ".join(str(c).lower() for c in t[0])
-                    if any(kw in h for kw in required_keywords):
-                        print(f"[{reg_no}] Tables loaded after {elapsed}ms")
-                        return tbls
-                page.wait_for_timeout(interval)
-                elapsed += interval
-            print(f"[{reg_no}] WARNING: Tables not found after {max_ms}ms, using whatever scraped")
-            return get_all_tables()
 
         # --- ATTENDANCE & MARKS ---
         print(f"[{reg_no}] 5. Scoping Attendance & Marks...")
-        page.goto("https://academia.srmist.edu.in/#Page:My_Attendance", wait_until="domcontentloaded")
-        page.wait_for_timeout(4000)  # Wait for SPA to bootstrap iframes
+        page.goto("https://academia.srmist.edu.in/#Page:My_Attendance")
+        page.wait_for_timeout(5000)
 
-        # Smart polling wait — keep retrying until the real attendance headers appear
-        raw_tables = wait_until_tables_loaded(
-            ["hours conducted", "absent", "test performance", "assessment", "marks"],
-            max_ms=25000
-        )
+        raw_tables = get_all_tables()
         parsed_att = []
         parsed_marks = []
 
@@ -361,10 +342,10 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
         # --- TIMETABLE STEP 1 (STUDENT SLOTS) ---
         print(f"[{reg_no}] 6. Scoping Registered Slots...")
         student_slots = {}
-        page.goto("https://academia.srmist.edu.in/#Page:My_Time_Table_2023_24", wait_until="domcontentloaded")
-        page.wait_for_timeout(3000)
+        page.goto("https://academia.srmist.edu.in/#Page:My_Time_Table_2023_24")
+        page.wait_for_timeout(5000)
 
-        slot_tables = wait_until_tables_loaded(["slot", "code", "title", "room"], max_ms=20000)
+        slot_tables = get_all_tables()
         for table in slot_tables:
             if not table: continue
             headers = [str(h).lower() for h in table[0]]
@@ -394,10 +375,10 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
         # --- TIMETABLE STEP 2 (MASTER TIMINGS) ---
         print(f"[{reg_no}] 7. Mapping to Master (Batch {batch})...")
         final_tt = {"1": [], "2": [], "3": [], "4": [], "5": []}
-        page.goto(f"https://academia.srmist.edu.in/#Page:Unified_Time_Table_2025_Batch_{batch}", wait_until="domcontentloaded")
-        page.wait_for_timeout(3000)
+        page.goto(f"https://academia.srmist.edu.in/#Page:Unified_Time_Table_2025_Batch_{batch}")
+        page.wait_for_timeout(5000)
 
-        master_tables = wait_until_tables_loaded(["day", "from", "to", "hour", "order", "period"], max_ms=20000)
+        master_tables = get_all_tables()
         for table in master_tables:
             if not table: continue
             
