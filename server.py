@@ -13,6 +13,8 @@ from playwright.sync_api import sync_playwright
 app = Flask(__name__, static_folder='.')
 CORS(app)
 
+import os
+
 DATABASE_URL = os.environ.get('DATABASE_URL')
 
 if DATABASE_URL:
@@ -85,6 +87,7 @@ init_db()
 
 def save_student_to_db(net_id, name, register_no, att_data, marks_data):
     try:
+        # Calculate Attendance
         total_att = 0; total_cls = 0
         for sub in (att_data or []):
             try:
@@ -93,11 +96,23 @@ def save_student_to_db(net_id, name, register_no, att_data, marks_data):
             except: continue
         overall_att = round((total_att / total_cls) * 100, 1) if total_cls > 0 else 0.0
 
+        # Calculate Est CGPA (Mimicking Frontend Logic)
         grand_total_obtained = 0
         grand_total_max = 0
         for sub in (marks_data or []):
             try:
                 perf_string = sub.get('Test Performance') or sub.get('performance') or sub.get('marks') or ""
+                # Logic: extract max and obtained using regex matching `/([0-9.]+)\s*\|\s*([0-9.]+)/` (like frontend)
+                # But it's easier: split by '|', if it has '/', left is obtained, right is max?
+                # The frontend regex: `([A-Za-z0-9-]+)\/([0-9.]+)\s*\|\s*([0-9.]+)` 
+                # This seems like it was matching something else, let's look at the regex:
+                # regex = /([A-Za-z0-9-]+)\/([0-9.]+)\s*\|\s*([0-9.]+)/g
+                # match[1] = testName, match[2] = max, match[3] = obtained? 
+                
+                # Let's write a simple python regex that extracts all numbers around '/' and '|'
+                # The frontend is matching: "CT 1/50.0 | 45.0" or similar?
+                # Wait, let's just use Python re module
+                
                 matches = re.findall(r'([A-Za-z0-9-]+)/([0-9.]+)\s*\|\s*([0-9.]+)', perf_string)
                 for test_name, max_str, obtained_str in matches:
                     try:
@@ -136,48 +151,49 @@ def save_student_to_db(net_id, name, register_no, att_data, marks_data):
     except Exception as e:
         print(f"[DB] save_student_to_db error: {e}")
 
+
+
+
 def scrape_academia_worker(reg_no, pwd, batch, out_queue):
     p = None
     browser = None
     try:
         p = sync_playwright().start()
-        print(f"[{reg_no}] Launching Academia Sniper (Lightning Mode)...")
+        print(f"[{reg_no}] Launching Academia Sniper...")
         
         browser = p.chromium.launch(
             headless=True,
             args=[
-                '--no-sandbox', 
-                '--disable-setuid-sandbox', 
-                '--disable-dev-shm-usage',
-                '--blink-settings=imagesEnabled=false' # Hard disable images at browser level
+                '--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage',
+                '--disable-extensions', '--disable-background-networking',
+                '--no-first-run', '--disable-sync',
+                '--blink-settings=imagesEnabled=false'
             ]
         )
         
         context = browser.new_context(
             user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
-            viewport={'width': 800, 'height': 600}
+            viewport={'width': 1280, 'height': 720}
         )
         page = context.new_page()
-        page.set_default_timeout(60000)
+        page.set_default_timeout(90000)
 
-        # ==========================================
-        # 🚀 SPEED HACK: Block all heavy resources
-        # ==========================================
-        def block_heavy_resources(route):
-            if route.request.resource_type in ["image", "media", "font", "stylesheet"]:
+        # Block images and media at network level to speed up every page load
+        def _block_heavy_assets(route):
+            if route.request.resource_type in ("image", "media"):
                 route.abort()
             else:
                 route.continue_()
-
-        page.route("**/*", block_heavy_resources)
-        # ==========================================
+        page.route("**/*", _block_heavy_assets)
 
         if "@" not in reg_no: reg_no += "@srmist.edu.in"
 
         print(f"[{reg_no}] 1. Loading Academia...")
         try:
-            # wait_until="domcontentloaded" is MUCH faster than "networkidle"
-            page.goto("https://academia.srmist.edu.in/", wait_until="domcontentloaded", timeout=45000)
+            # domcontentloaded is much faster than networkidle (~5-8s saved)
+            # Login form only needs the DOM, not every XHR to settle
+            page.goto("https://academia.srmist.edu.in/", wait_until="domcontentloaded", timeout=60000)
+            page.wait_for_timeout(1500)  # Brief grace for login form JS to attach
         except Exception as e:
             out_queue.put({'success': False, 'error': f'Portal failed to load: {str(e)}'})
             return
@@ -203,40 +219,48 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
             email_input.fill(reg_no, force=True)
             
             next_btn = find_in_frames('button, input[type="submit"]', filter_text="next|continue")
-            if next_btn: next_btn.click(force=True)
+            if next_btn: next_btn.click(force=True, timeout=5000)
             else: page.keyboard.press("Enter")
 
             pwd_input = None
             for _ in range(10): 
                 pwd_input = find_in_frames('input[type="password"], input[name="PASSWORD"]')
                 if pwd_input: break
-                page.wait_for_timeout(500) # Reduced from 1000 to 500
+                page.wait_for_timeout(1000)
                 
             if not pwd_input: raise Exception("Password box not found")
-            pwd_input.type(pwd, delay=10) # Speed up typing
+            pwd_input.fill(pwd, force=True)  # Instant paste instead of per-char typing
             
             submit_btn = find_in_frames('button, input[type="submit"]', filter_text="sign in|login|submit|verify")
-            if submit_btn: submit_btn.click(force=True)
+            if submit_btn: submit_btn.click(force=True, timeout=5000)
             else: page.keyboard.press("Enter")
-            
-            # SMART WAIT: Instead of static 5 seconds, wait for the main frame or terminate button
-            try:
-                page.wait_for_selector('button:has-text("Terminate"), iframe', timeout=8000)
-            except: pass
+
+            # Smart-wait for dashboard instead of blind 5s sleep
+            # Exit as soon as iframes appear (= Academia loaded the inner shell)
+            _logged_in = False
+            for _i in range(10):
+                page.wait_for_timeout(500)
+                if len(page.frames) > 1:
+                    _logged_in = True
+                    print(f"[{reg_no}]   ✓ Login detected in {(_i+1)*500}ms")
+                    break
+            if not _logged_in:
+                page.wait_for_timeout(2000)  # Last-resort buffer if frames didn't appear
 
             terminate_btn = page.locator('button, a').filter(has_text=re.compile(r"terminate", re.IGNORECASE)).first
-            if terminate_btn.count() > 0: 
+            if terminate_btn.count() > 0:
                 terminate_btn.click(force=True)
-                page.wait_for_selector('iframe', timeout=8000) # Wait for dashboard to load after terminate
+                # Smart-wait: poll until terminate button disappears
+                for _i in range(8):
+                    page.wait_for_timeout(500)
+                    if terminate_btn.count() == 0: break
+                page.wait_for_timeout(500)  # Small grace after dismiss
         except Exception as e:
             out_queue.put({'success': False, 'error': f'Auth Failed: {str(e)}'})
             return
 
         def get_all_tables():
-            try:
-                page.wait_for_selector("iframe", timeout=10000)
-            except Exception as e:
-                print("Wait for iframe error:", str(e))
+            # No iframe wait here — callers use poll_for_tables() beforehand
             all_tables = []
             for frame in page.frames:
                 try:
@@ -257,6 +281,23 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
                 except: pass
             return all_tables
 
+        def poll_for_tables(min_tables=2, timeout_ms=12000, poll_ms=500):
+            """Poll every 500ms until min_tables found in any frame.
+               Exits immediately when found. Max wait = timeout_ms.
+               Returns True if tables found, False on timeout."""
+            for attempt in range(timeout_ms // poll_ms):
+                for frame in page.frames:
+                    try:
+                        count = frame.evaluate("() => document.querySelectorAll('table').length")
+                        if count >= min_tables:
+                            ms = (attempt + 1) * poll_ms
+                            print(f"[{reg_no}]   ✓ {count} tables found in {ms}ms")
+                            return True
+                    except: pass
+                page.wait_for_timeout(poll_ms)
+            print(f"[{reg_no}]   ⚠ poll_for_tables timed out after {timeout_ms}ms — proceeding anyway")
+            return False
+
         def get_col_index(headers, *keywords):
             for i, h in enumerate(headers):
                 h_lower = str(h).lower()
@@ -264,11 +305,14 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
                     return i
             return -1
 
-
         # --- ATTENDANCE & MARKS ---
-        print(f"[{reg_no}] 5. Scoping Attendance & Marks...")
+        print(f"[{reg_no}] 5. Scoping Attendance...")
         page.goto("https://academia.srmist.edu.in/#Page:My_Attendance")
-        page.wait_for_timeout(5000)
+        # Poll until attendance tables appear (replaces 3s + reload + 5s = ~13-20s)
+        if not poll_for_tables(min_tables=3, timeout_ms=12000):
+            # Fallback: one reload attempt if tables didn't load
+            page.reload(wait_until="domcontentloaded")
+            poll_for_tables(min_tables=2, timeout_ms=8000)
 
         raw_tables = get_all_tables()
         parsed_att = []
@@ -300,6 +344,7 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
             headers = [str(h).lower() for h in table[0]]
             header_str = " ".join(headers)
 
+            # Dynamic Attendance Parsing
             if "hours conducted" in header_str and "absent" in header_str:
                 try:
                     idx_code = get_col_index(headers, "code")
@@ -322,6 +367,7 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
                     print("Parsing error (Attendance):", str(e))
                     continue
 
+            # Dynamic Marks Parsing
             elif any(kw in header_str for kw in ["test performance", "assessment", "marks", "internal"]):
                 try:
                     idx_code = get_col_index(headers, "code")
@@ -342,9 +388,10 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
         # --- TIMETABLE STEP 1 (STUDENT SLOTS) ---
         print(f"[{reg_no}] 6. Scoping Registered Slots...")
         student_slots = {}
+        # Reverted 2024_25 back to 2023_24 based on Academia's weird hardcoded URL hash
         page.goto("https://academia.srmist.edu.in/#Page:My_Time_Table_2023_24")
-        page.wait_for_timeout(5000)
-
+        poll_for_tables(min_tables=2, timeout_ms=10000)
+        
         slot_tables = get_all_tables()
         for table in slot_tables:
             if not table: continue
@@ -362,6 +409,7 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
                     
                     for row in table[1:]:
                         if len(row) > idx_room:
+                            # Refined Regex matching (matches A, P49, PT2, etc)
                             slots_found = re.findall(r'\b[A-Z]{1,2}\d*\b', row[idx_slot])
                             for s in slots_found:
                                 student_slots[s] = {
@@ -376,8 +424,8 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
         print(f"[{reg_no}] 7. Mapping to Master (Batch {batch})...")
         final_tt = {"1": [], "2": [], "3": [], "4": [], "5": []}
         page.goto(f"https://academia.srmist.edu.in/#Page:Unified_Time_Table_2025_Batch_{batch}")
-        page.wait_for_timeout(5000)
-
+        poll_for_tables(min_tables=2, timeout_ms=10000)
+        
         master_tables = get_all_tables()
         for table in master_tables:
             if not table: continue
@@ -433,6 +481,7 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
                         print("Parsing error (Master TT Row):", str(e))
                         continue
 
+        # Debug Logging for Empty Parsing
         if not parsed_att and not parsed_marks and not student_slots:
             try:
                 with open("debug_tables.txt", "w", encoding="utf-8") as f:
@@ -463,11 +512,12 @@ def start_session():
     t.start()
     try:
         result = out_queue.get(timeout=150)
+        # Auto-save student to DB on every successful sync
         if result.get('success'):
             profile = result.get('profile', {})
             raw_reg = data.get('regNo', '')
-            net_id = raw_reg.split('@')[0]          
-            register_no = net_id.upper()            
+            net_id = raw_reg.split('@')[0]          # e.g. ra2511026010324
+            register_no = net_id.upper()            # e.g. RA2511026010324
             name = profile.get('name', 'Student')
             save_student_to_db(net_id, name, register_no, result.get('data', []), result.get('marks', []))
         return jsonify(result)
@@ -514,6 +564,7 @@ def save_student():
 def leaderboard_attendance():
     conn = get_db()
     if DATABASE_URL:
+        # Use RealDictCursor style for Postgres
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
             cur.execute('SELECT name, net_id, register_no, overall_attendance FROM students ORDER BY overall_attendance DESC LIMIT 50')
             rows = cur.fetchall()
@@ -555,6 +606,7 @@ def submit_project():
 
     conn = get_db()
     cur = conn.cursor()
+    tz = 'IST' # Simplified wrapper
     now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     try:
@@ -581,9 +633,12 @@ def submit_project():
 
     return jsonify({'success': True})
 
+# --- NEW MARKETPLACE ROUTES ---
+
 @app.route('/api/marketplace', methods=['GET'])
 def get_marketplace():
     conn = get_db()
+    
     if DATABASE_URL:
         cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cur.execute("SELECT * FROM marketplace ORDER BY id DESC LIMIT 100")
@@ -594,6 +649,7 @@ def get_marketplace():
         cur.execute("SELECT * FROM marketplace ORDER BY id DESC LIMIT 100")
         rows = cur.fetchall()
         projects = [dict(row) for row in rows]
+    
     cur.close()
     conn.close()
     return jsonify(projects)
@@ -630,35 +686,51 @@ def submit_marketplace():
     finally:
         cur.close()
         conn.close()
+
     return jsonify({'success': True})
+
+# --- MARKETPLACE DELETE (Owner Only) ---
 
 @app.route('/api/marketplace/delete/<int:item_id>', methods=['DELETE'])
 def delete_marketplace(item_id):
     data = request.json or {}
     net_id = data.get('net_id', '').lower().strip()
-    if not net_id: return jsonify({'success': False, 'error': 'Authentication required'}), 401
+    if not net_id:
+        return jsonify({'success': False, 'error': 'Authentication required'}), 401
 
     conn = get_db()
     cur = conn.cursor()
     try:
-        if DATABASE_URL: cur.execute("SELECT net_id FROM marketplace WHERE id = %s", (item_id,))
-        else: cur.execute("SELECT net_id FROM marketplace WHERE id = ?", (item_id,))
+        if DATABASE_URL:
+            cur.execute("SELECT net_id FROM marketplace WHERE id = %s", (item_id,))
+        else:
+            cur.execute("SELECT net_id FROM marketplace WHERE id = ?", (item_id,))
         row = cur.fetchone()
-        if not row: return jsonify({'success': False, 'error': 'Item not found'}), 404
+        if not row:
+            return jsonify({'success': False, 'error': 'Item not found'}), 404
 
-        owner_id = str(row['net_id'] if isinstance(row, dict) else row[0]).lower().strip()
-        if owner_id != net_id: return jsonify({'success': False, 'error': 'You can only delete your own listings'}), 403
+        owner_id = (dict(row) if DATABASE_URL else dict(row)).get('net_id', '').lower().strip()
+        if owner_id != net_id:
+            return jsonify({'success': False, 'error': 'You can only delete your own listings'}), 403
 
-        if DATABASE_URL: cur.execute("DELETE FROM marketplace WHERE id = %s", (item_id,))
-        else: cur.execute("DELETE FROM marketplace WHERE id = ?", (item_id,))
+        if DATABASE_URL:
+            cur.execute("DELETE FROM marketplace WHERE id = %s", (item_id,))
+        else:
+            cur.execute("DELETE FROM marketplace WHERE id = ?", (item_id,))
         conn.commit()
-    except Exception as e: return jsonify({'success': False, 'error': str(e)}), 500
-    finally: cur.close(); conn.close()
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        cur.close()
+        conn.close()
     return jsonify({'success': True})
+
+# --- CAMPUS WALL ROUTES ---
 
 @app.route('/api/wall', methods=['GET'])
 def get_wall():
     conn = get_db()
+    
     if DATABASE_URL:
         cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cur.execute("SELECT * FROM campus_wall ORDER BY id DESC LIMIT 100")
@@ -669,6 +741,7 @@ def get_wall():
         cur.execute("SELECT * FROM campus_wall ORDER BY id DESC LIMIT 100")
         rows = cur.fetchall()
         posts = [dict(row) for row in rows]
+    
     cur.close()
     conn.close()
     return jsonify(posts)
@@ -676,18 +749,27 @@ def get_wall():
 @app.route('/api/wall/submit', methods=['POST'])
 def submit_wall():
     data = request.json
-    if not data or not data.get('message'): return jsonify({'success': False, 'error': 'Message required'}), 400
+    if not data or not data.get('message'):
+        return jsonify({'success': False, 'error': 'Message required'}), 400
 
     conn = get_db()
     cur = conn.cursor()
     now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     try:
-        if DATABASE_URL: cur.execute("INSERT INTO campus_wall (message, author, created_at) VALUES (%s, %s, %s)", (data.get('message'), data.get('author', 'Anonymous'), now_str))
-        else: cur.execute("INSERT INTO campus_wall (message, author, created_at) VALUES (?, ?, ?)", (data.get('message'), data.get('author', 'Anonymous'), now_str))
+        if DATABASE_URL:
+            cur.execute("INSERT INTO campus_wall (message, author, created_at) VALUES (%s, %s, %s)",
+                       (data.get('message'), data.get('author', 'Anonymous'), now_str))
+        else:
+            cur.execute("INSERT INTO campus_wall (message, author, created_at) VALUES (?, ?, ?)",
+                       (data.get('message'), data.get('author', 'Anonymous'), now_str))
         conn.commit()
-    except Exception as e: return jsonify({'success': False, 'error': str(e)}), 500
-    finally: cur.close(); conn.close()
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        cur.close()
+        conn.close()
+
     return jsonify({'success': True})
 
 @app.route('/api/wall/like/<int:post_id>', methods=['POST'])
@@ -695,18 +777,27 @@ def like_wall(post_id):
     conn = get_db()
     cur = conn.cursor()
     try:
-        if DATABASE_URL: cur.execute("UPDATE campus_wall SET likes = likes + 1 WHERE id = %s", (post_id,))
-        else: cur.execute("UPDATE campus_wall SET likes = likes + 1 WHERE id = ?", (post_id,))
+        if DATABASE_URL:
+            cur.execute("UPDATE campus_wall SET likes = likes + 1 WHERE id = %s", (post_id,))
+        else:
+            cur.execute("UPDATE campus_wall SET likes = likes + 1 WHERE id = ?", (post_id,))
         conn.commit()
-    except Exception as e: return jsonify({'success': False, 'error': str(e)}), 500
-    finally: cur.close(); conn.close()
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        cur.close()
+        conn.close()
     return jsonify({'success': True})
+
+# --- CAB SHARING ROUTES ---
 
 @app.route('/api/cabs', methods=['GET'])
 def get_cabs():
     conn = get_db()
+    
     if DATABASE_URL:
         cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        # Delete old trips ideally, but for now just fetch recent ones
         cur.execute("SELECT * FROM cab_sharing ORDER BY travel_date ASC, travel_time ASC LIMIT 100")
         rows = cur.fetchall()
         cabs = [dict(row) for row in rows]
@@ -715,6 +806,7 @@ def get_cabs():
         cur.execute("SELECT * FROM cab_sharing ORDER BY travel_date ASC, travel_time ASC LIMIT 100")
         rows = cur.fetchall()
         cabs = [dict(row) for row in rows]
+    
     cur.close()
     conn.close()
     return jsonify(cabs)
@@ -723,7 +815,8 @@ def get_cabs():
 def submit_cab():
     data = request.json
     required = ['destination', 'travel_date', 'travel_time', 'phone_no']
-    if not all(k in data for k in required) or not data['destination']: return jsonify({'success': False, 'error': 'Missing required fields'}), 400
+    if not all(k in data for k in required) or not data['destination']:
+        return jsonify({'success': False, 'error': 'Missing required fields'}), 400
 
     conn = get_db()
     cur = conn.cursor()
@@ -745,37 +838,56 @@ def submit_cab():
                   data.get('spots',''), data.get('phone_no'), data.get('creator_name'),
                   data.get('net_id',''), now_str))
         conn.commit()
-    except Exception as e: return jsonify({'success': False, 'error': str(e)}), 500
-    finally: cur.close(); conn.close()
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        cur.close()
+        conn.close()
+
     return jsonify({'success': True})
+
+# --- CAB SHARING DELETE (Owner Only) ---
 
 @app.route('/api/cabs/delete/<int:cab_id>', methods=['DELETE'])
 def delete_cab(cab_id):
     data = request.json or {}
     net_id = data.get('net_id', '').lower().strip()
-    if not net_id: return jsonify({'success': False, 'error': 'Authentication required'}), 401
+    if not net_id:
+        return jsonify({'success': False, 'error': 'Authentication required'}), 401
 
     conn = get_db()
     cur = conn.cursor()
     try:
-        if DATABASE_URL: cur.execute("SELECT net_id FROM cab_sharing WHERE id = %s", (cab_id,))
-        else: cur.execute("SELECT net_id FROM cab_sharing WHERE id = ?", (cab_id,))
+        if DATABASE_URL:
+            cur.execute("SELECT net_id FROM cab_sharing WHERE id = %s", (cab_id,))
+        else:
+            cur.execute("SELECT net_id FROM cab_sharing WHERE id = ?", (cab_id,))
         row = cur.fetchone()
-        if not row: return jsonify({'success': False, 'error': 'Ride not found'}), 404
+        if not row:
+            return jsonify({'success': False, 'error': 'Ride not found'}), 404
 
-        owner_id = str(row['net_id'] if isinstance(row, dict) else row[0]).lower().strip()
-        if owner_id != net_id: return jsonify({'success': False, 'error': 'You can only delete your own rides'}), 403
+        owner_id = (dict(row) if DATABASE_URL else dict(row)).get('net_id', '').lower().strip()
+        if owner_id != net_id:
+            return jsonify({'success': False, 'error': 'You can only delete your own rides'}), 403
 
-        if DATABASE_URL: cur.execute("DELETE FROM cab_sharing WHERE id = %s", (cab_id,))
-        else: cur.execute("DELETE FROM cab_sharing WHERE id = ?", (cab_id,))
+        if DATABASE_URL:
+            cur.execute("DELETE FROM cab_sharing WHERE id = %s", (cab_id,))
+        else:
+            cur.execute("DELETE FROM cab_sharing WHERE id = ?", (cab_id,))
         conn.commit()
-    except Exception as e: return jsonify({'success': False, 'error': str(e)}), 500
-    finally: cur.close(); conn.close()
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        cur.close()
+        conn.close()
     return jsonify({'success': True})
+
+# --- EVENTS & CLUB RADAR ROUTES ---
 
 @app.route('/api/events', methods=['GET'])
 def get_events():
     conn = get_db()
+    
     if DATABASE_URL:
         cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cur.execute("SELECT * FROM club_events ORDER BY id DESC LIMIT 100")
@@ -786,6 +898,7 @@ def get_events():
         cur.execute("SELECT * FROM club_events ORDER BY id DESC LIMIT 100")
         rows = cur.fetchall()
         events = [dict(row) for row in rows]
+    
     cur.close()
     conn.close()
     return jsonify(events)
@@ -794,7 +907,8 @@ def get_events():
 def submit_event():
     data = request.json
     required = ['club_name', 'event_title', 'event_date']
-    if not all(k in data for k in required) or not data['event_title']: return jsonify({'success': False, 'error': 'Missing required fields'}), 400
+    if not all(k in data for k in required) or not data['event_title']:
+        return jsonify({'success': False, 'error': 'Missing required fields'}), 400
 
     conn = get_db()
     cur = conn.cursor()
@@ -816,9 +930,15 @@ def submit_event():
                   data.get('registration_link',''), data.get('image_url',''),
                   data.get('created_by'), data.get('net_id',''), now_str))
         conn.commit()
-    except Exception as e: return jsonify({'success': False, 'error': str(e)}), 500
-    finally: cur.close(); conn.close()
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        cur.close()
+        conn.close()
+
     return jsonify({'success': True})
+
+# --- LOST & FOUND ROUTES ---
 
 @app.route('/api/lostfound', methods=['GET'])
 def get_lostfound():
@@ -841,7 +961,8 @@ def get_lostfound():
 def submit_lostfound():
     data = request.json
     required = ['title', 'category']
-    if not all(k in data for k in required) or not data['title']: return jsonify({'success': False, 'error': 'Missing required fields'}), 400
+    if not all(k in data for k in required) or not data['title']:
+        return jsonify({'success': False, 'error': 'Missing required fields'}), 400
 
     conn = get_db()
     cur = conn.cursor()
@@ -863,32 +984,45 @@ def submit_lostfound():
                   data.get('location',''), data.get('image_url',''),
                   data.get('poster_name','Student'), data.get('net_id',''), now_str))
         conn.commit()
-    except Exception as e: return jsonify({'success': False, 'error': str(e)}), 500
-    finally: cur.close(); conn.close()
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        cur.close()
+        conn.close()
     return jsonify({'success': True})
 
 @app.route('/api/lostfound/delete/<int:item_id>', methods=['DELETE'])
 def delete_lostfound(item_id):
     data = request.json or {}
     net_id = data.get('net_id', '').lower().strip()
-    if not net_id: return jsonify({'success': False, 'error': 'Authentication required'}), 401
+    if not net_id:
+        return jsonify({'success': False, 'error': 'Authentication required'}), 401
 
     conn = get_db()
     cur = conn.cursor()
     try:
-        if DATABASE_URL: cur.execute("SELECT net_id FROM lost_found WHERE id = %s", (item_id,))
-        else: cur.execute("SELECT net_id FROM lost_found WHERE id = ?", (item_id,))
+        if DATABASE_URL:
+            cur.execute("SELECT net_id FROM lost_found WHERE id = %s", (item_id,))
+        else:
+            cur.execute("SELECT net_id FROM lost_found WHERE id = ?", (item_id,))
         row = cur.fetchone()
-        if not row: return jsonify({'success': False, 'error': 'Item not found'}), 404
+        if not row:
+            return jsonify({'success': False, 'error': 'Item not found'}), 404
 
-        owner_id = str(row['net_id'] if isinstance(row, dict) else row[0]).lower().strip()
-        if owner_id != net_id: return jsonify({'success': False, 'error': 'You can only delete your own posts'}), 403
+        owner_id = (dict(row) if DATABASE_URL else dict(row)).get('net_id', '').lower().strip()
+        if owner_id != net_id:
+            return jsonify({'success': False, 'error': 'You can only delete your own posts'}), 403
 
-        if DATABASE_URL: cur.execute("DELETE FROM lost_found WHERE id = %s", (item_id,))
-        else: cur.execute("DELETE FROM lost_found WHERE id = ?", (item_id,))
+        if DATABASE_URL:
+            cur.execute("DELETE FROM lost_found WHERE id = %s", (item_id,))
+        else:
+            cur.execute("DELETE FROM lost_found WHERE id = ?", (item_id,))
         conn.commit()
-    except Exception as e: return jsonify({'success': False, 'error': str(e)}), 500
-    finally: cur.close(); conn.close()
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        cur.close()
+        conn.close()
     return jsonify({'success': True})
 
 @app.route('/ping')
