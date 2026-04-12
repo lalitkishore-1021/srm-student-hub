@@ -152,12 +152,7 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
         
         browser = p.chromium.launch(
             headless=True,
-            args=[
-                '--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage',
-                '--disable-extensions', '--disable-background-networking',
-                '--no-first-run', '--disable-sync',
-                '--blink-settings=imagesEnabled=false'
-            ]
+            args=['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
         )
         
         context = browser.new_context(
@@ -167,22 +162,11 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
         page = context.new_page()
         page.set_default_timeout(90000)
 
-        # Block images and media at network level to speed up every page load
-        def _block_heavy_assets(route):
-            if route.request.resource_type in ("image", "media"):
-                route.abort()
-            else:
-                route.continue_()
-        page.route("**/*", _block_heavy_assets)
-
         if "@" not in reg_no: reg_no += "@srmist.edu.in"
 
         print(f"[{reg_no}] 1. Loading Academia...")
         try:
-            # domcontentloaded is much faster than networkidle (~5-8s saved)
-            # Login form only needs the DOM, not every XHR to settle
-            page.goto("https://academia.srmist.edu.in/", wait_until="domcontentloaded", timeout=60000)
-            page.wait_for_timeout(1500)  # Brief grace for login form JS to attach
+            page.goto("https://academia.srmist.edu.in/", wait_until="networkidle", timeout=60000)
         except Exception as e:
             out_queue.put({'success': False, 'error': f'Portal failed to load: {str(e)}'})
             return
@@ -218,38 +202,24 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
                 page.wait_for_timeout(1000)
                 
             if not pwd_input: raise Exception("Password box not found")
-            pwd_input.fill(pwd, force=True)  # Instant paste instead of per-char typing
+            pwd_input.type(pwd, delay=30) 
             
             submit_btn = find_in_frames('button, input[type="submit"]', filter_text="sign in|login|submit|verify")
             if submit_btn: submit_btn.click(force=True, timeout=5000)
             else: page.keyboard.press("Enter")
-
-            # Smart-wait for dashboard instead of blind 5s sleep
-            # Exit as soon as iframes appear (= Academia loaded the inner shell)
-            _logged_in = False
-            for _i in range(10):
-                page.wait_for_timeout(500)
-                if len(page.frames) > 1:
-                    _logged_in = True
-                    print(f"[{reg_no}]   ✓ Login detected in {(_i+1)*500}ms")
-                    break
-            if not _logged_in:
-                page.wait_for_timeout(2000)  # Last-resort buffer if frames didn't appear
+            page.wait_for_timeout(5000) 
 
             terminate_btn = page.locator('button, a').filter(has_text=re.compile(r"terminate", re.IGNORECASE)).first
-            if terminate_btn.count() > 0:
-                terminate_btn.click(force=True)
-                # Smart-wait: poll until terminate button disappears
-                for _i in range(8):
-                    page.wait_for_timeout(500)
-                    if terminate_btn.count() == 0: break
-                page.wait_for_timeout(500)  # Small grace after dismiss
+            if terminate_btn.count() > 0: terminate_btn.click(force=True); page.wait_for_timeout(4000)
         except Exception as e:
             out_queue.put({'success': False, 'error': f'Auth Failed: {str(e)}'})
             return
 
         def get_all_tables():
-            # No iframe wait here — callers use poll_for_tables() beforehand
+            try:
+                page.wait_for_selector("iframe", timeout=10000)
+            except Exception as e:
+                print("Wait for iframe error:", str(e))
             all_tables = []
             for frame in page.frames:
                 try:
@@ -270,23 +240,6 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
                 except: pass
             return all_tables
 
-        def poll_for_tables(min_tables=2, timeout_ms=12000, poll_ms=500):
-            """Poll every 500ms until min_tables found in any frame.
-               Exits immediately when found. Max wait = timeout_ms.
-               Returns True if tables found, False on timeout."""
-            for attempt in range(timeout_ms // poll_ms):
-                for frame in page.frames:
-                    try:
-                        count = frame.evaluate("() => document.querySelectorAll('table').length")
-                        if count >= min_tables:
-                            ms = (attempt + 1) * poll_ms
-                            print(f"[{reg_no}]   ✓ {count} tables found in {ms}ms")
-                            return True
-                    except: pass
-                page.wait_for_timeout(poll_ms)
-            print(f"[{reg_no}]   ⚠ poll_for_tables timed out after {timeout_ms}ms — proceeding anyway")
-            return False
-
         def get_col_index(headers, *keywords):
             for i, h in enumerate(headers):
                 h_lower = str(h).lower()
@@ -297,11 +250,9 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
         # --- ATTENDANCE & MARKS ---
         print(f"[{reg_no}] 5. Scoping Attendance...")
         page.goto("https://academia.srmist.edu.in/#Page:My_Attendance")
-        # Poll until attendance tables appear (replaces 3s + reload + 5s = ~13-20s)
-        if not poll_for_tables(min_tables=3, timeout_ms=12000):
-            # Fallback: one reload attempt if tables didn't load
-            page.reload(wait_until="domcontentloaded")
-            poll_for_tables(min_tables=2, timeout_ms=8000)
+        page.wait_for_timeout(3000)
+        page.reload(wait_until="networkidle")
+        page.wait_for_timeout(5000)
 
         raw_tables = get_all_tables()
         parsed_att = []
@@ -379,7 +330,7 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
         student_slots = {}
         # Reverted 2024_25 back to 2023_24 based on Academia's weird hardcoded URL hash
         page.goto("https://academia.srmist.edu.in/#Page:My_Time_Table_2023_24")
-        poll_for_tables(min_tables=2, timeout_ms=10000)
+        page.wait_for_timeout(5000)
         
         slot_tables = get_all_tables()
         for table in slot_tables:
@@ -413,7 +364,7 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
         print(f"[{reg_no}] 7. Mapping to Master (Batch {batch})...")
         final_tt = {"1": [], "2": [], "3": [], "4": [], "5": []}
         page.goto(f"https://academia.srmist.edu.in/#Page:Unified_Time_Table_2025_Batch_{batch}")
-        poll_for_tables(min_tables=2, timeout_ms=10000)
+        page.wait_for_timeout(5000)
         
         master_tables = get_all_tables()
         for table in master_tables:

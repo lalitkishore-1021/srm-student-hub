@@ -59,185 +59,42 @@
         }
 
         #mobile-lock {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0, 0, 0, 0.75);
-            z-index: 999999;
-            display: none;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            text-align: center;
-            padding: 40px;
-            box-sizing: border-box;
-            backdrop-filter: blur(15px);
+            z-index: 999999; display: none; flex-direction: column; justify-content: center; align-items: center;
+            text-align: center; padding: 40px; box-sizing: border-box; backdrop-filter: blur(15px);
         }
-
-        #mobile-lock svg {
-            width: 120px;
-            height: 120px;
-            margin-bottom: 30px;
-            filter: drop-shadow(0 0 25px var(--primary-glow));
-            animation: pulse 2s infinite alternate;
-        }
-
-        #mobile-lock h1 {
-            font-family: 'Montserrat', sans-serif;
-            font-size: 2.2rem;
-            color: var(--primary);
-            margin: 0 0 15px 0;
-            text-transform: uppercase;
-        }
-
-        #mobile-lock p {
-            color: var(--text-main);
-            font-size: 1.1rem;
-            line-height: 1.6;
-            margin: 0 0 40px 0;
-        }
-
-        .install-instructions {
-            background: var(--glass);
-            border: 1px solid var(--glass-border);
-            padding: 20px;
-            border-radius: 16px;
-            text-align: left;
-            box-shadow: 0 10px 30px var(--shadow);
-            width: 100%;
-            max-width: 400px;
-        }
-
-        .install-instructions li {
-            margin-bottom: 15px;
-            color: var(--text-main);
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            font-size: 1.05rem;
-        }
-
-        .install-instructions li svg {
-            width: 30px;
-            height: 30px;
-            stroke: var(--primary);
-            flex-shrink: 0;
-        }
-
+        #mobile-lock svg { width: 120px; height: 120px; margin-bottom: 30px; filter: drop-shadow(0 0 25px var(--primary-glow)); animation: pulse 2s infinite alternate; }
+        #mobile-lock h1 { font-family: 'Montserrat', sans-serif; font-size: 2.2rem; color: var(--primary); margin: 0 0 15px 0; text-transform: uppercase; }
+        #mobile-lock p { color: var(--text-main); font-size: 1.1rem; line-height: 1.6; margin: 0 0 40px 0; }
+        .install-instructions { background: var(--glass); border: 1px solid var(--glass-border); padding: 20px; border-radius: 16px; text-align: left; box-shadow: 0 10px 30px var(--shadow); width: 100%; max-width: 400px; }
+        .install-instructions li { margin-bottom: 15px; color: var(--text-main); display: flex; align-items: center; gap: 15px; font-size: 1.05rem; }
+        .install-instructions li svg { width: 30px; height: 30px; stroke: var(--primary); flex-shrink: 0; }
+        
         .share-btn {
             background: linear-gradient(135deg, #ffaa00, #ff8800);
-            color: #000;
-            border: none;
-            padding: 12px 25px;
-            border-radius: 30px;
-            font-family: 'Montserrat', sans-serif;
-            font-weight: 900;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 1rem;
-            margin-top: 20px;
-            box-shadow: 0 10px 20px rgba(255, 170, 0, 0.4);
-            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            text-transform: uppercase;
+            color: #000; border: none; padding: 12px 25px; border-radius: 30px;
+            font-family: 'Montserrat', sans-serif; font-weight: 900; cursor: pointer;
+            display: inline-flex; align-items: center; gap: 10px; font-size: 1rem;
+            margin-top: 20px; box-shadow: 0 10px 20px rgba(255, 170, 0, 0.4);
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); text-transform: uppercase;
         }
-
-        .share-btn:hover {
-            transform: scale(1.1) translateY(-5px);
-            box-shadow: 0 15px 25px rgba(255, 170, 0, 0.6);
-        }
-
-        .share-btn svg {
-            width: 20px;
-            height: 20px;
-            stroke: #000;
-            stroke-width: 2.5;
-        }
+        .share-btn:hover { transform: scale(1.1) translateY(-5px); box-shadow: 0 15px 25px rgba(255, 170, 0, 0.6); }
+        .share-btn svg { width: 20px; height: 20px; stroke: #000; stroke-width: 2.5; }
 
         #share-template {
-            position: fixed;
-            top: -9999px;
-            left: -9999px;
-            width: 1080px;
-            height: 1920px;
+            position: fixed; top: -9999px; left: -9999px; width: 1080px; height: 1920px;
             background: radial-gradient(circle at top right, #1a1a1a 0%, #050505 100%);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            box-sizing: border-box;
-            border: 20px solid var(--primary);
-            z-index: -100;
-            opacity: 0;
-            pointer-events: none;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            box-sizing: border-box; border: 20px solid var(--primary); z-index: -100; opacity: 0; pointer-events: none;
         }
-
-        .st-watermark {
-            position: absolute;
-            top: 120px;
-            display: flex;
-            align-items: center;
-            gap: 30px;
-        }
-
-        .st-watermark svg {
-            width: 120px;
-            height: 120px;
-            filter: drop-shadow(0 0 30px rgba(255, 170, 0, 0.8));
-        }
-
-        .st-watermark h2 {
-            font-family: 'Montserrat', sans-serif;
-            font-size: 4rem;
-            color: var(--primary);
-            font-weight: 900;
-            margin: 0;
-            letter-spacing: 2px;
-        }
-
-        .st-card {
-            background: rgba(255, 255, 255, 0.05);
-            border: 2px solid rgba(255, 170, 0, 0.3);
-            border-radius: 50px;
-            padding: 100px;
-            width: 850px;
-            text-align: center;
-            box-shadow: 0 40px 80px rgba(0, 0, 0, 0.6);
-            backdrop-filter: blur(20px);
-        }
-
-        .st-title {
-            font-family: 'Montserrat', sans-serif;
-            font-size: 4rem;
-            color: #aaa;
-            text-transform: uppercase;
-            letter-spacing: 6px;
-            margin: 0 0 60px 0;
-        }
-
-        .st-value {
-            font-family: 'Montserrat', sans-serif;
-            font-size: 18rem;
-            font-weight: 900;
-            color: #fff;
-            margin: 0;
-            line-height: 1;
-            filter: drop-shadow(0 30px 40px rgba(255, 170, 0, 0.3));
-        }
-
-        .st-footer {
-            position: absolute;
-            bottom: 120px;
-            font-family: 'Montserrat', sans-serif;
-            font-size: 2.8rem;
-            color: rgba(255, 170, 0, 0.8);
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 4px;
-        }
+        .st-watermark { position: absolute; top: 120px; display: flex; align-items: center; gap: 30px; }
+        .st-watermark svg { width: 120px; height: 120px; filter: drop-shadow(0 0 30px rgba(255, 170, 0, 0.8)); }
+        .st-watermark h2 { font-family: 'Montserrat', sans-serif; font-size: 4rem; color: var(--primary); font-weight: 900; margin: 0; letter-spacing: 2px; }
+        .st-card { background: rgba(255,255,255,0.05); border: 2px solid rgba(255,170,0,0.3); border-radius: 50px; padding: 100px; width: 850px; text-align: center; box-shadow: 0 40px 80px rgba(0,0,0,0.6); backdrop-filter: blur(20px); }
+        .st-title { font-family: 'Montserrat', sans-serif; font-size: 4rem; color: #aaa; text-transform: uppercase; letter-spacing: 6px; margin: 0 0 60px 0; }
+        .st-value { font-family: 'Montserrat', sans-serif; font-size: 18rem; font-weight: 900; color: #fff; margin: 0; line-height: 1; filter: drop-shadow(0 30px 40px rgba(255,170,0,0.3)); }
+        .st-footer { position: absolute; bottom: 120px; font-family: 'Montserrat', sans-serif; font-size: 2.8rem; color: rgba(255, 170, 0, 0.8); font-weight: 700; text-transform: uppercase; letter-spacing: 4px; }
 
         .btn-container {
             position: fixed;
@@ -991,7 +848,6 @@
             transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             pointer-events: none;
         }
-
         .ptr-spinner {
             background: var(--card-bg);
             border: 2px solid var(--primary);
@@ -1008,20 +864,9 @@
             backdrop-filter: blur(10px);
             transition: transform 0.2s;
         }
-
-        .ptr-container.active {
-            transform: translateY(110px);
-        }
-
-        .ptr-spinner.spinning {
-            animation: ptr-spin 1s linear infinite;
-        }
-
-        @keyframes ptr-spin {
-            100% {
-                transform: rotate(360deg);
-            }
-        }
+        .ptr-container.active { transform: translateY(110px); }
+        .ptr-spinner.spinning { animation: ptr-spin 1s linear infinite; }
+        @keyframes ptr-spin { 100% { transform: rotate(360deg); } }
 
         .overview-percent {
             font-size: 48px;
@@ -1583,25 +1428,10 @@
         <div class="splash-text">Loading Hub...</div>
     </div>
 
-    <!-- ADD LOGOUT BTN HERE -->
-    <div class="top-left-actions" style="position: absolute; top: 20px; left: 20px; z-index: 1000; display: none;"
-        id="logoutBtnContainer">
-        <button id="logoutBtn" class="icon-btn" onclick="logoutFromApp()" title="Log Out"
-            style="color: var(--danger); border-color: rgba(255, 68, 68, 0.4); background: rgba(0,0,0,0.5);">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
-                stroke-linejoin="round">
-                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-                <polyline points="16 17 21 12 16 7"></polyline>
-                <line x1="21" y1="12" x2="9" y2="12"></line>
-            </svg>
-        </button>
-    </div>
-
     <div class="btn-container" id="navButtons">
         <button id="reSyncBtn" class="icon-btn" onclick="openSyncModal()" title="Sync Academia Data"
             style="color: var(--primary); border-color: var(--primary);">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
-                stroke-linejoin="round">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                 <polyline points="23 4 23 10 17 10"></polyline>
                 <polyline points="1 20 1 14 7 14"></polyline>
                 <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
@@ -1636,47 +1466,33 @@
                         <stop offset="100%" stop-color="#ffdd00" />
                     </linearGradient>
                 </defs>
-                <path
-                    d="M 30 20 L 10 50 L 30 80 M 70 20 L 90 50 L 70 80 M 35 65 L 45 65 L 45 50 L 55 50 L 55 35 L 65 35"
-                    fill="none" stroke="url(#lockGradient)" stroke-width="8" stroke-linecap="round"
-                    stroke-linejoin="round" />
+                <path d="M 30 20 L 10 50 L 30 80 M 70 20 L 90 50 L 70 80 M 35 65 L 45 65 L 45 50 L 55 50 L 55 35 L 65 35" fill="none" stroke="url(#lockGradient)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" />
             </svg>
             <h1>App Access Required</h1>
-            <p>To use SRM Student Hub on your phone, you must install the Web App. This unlocks true full-screen mode,
-                native speed, and easy access without entering your URL every time!</p>
+            <p>To use SRM Student Hub on your phone, you must install the Web App. This unlocks true full-screen mode, native speed, and easy access without entering your URL every time!</p>
             <div class="install-instructions">
-                <li><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
-                    </svg> Tap the <b>Share Menu</b> (iOS) or <b>Browser Menu ⋮</b> (Android)</li>
-                <li><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                        <line x1="12" y1="8" x2="12" y2="16"></line>
-                        <line x1="8" y1="12" x2="16" y2="12"></line>
-                    </svg> Select <b>"Add to Home Screen"</b></li>
-                <li><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                        <polyline points="22 4 12 14.01 9 11.01"></polyline>
-                    </svg> Open the app directly from your home screen!</li>
+                <li><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg> Tap the <b>Share Menu</b> (iOS) or <b>Browser Menu ⋮</b> (Android)</li>
+                <li><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg> Select <b>"Add to Home Screen"</b></li>
+                <li><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg> Open the app directly from your home screen!</li>
             </div>
         </div>
 
         <div id="share-template">
             <div class="st-watermark">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
-                    <path d="M 35 65 L 45 65 L 45 50 L 55 50 L 55 35 L 65 35" fill="none" stroke="#ffaa00"
-                        stroke-width="8" stroke-linecap="round" stroke-linejoin="round" />
-                </svg>
-                <h2>SRM STUDENT HUB</h2>
-            </div>
-            <div class="st-card">
-                <h3 class="st-title" id="st-title">My Attendance</h3>
-                <h1 class="st-value" id="st-value">90.9%</h1>
-            </div>
-            <div class="st-footer">Made with SRM Student Hub</div>
+                <path d="M 35 65 L 45 65 L 45 50 L 55 50 L 55 35 L 65 35" fill="none" stroke="#ffaa00" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+            <h2>SRM STUDENT HUB</h2>
         </div>
+        <div class="st-card">
+            <h3 class="st-title" id="st-title">My Attendance</h3>
+            <h1 class="st-value" id="st-value">90.9%</h1>
+        </div>
+        <div class="st-footer">Made with SRM Student Hub</div>
+    </div>
 
 
-        <header class="site-header">
+    <header class="site-header">
             <svg id="logoInstallTrigger" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" class="main-logo"
                 title="Click to Install App">
                 <defs>
@@ -1723,14 +1539,28 @@
                                 <p class="id-reg">RA2511026010324</p>
                             </div>
                         </div>
-                        <!-- ID Details removed as requested -->
+                        <div class="id-details">
+                            <span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+                                </svg> B.Tech</span>
+                            <span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                                    <line x1="3" y1="9" x2="21" y2="9" />
+                                    <line x1="9" y1="21" x2="9" y2="9" />
+                                </svg> CS AIML</span>
+                            <span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+                                    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+                                </svg> Semester 2</span>
+                        </div>
                     </div>
                     <div class="stats-bar">
                         <div class="stat-box">
                             <div class="stat-val green" id="home-att-val">--%</div>
-                            <div class="stat-label">Attendance <span id="att-perc-badge"
-                                    style="display:block; font-size:0.75rem; font-weight:900; margin-top:5px; color: var(--text-sub); letter-spacing: 1px;"></span>
-                            </div>
+                            <div class="stat-label">Attendance <span id="att-perc-badge" style="display:block; font-size:0.75rem; font-weight:900; margin-top:5px; color: var(--text-sub); letter-spacing: 1px;"></span></div>
                         </div>
                         <div class="stat-box">
                             <div class="stat-val blue" id="home-course-val">-</div>
@@ -1745,14 +1575,11 @@
             </div>
 
             <!-- HOLIDAY BANNER (HOME) -->
-            <div id="home-holiday-banner" class="holiday-banner fade-in-up"
-                style="display: none; align-items: center; justify-content: center; background: linear-gradient(135deg, rgba(255, 170, 0, 0.15), rgba(255, 85, 0, 0.1)); border: 1px solid rgba(255, 170, 0, 0.3); border-radius: 15px; padding: 15px 20px; margin: 0 auto 20px; max-width: 600px; color: var(--text-main); font-family: 'Montserrat', sans-serif; gap: 15px; box-shadow: 0 10px 30px rgba(255,170,0,0.1);">
+            <div id="home-holiday-banner" class="holiday-banner fade-in-up" style="display: none; align-items: center; justify-content: center; background: linear-gradient(135deg, rgba(255, 170, 0, 0.15), rgba(255, 85, 0, 0.1)); border: 1px solid rgba(255, 170, 0, 0.3); border-radius: 15px; padding: 15px 20px; margin: 0 auto 20px; max-width: 600px; color: var(--text-main); font-family: 'Montserrat', sans-serif; gap: 15px; box-shadow: 0 10px 30px rgba(255,170,0,0.1);">
                 <div style="font-size: 2.2rem; filter: drop-shadow(0 0 10px rgba(255,170,0,0.5));">🌴</div>
                 <div style="text-align: left;">
-                    <h3 style="margin: 0 0 5px; color: var(--primary); font-size: 1.1rem; text-transform: uppercase;">
-                        It's a Holiday!</h3>
-                    <p id="home-holiday-name" style="margin: 0; font-size: 0.85rem; color: var(--text-sub);">No classes
-                        today. Take a break and recharge.</p>
+                    <h3 style="margin: 0 0 5px; color: var(--primary); font-size: 1.1rem; text-transform: uppercase;">It's a Holiday!</h3>
+                    <p id="home-holiday-name" style="margin: 0; font-size: 0.85rem; color: var(--text-sub);">No classes today. Take a break and recharge.</p>
                 </div>
             </div>
 
@@ -1790,67 +1617,59 @@
                     </div>
                 </div>
                 <div class="action-card" onclick="switchView('projecthub-view'); loadProjects();">
-                    <div class="action-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="2">
-                            <polygon
-                                points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2">
-                            </polygon>
-                        </svg></div>
+                    <div class="action-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                    </svg></div>
                     <div>
                         <h4 class="action-title">Project Hub</h4>
                         <p class="action-sub">Top Final Year Projects</p>
                     </div>
                 </div>
                 <div class="action-card" onclick="switchView('marketplace-view'); loadMarketplace();">
-                    <div class="action-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="2">
-                            <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
-                            <line x1="3" y1="6" x2="21" y2="6"></line>
-                            <path d="M16 10a4 4 0 0 1-8 0"></path>
-                        </svg></div>
+                    <div class="action-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+                        <line x1="3" y1="6" x2="21" y2="6"></line>
+                        <path d="M16 10a4 4 0 0 1-8 0"></path>
+                    </svg></div>
                     <div>
                         <h4 class="action-title">Campus Market</h4>
                         <p class="action-sub">Buy, Sell & Trade</p>
                     </div>
                 </div>
                 <div class="action-card" onclick="switchView('wall-view'); loadWall();">
-                    <div class="action-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="2">
-                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-                        </svg></div>
+                    <div class="action-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                    </svg></div>
                     <div>
                         <h4 class="action-title">Campus Wall</h4>
                         <p class="action-sub">Anonymous Feed</p>
                     </div>
                 </div>
                 <div class="action-card" onclick="switchView('cabs-view'); loadCabs();">
-                    <div class="action-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="2">
-                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                            <path d="M5 11l1.5-4.5a2 2 0 0 1 1.9-1.5h7.2a2 2 0 0 1 1.9 1.5L19 11"></path>
-                        </svg></div>
+                    <div class="action-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                        <path d="M5 11l1.5-4.5a2 2 0 0 1 1.9-1.5h7.2a2 2 0 0 1 1.9 1.5L19 11"></path>
+                    </svg></div>
                     <div>
                         <h4 class="action-title">Cab Sharing</h4>
                         <p class="action-sub">Find travel partners</p>
                     </div>
                 </div>
                 <div class="action-card" onclick="switchView('lostfound-view'); loadLostFound();">
-                    <div class="action-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="2">
-                            <circle cx="11" cy="11" r="8"></circle>
-                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                        </svg></div>
+                    <div class="action-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg></div>
                     <div>
                         <h4 class="action-title">Lost & Found</h4>
                         <p class="action-sub">Report or find items</p>
                     </div>
                 </div>
                 <div class="action-card" onclick="switchView('events-view'); loadEvents();">
-                    <div class="action-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="2">
-                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-                            <circle cx="12" cy="10" r="3"></circle>
-                        </svg></div>
+                    <div class="action-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                        <circle cx="12" cy="10" r="3"></circle>
+                    </svg></div>
                     <div>
                         <h4 class="action-title">Club Radar</h4>
                         <p class="action-sub">Upcoming SRM Events</p>
@@ -1909,85 +1728,53 @@
 
         <div id="projecthub-view" class="app-view">
             <div class="view-header">
-                <button class="back-btn" onclick="switchNav('home-view', document.querySelector('.nav-item'))">&#8592;
-                    Back to Home</button>
+                <button class="back-btn" onclick="switchNav('home-view', document.querySelector('.nav-item'))">&#8592; Back to Home</button>
                 <h2 class="gallery-title">Innovation Lab ✨</h2>
                 <p class="subtitle" style="margin-bottom: 20px;">Top Final Year Projects by SRMites</p>
             </div>
 
             <div style="text-align: center; margin-bottom: 30px;">
-                <button class="action-btn"
-                    onclick="document.getElementById('projectSubmitModal').style.display='flex'; document.getElementById('ph-status').innerText='';"
-                    style="background: linear-gradient(135deg, #ffaa00, #ff8800); color: #000; font-weight: 900; font-size: 1rem; padding: 14px 30px; border-radius: 30px; box-shadow: 0 10px 20px rgba(255,170,0,0.4); text-transform: uppercase; max-width: 300px; margin: 0 auto;">+
-                    Submit Your Project</button>
+                <button class="action-btn" onclick="document.getElementById('projectSubmitModal').style.display='flex'; document.getElementById('ph-status').innerText='';" style="background: linear-gradient(135deg, #ffaa00, #ff8800); color: #000; font-weight: 900; font-size: 1rem; padding: 14px 30px; border-radius: 30px; box-shadow: 0 10px 20px rgba(255,170,0,0.4); text-transform: uppercase; max-width: 300px; margin: 0 auto;">+ Submit Your Project</button>
             </div>
 
-            <div id="ph-list"
-                style="max-width: 800px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px;">
-                <div class="image-card fade-in-up"
-                    style="transform: none; text-align: left; background: rgba(255,170,0,0.05); border: 1px solid rgba(255,170,0,0.2);">
-                    <div
-                        style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
-                        <h3
-                            style="color: var(--primary); margin: 0; font-size: 1.3rem; font-family: 'Montserrat', sans-serif;">
-                            AI-Powered Medical Diagnosis</h3>
-                        <span
-                            style="background: rgba(255,170,0,0.2); padding: 5px 10px; border-radius: 8px; font-size: 0.8rem; color: var(--primary); font-weight: bold; white-space: nowrap;">🔥
-                            #1 TRENDING</span>
+            <div id="ph-list" style="max-width: 800px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px;">
+                <div class="image-card fade-in-up" style="transform: none; text-align: left; background: rgba(255,170,0,0.05); border: 1px solid rgba(255,170,0,0.2);">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+                        <h3 style="color: var(--primary); margin: 0; font-size: 1.3rem; font-family: 'Montserrat', sans-serif;">AI-Powered Medical Diagnosis</h3>
+                        <span style="background: rgba(255,170,0,0.2); padding: 5px 10px; border-radius: 8px; font-size: 0.8rem; color: var(--primary); font-weight: bold; white-space: nowrap;">🔥 #1 TRENDING</span>
                     </div>
-                    <p style="color: var(--text-sub); line-height: 1.6; font-size: 0.95rem; margin-bottom: 15px;">A
-                        full-stack diagnostic tool using quantized LLMs to predict diseases from basic patient
-                        symptomatic inputs in real-time accurately.</p>
+                    <p style="color: var(--text-sub); line-height: 1.6; font-size: 0.95rem; margin-bottom: 15px;">A full-stack diagnostic tool using quantized LLMs to predict diseases from basic patient symptomatic inputs in real-time accurately.</p>
                     <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 18px;">
-                        <span
-                            style="background: rgba(255,255,255,0.07); padding: 4px 10px; border-radius: 5px; font-size: 0.8rem; color: #aaa;">Next.js</span>
-                        <span
-                            style="background: rgba(255,255,255,0.07); padding: 4px 10px; border-radius: 5px; font-size: 0.8rem; color: #aaa;">PyTorch</span>
-                        <span
-                            style="background: rgba(255,255,255,0.07); padding: 4px 10px; border-radius: 5px; font-size: 0.8rem; color: #aaa;">FastAPI</span>
+                        <span style="background: rgba(255,255,255,0.07); padding: 4px 10px; border-radius: 5px; font-size: 0.8rem; color: #aaa;">Next.js</span>
+                        <span style="background: rgba(255,255,255,0.07); padding: 4px 10px; border-radius: 5px; font-size: 0.8rem; color: #aaa;">PyTorch</span>
+                        <span style="background: rgba(255,255,255,0.07); padding: 4px 10px; border-radius: 5px; font-size: 0.8rem; color: #aaa;">FastAPI</span>
                     </div>
-                    <button class="action-btn" onclick="alert('Opens GitHub link')"
-                        style="background: rgba(255,170,0,0.15); color: var(--primary); border: 1px solid var(--primary); padding: 10px 20px; border-radius: 10px; font-size: 0.9rem; font-weight: bold; margin: 0;">View
-                        GitHub ↗</button>
+                    <button class="action-btn" onclick="alert('Opens GitHub link')" style="background: rgba(255,170,0,0.15); color: var(--primary); border: 1px solid var(--primary); padding: 10px 20px; border-radius: 10px; font-size: 0.9rem; font-weight: bold; margin: 0;">View GitHub ↗</button>
                 </div>
 
                 <div class="image-card fade-in-up" style="transform: none; text-align: left;">
-                    <div
-                        style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
-                        <h3
-                            style="color: var(--text-main); margin: 0; font-size: 1.2rem; font-family: 'Montserrat', sans-serif;">
-                            Decentralized Voting System</h3>
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+                        <h3 style="color: var(--text-main); margin: 0; font-size: 1.2rem; font-family: 'Montserrat', sans-serif;">Decentralized Voting System</h3>
                     </div>
-                    <p style="color: var(--text-sub); line-height: 1.5; font-size: 0.9rem; margin-bottom: 15px;">A
-                        secure, tamper-proof university election app deployed entirely on the Ethereum testnet using
-                        Solidity smart contracts.</p>
+                    <p style="color: var(--text-sub); line-height: 1.5; font-size: 0.9rem; margin-bottom: 15px;">A secure, tamper-proof university election app deployed entirely on the Ethereum testnet using Solidity smart contracts.</p>
                     <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 18px;">
-                        <span
-                            style="background: rgba(255,255,255,0.05); padding: 4px 10px; border-radius: 5px; font-size: 0.8rem; color: #888;">Solidity</span>
-                        <span
-                            style="background: rgba(255,255,255,0.05); padding: 4px 10px; border-radius: 5px; font-size: 0.8rem; color: #888;">React</span>
-                        <span
-                            style="background: rgba(255,255,255,0.05); padding: 4px 10px; border-radius: 5px; font-size: 0.8rem; color: #888;">Hardhat</span>
+                        <span style="background: rgba(255,255,255,0.05); padding: 4px 10px; border-radius: 5px; font-size: 0.8rem; color: #888;">Solidity</span>
+                        <span style="background: rgba(255,255,255,0.05); padding: 4px 10px; border-radius: 5px; font-size: 0.8rem; color: #888;">React</span>
+                        <span style="background: rgba(255,255,255,0.05); padding: 4px 10px; border-radius: 5px; font-size: 0.8rem; color: #888;">Hardhat</span>
                     </div>
-                    <button class="action-btn" onclick="alert('Opens Live Demo')"
-                        style="background: var(--glass); color: var(--primary); padding: 10px 20px; border-radius: 10px; font-size: 0.9rem; font-weight: bold; margin: 0;">View
-                        Live Demo →</button>
+                    <button class="action-btn" onclick="alert('Opens Live Demo')" style="background: var(--glass); color: var(--primary); padding: 10px 20px; border-radius: 10px; font-size: 0.9rem; font-weight: bold; margin: 0;">View Live Demo →</button>
                 </div>
 
-                <div class="image-card fade-in-up"
-                    style="transform: none; text-align: left; opacity: 0.6; border: 1px dashed var(--glass-border);">
-                    <h3 style="color: var(--text-sub); margin: 0 0 10px 0; font-style: italic;">Your Project Could Be
-                        Here!</h3>
-                    <p style="color: var(--text-sub); font-size: 0.9rem; margin: 0;">Submit your Final Year Project to
-                        get featured and reach thousands of SRM students.</p>
+                <div class="image-card fade-in-up" style="transform: none; text-align: left; opacity: 0.6; border: 1px dashed var(--glass-border);">
+                    <h3 style="color: var(--text-sub); margin: 0 0 10px 0; font-style: italic;">Your Project Could Be Here!</h3>
+                    <p style="color: var(--text-sub); font-size: 0.9rem; margin: 0;">Submit your Final Year Project to get featured and reach thousands of SRM students.</p>
                 </div>
             </div>
         </div>
 
         <div id="marketplace-view" class="app-view">
             <div class="view-header">
-                <button class="back-btn" onclick="switchNav('home-view', document.querySelector('.nav-item'))">&#8592;
-                    Back to Home</button>
+                <button class="back-btn" onclick="switchNav('home-view', document.querySelector('.nav-item'))">&#8592; Back to Home</button>
                 <h2 class="gallery-title">Campus Market 🛒</h2>
                 <p class="subtitle" style="margin-bottom: 20px;">Buy, Sell, and Trade within SRM</p>
             </div>
@@ -2000,65 +1787,47 @@
             </div>
 
             <div style="text-align: center; margin-bottom: 30px;">
-                <button class="action-btn"
-                    onclick="document.getElementById('marketSubmitModal').style.display='flex'; document.getElementById('market-status').innerText='';"
-                    style="background: linear-gradient(135deg, #ffaa00, #ff8800); color: #000; font-weight: 900; font-size: 1rem; padding: 14px 30px; border-radius: 30px; box-shadow: 0 10px 20px rgba(255,170,0,0.4); text-transform: uppercase; max-width: 300px; margin: 0 auto;">+
-                    Sell an Item</button>
+                <button class="action-btn" onclick="document.getElementById('marketSubmitModal').style.display='flex'; document.getElementById('market-status').innerText='';" style="background: linear-gradient(135deg, #ffaa00, #ff8800); color: #000; font-weight: 900; font-size: 1rem; padding: 14px 30px; border-radius: 30px; box-shadow: 0 10px 20px rgba(255,170,0,0.4); text-transform: uppercase; max-width: 300px; margin: 0 auto;">+ Sell an Item</button>
             </div>
 
-            <div id="market-list"
-                style="max-width: 800px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px;">
+            <div id="market-list" style="max-width: 800px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px;">
                 <!-- dynamic items here -->
             </div>
         </div>
 
         <div id="wall-view" class="app-view">
             <div class="view-header">
-                <button class="back-btn" onclick="switchNav('home-view', document.querySelector('.nav-item'))">&#8592;
-                    Back to Home</button>
+                <button class="back-btn" onclick="switchNav('home-view', document.querySelector('.nav-item'))">&#8592; Back to Home</button>
                 <h2 class="gallery-title">Campus Wall 🧱</h2>
                 <p class="subtitle" style="margin-bottom: 20px;">Anonymous Confessions, Questions & Thoughts</p>
             </div>
 
-            <div
-                style="max-width: 600px; margin: 0 auto 30px auto; display: flex; flex-direction: column; gap: 12px; align-items: stretch;">
-                <textarea id="wall-input" placeholder="Write something anonymously..." rows="3"
-                    style="width: 100%; background: rgba(0,0,0,0.5); border: 1px solid var(--glass-border); color: #fff; padding: 18px; border-radius: 15px; font-family: inherit; font-size: 1.1rem; resize: none; min-height: 80px; max-height: 200px; line-height: 1.5; box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);"
-                    oninput="this.style.height='auto'; this.style.height=Math.min(this.scrollHeight,200)+'px';"></textarea>
-                <button class="action-btn" onclick="submitWall()"
-                    style="margin: 0; padding: 14px; border-radius: 12px; font-size: 1rem; letter-spacing: 1px; box-shadow: 0 4px 15px rgba(255,170,0,0.3);">Post
-                    to Wall</button>
+            <div style="max-width: 600px; margin: 0 auto 30px auto; display: flex; flex-direction: column; gap: 12px; align-items: stretch;">
+                <textarea id="wall-input" placeholder="Write something anonymously..." rows="3" style="width: 100%; background: rgba(0,0,0,0.5); border: 1px solid var(--glass-border); color: #fff; padding: 18px; border-radius: 15px; font-family: inherit; font-size: 1.1rem; resize: none; min-height: 80px; max-height: 200px; line-height: 1.5; box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);" oninput="this.style.height='auto'; this.style.height=Math.min(this.scrollHeight,200)+'px';"></textarea>
+                <button class="action-btn" onclick="submitWall()" style="margin: 0; padding: 14px; border-radius: 12px; font-size: 1rem; letter-spacing: 1px; box-shadow: 0 4px 15px rgba(255,170,0,0.3);">Post to Wall</button>
             </div>
-            <p id="wall-status"
-                style="font-size: 0.85rem; font-weight: bold; text-align: center; color: var(--danger);"></p>
+            <p id="wall-status" style="font-size: 0.85rem; font-weight: bold; text-align: center; color: var(--danger);"></p>
 
-            <div id="wall-list"
-                style="max-width: 600px; margin: 0 auto; display: flex; flex-direction: column; gap: 15px;"></div>
+            <div id="wall-list" style="max-width: 600px; margin: 0 auto; display: flex; flex-direction: column; gap: 15px;"></div>
         </div>
 
         <div id="cabs-view" class="app-view">
             <div class="view-header">
-                <button class="back-btn" onclick="switchNav('home-view', document.querySelector('.nav-item'))">&#8592;
-                    Back to Home</button>
+                <button class="back-btn" onclick="switchNav('home-view', document.querySelector('.nav-item'))">&#8592; Back to Home</button>
                 <h2 class="gallery-title">Travel Pool 🚕</h2>
                 <p class="subtitle" style="margin-bottom: 20px;">Split cab fares to the Airport, Station or Home</p>
             </div>
 
             <div style="text-align: center; margin-bottom: 30px;">
-                <button class="action-btn"
-                    onclick="document.getElementById('cabSubmitModal').style.display='flex'; document.getElementById('cab-status').innerText='';"
-                    style="background: linear-gradient(135deg, #00cc66, #00994d); color: #fff; font-weight: 900; font-size: 1rem; padding: 14px 30px; border-radius: 30px; box-shadow: 0 10px 20px rgba(0,204,102,0.4); text-transform: uppercase; max-width: 300px; margin: 0 auto;">+
-                    Request a Partner</button>
+                <button class="action-btn" onclick="document.getElementById('cabSubmitModal').style.display='flex'; document.getElementById('cab-status').innerText='';" style="background: linear-gradient(135deg, #00cc66, #00994d); color: #fff; font-weight: 900; font-size: 1rem; padding: 14px 30px; border-radius: 30px; box-shadow: 0 10px 20px rgba(0,204,102,0.4); text-transform: uppercase; max-width: 300px; margin: 0 auto;">+ Request a Partner</button>
             </div>
 
-            <div id="cabs-list"
-                style="max-width: 800px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px;"></div>
+            <div id="cabs-list" style="max-width: 800px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px;"></div>
         </div>
 
         <div id="lostfound-view" class="app-view">
             <div class="view-header">
-                <button class="back-btn" onclick="switchNav('home-view', document.querySelector('.nav-item'))">&#8592;
-                    Back to Home</button>
+                <button class="back-btn" onclick="switchNav('home-view', document.querySelector('.nav-item'))">&#8592; Back to Home</button>
                 <h2 class="gallery-title">Lost & Found 🔍</h2>
                 <p class="subtitle" style="margin-bottom: 20px;">Report lost items or help reunite found ones</p>
             </div>
@@ -2070,34 +1839,24 @@
             </div>
 
             <div style="text-align: center; margin-bottom: 30px;">
-                <button class="action-btn"
-                    onclick="document.getElementById('lfSubmitModal').style.display='flex'; document.getElementById('lf-status').innerText='';"
-                    style="background: linear-gradient(135deg, #e65c00, #f59e0b); color: #fff; font-weight: 900; font-size: 1rem; padding: 14px 30px; border-radius: 30px; box-shadow: 0 10px 20px rgba(230,92,0,0.4); text-transform: uppercase; max-width: 300px; margin: 0 auto;">+
-                    Report Item</button>
+                <button class="action-btn" onclick="document.getElementById('lfSubmitModal').style.display='flex'; document.getElementById('lf-status').innerText='';" style="background: linear-gradient(135deg, #e65c00, #f59e0b); color: #fff; font-weight: 900; font-size: 1rem; padding: 14px 30px; border-radius: 30px; box-shadow: 0 10px 20px rgba(230,92,0,0.4); text-transform: uppercase; max-width: 300px; margin: 0 auto;">+ Report Item</button>
             </div>
 
-            <div id="lf-list"
-                style="max-width: 800px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px;"></div>
+            <div id="lf-list" style="max-width: 800px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px;"></div>
         </div>
 
         <div id="events-view" class="app-view">
             <div class="view-header">
-                <button class="back-btn" onclick="switchNav('home-view', document.querySelector('.nav-item'))">&#8592;
-                    Back to Home</button>
+                <button class="back-btn" onclick="switchNav('home-view', document.querySelector('.nav-item'))">&#8592; Back to Home</button>
                 <h2 class="gallery-title">Events & Club Radar 🎟️</h2>
-                <p class="subtitle" style="margin-bottom: 20px;">Discover tech events, hackathons, and cultural fests at
-                    SRM</p>
+                <p class="subtitle" style="margin-bottom: 20px;">Discover tech events, hackathons, and cultural fests at SRM</p>
             </div>
 
             <div style="text-align: center; margin-bottom: 30px;">
-                <button class="action-btn"
-                    onclick="document.getElementById('eventSubmitModal').style.display='flex'; document.getElementById('event-status').innerText='';"
-                    style="background: linear-gradient(135deg, #e60073, #ff3399); color: #fff; font-weight: 900; font-size: 1rem; padding: 14px 30px; border-radius: 30px; box-shadow: 0 10px 20px rgba(230,0,115,0.4); text-transform: uppercase; max-width: 300px; margin: 0 auto;">+
-                    Post an Event</button>
+                <button class="action-btn" onclick="document.getElementById('eventSubmitModal').style.display='flex'; document.getElementById('event-status').innerText='';" style="background: linear-gradient(135deg, #e60073, #ff3399); color: #fff; font-weight: 900; font-size: 1rem; padding: 14px 30px; border-radius: 30px; box-shadow: 0 10px 20px rgba(230,0,115,0.4); text-transform: uppercase; max-width: 300px; margin: 0 auto;">+ Post an Event</button>
             </div>
 
-            <div id="events-list"
-                style="max-width: 800px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px;"></div>
+            <div id="events-list" style="max-width: 800px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px;"></div>
         </div>
 
         <div id="cgpa-view" class="app-view">
@@ -2145,27 +1904,16 @@
 
         <div id="helper-view" class="app-view">
             <div class="view-header" style="margin-bottom: 10px;">
-                <button class="back-btn" style="margin-bottom: 20px;"
-                    onclick="switchNav('home-view', document.querySelector('.nav-item'))">&#8592; Back to Home</button>
+                <button class="back-btn" style="margin-bottom: 20px;" onclick="switchNav('home-view', document.querySelector('.nav-item'))">&#8592; Back to Home</button>
                 <h2 class="gallery-title" style="margin-bottom: 20px;">Study Helper</h2>
             </div>
-
-            <div class="image-card fade-in-up"
-                style="padding: 0; overflow: hidden; border-radius: 20px; max-width: 1000px; margin: 0 auto; margin-bottom: 20px;">
-                <div
-                    style="background: rgba(255,170,0,0.1); padding: 15px; border-bottom: 1px solid var(--glass-border); display: flex; justify-content: space-between; align-items: center;">
-                    <span
-                        style="font-family: 'Montserrat', sans-serif; font-weight: bold; color: var(--primary); font-size: 0.9rem; text-transform: uppercase;">The
-                        Helpers | Community Resources</span>
-                    <a href="https://thehelpers.vercel.app/semesters" target="_blank"
-                        style="color: var(--text-main); font-size: 0.8rem; text-decoration: none; border: 1px solid var(--glass-border); padding: 6px 12px; border-radius: 8px; background: rgba(0,0,0,0.3); font-weight: bold; transition: all 0.3s;"
-                        onmouseover="this.style.background='var(--primary)'; this.style.color='#000';"
-                        onmouseout="this.style.background='rgba(0,0,0,0.3)'; this.style.color='var(--text-main)';">Open
-                        Link ↗</a>
+            
+            <div class="image-card fade-in-up" style="padding: 0; overflow: hidden; border-radius: 20px; max-width: 1000px; margin: 0 auto; margin-bottom: 20px;">
+                <div style="background: rgba(255,170,0,0.1); padding: 15px; border-bottom: 1px solid var(--glass-border); display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-family: 'Montserrat', sans-serif; font-weight: bold; color: var(--primary); font-size: 0.9rem; text-transform: uppercase;">The Helpers | Community Resources</span>
+                    <a href="https://thehelpers.vercel.app/semesters" target="_blank" style="color: var(--text-main); font-size: 0.8rem; text-decoration: none; border: 1px solid var(--glass-border); padding: 6px 12px; border-radius: 8px; background: rgba(0,0,0,0.3); font-weight: bold; transition: all 0.3s;" onmouseover="this.style.background='var(--primary)'; this.style.color='#000';" onmouseout="this.style.background='rgba(0,0,0,0.3)'; this.style.color='var(--text-main)';">Open Link ↗</a>
                 </div>
-                <iframe src="https://thehelpers.vercel.app/semesters"
-                    style="width: 100%; height: 72vh; border: none; background: #000;"
-                    sandbox="allow-scripts allow-same-origin allow-popups"></iframe>
+                <iframe src="https://thehelpers.vercel.app/semesters" style="width: 100%; height: 72vh; border: none; background: #000;" sandbox="allow-scripts allow-same-origin allow-popups"></iframe>
             </div>
         </div>
 
@@ -2223,14 +1971,11 @@
             </div>
 
             <!-- HOLIDAY BANNER (PLAN) -->
-            <div id="plan-holiday-banner" class="holiday-banner fade-in-up"
-                style="display: none; align-items: center; justify-content: center; background: linear-gradient(135deg, rgba(255, 170, 0, 0.15), rgba(255, 85, 0, 0.1)); border: 1px solid rgba(255, 170, 0, 0.3); border-radius: 15px; padding: 15px 20px; margin: 0 auto 20px; max-width: 600px; color: var(--text-main); font-family: 'Montserrat', sans-serif; gap: 15px; box-shadow: 0 10px 30px rgba(255,170,0,0.1);">
+            <div id="plan-holiday-banner" class="holiday-banner fade-in-up" style="display: none; align-items: center; justify-content: center; background: linear-gradient(135deg, rgba(255, 170, 0, 0.15), rgba(255, 85, 0, 0.1)); border: 1px solid rgba(255, 170, 0, 0.3); border-radius: 15px; padding: 15px 20px; margin: 0 auto 20px; max-width: 600px; color: var(--text-main); font-family: 'Montserrat', sans-serif; gap: 15px; box-shadow: 0 10px 30px rgba(255,170,0,0.1);">
                 <div style="font-size: 2.2rem; filter: drop-shadow(0 0 10px rgba(255,170,0,0.5));">🌴</div>
                 <div style="text-align: left;">
-                    <h3 style="margin: 0 0 5px; color: var(--primary); font-size: 1.1rem; text-transform: uppercase;">
-                        It's a Holiday!</h3>
-                    <p style="margin: 0; font-size: 0.85rem; color: var(--text-sub);">No classes today. Take a break and
-                        recharge.</p>
+                    <h3 style="margin: 0 0 5px; color: var(--primary); font-size: 1.1rem; text-transform: uppercase;">It's a Holiday!</h3>
+                    <p style="margin: 0; font-size: 0.85rem; color: var(--text-sub);">No classes today. Take a break and recharge.</p>
                 </div>
             </div>
 
@@ -2253,20 +1998,11 @@
                 <h3 style="color: var(--primary); margin-top: 0;" id="event-date-title">Date</h3>
                 <p id="event-desc" style="color: var(--text-main); font-size: 1.1rem; line-height: 1.6;"></p>
                 <div style="margin-top: 15px; border-top: 1px dashed var(--glass-border); padding-top: 15px;">
-                    <h4
-                        style="color: var(--primary); margin: 0 0 10px 0; font-size: 0.9rem; text-transform: uppercase;">
-                        Custom Reminder</h4>
-                    <p style="font-size: 0.8rem; color: var(--text-sub); margin-bottom: 10px;">Get a push notification
-                        on this day.</p>
-                    <input type="text" id="custom-reminder-val" class="modal-input" autocomplete="off"
-                        placeholder="E.g. Project Review, Quiz..."
-                        style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; padding: 12px; border-radius: 8px; font-size: 0.9rem; margin-bottom: 10px;">
-                    <button class="action-btn" onclick="saveCustomReminder()"
-                        style="padding: 10px; font-size: 0.85rem; background: var(--glass); color: var(--text-main); border: 1px solid var(--glass-border);">Save
-                        Reminder</button>
-                    <p id="custom-reminder-status"
-                        style="font-size: 0.8rem; color: #00cc66; margin-top: 10px; height: 15px; font-weight: bold;">
-                    </p>
+                    <h4 style="color: var(--primary); margin: 0 0 10px 0; font-size: 0.9rem; text-transform: uppercase;">Custom Reminder</h4>
+                    <p style="font-size: 0.8rem; color: var(--text-sub); margin-bottom: 10px;">Get a push notification on this day.</p>
+                    <input type="text" id="custom-reminder-val" class="modal-input" autocomplete="off" placeholder="E.g. Project Review, Quiz..." style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; padding: 12px; border-radius: 8px; font-size: 0.9rem; margin-bottom: 10px;">
+                    <button class="action-btn" onclick="saveCustomReminder()" style="padding: 10px; font-size: 0.85rem; background: var(--glass); color: var(--text-main); border: 1px solid var(--glass-border);">Save Reminder</button>
+                    <p id="custom-reminder-status" style="font-size: 0.8rem; color: #00cc66; margin-top: 10px; height: 15px; font-weight: bold;"></p>
                 </div>
             </div>
         </div>
@@ -2275,17 +2011,13 @@
             <div class="view-header">
                 <h2 class="gallery-title">Time Table</h2>
             </div>
-
+            
             <!-- HOLIDAY BANNER (TIMETABLE) -->
-            <div id="timetable-holiday-banner" class="holiday-banner fade-in-up"
-                style="display: none; align-items: center; justify-content: center; background: linear-gradient(135deg, rgba(255, 170, 0, 0.15), rgba(255, 85, 0, 0.1)); border: 1px solid rgba(255, 170, 0, 0.3); border-radius: 15px; padding: 12px 15px; margin: 0 15px 20px; width: calc(100% - 30px); max-width: 600px; color: var(--text-main); font-family: 'Montserrat', sans-serif; gap: 12px; box-shadow: 0 10px 30px rgba(255,170,0,0.1); box-sizing: border-box;">
-                <div style="font-size: 2rem; filter: drop-shadow(0 0 10px rgba(255,170,0,0.5)); flex-shrink: 0;">🌴
-                </div>
+            <div id="timetable-holiday-banner" class="holiday-banner fade-in-up" style="display: none; align-items: center; justify-content: center; background: linear-gradient(135deg, rgba(255, 170, 0, 0.15), rgba(255, 85, 0, 0.1)); border: 1px solid rgba(255, 170, 0, 0.3); border-radius: 15px; padding: 12px 15px; margin: 0 15px 20px; width: calc(100% - 30px); max-width: 600px; color: var(--text-main); font-family: 'Montserrat', sans-serif; gap: 12px; box-shadow: 0 10px 30px rgba(255,170,0,0.1); box-sizing: border-box;">
+                <div style="font-size: 2rem; filter: drop-shadow(0 0 10px rgba(255,170,0,0.5)); flex-shrink: 0;">🌴</div>
                 <div style="text-align: left; min-width: 0;">
-                    <h3 style="margin: 0 0 5px; color: var(--primary); font-size: 1rem; text-transform: uppercase;">It's
-                        a Holiday!</h3>
-                    <p style="margin: 0; font-size: 0.8rem; color: var(--text-sub);">No classes today. Take a break and
-                        recharge.</p>
+                    <h3 style="margin: 0 0 5px; color: var(--primary); font-size: 1rem; text-transform: uppercase;">It's a Holiday!</h3>
+                    <p style="margin: 0; font-size: 0.8rem; color: var(--text-sub);">No classes today. Take a break and recharge.</p>
                 </div>
             </div>
             <div class="tt-day-selector">
@@ -2381,10 +2113,8 @@
         </a>
         <a class="nav-item" onclick="switchNav('leaderboard-view', this); loadLeaderboard('attendance');">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6" />
-                <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18" />
-                <path d="M4 22h16" />
-                <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22" />
+                <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6" /><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18" />
+                <path d="M4 22h16" /><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22" />
                 <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22" />
                 <path d="M18 2H6v7a6 6 0 0 0 12 0V2z" />
             </svg>
@@ -2395,164 +2125,111 @@
     <!-- GLOBAL NOTIFICATION LIGHTBOX -->
     <div id="lightbox" class="lightbox" onclick="if(event.target === this) closeLightbox()">
         <span class="close-btn" onclick="closeLightbox()">&times;</span>
+        <img id="lightbox-img" src="">
     </div>
 
     <!-- PROJECT HUB SUBMIT MODAL (Independent Lightbox) -->
-    <div id="projectSubmitModal" class="lightbox"
-        onclick="if(event.target===this) document.getElementById('projectSubmitModal').style.display='none'">
+    <div id="projectSubmitModal" class="lightbox" onclick="if(event.target===this) document.getElementById('projectSubmitModal').style.display='none'">
         <div class="sync-modal-content">
-            <span class="close-btn" style="top:10px;right:15px;font-size:30px;"
-                onclick="document.getElementById('projectSubmitModal').style.display='none'">&times;</span>
-            <h3 style="color:var(--primary); font-family:'Montserrat',sans-serif; margin-bottom: 20px;">Submit Your
-                Project</h3>
+            <span class="close-btn" style="top:10px;right:15px;font-size:30px;" onclick="document.getElementById('projectSubmitModal').style.display='none'">&times;</span>
+            <h3 style="color:var(--primary); font-family:'Montserrat',sans-serif; margin-bottom: 20px;">Submit Your Project</h3>
             <div style="display: flex; flex-direction: column; gap: 12px;">
-                <input id="ph-title" class="modal-input" placeholder="Project Title *"
-                    style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; padding: 13px; border-radius: 12px;">
-                <textarea id="ph-desc" class="modal-input" placeholder="Short Description" rows="3"
-                    style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; padding: 13px; border-radius: 12px; resize: none; font-family: inherit;"></textarea>
-                <input id="ph-tech" class="modal-input" placeholder="Tech Stack (e.g. React, Python, Node)"
-                    style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; padding: 13px; border-radius: 12px;">
-                <input id="ph-github" class="modal-input" placeholder="GitHub URL (optional)"
-                    style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; padding: 13px; border-radius: 12px;">
-                <input id="ph-demo" class="modal-input" placeholder="Live Demo URL (optional)"
-                    style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; padding: 13px; border-radius: 12px;">
+                <input id="ph-title" class="modal-input" placeholder="Project Title *" style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; padding: 13px; border-radius: 12px;">
+                <textarea id="ph-desc" class="modal-input" placeholder="Short Description" rows="3" style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; padding: 13px; border-radius: 12px; resize: none; font-family: inherit;"></textarea>
+                <input id="ph-tech" class="modal-input" placeholder="Tech Stack (e.g. React, Python, Node)" style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; padding: 13px; border-radius: 12px;">
+                <input id="ph-github" class="modal-input" placeholder="GitHub URL (optional)" style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; padding: 13px; border-radius: 12px;">
+                <input id="ph-demo" class="modal-input" placeholder="Live Demo URL (optional)" style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; padding: 13px; border-radius: 12px;">
                 <button class="action-btn" onclick="submitProject()" style="margin-top: 5px;">SUBMIT PROJECT</button>
-                <p id="ph-status" style="font-size: 0.85rem; font-weight: bold; text-align: center; min-height: 20px;">
-                </p>
+                <p id="ph-status" style="font-size: 0.85rem; font-weight: bold; text-align: center; min-height: 20px;"></p>
             </div>
         </div>
     </div>
-    <img id="lightbox-img" src="">
-    </div>
+
 
     <!-- MARKETPLACE SUBMIT MODAL -->
-    <div id="marketSubmitModal" class="lightbox"
-        onclick="if(event.target===this) document.getElementById('marketSubmitModal').style.display='none'">
+    <div id="marketSubmitModal" class="lightbox" onclick="if(event.target===this) document.getElementById('marketSubmitModal').style.display='none'">
         <div class="sync-modal-content">
-            <span class="close-btn" style="top:10px;right:15px;font-size:30px;"
-                onclick="document.getElementById('marketSubmitModal').style.display='none'">&times;</span>
-            <h3 style="color:var(--primary); font-family:'Montserrat',sans-serif; margin-bottom: 20px;">Post an Item
-            </h3>
+            <span class="close-btn" style="top:10px;right:15px;font-size:30px;" onclick="document.getElementById('marketSubmitModal').style.display='none'">&times;</span>
+            <h3 style="color:var(--primary); font-family:'Montserrat',sans-serif; margin-bottom: 20px;">Post an Item</h3>
             <div style="display: flex; flex-direction: column; gap: 12px;">
-                <input id="market-title" class="modal-input" placeholder="What are you selling? *"
-                    style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; padding: 13px; border-radius: 12px;">
-                <textarea id="market-desc" class="modal-input" placeholder="Item Description / Condition" rows="3"
-                    style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; padding: 13px; border-radius: 12px; resize: none; font-family: inherit;"></textarea>
-                <select id="market-category" class="modal-input"
-                    style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; padding: 13px; border-radius: 12px; appearance: none;">
+                <input id="market-title" class="modal-input" placeholder="What are you selling? *" style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; padding: 13px; border-radius: 12px;">
+                <textarea id="market-desc" class="modal-input" placeholder="Item Description / Condition" rows="3" style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; padding: 13px; border-radius: 12px; resize: none; font-family: inherit;"></textarea>
+                <select id="market-category" class="modal-input" style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; padding: 13px; border-radius: 12px; appearance: none;">
                     <option value="" disabled selected>Select Category *</option>
                     <option value="Food">Late Night Food</option>
                     <option value="Books">Books & Stationeries</option>
                     <option value="Accessories">Electronics / Accessories</option>
                     <option value="Other">Other Category</option>
                 </select>
-                <input type="text" id="market-price" class="modal-input" placeholder="Price (e.g. ₹500 or Free)"
-                    style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; padding: 13px; border-radius: 12px;">
-                <input id="market-phone" class="modal-input" placeholder="WhatsApp Number *"
-                    style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; padding: 13px; border-radius: 12px;">
-                <label for="market-image-file"
-                    style="background: rgba(0,0,0,0.3); border: 1px dashed var(--glass-border); color: #fff; padding: 13px; border-radius: 12px; cursor: pointer; text-align: center;">
+                <input type="text" id="market-price" class="modal-input" placeholder="Price (e.g. ₹500 or Free)" style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; padding: 13px; border-radius: 12px;">
+                <input id="market-phone" class="modal-input" placeholder="WhatsApp Number *" style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; padding: 13px; border-radius: 12px;">
+                <label for="market-image-file" style="background: rgba(0,0,0,0.3); border: 1px dashed var(--glass-border); color: #fff; padding: 13px; border-radius: 12px; cursor: pointer; text-align: center;">
                     📷 Click to select a photo from your device (Max 5MB)
-                    <input type="file" id="market-image-file" accept="image/*" style="display: none;"
-                        onchange="this.parentElement.innerHTML = '✅ Photo Selected: ' + this.files[0].name + '<input type=\\\'file\\\' id=\\\'market-image-file\\\' accept=\\\'image/*\\\' style=\\\'display: none;\\\'>'; document.getElementById('market-image-file').files = this.files;">
+                    <input type="file" id="market-image-file" accept="image/*" style="display: none;" onchange="this.parentElement.innerHTML = '✅ Photo Selected: ' + this.files[0].name + '<input type=\\\'file\\\' id=\\\'market-image-file\\\' accept=\\\'image/*\\\' style=\\\'display: none;\\\'>'; document.getElementById('market-image-file').files = this.files;">
                 </label>
                 <button class="action-btn" onclick="submitMarketItem()" style="margin-top: 5px;">POST ITEM</button>
-                <p id="market-status"
-                    style="font-size: 0.85rem; font-weight: bold; text-align: center; min-height: 20px;"></p>
+                <p id="market-status" style="font-size: 0.85rem; font-weight: bold; text-align: center; min-height: 20px;"></p>
             </div>
         </div>
     </div>
 
     <!-- CAB SHARING SUBMIT MODAL -->
-    <div id="cabSubmitModal" class="lightbox"
-        onclick="if(event.target===this) document.getElementById('cabSubmitModal').style.display='none'">
+    <div id="cabSubmitModal" class="lightbox" onclick="if(event.target===this) document.getElementById('cabSubmitModal').style.display='none'">
         <div class="sync-modal-content">
-            <span class="close-btn" style="top:10px;right:15px;font-size:30px;"
-                onclick="document.getElementById('cabSubmitModal').style.display='none'">&times;</span>
-            <h3 style="color:var(--primary); font-family:'Montserrat',sans-serif; margin-bottom: 20px;">Find a Travel
-                Partner</h3>
+            <span class="close-btn" style="top:10px;right:15px;font-size:30px;" onclick="document.getElementById('cabSubmitModal').style.display='none'">&times;</span>
+            <h3 style="color:var(--primary); font-family:'Montserrat',sans-serif; margin-bottom: 20px;">Find a Travel Partner</h3>
             <div style="display: flex; flex-direction: column; gap: 12px;">
-                <input id="cab-dest" class="modal-input" placeholder="Destination (e.g. Airport, Central) *"
-                    style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; padding: 13px; border-radius: 12px;">
-                <input type="date" id="cab-date" class="modal-input"
-                    style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; padding: 13px; border-radius: 12px; font-family: inherit;">
-                <input type="time" id="cab-time" class="modal-input"
-                    style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; padding: 13px; border-radius: 12px; font-family: inherit;">
-                <input id="cab-spots" class="modal-input" placeholder="Spots available (e.g. 2 seats) *"
-                    style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; padding: 13px; border-radius: 12px;">
-                <input id="cab-phone" class="modal-input" placeholder="WhatsApp Number *"
-                    style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; padding: 13px; border-radius: 12px;">
+                <input id="cab-dest" class="modal-input" placeholder="Destination (e.g. Airport, Central) *" style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; padding: 13px; border-radius: 12px;">
+                <input type="date" id="cab-date" class="modal-input" style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; padding: 13px; border-radius: 12px; font-family: inherit;">
+                <input type="time" id="cab-time" class="modal-input" style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; padding: 13px; border-radius: 12px; font-family: inherit;">
+                <input id="cab-spots" class="modal-input" placeholder="Spots available (e.g. 2 seats) *" style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; padding: 13px; border-radius: 12px;">
+                <input id="cab-phone" class="modal-input" placeholder="WhatsApp Number *" style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; padding: 13px; border-radius: 12px;">
                 <button class="action-btn" onclick="submitCab()" style="margin-top: 5px;">POST RIDE</button>
-                <p id="cab-status" style="font-size: 0.85rem; font-weight: bold; text-align: center; min-height: 20px;">
-                </p>
+                <p id="cab-status" style="font-size: 0.85rem; font-weight: bold; text-align: center; min-height: 20px;"></p>
             </div>
         </div>
     </div>
 
     <!-- EVENT SUBMIT MODAL -->
-    <div id="eventSubmitModal" class="lightbox"
-        onclick="if(event.target===this) document.getElementById('eventSubmitModal').style.display='none'">
+    <div id="eventSubmitModal" class="lightbox" onclick="if(event.target===this) document.getElementById('eventSubmitModal').style.display='none'">
         <div class="sync-modal-content">
-            <span class="close-btn" style="top:10px;right:15px;font-size:30px;"
-                onclick="document.getElementById('eventSubmitModal').style.display='none'">&times;</span>
-            <h3 style="color:var(--primary); font-family:'Montserrat',sans-serif; margin-bottom: 20px;">Promote an Event
-            </h3>
+            <span class="close-btn" style="top:10px;right:15px;font-size:30px;" onclick="document.getElementById('eventSubmitModal').style.display='none'">&times;</span>
+            <h3 style="color:var(--primary); font-family:'Montserrat',sans-serif; margin-bottom: 20px;">Promote an Event</h3>
             <div style="display: flex; flex-direction: column; gap: 12px;">
-                <input id="event-club" class="modal-input" placeholder="Club / Team Name *"
-                    style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; padding: 13px; border-radius: 12px;">
-                <input id="event-title" class="modal-input" placeholder="Event Title *"
-                    style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; padding: 13px; border-radius: 12px;">
-                <input type="date" id="event-date" class="modal-input"
-                    style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; padding: 13px; border-radius: 12px; font-family: inherit;">
-                <input id="event-link" class="modal-input" placeholder="Registration Link (optional)"
-                    style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; padding: 13px; border-radius: 12px;">
-                <label for="event-image-file"
-                    style="background: rgba(0,0,0,0.3); border: 1px dashed #e60073; color: #fff; padding: 13px; border-radius: 12px; cursor: pointer; text-align: center;">
+                <input id="event-club" class="modal-input" placeholder="Club / Team Name *" style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; padding: 13px; border-radius: 12px;">
+                <input id="event-title" class="modal-input" placeholder="Event Title *" style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; padding: 13px; border-radius: 12px;">
+                <input type="date" id="event-date" class="modal-input" style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; padding: 13px; border-radius: 12px; font-family: inherit;">
+                <input id="event-link" class="modal-input" placeholder="Registration Link (optional)" style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; padding: 13px; border-radius: 12px;">
+                <label for="event-image-file" style="background: rgba(0,0,0,0.3); border: 1px dashed #e60073; color: #fff; padding: 13px; border-radius: 12px; cursor: pointer; text-align: center;">
                     🖼️ Click to upload Event Poster from device
-                    <input type="file" id="event-image-file" accept="image/*" style="display: none;"
-                        onchange="this.parentElement.innerHTML = '✅ Poster Selected: ' + this.files[0].name + '<input type=\\\'file\\\' id=\\\'event-image-file\\\' accept=\\\'image/*\\\' style=\\\'display: none;\\\'>'; document.getElementById('event-image-file').files = this.files;">
+                    <input type="file" id="event-image-file" accept="image/*" style="display: none;" onchange="this.parentElement.innerHTML = '✅ Poster Selected: ' + this.files[0].name + '<input type=\\\'file\\\' id=\\\'event-image-file\\\' accept=\\\'image/*\\\' style=\\\'display: none;\\\'>'; document.getElementById('event-image-file').files = this.files;">
                 </label>
-                <button class="action-btn" onclick="submitEvent()"
-                    style="margin-top: 5px; background: #e60073; color: white;">POST EVENT</button>
-                <p id="event-status"
-                    style="font-size: 0.85rem; font-weight: bold; text-align: center; min-height: 20px;"></p>
+                <button class="action-btn" onclick="submitEvent()" style="margin-top: 5px; background: #e60073; color: white;">POST EVENT</button>
+                <p id="event-status" style="font-size: 0.85rem; font-weight: bold; text-align: center; min-height: 20px;"></p>
             </div>
         </div>
     </div>
 
     <!-- LOST & FOUND SUBMIT MODAL -->
-    <div id="lfSubmitModal" class="lightbox"
-        onclick="if(event.target===this) document.getElementById('lfSubmitModal').style.display='none'">
+    <div id="lfSubmitModal" class="lightbox" onclick="if(event.target===this) document.getElementById('lfSubmitModal').style.display='none'">
         <div class="sync-modal-content">
-            <span class="close-btn" style="top:10px;right:15px;font-size:30px;"
-                onclick="document.getElementById('lfSubmitModal').style.display='none'">&times;</span>
-            <h3 style="color:var(--primary); font-family:'Montserrat',sans-serif; margin-bottom: 20px;">Report Lost /
-                Found Item</h3>
+            <span class="close-btn" style="top:10px;right:15px;font-size:30px;" onclick="document.getElementById('lfSubmitModal').style.display='none'">&times;</span>
+            <h3 style="color:var(--primary); font-family:'Montserrat',sans-serif; margin-bottom: 20px;">Report Lost / Found Item</h3>
             <div style="display: flex; flex-direction: column; gap: 12px;">
-                <input id="lf-title" class="modal-input" placeholder="Item Name *"
-                    style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; padding: 13px; border-radius: 12px;">
-                <textarea id="lf-desc" class="modal-input" placeholder="Description (color, brand, any details)"
-                    rows="3"
-                    style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; padding: 13px; border-radius: 12px; resize: none; font-family: inherit;"></textarea>
-                <select id="lf-category" class="modal-input"
-                    style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; padding: 13px; border-radius: 12px; appearance: none;">
+                <input id="lf-title" class="modal-input" placeholder="Item Name *" style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; padding: 13px; border-radius: 12px;">
+                <textarea id="lf-desc" class="modal-input" placeholder="Description (color, brand, any details)" rows="3" style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; padding: 13px; border-radius: 12px; resize: none; font-family: inherit;"></textarea>
+                <select id="lf-category" class="modal-input" style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; padding: 13px; border-radius: 12px; appearance: none;">
                     <option value="" disabled selected>Lost or Found? *</option>
                     <option value="Lost">I Lost Something</option>
                     <option value="Found">I Found Something</option>
                 </select>
-                <input id="lf-location" class="modal-input" placeholder="Place / Location (e.g. TP Food Court, Library)"
-                    style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; padding: 13px; border-radius: 12px;">
-                <label for="lf-image-file"
-                    style="background: rgba(0,0,0,0.3); border: 1px dashed #e65c00; color: #fff; padding: 13px; border-radius: 12px; cursor: pointer; text-align: center;">
+                <input id="lf-location" class="modal-input" placeholder="Place / Location (e.g. TP Food Court, Library)" style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; padding: 13px; border-radius: 12px;">
+                <label for="lf-image-file" style="background: rgba(0,0,0,0.3); border: 1px dashed #e65c00; color: #fff; padding: 13px; border-radius: 12px; cursor: pointer; text-align: center;">
                     📷 Upload a photo of the item
-                    <input type="file" id="lf-image-file" accept="image/*" style="display: none;"
-                        onchange="this.parentElement.innerHTML = '✅ Photo Selected: ' + this.files[0].name + '<input type=\\\'file\\\' id=\\\'lf-image-file\\\' accept=\\\'image/*\\\' style=\\\'display: none;\\\'>'; document.getElementById('lf-image-file').files = this.files;">
+                    <input type="file" id="lf-image-file" accept="image/*" style="display: none;" onchange="this.parentElement.innerHTML = '✅ Photo Selected: ' + this.files[0].name + '<input type=\\\'file\\\' id=\\\'lf-image-file\\\' accept=\\\'image/*\\\' style=\\\'display: none;\\\'>'; document.getElementById('lf-image-file').files = this.files;">
                 </label>
-                <button class="action-btn" onclick="submitLostFound()"
-                    style="margin-top: 5px; background: linear-gradient(135deg, #e65c00, #f59e0b); color: #fff;">REPORT
-                    ITEM</button>
-                <p id="lf-status" style="font-size: 0.85rem; font-weight: bold; text-align: center; min-height: 20px;">
-                </p>
+                <button class="action-btn" onclick="submitLostFound()" style="margin-top: 5px; background: linear-gradient(135deg, #e65c00, #f59e0b); color: #fff;">REPORT ITEM</button>
+                <p id="lf-status" style="font-size: 0.85rem; font-weight: bold; text-align: center; min-height: 20px;"></p>
             </div>
         </div>
     </div>
@@ -2643,7 +2320,7 @@
                         if (mobileLock) mobileLock.style.display = 'none';
                     }
                     deferredPrompt = null;
-                } catch (err) {
+                } catch(err) {
                     console.error("Install prompt error:", err);
                 }
             } else {
@@ -2781,14 +2458,10 @@
                 document.getElementById('unauth-hero').style.display = 'none';
                 document.getElementById('auth-dashboard').style.display = 'block';
                 document.getElementById('advisors-section').style.display = 'block';
-                const logoutContainer = document.getElementById('logoutBtnContainer');
-                if (logoutContainer) logoutContainer.style.display = 'flex';
             } else {
                 document.getElementById('unauth-hero').style.display = 'block';
                 document.getElementById('auth-dashboard').style.display = 'none';
                 document.getElementById('advisors-section').style.display = 'none';
-                const logoutContainer = document.getElementById('logoutBtnContainer');
-                if (logoutContainer) logoutContainer.style.display = 'none';
             }
             // Show holiday banner on home page
             checkAndShowHolidayBanner('home-holiday-banner');
@@ -2799,9 +2472,6 @@
             if (srmPlanner[dateStr] && srmPlanner[dateStr].type === 'Holiday') {
                 let nameEl = document.getElementById('home-holiday-name');
                 if (nameEl) nameEl.textContent = srmPlanner[dateStr].title + ' — No classes today!';
-            } else if (todayLocal.getDay() === 0 || todayLocal.getDay() === 6) {
-                let nameEl = document.getElementById('home-holiday-name');
-                if (nameEl) nameEl.textContent = 'Weekend — No classes today!';
             }
         }
 
@@ -2812,7 +2482,17 @@
             if (nameEl) nameEl.innerText = (profile.name || 'STUDENT').toUpperCase();
             if (regEl) regEl.innerText = (profile.regNo || '').toUpperCase();
 
-            // ID Details update removed as per user request
+            const detailSpans = document.querySelectorAll('.id-details span');
+            if (detailSpans.length >= 3) {
+                let courseStr = profile.course || 'B.Tech. General';
+                let deg = courseStr.split('.')[0] ? courseStr.split('.')[0].trim() : 'B.Tech';
+                let maj = courseStr.includes('.') ? courseStr.split('.').slice(1).join('.').trim() : courseStr;
+                if (deg.length < 2) deg = 'B.Tech';
+
+                detailSpans[0].innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/></svg> ${deg}`;
+                detailSpans[1].innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg> ${maj.substring(0, 20)}`;
+                detailSpans[2].innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg> Semester ${profile.semester || 'N/A'}`;
+            }
         }
 
         function loadSavedData() {
@@ -2836,13 +2516,6 @@
 
         function openSyncModal() { document.getElementById('syncModal').style.display = 'flex'; }
         function closeSyncModal() { document.getElementById('syncModal').style.display = 'none'; }
-        function logoutFromApp() {
-            if (confirm("Are you sure you want to log out?")) {
-                localStorage.clear();
-                isLoggedIn = false;
-                window.location.reload();
-            }
-        }
 
         async function startLiveSync() {
             const regNo = document.getElementById('srm-reg').value.trim();
@@ -2996,7 +2669,7 @@
                 const attEl = document.getElementById('home-att-val');
                 const courseEl = document.getElementById('home-course-val');
                 const attPercBadge = document.getElementById('att-perc-badge');
-
+                
                 if (attEl) attEl.innerText = overallPerc + "%";
                 if (courseEl) courseEl.innerText = attendanceData.length;
                 if (attPercBadge) {
@@ -3124,18 +2797,17 @@
             let tzoffset = todayLocal.getTimezoneOffset() * 60000;
             let dateStr = (new Date(todayLocal - tzoffset)).toISOString().slice(0, 10);
             let isHoliday = srmPlanner[dateStr] && srmPlanner[dateStr].type === "Holiday";
-            let isWeekend = todayLocal.getDay() === 0 || todayLocal.getDay() === 6;
-
+            
             let banner = document.getElementById(viewId);
             if (banner) {
-                if (isHoliday || isWeekend) {
+                if (isHoliday) {
                     banner.style.display = 'flex';
                 } else {
                     banner.style.display = 'none';
                 }
             }
         }
-
+        
         function showHolidaySlideUp() {
             // Deprecated - using inline banners now
         }
@@ -3225,7 +2897,7 @@
 
             if (classesForDay.length === 0) {
                 grid.innerHTML = `<div class="image-card" style="text-align:center; padding: 30px;"><h3 style="color:var(--text-sub); margin:0;">No classes scheduled for Day ${dayNumber}</h3></div>`;
-
+                
                 let todayLocal = new Date();
                 let tzoffset = todayLocal.getTimezoneOffset() * 60000;
                 let dayOrderDate = (new Date(todayLocal - tzoffset)).toISOString().slice(0, 10);
@@ -3235,7 +2907,7 @@
                 } else {
                     currentDayOrder = (currentDayOrder >= 1 && currentDayOrder <= 5) ? currentDayOrder : 0;
                 }
-
+                
                 let isHoliday = srmPlanner[dayOrderDate] && srmPlanner[dayOrderDate].type === "Holiday";
                 if (dayNumber == currentDayOrder || currentDayOrder === 0 || isHoliday) {
                     checkAndShowHolidayBanner('timetable-holiday-banner');
@@ -3337,7 +3009,7 @@
                 }
                 grid.innerHTML += `<div class="cal-day ${extraClass}" onclick="showEventDetails('${dateStr}')">${i}</div>`;
             }
-
+            
             checkAndShowHolidayBanner('plan-holiday-banner');
         }
 
@@ -3350,9 +3022,9 @@
         let currentEditingDate = null;
 
         function saveCustomReminder() {
-            if (!currentEditingDate) return;
+            if(!currentEditingDate) return;
             const val = document.getElementById('custom-reminder-val').value.trim();
-            if (val) {
+            if(val) {
                 userReminders[currentEditingDate] = val;
                 document.getElementById('custom-reminder-status').innerText = "Reminder saved!";
                 document.getElementById('custom-reminder-status').style.color = "#00cc66";
@@ -3374,7 +3046,7 @@
             card.style.animation = 'fadeInUp 0.4s ease forwards';
 
             document.getElementById('event-date-title').innerText = new Date(dateStr).toDateString();
-
+            
             document.getElementById('custom-reminder-val').value = userReminders[dateStr] || '';
             document.getElementById('custom-reminder-status').innerText = '';
 
@@ -3389,12 +3061,10 @@
 
         // ================= GALLERY & PROJECTS =================
         const projectsDatabase = {
-            'oopsBanner': { title: 'OOPS Banner App', subProjects: [{ id: 'ucsFolder', title: "UC's" }, { id: 'week1Problem', title: 'Week 1 & 2 Problems' }, { id: 'week34Problem', title: 'Week 3 & 4 Problems' }, { id: 'week45Problem', title: 'week 4 & 5 problem' }, { id: 'week67Problem', title: 'week 6 & 7 problem' }, { id: 'helloAppFolder', title: 'HelloApp UC\'s' }] },
+            'oopsBanner': { title: 'OOPS Banner App', subProjects: [{ id: 'ucsFolder', title: "UC's" }, { id: 'week1Problem', title: 'Week 1 & 2 Problems' }, { id: 'week34Problem', title: 'Week 3 & 4 Problems' }, { id: 'helloAppFolder', title: 'HelloApp UC\'s' }] },
             'ucsFolder': { title: "OOPS Banner App UC's", parent: 'oopsBanner', images: [{ src: 'images/oops-banner/uc1.png', label: '1' }, { src: 'images/oops-banner/uc2.png', label: '2' }, { src: 'images/oops-banner/uc3.png', label: '3' }, { src: 'images/oops-banner/uc4.png', label: '4' }, { src: 'images/oops-banner/uc5.png', label: '5' }, { src: 'images/oops-banner/uc6.png', label: '6' }, { src: 'images/oops-banner/uc7.png', label: '7' }, { src: 'images/oops-banner/uc8.png', label: '8' }, { src: 'images/oops-banner/uc9.png', label: '9' }, { src: 'images/oops-banner/uc10.png', label: '10' }, { src: 'images/oops-banner/end.png', label: 'end' }] },
             'week1Problem': { title: 'Week 1 and 2 Problems', parent: 'oopsBanner', images: [{ src: 'images/oops-banner/Basic-step1.png', label: 'Basic-Step' }, { src: 'images/oops-banner/Basic-step2.png', label: 'Basic-Step' }, { src: 'images/oops-banner/level1.png', label: 'Part 1' }, { src: 'images/oops-banner/level12.png', label: 'Part 2' }, { src: 'images/oops-banner/level13.png', label: 'Part 3' }, { src: 'images/oops-banner/bash.png', label: 'Bash' }, { src: 'images/oops-banner/level21.png', label: 'Part 4' }, { src: 'images/oops-banner/level22.png', label: 'Part 5' }, { src: 'images/oops-banner/level3.png', label: 'Part 6' }] },
             'week34Problem': { title: 'Week 3 and 4 Problems', parent: 'oopsBanner', images: [{ src: 'images/oops-banner/w31.png', label: 'Step1' }, { src: 'images/oops-banner/w32.png', label: 'Step2' }, { src: 'images/oops-banner/w33.png', label: 'Step3' }, { src: 'images/oops-banner/w34.png', label: 'Step4' }, { src: 'images/oops-banner/w35.png', label: 'Step5' }, { src: 'images/oops-banner/w36.png', label: 'Step6' }, { src: 'images/oops-banner/end.png', label: 'end' }] },
-            'week45Problem': { title: 'week 4 & 5 problem', parent: 'oopsBanner', images: [] },
-            'week67Problem': { title: 'week 6 & 7 problem', parent: 'oopsBanner', images: [] },
             'helloAppFolder': { title: 'HelloApp UC\'s', parent: 'oopsBanner', video: 'https://www.youtube.com/embed/k8eX_rkQxPk', images: [{ src: 'images/oops-banner/ha1.png', label: 'uc 1 Step 1' }, { src: 'images/oops-banner/ha2.png', label: 'Step 2' }, { src: 'images/oops-banner/ha3.png', label: 'Step 3' }, { src: 'images/oops-banner/ha4.png', label: 'Step 4' }, { src: 'images/oops-banner/ha5.png', label: 'uc 2 Step 5' }, { src: 'images/oops-banner/ha6.png', label: 'Step 6' }, { src: 'images/oops-banner/ha7.png', label: 'uc 3 Step 7' }, { src: 'images/oops-banner/ha8.png', label: 'Step 8' }, { src: 'images/oops-banner/ha9.png', label: 'Step 8' }, { src: 'images/oops-banner/ha10.png', label: 'Step 9' }, { src: 'images/oops-banner/ha11.png', label: 'Step 10' }, { src: 'images/oops-banner/ha12.png', label: 'Step 11' }, { src: 'images/oops-banner/ha13.png', label: 'Step 12' }, { src: 'images/oops-banner/ha14.png', label: 'Step 13' }, { src: 'images/oops-banner/end.png', label: 'end' }] }
         };
 
@@ -3557,15 +3227,15 @@
             ptrEl.innerHTML = '<div class="ptr-spinner">↓</div>';
             document.body.appendChild(ptrEl);
 
-            document.addEventListener('touchstart', e => {
-                if (window.scrollY === 0) pStart.y = e.touches[0].clientY;
-            }, { passive: true });
+            document.addEventListener('touchstart', e => { 
+                if(window.scrollY === 0) pStart.y = e.touches[0].clientY; 
+            }, {passive: true});
 
             document.addEventListener('touchmove', e => {
-                if (window.scrollY === 0 && pStart.y > 0) {
+                if(window.scrollY === 0 && pStart.y > 0) {
                     pCurrent.y = e.touches[0].clientY;
                     let diff = pCurrent.y - pStart.y;
-
+                    
                     if (diff > 50 && diff < 150) {
                         ptrEl.style.transform = `translateY(${diff * 0.5}px)`;
                         ptrEl.querySelector('.ptr-spinner').innerHTML = '↓';
@@ -3575,7 +3245,7 @@
                         ptrEl.querySelector('.ptr-spinner').innerHTML = '↻';
                     }
                 }
-            }, { passive: true });
+            }, {passive: true});
 
             document.addEventListener('touchend', e => {
                 let diff = pCurrent.y - pStart.y;
@@ -3583,10 +3253,10 @@
                     ptrEl.classList.add('active');
                     ptrEl.querySelector('.ptr-spinner').classList.add('spinning');
                     ptrEl.querySelector('.ptr-spinner').innerHTML = '↻';
-
+                    
                     // Trigger sync modal
                     openSyncModal();
-
+                    
                     setTimeout(() => {
                         ptrEl.style.transform = 'translateY(0)';
                         ptrEl.classList.remove('active');
@@ -3694,9 +3364,9 @@
             const btn = event.currentTarget;
             const originalHTML = btn.innerHTML;
             btn.innerHTML = `<div class="css-loader" style="width: 20px; height: 20px; margin: 0;"></div>`;
-
+            
             const template = document.getElementById('share-template');
-
+            
             // Temporarily reveal to html2canvas (kept hidden by z-index: -100)
             const originalTop = template.style.top;
             const originalLeft = template.style.left;
@@ -3715,7 +3385,7 @@
                     scale: 1, backgroundColor: '#050505',
                     width: 1080, height: 1920, useCORS: true
                 });
-
+                
                 canvas.toBlob(async (blob) => {
                     const file = new File([blob], 'srm-hub-stats.png', { type: 'image/png' });
                     if (navigator.canShare && navigator.canShare({ files: [file] })) {
@@ -3779,14 +3449,14 @@
                         ? (s.overall_attendance >= 75 ? 'var(--success)' : 'var(--danger)')
                         : (s.est_cgpa >= 9 ? 'var(--primary)' : 'var(--text-main)');
                     const medal = rankEmojis[i] || `#${i + 1}`;
-
+                    
                     // Check if this row is the current user
                     const isMe = s.net_id && myNetId && s.net_id.toUpperCase() === myNetId;
                     const bgStyle = isMe ? 'var(--glass)' : (i === 0 ? 'rgba(255,170,0,0.08)' : 'var(--glass)');
                     const borderStyle = isMe ? '2px solid var(--primary)' : (i === 0 ? '1px solid rgba(255,170,0,0.3)' : '1px solid var(--glass-border)');
                     const shadowStyle = isMe ? 'box-shadow: 0 0 15px rgba(255,170,0,0.3);' : '';
                     const idTag = isMe ? 'id="my-lb-row"' : '';
-
+                    
                     return `
                     <div ${idTag} class="image-card fade-in-up" style="transform: none; display: flex; align-items: center; gap: 20px; padding: 20px; margin-bottom: 12px; background: ${bgStyle}; border: ${borderStyle}; ${shadowStyle}">
                         <div style="font-size: 2rem; min-width: 40px; text-align: center;">${medal}</div>
@@ -3876,10 +3546,10 @@
                         const scaleSize = MAX_WIDTH / img.width;
                         canvas.width = MAX_WIDTH;
                         canvas.height = img.height * scaleSize;
-
+                        
                         const ctx = canvas.getContext('2d');
                         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-
+                        
                         // Compress to 0.7 quality JPEG
                         const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
                         resolve(compressedBase64);
@@ -3934,7 +3604,7 @@
                 const waLink = phoneWa ? `https://wa.me/${phoneWa}?text=Hi! I saw your "${p.title}" ad on SRM Student Hub.` : '';
                 const formatTime = p.created_at ? new Date(p.created_at).toLocaleDateString() : '';
                 const isOwner = myNetId && p.net_id && myNetId === (p.net_id || '').toLowerCase();
-
+                
                 return `
                 <div class="image-card fade-in-up" style="transform: none; text-align: left; position: relative; padding: 20px;">
                     <span style="position: absolute; top: 20px; right: 20px; background: rgba(255,255,255,0.1); padding: 5px 12px; border-radius: 8px; font-size: 0.8rem; font-weight: bold; color: #fff;">${p.category || 'Item'}</span>
@@ -3964,10 +3634,10 @@
             const phone_no = document.getElementById('market-phone').value.trim();
             const status = document.getElementById('market-status');
             const imageFile = document.getElementById('market-image-file')?.files[0];
-
-            if (!title || !category || !phone_no) {
-                status.style.color = 'var(--danger)'; status.innerText = 'Title, Category, and Phone are required!';
-                return;
+            
+            if (!title || !category || !phone_no) { 
+                status.style.color = 'var(--danger)'; status.innerText = 'Title, Category, and Phone are required!'; 
+                return; 
             }
 
             const profile = JSON.parse(localStorage.getItem('squadProfile') || '{}');
@@ -3978,7 +3648,7 @@
             let image_url = '';
             try {
                 if (imageFile) image_url = await compressImage(imageFile);
-            } catch (e) { console.error("Compression failed", e); }
+            } catch(e) { console.error("Compression failed", e); }
 
             status.style.color = 'var(--primary)'; status.innerText = 'Posting Item...';
             try {
@@ -3997,15 +3667,15 @@
                 const result = await res.json();
                 if (result.success) {
                     status.style.color = 'var(--success)'; status.innerText = '✅ Item Posted!';
-                    ['market-title', 'market-desc', 'market-price', 'market-phone'].forEach(id => document.getElementById(id).value = '');
+                    ['market-title','market-desc','market-price','market-phone'].forEach(id => document.getElementById(id).value = '');
                     const label = document.querySelector('label[for="market-image-file"]');
-                    if (label) label.innerHTML = '📷 Click to select a photo from your device (Max 5MB) <input type="file" id="market-image-file" accept="image/*" style="display: none;">';
+                    if(label) label.innerHTML = '📷 Click to select a photo from your device (Max 5MB) <input type="file" id="market-image-file" accept="image/*" style="display: none;">';
                     document.getElementById('market-category').selectedIndex = 0;
                     setTimeout(() => { document.getElementById('marketSubmitModal').style.display = 'none'; loadMarketplace(); }, 1500);
                 } else {
                     status.style.color = 'var(--danger)'; status.innerText = '❌ ' + result.error;
                 }
-            } catch (e) {
+            } catch(e) {
                 status.style.color = 'var(--danger)'; status.innerText = '❌ Could not connect to server.';
             }
         }
@@ -4022,7 +3692,7 @@
                 const result = await res.json();
                 if (result.success) { loadMarketplace(); }
                 else { alert(result.error || 'Could not delete item.'); }
-            } catch (e) { alert('Connection error.'); }
+            } catch(e) { alert('Connection error.'); }
         }
 
         // ============ CAMPUS WALL ============
@@ -4033,7 +3703,7 @@
             try {
                 const res = await fetch(`${BACKEND_URL}/api/wall`);
                 const posts = await res.json();
-
+                
                 if (posts.length === 0) {
                     list.innerHTML = '<div style="text-align:center; padding: 40px; color: var(--text-sub);">No confessions yet. Be the first!</div>';
                     return;
@@ -4062,24 +3732,24 @@
             const input = document.getElementById('wall-input');
             const status = document.getElementById('wall-status');
             const message = input.value.trim();
-            if (!message) return;
+            if(!message) return;
 
             input.disabled = true;
             try {
                 const res = await fetch(`${BACKEND_URL}/api/wall/submit`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({ message })
                 });
                 const result = await res.json();
-                if (result.success) {
+                if(result.success) {
                     input.value = '';
                     status.innerText = '';
                     loadWall();
                 } else {
                     status.innerText = 'Failed to post.';
                 }
-            } catch (e) { status.innerText = 'Connection error.'; }
+            } catch(e) { status.innerText = 'Connection error.'; }
             input.disabled = false;
         }
 
@@ -4094,7 +3764,7 @@
                 btn.style.pointerEvents = 'none';
 
                 await fetch(`${BACKEND_URL}/api/wall/like/${id}`, { method: 'POST' });
-            } catch (e) { console.error('Like failed'); }
+            } catch(e) { console.error('Like failed'); }
         }
 
         // ============ CAB SHARING ============
@@ -4105,7 +3775,7 @@
             try {
                 const res = await fetch(`${BACKEND_URL}/api/cabs`);
                 const cabs = await res.json();
-
+                
                 if (cabs.length === 0) {
                     list.innerHTML = `
                     <div class="image-card" style="text-align: center; opacity: 0.6; border: 1px dashed var(--glass-border); padding: 35px;">
@@ -4121,7 +3791,7 @@
                     const waLink = phoneWa ? `https://wa.me/${phoneWa}?text=Hi! I saw your Cab ride to ${p.destination} on SRM Hub.` : '';
                     const formattedDate = new Date(p.travel_date).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
                     const isOwner = myNetId && p.net_id && myNetId === (p.net_id || '').toLowerCase();
-
+                    
                     return `
                     <div class="image-card fade-in-up" style="transform: none; text-align: left; padding: 20px; border-left: 4px solid #00cc66;">
                         <div style="display: flex; justify-content: space-between; align-items: flex-start;">
@@ -4148,10 +3818,10 @@
             const spots = document.getElementById('cab-spots').value.trim();
             const phone_no = document.getElementById('cab-phone').value.trim();
             const status = document.getElementById('cab-status');
-
-            if (!destination || !travel_date || !travel_time || !phone_no) {
-                status.style.color = 'var(--danger)'; status.innerText = 'All fields except spots are required!';
-                return;
+            
+            if (!destination || !travel_date || !travel_time || !phone_no) { 
+                status.style.color = 'var(--danger)'; status.innerText = 'All fields except spots are required!'; 
+                return; 
             }
 
             const profile = JSON.parse(localStorage.getItem('squadProfile') || '{}');
@@ -4172,10 +3842,10 @@
                 const result = await res.json();
                 if (result.success) {
                     status.style.color = 'var(--success)'; status.innerText = '✅ Ride Request Posted!';
-                    ['cab-dest', 'cab-date', 'cab-time', 'cab-spots', 'cab-phone'].forEach(id => document.getElementById(id).value = '');
+                    ['cab-dest','cab-date','cab-time','cab-spots','cab-phone'].forEach(id => document.getElementById(id).value = '');
                     setTimeout(() => { document.getElementById('cabSubmitModal').style.display = 'none'; loadCabs(); }, 1500);
                 } else { status.style.color = 'var(--danger)'; status.innerText = '❌ ' + result.error; }
-            } catch (e) { status.style.color = 'var(--danger)'; status.innerText = '❌ Connection error.'; }
+            } catch(e) { status.style.color = 'var(--danger)'; status.innerText = '❌ Connection error.'; }
         }
 
         // ============ EVENTS & CLUB RADAR ============
@@ -4186,7 +3856,7 @@
             try {
                 const res = await fetch(`${BACKEND_URL}/api/events`);
                 const events = await res.json();
-
+                
                 if (events.length === 0) {
                     list.innerHTML = `
                     <div class="image-card" style="text-align: center; opacity: 0.6; border: 1px dashed var(--glass-border); padding: 35px;">
@@ -4198,7 +3868,7 @@
 
                 list.innerHTML = events.map(p => {
                     const formattedDate = p.event_date ? new Date(p.event_date).toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' }) : 'Date TBD';
-
+                    
                     return `
                     <div class="image-card fade-in-up" style="transform: none; text-align: left; padding: 0; overflow: hidden; position: relative;">
                         ${p.image_url ? `<div style="width: 100%; height: 200px; overflow: hidden; background: #111;"><img src="${p.image_url}" style="width: 100%; height: 100%; object-fit: cover; opacity: 0.8;" onerror="this.style.display='none'"></div>` : ''}
@@ -4225,10 +3895,10 @@
             const registration_link = document.getElementById('event-link').value.trim();
             const imageFile = document.getElementById('event-image-file')?.files[0];
             const status = document.getElementById('event-status');
-
-            if (!club_name || !event_title || !event_date) {
-                status.style.color = 'var(--danger)'; status.innerText = 'Club name, Title, and Date are required!';
-                return;
+            
+            if (!club_name || !event_title || !event_date) { 
+                status.style.color = 'var(--danger)'; status.innerText = 'Club name, Title, and Date are required!'; 
+                return; 
             }
 
             const profile = JSON.parse(localStorage.getItem('squadProfile') || '{}');
@@ -4239,7 +3909,7 @@
             let image_url = '';
             try {
                 if (imageFile) image_url = await compressImage(imageFile);
-            } catch (e) { console.error("Compression failed", e); }
+            } catch(e) { console.error("Compression failed", e); }
 
             status.style.color = '#e60073'; status.innerText = 'Posting Event...';
             try {
@@ -4255,12 +3925,12 @@
                 const result = await res.json();
                 if (result.success) {
                     status.style.color = 'var(--success)'; status.innerText = '✅ Event Posted!';
-                    ['event-club', 'event-title', 'event-date', 'event-link'].forEach(id => document.getElementById(id).value = '');
+                    ['event-club','event-title','event-date','event-link'].forEach(id => document.getElementById(id).value = '');
                     const label = document.querySelector('label[for="event-image-file"]');
-                    if (label) label.innerHTML = '🖼️ Click to upload Event Poster from device <input type="file" id="event-image-file" accept="image/*" style="display: none;">';
+                    if(label) label.innerHTML = '🖼️ Click to upload Event Poster from device <input type="file" id="event-image-file" accept="image/*" style="display: none;">';
                     setTimeout(() => { document.getElementById('eventSubmitModal').style.display = 'none'; loadEvents(); }, 1500);
                 } else { status.style.color = 'var(--danger)'; status.innerText = '❌ ' + result.error; }
-            } catch (e) { status.style.color = 'var(--danger)'; status.innerText = '❌ Connection error.'; }
+            } catch(e) { status.style.color = 'var(--danger)'; status.innerText = '❌ Connection error.'; }
         }
 
         async function submitProject() {
@@ -4289,12 +3959,12 @@
                 const result = await res.json();
                 if (result.success) {
                     status.style.color = 'var(--success)'; status.innerText = '✅ Project submitted!';
-                    ['ph-title', 'ph-desc', 'ph-tech', 'ph-github', 'ph-demo'].forEach(id => document.getElementById(id).value = '');
+                    ['ph-title','ph-desc','ph-tech','ph-github','ph-demo'].forEach(id => document.getElementById(id).value = '');
                     setTimeout(() => { document.getElementById('projectSubmitModal').style.display = 'none'; loadProjects(); }, 1500);
                 } else {
                     status.style.color = 'var(--danger)'; status.innerText = '❌ ' + result.error;
                 }
-            } catch (e) {
+            } catch(e) {
                 status.style.color = 'var(--danger)'; status.innerText = '❌ Could not connect to server.';
             }
         }
@@ -4311,7 +3981,7 @@
                 const result = await res.json();
                 if (result.success) { loadCabs(); }
                 else { alert(result.error || 'Could not delete ride.'); }
-            } catch (e) { alert('Connection error.'); }
+            } catch(e) { alert('Connection error.'); }
         }
 
         // ============ LOST & FOUND ============
@@ -4398,7 +4068,7 @@
             try {
                 status.style.color = 'var(--primary)'; status.innerText = 'Processing...';
                 if (imageFile) image_url = await compressImage(imageFile);
-            } catch (e) { console.error('Compression failed', e); }
+            } catch(e) { console.error('Compression failed', e); }
 
             status.style.color = 'var(--primary)'; status.innerText = 'Posting...';
             try {
@@ -4417,13 +4087,13 @@
                 const result = await res.json();
                 if (result.success) {
                     status.style.color = 'var(--success)'; status.innerText = '✅ Item Reported!';
-                    ['lf-title', 'lf-desc', 'lf-location'].forEach(id => document.getElementById(id).value = '');
+                    ['lf-title','lf-desc','lf-location'].forEach(id => document.getElementById(id).value = '');
                     catEl.selectedIndex = 0;
                     setTimeout(() => { document.getElementById('lfSubmitModal').style.display = 'none'; loadLostFound(); }, 1500);
                 } else {
                     status.style.color = 'var(--danger)'; status.innerText = '❌ ' + result.error;
                 }
-            } catch (e) {
+            } catch(e) {
                 status.style.color = 'var(--danger)'; status.innerText = '❌ Connection error.';
             }
         }
@@ -4440,7 +4110,7 @@
                 const result = await res.json();
                 if (result.success) { loadLostFound(); }
                 else { alert(result.error || 'Could not delete.'); }
-            } catch (e) { alert('Connection error.'); }
+            } catch(e) { alert('Connection error.'); }
         }
 
         // ============ AUTO-NOTIFICATION PROMPT FOR ALL USERS ============
@@ -4462,24 +4132,17 @@
 
     </script>
 
-    <div id="mobile-lock"
-        style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(5,5,5,0.95); z-index: 9999; flex-direction: column; align-items: center; justify-content: center; padding: 20px; text-align: center;">
-        <svg viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2"
-            style="width: 60px; height: 60px; margin-bottom: 20px;">
-            <rect x="5" y="2" width="14" height="20" rx="2" ry="2" />
-            <line x1="12" y1="18" x2="12.01" y2="18" />
+    <div id="mobile-lock" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(5,5,5,0.95); z-index: 9999; flex-direction: column; align-items: center; justify-content: center; padding: 20px; text-align: center;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2" style="width: 60px; height: 60px; margin-bottom: 20px;">
+            <rect x="5" y="2" width="14" height="20" rx="2" ry="2"/>
+            <line x1="12" y1="18" x2="12.01" y2="18"/>
         </svg>
         <h1 style="color: var(--text-main); font-size: 1.5rem; margin-bottom: 10px;">Install App</h1>
-        <p style="color: var(--text-sub); margin-bottom: 30px; max-width: 300px;">For the best experience, install the
-            app on your home screen to hide browser bars and use it in fullscreen dark mode.</p>
-        <button class="share-btn" onclick="installPWA()"
-            style="padding: 15px 30px; font-size: 1.2rem; display: flex; align-items: center; justify-content: center; width: 100%; max-width: 300px;">
+        <p style="color: var(--text-sub); margin-bottom: 30px; max-width: 300px;">For the best experience, install the app on your home screen to hide browser bars and use it in fullscreen dark mode.</p>
+        <button class="share-btn" onclick="installPWA()" style="padding: 15px 30px; font-size: 1.2rem; display: flex; align-items: center; justify-content: center; width: 100%; max-width: 300px;">
             INSTALL NOW
         </button>
-        <button onclick="document.getElementById('mobile-lock').style.display='none'"
-            style="margin-top: 20px; background: transparent; border: none; color: var(--text-sub); font-size: 1rem; text-decoration: underline;">Continue
-            in browser (Not Recommended)</button>
+        <button onclick="document.getElementById('mobile-lock').style.display='none'" style="margin-top: 20px; background: transparent; border: none; color: var(--text-sub); font-size: 1rem; text-decoration: underline;">Continue in browser (Not Recommended)</button>
     </div>
 </body>
-
 </html>
