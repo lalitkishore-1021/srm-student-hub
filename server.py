@@ -102,17 +102,6 @@ def save_student_to_db(net_id, name, register_no, att_data, marks_data):
         for sub in (marks_data or []):
             try:
                 perf_string = sub.get('Test Performance') or sub.get('performance') or sub.get('marks') or ""
-                # Logic: extract max and obtained using regex matching `/([0-9.]+)\s*\|\s*([0-9.]+)/` (like frontend)
-                # But it's easier: split by '|', if it has '/', left is obtained, right is max?
-                # The frontend regex: `([A-Za-z0-9-]+)\/([0-9.]+)\s*\|\s*([0-9.]+)` 
-                # This seems like it was matching something else, let's look at the regex:
-                # regex = /([A-Za-z0-9-]+)\/([0-9.]+)\s*\|\s*([0-9.]+)/g
-                # match[1] = testName, match[2] = max, match[3] = obtained? 
-                
-                # Let's write a simple python regex that extracts all numbers around '/' and '|'
-                # The frontend is matching: "CT 1/50.0 | 45.0" or similar?
-                # Wait, let's just use Python re module
-                
                 matches = re.findall(r'([A-Za-z0-9-]+)/([0-9.]+)\s*\|\s*([0-9.]+)', perf_string)
                 for test_name, max_str, obtained_str in matches:
                     try:
