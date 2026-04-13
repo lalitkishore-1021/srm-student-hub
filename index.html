@@ -2527,8 +2527,14 @@
                 return;
             }
 
-            statusText.innerText = "🔄 Syncing with Academia... This takes up to 90 seconds.";
+            let secondsPassed = 0;
+            statusText.innerHTML = `🔄 Syncing with Academia... <span style="font-family: inherit; font-size: 1.1rem; color: #fff; background: rgba(255,170,0,0.2); padding: 2px 8px; border-radius: 6px;">0s</span>`;
             statusText.style.color = "var(--primary)";
+            
+            let timerInterval = setInterval(() => {
+                secondsPassed++;
+                statusText.innerHTML = `🔄 Syncing with Academia... <span style="font-family: inherit; font-size: 1.1rem; color: #fff; background: rgba(255,170,0,0.2); padding: 2px 8px; border-radius: 6px;">${secondsPassed}s</span>`;
+            }, 1000);
 
             try {
                 const res = await fetch(`${BACKEND_URL}/api/start_session`, {
@@ -2538,14 +2544,15 @@
                 });
 
                 const result = await res.json();
+                clearInterval(timerInterval);
 
                 if (!result.success) {
-                    statusText.innerText = "❌ " + result.error;
+                    statusText.innerText = `❌ ${result.error} (Failed after ${secondsPassed}s)`;
                     statusText.style.color = "var(--danger)";
                     return;
                 }
 
-                statusText.innerText = "✅ Success! Dashboard Updated.";
+                statusText.innerText = `✅ Success! Synced in ${secondsPassed} seconds.`;
                 statusText.style.color = "var(--success)";
 
                 isLoggedIn = true;
@@ -2567,9 +2574,10 @@
                 try { renderMarks(marksList); } catch (e) { console.error("Marks Render Error:", e); }
                 try { renderTimetable(ttDict); } catch (e) { console.error("Timetable Render Error:", e); }
 
-                setTimeout(() => closeSyncModal(), 1500);
+                setTimeout(() => closeSyncModal(), 2000);
 
             } catch (e) {
+                clearInterval(timerInterval);
                 statusText.innerText = "❌ Could not connect to backend server.";
                 statusText.style.color = "var(--danger)";
             } finally {
@@ -3061,11 +3069,12 @@
 
         // ================= GALLERY & PROJECTS =================
         const projectsDatabase = {
-            'oopsBanner': { title: 'OOPS Banner App', subProjects: [{ id: 'ucsFolder', title: "UC's" }, { id: 'week1Problem', title: 'Week 1 & 2 Problems' }, { id: 'week34Problem', title: 'Week 3 & 4 Problems' }, { id: 'helloAppFolder', title: 'HelloApp UC\'s' }] },
+            'oopsBanner': { title: 'OOPS Banner App', subProjects: [{ id: 'ucsFolder', title: "UC's" }, { id: 'week1Problem', title: 'Week 1 & 2 Problems' }, { id: 'week34Problem', title: 'Week 3 & 4 Problems' }, { id: 'helloAppFolder', title: "HelloApp UC's" }, { id: 'week78ProblemI', title: 'week 7 and 8 problems i' }] },
             'ucsFolder': { title: "OOPS Banner App UC's", parent: 'oopsBanner', images: [{ src: 'images/oops-banner/uc1.png', label: '1' }, { src: 'images/oops-banner/uc2.png', label: '2' }, { src: 'images/oops-banner/uc3.png', label: '3' }, { src: 'images/oops-banner/uc4.png', label: '4' }, { src: 'images/oops-banner/uc5.png', label: '5' }, { src: 'images/oops-banner/uc6.png', label: '6' }, { src: 'images/oops-banner/uc7.png', label: '7' }, { src: 'images/oops-banner/uc8.png', label: '8' }, { src: 'images/oops-banner/uc9.png', label: '9' }, { src: 'images/oops-banner/uc10.png', label: '10' }, { src: 'images/oops-banner/end.png', label: 'end' }] },
             'week1Problem': { title: 'Week 1 and 2 Problems', parent: 'oopsBanner', images: [{ src: 'images/oops-banner/Basic-step1.png', label: 'Basic-Step' }, { src: 'images/oops-banner/Basic-step2.png', label: 'Basic-Step' }, { src: 'images/oops-banner/level1.png', label: 'Part 1' }, { src: 'images/oops-banner/level12.png', label: 'Part 2' }, { src: 'images/oops-banner/level13.png', label: 'Part 3' }, { src: 'images/oops-banner/bash.png', label: 'Bash' }, { src: 'images/oops-banner/level21.png', label: 'Part 4' }, { src: 'images/oops-banner/level22.png', label: 'Part 5' }, { src: 'images/oops-banner/level3.png', label: 'Part 6' }] },
             'week34Problem': { title: 'Week 3 and 4 Problems', parent: 'oopsBanner', images: [{ src: 'images/oops-banner/w31.png', label: 'Step1' }, { src: 'images/oops-banner/w32.png', label: 'Step2' }, { src: 'images/oops-banner/w33.png', label: 'Step3' }, { src: 'images/oops-banner/w34.png', label: 'Step4' }, { src: 'images/oops-banner/w35.png', label: 'Step5' }, { src: 'images/oops-banner/w36.png', label: 'Step6' }, { src: 'images/oops-banner/end.png', label: 'end' }] },
-            'helloAppFolder': { title: 'HelloApp UC\'s', parent: 'oopsBanner', video: 'https://www.youtube.com/embed/k8eX_rkQxPk', images: [{ src: 'images/oops-banner/ha1.png', label: 'uc 1 Step 1' }, { src: 'images/oops-banner/ha2.png', label: 'Step 2' }, { src: 'images/oops-banner/ha3.png', label: 'Step 3' }, { src: 'images/oops-banner/ha4.png', label: 'Step 4' }, { src: 'images/oops-banner/ha5.png', label: 'uc 2 Step 5' }, { src: 'images/oops-banner/ha6.png', label: 'Step 6' }, { src: 'images/oops-banner/ha7.png', label: 'uc 3 Step 7' }, { src: 'images/oops-banner/ha8.png', label: 'Step 8' }, { src: 'images/oops-banner/ha9.png', label: 'Step 8' }, { src: 'images/oops-banner/ha10.png', label: 'Step 9' }, { src: 'images/oops-banner/ha11.png', label: 'Step 10' }, { src: 'images/oops-banner/ha12.png', label: 'Step 11' }, { src: 'images/oops-banner/ha13.png', label: 'Step 12' }, { src: 'images/oops-banner/ha14.png', label: 'Step 13' }, { src: 'images/oops-banner/end.png', label: 'end' }] }
+            'helloAppFolder': { title: "HelloApp UC's", parent: 'oopsBanner', video: 'https://www.youtube.com/embed/k8eX_rkQxPk', images: [{ src: 'images/oops-banner/ha1.png', label: 'uc 1 Step 1' }, { src: 'images/oops-banner/ha2.png', label: 'Step 2' }, { src: 'images/oops-banner/ha3.png', label: 'Step 3' }, { src: 'images/oops-banner/ha4.png', label: 'Step 4' }, { src: 'images/oops-banner/ha5.png', label: 'uc 2 Step 5' }, { src: 'images/oops-banner/ha6.png', label: 'Step 6' }, { src: 'images/oops-banner/ha7.png', label: 'uc 3 Step 7' }, { src: 'images/oops-banner/ha8.png', label: 'Step 8' }, { src: 'images/oops-banner/ha9.png', label: 'Step 8' }, { src: 'images/oops-banner/ha10.png', label: 'Step 9' }, { src: 'images/oops-banner/ha11.png', label: 'Step 10' }, { src: 'images/oops-banner/ha12.png', label: 'Step 11' }, { src: 'images/oops-banner/ha13.png', label: 'Step 12' }, { src: 'images/oops-banner/ha14.png', label: 'Step 13' }, { src: 'images/oops-banner/end.png', label: 'end' }] },
+            'week78ProblemI': { title: 'week 7 and 8 problems ', parent: 'oopsBanner', images: [{ src: 'images/oops-banner/aa1.png', label: 'Step1' }, { src: 'images/oops-banner/aa2.png', label: 'Step1' }, { src: 'images/oops-banner/aa3.png', label: 'Step1' }, { src: 'images/oops-banner/end.png', label: 'end' }] }
         };
 
         function openProject(projectId) {
