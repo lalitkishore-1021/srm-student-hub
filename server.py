@@ -322,7 +322,7 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
             elif any(kw in header_str for kw in ["test performance", "assessment", "marks", "internal"]):
                 try:
                     idx_code = get_col_index(headers, "code")
-                    idx_title = get_col_index(headers, "title")
+                    idx_title = get_col_index(headers, "title", "name", "course name")
                     idx_perf = get_col_index(headers, "performance", "assessment", "marks", "internal")
                     
                     if idx_code == -1 or idx_perf == -1: continue
@@ -380,69 +380,35 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
         for table in slot_tables:
             if not table: continue
             for r_idx, row in enumerate(table):
-                row_text = ' '.join([str(c).lower() for c in row])
-                # Look for advisor labels in any cell
                 for c_idx, cell in enumerate(row):
-                    cell_lower = str(cell).lower().strip()
-                    # Faculty Advisor detection
-                    if 'faculty advisor' in cell_lower or ('counselor' in cell_lower and 'faculty' in row_text):
-                        # Try to find name, email, phone in same column below or adjacent
-                        fa_text = str(cell).strip()
-                        # Check if FA info is embedded in the cell itself (multiline)
-                        lines = fa_text.split('\n')
-                        if len(lines) >= 2:
-                            for line in lines:
-                                line = line.strip()
-                                if '@' in line and 'srmist' in line.lower():
-                                    profile_data['fa_email'] = line
-                                elif re.match(r'^[0-9]{10}$', line.replace(' ', '')):
-                                    profile_data['fa_phone'] = line.replace(' ', '')
-                                elif len(line) > 3 and 'faculty' not in line.lower() and 'advisor' not in line.lower() and 'counselor' not in line.lower():
-                                    if 'fa_name' not in profile_data:
-                                        profile_data['fa_name'] = line
-                        # Also scan subsequent rows in same column area
-                        for scan_offset in range(1, min(5, len(table) - r_idx)):
-                            scan_row = table[r_idx + scan_offset]
-                            for sc in scan_row:
-                                sc_str = str(sc).strip()
-                                if '@' in sc_str and 'srmist' in sc_str.lower() and 'fa_email' not in profile_data:
-                                    profile_data['fa_email'] = sc_str
-                                elif re.match(r'^[0-9]{10,}$', sc_str.replace(' ', '').replace('-', '')) and 'fa_phone' not in profile_data:
-                                    profile_data['fa_phone'] = sc_str.replace(' ', '').replace('-', '')
-                                elif len(sc_str) > 3 and 'fa_name' not in profile_data and '@' not in sc_str and not sc_str.replace(' ', '').isdigit():
-                                    if 'academic' not in sc_str.lower() and 'advisor' not in sc_str.lower():
-                                        profile_data['fa_name'] = sc_str
-                            if 'fa_name' in profile_data and 'fa_email' in profile_data:
-                                break
+                    cell_str = str(cell).strip()
+                    cell_lower = cell_str.lower()
+                    
+                    # Faculty Advisor detection (usually in one multiline cell)
+                    if 'faculty advisor' in cell_lower:
+                        lines = [line.strip() for line in cell_str.split('\n') if line.strip()]
+                        for k, line in enumerate(lines):
+                            ll = line.lower()
+                            if 'faculty advisor' in ll:
+                                if k > 0 and len(lines[k-1]) > 3:
+                                    profile_data['fa_name'] = lines[k-1]
+                            elif '@' in ll and 'srmist' in ll:
+                                profile_data['fa_email'] = line
+                            elif re.match(r'^\+?[0-9\s-]{10,}$', line) and len(re.sub(r'\D', '', line)) >= 10:
+                                profile_data['fa_phone'] = re.sub(r'\D', '', line)[-10:]
                     
                     # Academic Advisor detection
                     if 'academic advisor' in cell_lower:
-                        aa_text = str(cell).strip()
-                        lines = aa_text.split('\n')
-                        if len(lines) >= 2:
-                            for line in lines:
-                                line = line.strip()
-                                if '@' in line and 'srmist' in line.lower():
-                                    profile_data['aa_email'] = line
-                                elif re.match(r'^[0-9]{10}$', line.replace(' ', '')):
-                                    profile_data['aa_phone'] = line.replace(' ', '')
-                                elif len(line) > 3 and 'academic' not in line.lower() and 'advisor' not in line.lower():
-                                    if 'aa_name' not in profile_data:
-                                        profile_data['aa_name'] = line
-                        # Scan subsequent rows
-                        for scan_offset in range(1, min(5, len(table) - r_idx)):
-                            scan_row = table[r_idx + scan_offset]
-                            for sc in scan_row:
-                                sc_str = str(sc).strip()
-                                if '@' in sc_str and 'srmist' in sc_str.lower() and 'aa_email' not in profile_data:
-                                    profile_data['aa_email'] = sc_str
-                                elif re.match(r'^[0-9]{10,}$', sc_str.replace(' ', '').replace('-', '')) and 'aa_phone' not in profile_data:
-                                    profile_data['aa_phone'] = sc_str.replace(' ', '').replace('-', '')
-                                elif len(sc_str) > 3 and 'aa_name' not in profile_data and '@' not in sc_str and not sc_str.replace(' ', '').isdigit():
-                                    if 'faculty' not in sc_str.lower() and 'advisor' not in sc_str.lower() and 'counselor' not in sc_str.lower():
-                                        profile_data['aa_name'] = sc_str
-                            if 'aa_name' in profile_data and 'aa_email' in profile_data:
-                                break
+                        lines = [line.strip() for line in cell_str.split('\n') if line.strip()]
+                        for k, line in enumerate(lines):
+                            ll = line.lower()
+                            if 'academic advisor' in ll:
+                                if k > 0 and len(lines[k-1]) > 3:
+                                    profile_data['aa_name'] = lines[k-1]
+                            elif '@' in ll and 'srmist' in ll:
+                                profile_data['aa_email'] = line
+                            elif re.match(r'^\+?[0-9\s-]{10,}$', line) and len(re.sub(r'\D', '', line)) >= 10:
+                                profile_data['aa_phone'] = re.sub(r'\D', '', line)[-10:]
         
         print(f"[{reg_no}] Profile extracted: regNo={profile_data.get('regNo','?')}, dept={profile_data.get('department','?')}, FA={profile_data.get('fa_name','?')}, AA={profile_data.get('aa_name','?')}")
         
@@ -466,8 +432,10 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
                             # Refined Regex matching (matches A, P49, PT2, etc)
                             slots_found = re.findall(r'\b[A-Z]{1,2}\d*\b', row[idx_slot])
                             for s in slots_found:
+                                # Use subject title if possible, else subject code
+                                subj_name = row[idx_title].strip() if idx_title != -1 and len(row) > idx_title and row[idx_title].strip() else row[idx_code].strip()
                                 student_slots[s] = {
-                                    "subject": f"{row[idx_code]} - {row[idx_title]}",
+                                    "subject": subj_name,
                                     "room": row[idx_room]
                                 }
                 except Exception as e:
@@ -494,17 +462,27 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
             for r_idx, row in enumerate(table):
                 first_cell = str(row[0]).lower().replace('\n', ' ').strip()
                 
-                # Check all cells in row for "from" / "to" pattern
-                if "from" in first_cell and "to" not in first_cell:
-                    from_row = [str(c).strip() for c in row[1:]]
-                elif "to" in first_cell and "from" not in first_cell:
-                    to_row = [str(c).strip() for c in row[1:]]
-                elif "from" in first_cell and "to" in first_cell:
+                # Check for \d+:\d+ pattern in the row to deeply detect timing rows
+                time_matches = [re.search(r'\d{1,2}:\d{2}', str(c)) for c in row[1:]]
+                has_times = sum(1 for m in time_matches if m is not None) >= 3
+                
+                if has_times:
+                    extracted = [str(c).replace('\n', ' ').strip() for c in row[1:]]
+                    if not from_row:
+                        from_row = extracted
+                    elif not to_row:
+                        to_row = extracted
+                    elif len(time_cols) == 0:
+                        # Fallback if both filled but another time row found
+                        time_cols = extracted
+                
+                # Sometimes a row has explicitly '8:00 - 8:50'
+                combined_match = [re.search(r'\d{1,2}:\d{2}\s*-\s*\d{1,2}:\d{2}', str(c)) for c in row[1:]]
+                if sum(1 for m in combined_match if m is not None) >= 3:
                     time_cols = [str(c).replace('\n', ' ').strip() for c in row[1:]]
-                elif any(x in first_cell for x in ["hour", "order", "time", "period"]):
-                    if not time_cols and not from_row:
-                        time_cols = [str(c).replace('\n', ' ').strip() for c in row[1:]]
-                elif "day" in first_cell and any(str(i) in first_cell for i in range(1, 6)):
+                
+                # Identify where days start
+                if ("day" in first_cell or "order" in first_cell) and any(str(i) in first_cell for i in range(1, 6)):
                     start_row = r_idx
                     break
                     
@@ -516,14 +494,14 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
                         time_cols.append(f"{f_clean} - {t_clean}")
                     elif f_clean:
                         time_cols.append(f_clean)
+            elif not time_cols and from_row and not to_row:
+                time_cols = from_row
                         
             # Debug: print extracted time columns
             if time_cols:
-                print(f"[{reg_no}] Table {t_idx}: time_cols ({len(time_cols)}) = {time_cols[:15]}")
-            if from_row:
-                print(f"[{reg_no}] Table {t_idx}: from_row = {from_row[:15]}")
-            if to_row:
-                print(f"[{reg_no}] Table {t_idx}: to_row = {to_row[:15]}")
+                print(f"[{reg_no}] Table {t_idx}: time_cols ({len(time_cols)}) = {time_cols[:10]}")
+            elif from_row:
+                print(f"[{reg_no}] Table {t_idx}: fallback from_row ({len(from_row)}) = {from_row[:10]}")
                     
             if start_row != -1:
                 print(f"[{reg_no}] Table {t_idx}: Day rows start at row {start_row}")
