@@ -1535,26 +1535,26 @@
                                 </svg>
                             </div>
                             <div>
-                                <h2 class="id-name">BALAGA LALIT KISHORE</h2>
-                                <p class="id-reg">RA2511026010324</p>
+                                <h2 class="id-name">STUDENT</h2>
+                                <p class="id-reg">Syncing...</p>
                             </div>
                         </div>
                         <div class="id-details">
-                            <span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            <span id="id-detail-course"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                     stroke-width="2">
                                     <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
-                                </svg> B.Tech</span>
-                            <span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                </svg> --</span>
+                            <span id="id-detail-dept"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                     stroke-width="2">
                                     <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
                                     <line x1="3" y1="9" x2="21" y2="9" />
                                     <line x1="9" y1="21" x2="9" y2="9" />
-                                </svg> CS AIML</span>
-                            <span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                </svg> --</span>
+                            <span id="id-detail-sem"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                     stroke-width="2">
                                     <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
                                     <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
-                                </svg> Semester 2</span>
+                                </svg> --</span>
                         </div>
                     </div>
                     <div class="stats-bar">
@@ -1703,16 +1703,29 @@
 
             <div id="advisors-section" style="display: none;">
                 <h3 class="section-title">Advisors</h3>
-                <div class="glass-card" style="text-align: left;">
-                    <h5
-                        style="color: var(--primary); margin: 0 0 5px 0; font-size: 0.75rem; text-transform: uppercase;">
-                        Faculty Advisor</h5>
-                    <h3 style="margin: 0 0 10px 0; font-size: 1.2rem;">Nithya Devi S M</h3>
-                    <div style="font-size: 0.85rem; color: var(--text-sub); margin-bottom: 5px;">@
-                        nithyads2@srmist.edu.in</div>
-                    <div style="font-size: 0.85rem; color: var(--text-sub); margin-bottom: 15px;">📞 9487634094</div>
-                    <button class="btn-primary" style="background: rgba(255,255,255,0.05); color: var(--text-main);">📞
-                        Call Advisor</button>
+                <div style="display: flex; flex-direction: column; gap: 15px;">
+                    <!-- Faculty Advisor Card -->
+                    <div id="fa-card" class="glass-card" style="text-align: left; display: none;">
+                        <h5
+                            style="color: var(--primary); margin: 0 0 5px 0; font-size: 0.75rem; text-transform: uppercase;">
+                            Faculty Advisor</h5>
+                        <h3 id="fa-name" style="margin: 0 0 10px 0; font-size: 1.2rem;">--</h3>
+                        <div id="fa-email" style="font-size: 0.85rem; color: var(--text-sub); margin-bottom: 5px;">@ --</div>
+                        <div id="fa-phone-display" style="font-size: 0.85rem; color: var(--text-sub); margin-bottom: 15px;">📞 --</div>
+                        <a id="fa-call-btn" href="tel:" class="btn-primary" style="background: rgba(255,255,255,0.05); color: var(--text-main); text-decoration: none; display: block; text-align: center; padding: 12px; border-radius: 12px; font-family: 'Montserrat', sans-serif; font-weight: 700; text-transform: uppercase;">📞
+                            Call Advisor</a>
+                    </div>
+                    <!-- Academic Advisor Card -->
+                    <div id="aa-card" class="glass-card" style="text-align: left; display: none;">
+                        <h5
+                            style="color: #00cc66; margin: 0 0 5px 0; font-size: 0.75rem; text-transform: uppercase;">
+                            Academic Advisor</h5>
+                        <h3 id="aa-name" style="margin: 0 0 10px 0; font-size: 1.2rem;">--</h3>
+                        <div id="aa-email" style="font-size: 0.85rem; color: var(--text-sub); margin-bottom: 5px;">@ --</div>
+                        <div id="aa-phone-display" style="font-size: 0.85rem; color: var(--text-sub); margin-bottom: 15px;">📞 --</div>
+                        <a id="aa-call-btn" href="tel:" class="btn-primary" style="background: rgba(255,255,255,0.05); color: var(--text-main); text-decoration: none; display: block; text-align: center; padding: 12px; border-radius: 12px; font-family: 'Montserrat', sans-serif; font-weight: 700; text-transform: uppercase;">📞
+                            Call Advisor</a>
+                    </div>
                 </div>
             </div>
         </div>
@@ -2482,16 +2495,77 @@
             if (nameEl) nameEl.innerText = (profile.name || 'STUDENT').toUpperCase();
             if (regEl) regEl.innerText = (profile.regNo || '').toUpperCase();
 
-            const detailSpans = document.querySelectorAll('.id-details span');
-            if (detailSpans.length >= 3) {
-                let courseStr = profile.course || 'B.Tech. General';
-                let deg = courseStr.split('.')[0] ? courseStr.split('.')[0].trim() : 'B.Tech';
-                let maj = courseStr.includes('.') ? courseStr.split('.').slice(1).join('.').trim() : courseStr;
-                if (deg.length < 2) deg = 'B.Tech';
+            // Use specific IDs for detail spans
+            const courseSpan = document.getElementById('id-detail-course');
+            const deptSpan = document.getElementById('id-detail-dept');
+            const semSpan = document.getElementById('id-detail-sem');
 
-                detailSpans[0].innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/></svg> ${deg}`;
-                detailSpans[1].innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg> ${maj.substring(0, 20)}`;
-                detailSpans[2].innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg> Semester ${profile.semester || 'N/A'}`;
+            let courseStr = profile.course || 'B.Tech';
+            let deg = courseStr;
+            // Try to extract degree program name
+            if (courseStr.includes('.')) {
+                deg = courseStr.split('.')[0].trim();
+                if (deg.length < 2) deg = 'B.Tech';
+            }
+
+            // Department: use scraped department field if available
+            let deptStr = profile.department || '';
+            if (!deptStr) {
+                // Fallback: try to extract from course string
+                if (courseStr.includes('.')) {
+                    deptStr = courseStr.split('.').slice(1).join('.').trim();
+                } else {
+                    deptStr = courseStr;
+                }
+            }
+
+            if (courseSpan) courseSpan.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/></svg> ${deg}`;
+            if (deptSpan) deptSpan.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg> ${deptStr.substring(0, 45)}`;
+            if (semSpan) semSpan.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg> Semester ${profile.semester || 'N/A'}`;
+
+            // Also render advisors
+            renderAdvisors(profile);
+        }
+
+        function renderAdvisors(profile) {
+            if (!profile) return;
+
+            // Faculty Advisor
+            const faCard = document.getElementById('fa-card');
+            if (faCard && (profile.fa_name || profile.fa_email || profile.fa_phone)) {
+                faCard.style.display = 'block';
+                const faNameEl = document.getElementById('fa-name');
+                const faEmailEl = document.getElementById('fa-email');
+                const faPhoneEl = document.getElementById('fa-phone-display');
+                const faCallBtn = document.getElementById('fa-call-btn');
+
+                if (faNameEl) faNameEl.innerText = profile.fa_name || 'Faculty Advisor';
+                if (faEmailEl) faEmailEl.innerText = '@ ' + (profile.fa_email || 'N/A');
+                if (faPhoneEl) faPhoneEl.innerText = '📞 ' + (profile.fa_phone || 'N/A');
+                if (faCallBtn && profile.fa_phone) {
+                    faCallBtn.href = 'tel:' + profile.fa_phone;
+                } else if (faCallBtn) {
+                    faCallBtn.style.display = 'none';
+                }
+            }
+
+            // Academic Advisor
+            const aaCard = document.getElementById('aa-card');
+            if (aaCard && (profile.aa_name || profile.aa_email || profile.aa_phone)) {
+                aaCard.style.display = 'block';
+                const aaNameEl = document.getElementById('aa-name');
+                const aaEmailEl = document.getElementById('aa-email');
+                const aaPhoneEl = document.getElementById('aa-phone-display');
+                const aaCallBtn = document.getElementById('aa-call-btn');
+
+                if (aaNameEl) aaNameEl.innerText = profile.aa_name || 'Academic Advisor';
+                if (aaEmailEl) aaEmailEl.innerText = '@ ' + (profile.aa_email || 'N/A');
+                if (aaPhoneEl) aaPhoneEl.innerText = '📞 ' + (profile.aa_phone || 'N/A');
+                if (aaCallBtn && profile.aa_phone) {
+                    aaCallBtn.href = 'tel:' + profile.aa_phone;
+                } else if (aaCallBtn) {
+                    aaCallBtn.style.display = 'none';
+                }
             }
         }
 
