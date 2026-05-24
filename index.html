@@ -1418,6 +1418,33 @@
                 filter: drop-shadow(0 0 8px rgba(191, 90, 242, 0.8));
             }
         }
+
+        /* Event Popup Styles */
+        .event-popup {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(10, 10, 15, 0.95); z-index: 10000;
+            display: flex; align-items: center; justify-content: center;
+            flex-direction: column; text-align: center;
+            backdrop-filter: blur(10px);
+            animation: fadeInOut 5s forwards;
+        }
+        .event-popup-content h1 {
+            font-size: 3rem; color: var(--accent);
+            animation: scalePop 1s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            margin: 0;
+        }
+        .event-popup-content p {
+            font-size: 1.2rem; color: var(--text-main); margin-top: 10px;
+            animation: slideUp 1s ease;
+        }
+        @keyframes scalePop { 0% { transform: scale(0.5); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+        @keyframes slideUp { 0% { transform: translateY(20px); opacity: 0; } 100% { transform: translateY(0); opacity: 1; } }
+        @keyframes fadeInOut {
+            0% { opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { opacity: 0; visibility: hidden; }
+        }
     </style>
 </head>
 
@@ -1426,6 +1453,13 @@
     <div id="splash-screen">
         <div class="css-loader"></div>
         <div class="splash-text">Loading Hub...</div>
+    </div>
+
+    <div id="eventPopup" class="event-popup" style="display: none;">
+        <div class="event-popup-content">
+            <h1 id="eventPopupTitle">Welcome Back!</h1>
+            <p id="eventPopupSub">College has opened.</p>
+        </div>
     </div>
 
     <div class="btn-container" id="navButtons">
@@ -2387,34 +2421,32 @@
 
         let currentCalDate = new Date();
         const srmPlanner = {
-            "2026-01-01": { type: "Holiday", title: "New Year's Day - Holiday" },
-            "2026-01-05": { type: "Event", title: "Enrolment Day - B.Tech" },
-            "2026-01-08": { type: "Event", title: "Commencement of Classes" },
-            "2026-01-15": { type: "Holiday", title: "Pongal - Holiday" },
-            "2026-01-16": { type: "Holiday", title: "Thiruvalluvar Day - Holiday" },
-            "2026-01-17": { type: "Holiday", title: "Uzhavar Thirunal - Holiday" },
-            "2026-01-26": { type: "Holiday", title: "Republic Day - Holiday" },
-            "2026-02-01": { type: "Holiday", title: "Thaipoosam - Holiday" },
-            "2026-03-04": { type: "Holiday", title: "Holi" },
-            "2026-03-19": { type: "Holiday", title: "Telugu New Year's Day - Holiday" },
-            "2026-03-21": { type: "Holiday", title: "Ramzan - Holiday" },
-            "2026-03-31": { type: "Holiday", title: "Mahaveer Jayanthi - Holiday" },
-            "2026-04-03": { type: "Holiday", title: "Good Friday - Holiday" },
-            "2026-04-14": { type: "Holiday", title: "Tamil New Year's Day / Dr. B.R. Ambedkar's Birthday - Holiday" },
-            "2026-05-01": { type: "Holiday", title: "May Day - Holiday" },
-            "2026-05-06": { type: "Event", title: "Last working Day" },
-            "2026-05-28": { type: "Holiday", title: "Bakrid - Holiday" },
-            "2026-06-26": { type: "Holiday", title: "Muharram - Holiday" }
+            "2026-07-20": { type: "Event", title: "Enrolment Day - B.Tech - II,III,IV / M.Tech" },
+            "2026-07-21": { type: "Event", title: "Commencement of Classes" },
+            "2026-08-01": { type: "Event", title: "Enrolment Day Starts B.Tech - I" },
+            "2026-08-07": { type: "Event", title: "Enrolment Day Ends with B.Tech - I" },
+            "2026-08-15": { type: "Holiday", title: "Independence Day - Holiday" },
+            "2026-08-17": { type: "Event", title: "Commencement of Classes for B.Tech - I" },
+            "2026-08-26": { type: "Holiday", title: "Milad - un - Nabi - Holiday" },
+            "2026-09-04": { type: "Holiday", title: "Krishna Jayanthi - Holiday" },
+            "2026-09-14": { type: "Holiday", title: "Vinayakar Chathurthi - Holiday" },
+            "2026-10-02": { type: "Holiday", title: "Gandhi Jayanthi - Holiday" },
+            "2026-10-19": { type: "Holiday", title: "Ayutha Pooja - Holiday" },
+            "2026-10-20": { type: "Holiday", title: "Vijaya Dasami - Holiday" },
+            "2026-11-08": { type: "Holiday", title: "Deepavali - Holiday" },
+            "2026-11-18": { type: "Event", title: "Last Working Day - B.Tech" },
+            "2026-12-04": { type: "Event", title: "Last Working Day - B.Tech - I" },
+            "2026-12-25": { type: "Holiday", title: "Christmas - Holiday" }
         };
 
-        // Auto-generate accurate Day Orders for 2026 Even Semester
-        const endDate = new Date(2026, 4, 6); // May 6th, 2026
-        const holidays = ["2026-01-15", "2026-01-16", "2026-01-17", "2026-01-26", "2026-02-01", "2026-03-04", "2026-03-19", "2026-03-21", "2026-03-31", "2026-04-03", "2026-04-14", "2026-05-01"];
+        // Auto-generate accurate Day Orders for 2026 Odd Semester
+        const endDate = new Date(2026, 11, 4); // Dec 4th, 2026
+        const holidays = ["2026-08-15", "2026-08-26", "2026-09-04", "2026-09-14", "2026-10-02", "2026-10-19", "2026-10-20", "2026-11-08", "2026-12-25"];
 
         let dOrder = 1;
         // Strictly deterministic integer loop completely avoiding Javascript DST / Timezone manipulation infinite loops!
         for (let i = 0; i < 150; i++) {
-            let d = new Date(2026, 0, 8 + i); // Jan 8th 2026 + i days
+            let d = new Date(2026, 6, 21 + i); // Jul 21st 2026 + i days
             if (d > endDate) break;
 
             let curISOTime = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, '0') + "-" + String(d.getDate()).padStart(2, '0');
@@ -2426,6 +2458,17 @@
 
                 dOrder = dOrder === 5 ? 1 : dOrder + 1;
             }
+        }
+
+        function getDayOrder(dateStr) {
+            let plan = srmPlanner[dateStr];
+            if (plan && plan.type === "Day Order") return plan.value;
+            if (plan && plan.value) return plan.value; // For Event type that holds Day Order
+            
+            // Fallback for dates outside the generated range
+            let d = new Date(dateStr);
+            let dayIndex = d.getDay();
+            return (dayIndex >= 1 && dayIndex <= 5) ? dayIndex : 0;
         }
 
         // ================= INITIALIZATION =================
@@ -2520,7 +2563,7 @@
             }
 
             if (courseSpan) courseSpan.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/></svg> ${deg}`;
-            if (deptSpan) deptSpan.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg> ${deptStr.substring(0, 45)}`;
+            if (deptSpan) deptSpan.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg> ${deptStr}`;
             if (semSpan) semSpan.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg> Semester ${profile.semester || 'N/A'}`;
 
             // Also render advisors
@@ -2977,85 +3020,65 @@
             const classesForDay = timetableData[dayNumber.toString()] || [];
             grid.innerHTML = '';
 
-            if (classesForDay.length === 0) {
+            let todayLocal = new Date();
+            let tzoffset = todayLocal.getTimezoneOffset() * 60000;
+            let dayOrderDate = (new Date(todayLocal - tzoffset)).toISOString().slice(0, 10);
+            let isHoliday = srmPlanner[dayOrderDate] && srmPlanner[dayOrderDate].type === "Holiday";
+            
+            if (isHoliday) {
+                grid.innerHTML = `<div class="image-card" style="text-align:center; padding: 20px;"><h4 style="color:var(--accent); margin:0;">Today Holiday</h4><p style="color:var(--text-sub); font-size:0.9rem;">${srmPlanner[dayOrderDate].title}</p></div>`;
+            } else if (classesForDay.length === 0) {
                 grid.innerHTML = `<div class="image-card" style="text-align:center; padding: 30px;"><h3 style="color:var(--text-sub); margin:0;">No classes scheduled for Day ${dayNumber}</h3></div>`;
-                
-                let todayLocal = new Date();
-                let tzoffset = todayLocal.getTimezoneOffset() * 60000;
-                let dayOrderDate = (new Date(todayLocal - tzoffset)).toISOString().slice(0, 10);
-                let currentDayOrder = todayLocal.getDay();
-                if (srmPlanner[dayOrderDate] && srmPlanner[dayOrderDate].type === "Day Order") {
-                    currentDayOrder = srmPlanner[dayOrderDate].value;
-                } else {
-                    currentDayOrder = (currentDayOrder >= 1 && currentDayOrder <= 5) ? currentDayOrder : 0;
-                }
-                
-                let isHoliday = srmPlanner[dayOrderDate] && srmPlanner[dayOrderDate].type === "Holiday";
-                if (dayNumber == currentDayOrder || currentDayOrder === 0 || isHoliday) {
-                    checkAndShowHolidayBanner('timetable-holiday-banner');
-                }
-                return;
-            }
-            // Remove duplicates and fallback "Period" classes if real times exist
-            let normalizeStr = (s) => String(s || '').replace(/\s+/g, ' ').trim().toLowerCase();
-            let realSubjects = new Set(classesForDay.filter(c => !String(c.time).toLowerCase().includes('period')).map(c => normalizeStr(c.subject)));
+            } else {
+                // Remove duplicates and fallback "Period" classes if real times exist
+                let normalizeStr = (s) => String(s || '').replace(/\s+/g, ' ').trim().toLowerCase();
+                let realSubjects = new Set(classesForDay.filter(c => !String(c.time).toLowerCase().includes('period')).map(c => normalizeStr(c.subject)));
 
-            let deduplicated = classesForDay.filter(c => {
-                let isPeriod = String(c.time).toLowerCase().includes('period');
-                if (isPeriod && realSubjects.has(normalizeStr(c.subject))) return false;
-                return true;
-            });
+                let deduplicated = classesForDay.filter(c => {
+                    let isPeriod = String(c.time).toLowerCase().includes('period');
+                    if (isPeriod && realSubjects.has(normalizeStr(c.subject))) return false;
+                    return true;
+                });
 
-            // Enforce exact uniqueness
-            let uniqueSet = new Set();
-            deduplicated = deduplicated.filter(c => {
-                let str = `${c.time}|${normalizeStr(c.subject)}`;
-                if (uniqueSet.has(str)) return false;
-                uniqueSet.add(str);
-                return true;
-            });
+                let uniqueSet = new Set();
+                deduplicated = deduplicated.filter(c => {
+                    let str = `${c.time}|${normalizeStr(c.subject)}`;
+                    if (uniqueSet.has(str)) return false;
+                    uniqueSet.add(str);
+                    return true;
+                });
 
-            // GROUPING LOGIC FOR IDENTICAL BACK-TO-BACK CLASSES
-            let mergedClasses = [];
-            deduplicated.forEach(cls => {
-                if (mergedClasses.length > 0) {
-                    let last = mergedClasses[mergedClasses.length - 1];
-                    if (normalizeStr(last.subject) === normalizeStr(cls.subject) && last.room === cls.room) {
-                        let timePartsLast = String(last.time).split(/[-]|to/i);
-                        let timePartsCls = String(cls.time).split(/[-]|to/i);
-                        let start1 = timePartsLast[0]?.trim() || last.time;
-                        let end2 = timePartsCls[1]?.trim() || String(cls.time).replace(/Period/i, '').trim();
-                        last.time = `${start1} - ${end2}`;
-                        return;
+                let mergedClasses = [];
+                deduplicated.forEach(cls => {
+                    if (mergedClasses.length > 0) {
+                        let last = mergedClasses[mergedClasses.length - 1];
+                        if (normalizeStr(last.subject) === normalizeStr(cls.subject) && last.room === cls.room) {
+                            let timePartsLast = String(last.time).split(/[-]|to/i);
+                            let timePartsCls = String(cls.time).split(/[-]|to/i);
+                            let start1 = timePartsLast[0]?.trim() || last.time;
+                            let end2 = timePartsCls[1]?.trim() || String(cls.time).replace(/Period/i, '').trim();
+                            last.time = `${start1} - ${end2}`;
+                            return;
+                        }
                     }
-                }
-                mergedClasses.push({ ...cls });
-            });
+                    mergedClasses.push({ ...cls });
+                });
 
-            mergedClasses.forEach(cls => {
-                let todayLocal = new Date();
-                let tzoffset = todayLocal.getTimezoneOffset() * 60000;
-                let dayOrderDate = (new Date(todayLocal - tzoffset)).toISOString().slice(0, 10);
+                mergedClasses.forEach(cls => {
+                    let currentDayOrder = getDayOrder(dayOrderDate);
+                    let isActive = isClassActive(cls.time) && dayNumber == currentDayOrder;
+                    let activeClass = isActive ? 'active-highlight' : '';
+                    let badge = isActive ? '<span class="active-badge">HAPPENING NOW</span>' : '';
 
-                let currentDayOrder = todayLocal.getDay();
-                if (srmPlanner[dayOrderDate] && srmPlanner[dayOrderDate].type === "Day Order") {
-                    currentDayOrder = srmPlanner[dayOrderDate].value;
-                } else {
-                    currentDayOrder = (currentDayOrder >= 1 && currentDayOrder <= 5) ? currentDayOrder : 0; // 0 for weekends
-                }
-
-                let isActive = isClassActive(cls.time) && dayNumber == currentDayOrder;
-                let activeClass = isActive ? 'active-highlight' : '';
-                let badge = isActive ? '<span class="active-badge">HAPPENING NOW</span>' : '';
-
-                grid.innerHTML += `
-                    <div class="tt-card fade-in-up ${activeClass}">
-                        <div class="tt-time"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> ${cls.time || 'N/A'} ${badge}</div>
-                        <h3 class="tt-subject">${cls.subject || 'Unknown Subject'}</h3>
-                        <div class="tt-room"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg> ${cls.room || 'Online/Unknown'}</div>
-                    </div>
-                `;
-            });
+                    grid.innerHTML += `
+                        <div class="tt-card fade-in-up ${activeClass}">
+                            <div class="tt-time"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> ${cls.time || 'N/A'} ${badge}</div>
+                            <h3 class="tt-subject">${cls.subject || 'Unknown Subject'}</h3>
+                            <div class="tt-room"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg> ${cls.room || 'Online/Unknown'}</div>
+                        </div>
+                    `;
+                });
+            }
         }
 
         // ================= CALENDAR LOGIC =================
@@ -3100,6 +3123,35 @@
             renderCalendar();
         }
 
+        function checkAndShowEventPopup() {
+            let todayLocal = new Date();
+            let tzoffset = todayLocal.getTimezoneOffset() * 60000;
+            let curISOTime = (new Date(todayLocal - tzoffset)).toISOString().slice(0, 10);
+            
+            let plan = srmPlanner[curISOTime];
+            if (plan && plan.title && !sessionStorage.getItem('eventPopupShown')) {
+                let show = false;
+                let t = "Notification";
+                let s = plan.title;
+                if (plan.title.includes("Enrolment") || plan.title.includes("Commencement")) {
+                    show = true;
+                    t = "Welcome Back! 🎉";
+                } else if (plan.title.includes("Last Working Day")) {
+                    show = true;
+                    t = "Semester Complete! 🎓";
+                }
+                
+                if (show) {
+                    document.getElementById('eventPopupTitle').innerText = t;
+                    document.getElementById('eventPopupSub').innerText = s;
+                    const popup = document.getElementById('eventPopup');
+                    popup.style.display = 'flex';
+                    sessionStorage.setItem('eventPopupShown', 'true');
+                    setTimeout(() => { popup.style.display = 'none'; }, 5000);
+                }
+            }
+        }
+
         let userReminders = JSON.parse(localStorage.getItem('userReminders') || '{}');
         let currentEditingDate = null;
 
@@ -3134,7 +3186,7 @@
 
             let plan = srmPlanner[dateStr];
             if (plan) {
-                let badge = plan.type === 'Holiday' ? '<span class="special-badge" style="background: linear-gradient(135deg, #00cc66, #00994d);">Holiday</span>' : `<span class="special-badge" style="background: linear-gradient(135deg, #bf5af2, #9432c7); text-transform: uppercase;">Day Order ${plan.value}</span>`;
+                let badge = plan.type === 'Holiday' ? '<span class="special-badge" style="background: linear-gradient(135deg, #00cc66, #00994d);">Holiday</span>' : `<span class="special-badge" style="background: linear-gradient(135deg, #bf5af2, #9432c7); text-transform: uppercase;">${plan.type}</span>`;
                 document.getElementById('event-desc').innerHTML = `${badge} <br><br> ${plan.title || 'No additional details.'}`;
             } else {
                 document.getElementById('event-desc').innerText = "No events scheduled for this day.";
@@ -3294,10 +3346,6 @@
             });
         }
 
-        // ================= STUDY HELPER DEPRECATED =================
-        // Helper UI has been replaced with the embedded iframe above
-        // Legacy init function removed
-
         // ================= UTILITIES & HELPERS =================
         // ================= PULL TO REFRESH =================
         let pStart = { y: 0 };
@@ -3362,12 +3410,7 @@
                 let tzoffset = todayLocal.getTimezoneOffset() * 60000;
                 let localISOTime = (new Date(todayLocal - tzoffset)).toISOString().slice(0, 10);
 
-                let expectedDayOrder = todayLocal.getDay();
-                if (srmPlanner[localISOTime] && srmPlanner[localISOTime].type === "Day Order") {
-                    expectedDayOrder = srmPlanner[localISOTime].value;
-                } else {
-                    expectedDayOrder = (expectedDayOrder >= 1 && expectedDayOrder <= 5) ? expectedDayOrder : 1;
-                }
+                let expectedDayOrder = getDayOrder(localISOTime) || 1;
 
                 // If currently viewing "Today's" Day Order, refresh to update the "Happening Now" highlights
                 if (activeDay == expectedDayOrder) {
@@ -3386,13 +3429,22 @@
             document.getElementById('themeToggle').innerText = document.body.classList.contains('light-mode') ? '🌙' : '☀️';
         }
 
-        setTimeout(() => {
-            document.getElementById('splash-screen').classList.add('zoom-out');
-            document.getElementById('main-content').classList.add('content-visible');
-            document.getElementById('navButtons').style.opacity = '1';
-            setTimeout(() => document.getElementById('splash-screen').style.display = 'none', 1000);
+        function initApp() {
+            setTimeout(() => { document.getElementById('splash-screen').style.display = 'none'; }, 1200);
+
+            let storedProfile = localStorage.getItem('squadProfile');
+            if (storedProfile) {
+                isLoggedIn = true;
+                const profile = JSON.parse(storedProfile);
+                document.getElementById('welcomeName').innerText = "Hi, " + (profile.name ? profile.name.split(' ')[0] : 'User') + " 👋";
+                
+                checkAndShowEventPopup();
+
+                loadSavedData();
+                showTab('dashboard');
+            }
             checkAndScheduleNotifications();
-        }, 1200);
+        }
 
         function openLightbox(src) { document.getElementById("lightbox").style.display = "flex"; document.getElementById("lightbox-img").src = src; }
         function closeLightbox() { document.getElementById("lightbox").style.display = "none"; }
