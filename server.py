@@ -250,13 +250,17 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
                 except: pass
             return all_tables
             
-        def wait_for_tables(timeout=15000):
+        def wait_for_data_tables(keyword, timeout=15000):
             start = time.time()
-            while time.time() - start < timeout / 1000:
+            while time.time() - start < timeout / 1000.0:
                 tables = get_all_tables()
-                if tables and len(tables) > 0: return tables
+                if tables:
+                    for t in tables:
+                        for row in t:
+                            if any(keyword.lower() in str(c).lower() for c in row):
+                                return tables
                 page.wait_for_timeout(500)
-            return []
+            return get_all_tables()
 
         def get_col_index(headers, *keywords):
             for i, h in enumerate(headers):
@@ -269,23 +273,23 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
         print(f"[{reg_no}] 5. Scoping Attendance...")
         page.goto("https://academia.srmist.edu.in/#Page:My_Attendance")
         
-        raw_tables = wait_for_tables(15000)
-        if not raw_tables:
+        raw_tables = wait_for_data_tables("attn")
+        if not any("attn" in str(c).lower() for t in raw_tables for row in t for c in row):
             page.reload(wait_until="networkidle")
-            raw_tables = wait_for_tables(15000)
+            raw_tables = wait_for_data_tables("attn")
 
         parsed_att = []
         parsed_marks = []
 
         def get_table_headers(tbl):
-            if not tbl: return [], ""
+            if not tbl: return [], "", -1
             for r_idx in range(min(4, len(tbl))):
                 hdrs = [str(h).lower() for h in tbl[r_idx]]
                 hdr_str = " ".join(hdrs)
                 if ("code" in hdr_str and ("title" in hdr_str or "name" in hdr_str)) or "attn" in hdr_str:
-                    return hdrs, hdr_str
+                    return hdrs, hdr_str, r_idx
             hdrs = [str(h).lower() for h in tbl[0]]
-            return hdrs, " ".join(hdrs)
+            return hdrs, " ".join(hdrs), 0
 
         # Profile Extraction
         profile_data = {
@@ -310,7 +314,7 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
 
         for table in raw_tables:
             if not table: continue
-            headers, header_str = get_table_headers(table)
+            headers, header_str, h_idx = get_table_headers(table)
 
             # Dynamic Attendance Parsing
             if "attn" in header_str or "attendance" in header_str:
@@ -325,7 +329,7 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
                     idx_abs = get_col_index(headers, "absent")
                     
                     if idx_code != -1 and idx_title != -1:
-                        for row in table[1:]:
+                        for row in table[h_idx+1:]:
                             if idx_attn_perc != -1 and len(row) > idx_attn_perc:
                                 # New Map: Just Attn %
                                 perc_str = str(row[idx_attn_perc]).replace('%', '').strip()
@@ -403,10 +407,10 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
         # Reverted 2024_25 back to 2023_24 based on Academia's weird hardcoded URL hash
         page.goto("https://academia.srmist.edu.in/#Page:My_Time_Table_2023_24")
         
-        slot_tables = wait_for_tables(15000)
-        if not slot_tables:
+        slot_tables = wait_for_data_tables("slot")
+        if not any("slot" in str(c).lower() for t in slot_tables for row in t for c in row):
             page.reload(wait_until="networkidle")
-            slot_tables = wait_for_tables(15000)
+            slot_tables = wait_for_data_tables("slot")
         
         # --- EXTRACT RICH PROFILE DATA FROM TIMETABLE PAGE ---
         for table in slot_tables:
@@ -471,7 +475,7 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
         # --- PARSE STUDENT SLOTS ---
         for table in slot_tables:
             if not table: continue
-            headers, header_str = get_table_headers(table)
+            headers, header_str, h_idx = get_table_headers(table)
             
             if "slot" in header_str and "code" in header_str:
                 try:
@@ -482,7 +486,7 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
                     
                     if -1 in (idx_code, idx_title, idx_slot, idx_room): continue
                     
-                    for row in table[1:]:
+                    for row in table[h_idx+1:]:
                         if len(row) > idx_room:
                             # Refined Regex matching (matches A, P49, PT2, etc)
                             slots_found = re.findall(r'\b[A-Z]{1,2}\d*\b', row[idx_slot])
@@ -504,10 +508,10 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
         
         page.goto(f"https://academia.srmist.edu.in/#Page:Unified_Time_Table_2025_Batch_{batch}")
         
-        master_tables = wait_for_tables(15000)
-        if not master_tables:
+        master_tables = wait_for_data_tables("day 1")
+        if not any("day 1" in str(c).lower() for t in master_tables for row in t for c in row):
             page.reload(wait_until="networkidle")
-            master_tables = wait_for_tables(15000)
+            master_tables = wait_for_data_tables("day 1")
         
         print(f"[{reg_no}] Found {len(master_tables)} master tables")
         
