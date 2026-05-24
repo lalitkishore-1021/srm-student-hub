@@ -30,7 +30,7 @@ DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'hub.db')
 def get_db():
     if DATABASE_URL:
         return psycopg2.connect(DATABASE_URL)
-    conn = sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect(DB_PATH, timeout=20)
     conn.row_factory = sqlite3.Row
     return conn
 
@@ -172,12 +172,20 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
         )
         page = context.new_page()
         page.set_default_timeout(90000)
+        
+        # Supercharge: Block unnecessary resources
+        def intercept_route(route):
+            if route.request.resource_type in ["image", "stylesheet", "font", "media"]:
+                route.abort()
+            else:
+                route.continue_()
+        page.route("**/*", intercept_route)
 
         if "@" not in reg_no: reg_no += "@srmist.edu.in"
 
         print(f"[{reg_no}] 1. Loading Academia...")
         try:
-            page.goto("https://academia.srmist.edu.in/", wait_until="networkidle", timeout=60000)
+            page.goto("https://academia.srmist.edu.in/", wait_until="domcontentloaded", timeout=60000)
         except Exception as e:
             out_queue.put({'success': False, 'error': f'Portal failed to load: {str(e)}'})
             return
@@ -218,19 +226,23 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
             submit_btn = find_in_frames('button, input[type="submit"]', filter_text="sign in|login|submit|verify")
             if submit_btn: submit_btn.click(force=True, timeout=5000)
             else: page.keyboard.press("Enter")
-            page.wait_for_timeout(5000) 
+            
+            # Wait for login to process dynamically by checking URL or waiting for iframe
+            try:
+                page.wait_for_url("**/#Page**", timeout=15000)
+            except:
+                page.wait_for_timeout(2000)
 
             terminate_btn = page.locator('button, a').filter(has_text=re.compile(r"terminate", re.IGNORECASE)).first
-            if terminate_btn.count() > 0: terminate_btn.click(force=True); page.wait_for_timeout(4000)
+            if terminate_btn.count() > 0: terminate_btn.click(force=True)
         except Exception as e:
             out_queue.put({'success': False, 'error': f'Auth Failed: {str(e)}'})
             return
 
         def get_all_tables():
             try:
-                page.wait_for_selector("iframe", timeout=10000)
-            except Exception as e:
-                print("Wait for iframe error:", str(e))
+                page.wait_for_selector("iframe", state="attached", timeout=5000)
+            except: pass
             all_tables = []
             for frame in page.frames:
                 try:
@@ -250,6 +262,14 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
                     if tables: all_tables.extend(tables)
                 except: pass
             return all_tables
+            
+        def wait_for_tables(timeout=15000):
+            start = time.time()
+            while time.time() - start < timeout / 1000:
+                tables = get_all_tables()
+                if tables and len(tables) > 0: return tables
+                page.wait_for_timeout(500)
+            return []
 
         def get_col_index(headers, *keywords):
             for i, h in enumerate(headers):
@@ -260,12 +280,14 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
 
         # --- ATTENDANCE & MARKS ---
         print(f"[{reg_no}] 5. Scoping Attendance...")
-        page.goto("https://academia.srmist.edu.in/#Page:My_Attendance")
-        page.wait_for_timeout(3000)
-        page.reload(wait_until="networkidle")
-        page.wait_for_timeout(5000)
+        page.goto("https://academia.srmist.edu.in/#Page:My_Attendance", wait_until="domcontentloaded")
+        raw_tables = wait_for_tables(15000)
+        
+        # If no tables found, try a single reload (Academia sometimes fails on first SPA load)
+        if not raw_tables:
+            page.reload(wait_until="domcontentloaded")
+            raw_tables = wait_for_tables(15000)
 
-        raw_tables = get_all_tables()
         parsed_att = []
         parsed_marks = []
 
@@ -296,24 +318,41 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
             header_str = " ".join(headers)
 
             # Dynamic Attendance Parsing
-            if "hours conducted" in header_str and "absent" in header_str:
+            if "attn" in header_str or "attendance" in header_str:
                 try:
                     idx_code = get_col_index(headers, "code")
                     idx_title = get_col_index(headers, "title")
+                    
+                    # New UI has "attn %" or similar
+                    idx_attn_perc = get_col_index(headers, "attn %", "attn", "attendance")
+                    # Fallback for old UI
                     idx_cond = get_col_index(headers, "conducted")
                     idx_abs = get_col_index(headers, "absent")
                     
-                    if -1 in (idx_code, idx_title, idx_cond, idx_abs): continue
-                    
-                    for row in table[1:]:
-                        if len(row) > max(idx_cond, idx_abs):
-                            cond = int(float(row[idx_cond] or 0))
-                            absent = int(float(row[idx_abs] or 0))
-                            parsed_att.append({
-                                "courseTitle": f"{row[idx_code]} - {row[idx_title][:20]}",
-                                "attended": max(0, cond - absent),
-                                "total": cond
-                            })
+                    if idx_code != -1 and idx_title != -1:
+                        for row in table[1:]:
+                            if idx_attn_perc != -1 and len(row) > idx_attn_perc:
+                                # New Map: Just Attn %
+                                perc_str = str(row[idx_attn_perc]).replace('%', '').strip()
+                                try:
+                                    perc = float(perc_str)
+                                    parsed_att.append({
+                                        "courseTitle": f"{row[idx_code]} - {row[idx_title][:20]}",
+                                        "attended": perc,
+                                        "total": 100
+                                    })
+                                except: pass
+                            elif idx_cond != -1 and idx_abs != -1 and len(row) > max(idx_cond, idx_abs):
+                                # Old Map: Hours conducted & absent
+                                try:
+                                    cond = int(float(row[idx_cond] or 0))
+                                    absent = int(float(row[idx_abs] or 0))
+                                    parsed_att.append({
+                                        "courseTitle": f"{row[idx_code]} - {row[idx_title][:20]}",
+                                        "attended": max(0, cond - absent),
+                                        "total": cond
+                                    })
+                                except: pass
                 except Exception as e:
                     print("Parsing error (Attendance):", str(e))
                     continue
@@ -322,7 +361,7 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
             elif any(kw in header_str for kw in ["test performance", "assessment", "marks", "internal"]):
                 try:
                     idx_code = get_col_index(headers, "code")
-                    idx_title = get_col_index(headers, "title", "name", "course name")
+                    idx_title = get_col_index(headers, "title", "name", "course name", "course type")
                     idx_perf = get_col_index(headers, "performance", "assessment", "marks", "internal")
                     
                     if idx_code == -1 or idx_perf == -1: continue
@@ -347,10 +386,12 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
         print(f"[{reg_no}] 6. Scoping Registered Slots...")
         student_slots = {}
         # Reverted 2024_25 back to 2023_24 based on Academia's weird hardcoded URL hash
-        page.goto("https://academia.srmist.edu.in/#Page:My_Time_Table_2023_24")
-        page.wait_for_timeout(5000)
+        page.goto("https://academia.srmist.edu.in/#Page:My_Time_Table_2023_24", wait_until="domcontentloaded")
+        slot_tables = wait_for_tables(15000)
         
-        slot_tables = get_all_tables()
+        if not slot_tables:
+            page.reload(wait_until="domcontentloaded")
+            slot_tables = wait_for_tables(15000)
         
         # --- EXTRACT RICH PROFILE DATA FROM TIMETABLE PAGE ---
         for table in slot_tables:
@@ -445,12 +486,18 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
         # --- TIMETABLE STEP 2 (MASTER TIMINGS) ---
         print(f"[{reg_no}] 7. Mapping to Master (Batch {batch})...")
         final_tt = {"1": [], "2": [], "3": [], "4": [], "5": []}
-        page.goto(f"https://academia.srmist.edu.in/#Page:Unified_Time_Table_2025_Batch_{batch}")
-        page.wait_for_timeout(5000)
+        global_seen_entries = {"1": set(), "2": set(), "3": set(), "4": set(), "5": set()}
         
-        master_tables = get_all_tables()
+        page.goto(f"https://academia.srmist.edu.in/#Page:Unified_Time_Table_2025_Batch_{batch}", wait_until="domcontentloaded")
+        master_tables = wait_for_tables(15000)
+        
+        if not master_tables:
+            page.reload(wait_until="domcontentloaded")
+            master_tables = wait_for_tables(15000)
+        
         print(f"[{reg_no}] Found {len(master_tables)} master tables")
         
+        last_good_time_cols = []
         for t_idx, table in enumerate(master_tables):
             if not table: continue
             
@@ -497,6 +544,12 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
             elif not time_cols and from_row and not to_row:
                 time_cols = from_row
                         
+            # Inherit from previous tables if split
+            if time_cols:
+                last_good_time_cols = time_cols
+            elif last_good_time_cols:
+                time_cols = last_good_time_cols
+                
             # Debug: print extracted time columns
             if time_cols:
                 print(f"[{reg_no}] Table {t_idx}: time_cols ({len(time_cols)}) = {time_cols[:10]}")
@@ -512,7 +565,6 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
                         day_order = day_match.group()
                         
                         if day_order in final_tt:
-                            seen_entries = set()
                             for i, cell in enumerate(row[1:]):
                                 slots_in_cell = re.findall(r'\b[A-Z]{1,2}\d*\b', cell)
                                 for s in slots_in_cell:
@@ -521,13 +573,13 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
                                         t_str = re.sub(r'\s+', ' ', t_str).strip()
                                         
                                         entry_key = f"{t_str}-{student_slots[s]['subject']}"
-                                        if entry_key not in seen_entries:
+                                        if entry_key not in global_seen_entries[day_order]:
                                             final_tt[day_order].append({
                                                 "time": t_str,
                                                 "subject": student_slots[s]['subject'],
                                                 "room": student_slots[s]['room']
                                             })
-                                            seen_entries.add(entry_key)
+                                            global_seen_entries[day_order].add(entry_key)
                                             print(f"[{reg_no}]   Day {day_order}: slot {s} -> {t_str} | {student_slots[s]['subject']}")
                     except Exception as e:
                         print("Parsing error (Master TT Row):", str(e))
