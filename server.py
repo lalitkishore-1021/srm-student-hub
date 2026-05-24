@@ -376,7 +376,8 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
                         title_val = row[idx_title].strip() if idx_title != -1 and len(row) > idx_title else ""
                         
                         # If a row has a valid code, update our tracker. Otherwise, inherit from previous row (handles rowspan).
-                        if code_val and len(code_val) > 2:
+                        # Only accept valid course codes (no spaces, slashes, or decimals) to prevent parsing garbage tables.
+                        if code_val and len(code_val) > 2 and "/" not in code_val and "." not in code_val and " " not in code_val.strip():
                             current_code = code_val
                             current_title = title_val if title_val else code_val
                         
@@ -394,7 +395,8 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
                             
                             existing = next((item for item in parsed_marks if item["courseCode"] == current_code), None)
                             if existing:
-                                existing["Test Performance"] += f" \n {formatted_perf}"
+                                if formatted_perf not in existing["Test Performance"]:
+                                    existing["Test Performance"] += f" \n {formatted_perf}"
                                 # Upgrade title if we found a better one
                                 if len(current_title) > len(existing.get("courseTitle", "")):
                                     existing["courseTitle"] = current_title
@@ -411,7 +413,8 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
                             
                             existing = next((item for item in parsed_marks if item["courseCode"] == current_code), None)
                             if existing:
-                                existing["Test Performance"] += f" \n {perf_str}"
+                                if perf_str not in existing["Test Performance"]:
+                                    existing["Test Performance"] += f" \n {perf_str}"
                             else:
                                 parsed_marks.append({
                                     "courseTitle": current_title,
