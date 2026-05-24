@@ -172,20 +172,12 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
         )
         page = context.new_page()
         page.set_default_timeout(90000)
-        
-        # Supercharge: Block unnecessary resources
-        def intercept_route(route):
-            if route.request.resource_type in ["image", "stylesheet", "font", "media"]:
-                route.abort()
-            else:
-                route.continue_()
-        page.route("**/*", intercept_route)
 
         if "@" not in reg_no: reg_no += "@srmist.edu.in"
 
         print(f"[{reg_no}] 1. Loading Academia...")
         try:
-            page.goto("https://academia.srmist.edu.in/", wait_until="domcontentloaded", timeout=60000)
+            page.goto("https://academia.srmist.edu.in/", wait_until="networkidle", timeout=60000)
         except Exception as e:
             out_queue.put({'success': False, 'error': f'Portal failed to load: {str(e)}'})
             return
@@ -226,15 +218,10 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
             submit_btn = find_in_frames('button, input[type="submit"]', filter_text="sign in|login|submit|verify")
             if submit_btn: submit_btn.click(force=True, timeout=5000)
             else: page.keyboard.press("Enter")
-            
-            # Wait for login to process dynamically by checking URL or waiting for iframe
-            try:
-                page.wait_for_url("**/#Page**", timeout=15000)
-            except:
-                page.wait_for_timeout(2000)
+            page.wait_for_timeout(5000)
 
             terminate_btn = page.locator('button, a').filter(has_text=re.compile(r"terminate", re.IGNORECASE)).first
-            if terminate_btn.count() > 0: terminate_btn.click(force=True)
+            if terminate_btn.count() > 0: terminate_btn.click(force=True); page.wait_for_timeout(4000)
         except Exception as e:
             out_queue.put({'success': False, 'error': f'Auth Failed: {str(e)}'})
             return
@@ -280,13 +267,12 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
 
         # --- ATTENDANCE & MARKS ---
         print(f"[{reg_no}] 5. Scoping Attendance...")
-        page.goto("https://academia.srmist.edu.in/#Page:My_Attendance", wait_until="domcontentloaded")
-        raw_tables = wait_for_tables(15000)
-        
-        # If no tables found, try a single reload (Academia sometimes fails on first SPA load)
-        if not raw_tables:
-            page.reload(wait_until="domcontentloaded")
-            raw_tables = wait_for_tables(15000)
+        page.goto("https://academia.srmist.edu.in/#Page:My_Attendance")
+        page.wait_for_timeout(3000)
+        page.reload(wait_until="networkidle")
+        page.wait_for_timeout(5000)
+
+        raw_tables = get_all_tables()
 
         parsed_att = []
         parsed_marks = []
@@ -386,12 +372,10 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
         print(f"[{reg_no}] 6. Scoping Registered Slots...")
         student_slots = {}
         # Reverted 2024_25 back to 2023_24 based on Academia's weird hardcoded URL hash
-        page.goto("https://academia.srmist.edu.in/#Page:My_Time_Table_2023_24", wait_until="domcontentloaded")
-        slot_tables = wait_for_tables(15000)
+        page.goto("https://academia.srmist.edu.in/#Page:My_Time_Table_2023_24")
+        page.wait_for_timeout(5000)
         
-        if not slot_tables:
-            page.reload(wait_until="domcontentloaded")
-            slot_tables = wait_for_tables(15000)
+        slot_tables = get_all_tables()
         
         # --- EXTRACT RICH PROFILE DATA FROM TIMETABLE PAGE ---
         for table in slot_tables:
@@ -488,12 +472,10 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
         final_tt = {"1": [], "2": [], "3": [], "4": [], "5": []}
         global_seen_entries = {"1": set(), "2": set(), "3": set(), "4": set(), "5": set()}
         
-        page.goto(f"https://academia.srmist.edu.in/#Page:Unified_Time_Table_2025_Batch_{batch}", wait_until="domcontentloaded")
-        master_tables = wait_for_tables(15000)
+        page.goto(f"https://academia.srmist.edu.in/#Page:Unified_Time_Table_2025_Batch_{batch}")
+        page.wait_for_timeout(5000)
         
-        if not master_tables:
-            page.reload(wait_until="domcontentloaded")
-            master_tables = wait_for_tables(15000)
+        master_tables = get_all_tables()
         
         print(f"[{reg_no}] Found {len(master_tables)} master tables")
         
