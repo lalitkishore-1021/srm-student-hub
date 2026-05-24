@@ -268,11 +268,11 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
         # --- ATTENDANCE & MARKS ---
         print(f"[{reg_no}] 5. Scoping Attendance...")
         page.goto("https://academia.srmist.edu.in/#Page:My_Attendance")
-        page.wait_for_timeout(3000)
-        page.reload(wait_until="networkidle")
-        page.wait_for_timeout(5000)
-
-        raw_tables = get_all_tables()
+        
+        raw_tables = wait_for_tables(15000)
+        if not raw_tables:
+            page.reload(wait_until="networkidle")
+            raw_tables = wait_for_tables(15000)
 
         parsed_att = []
         parsed_marks = []
@@ -356,18 +356,38 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
             elif any(kw in header_str for kw in ["test performance", "assessment", "marks", "internal"]):
                 try:
                     idx_code = get_col_index(headers, "code")
-                    idx_title = get_col_index(headers, "title", "name", "course name", "course type")
+                    idx_title = get_col_index(headers, "title", "name", "course name")
                     idx_perf = get_col_index(headers, "performance", "assessment", "marks", "internal")
                     
-                    if idx_code == -1 or idx_perf == -1: continue
+                    idx_max = get_col_index(headers, "max")
+                    idx_obt = get_col_index(headers, "obtained")
                     
-                    for row in table[1:]:
-                        if len(row) > idx_perf:
-                            # Use subject title (name) if available, fallback to code
-                            if idx_title != -1 and len(row) > idx_title and row[idx_title].strip():
-                                display_name = row[idx_title].strip()
+                    if idx_code == -1: continue
+                    
+                    for row in table[h_idx+1:]:
+                        if idx_max != -1 and idx_obt != -1 and len(row) > max(idx_code, idx_obt, idx_max):
+                            # New Format (Separate Max and Obtained columns)
+                            display_name = row[idx_title].strip() if idx_title != -1 else row[idx_code]
+                            perf_name = row[idx_perf].replace(' ', '') if idx_perf != -1 else "Test"
+                            max_val = str(row[idx_max]).strip()
+                            obt_val = str(row[idx_obt]).strip()
+                            
+                            if not obt_val: continue
+                            
+                            formatted_perf = f"{perf_name}/{max_val} | {obt_val}"
+                            
+                            existing = next((item for item in parsed_marks if item["courseCode"] == row[idx_code]), None)
+                            if existing:
+                                existing["Test Performance"] += f" \n {formatted_perf}"
                             else:
-                                display_name = row[idx_code]
+                                parsed_marks.append({
+                                    "courseTitle": display_name,
+                                    "courseCode": row[idx_code],
+                                    "Test Performance": formatted_perf
+                                })
+                        elif idx_perf != -1 and len(row) > idx_perf:
+                            # Old Format (Combined in one column)
+                            display_name = row[idx_title].strip() if idx_title != -1 else row[idx_code]
                             parsed_marks.append({
                                 "courseTitle": display_name,
                                 "courseCode": row[idx_code],
@@ -382,9 +402,11 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
         student_slots = {}
         # Reverted 2024_25 back to 2023_24 based on Academia's weird hardcoded URL hash
         page.goto("https://academia.srmist.edu.in/#Page:My_Time_Table_2023_24")
-        page.wait_for_timeout(5000)
         
-        slot_tables = get_all_tables()
+        slot_tables = wait_for_tables(15000)
+        if not slot_tables:
+            page.reload(wait_until="networkidle")
+            slot_tables = wait_for_tables(15000)
         
         # --- EXTRACT RICH PROFILE DATA FROM TIMETABLE PAGE ---
         for table in slot_tables:
@@ -481,9 +503,11 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
         global_seen_entries = {"1": set(), "2": set(), "3": set(), "4": set(), "5": set()}
         
         page.goto(f"https://academia.srmist.edu.in/#Page:Unified_Time_Table_2025_Batch_{batch}")
-        page.wait_for_timeout(5000)
         
-        master_tables = get_all_tables()
+        master_tables = wait_for_tables(15000)
+        if not master_tables:
+            page.reload(wait_until="networkidle")
+            master_tables = wait_for_tables(15000)
         
         print(f"[{reg_no}] Found {len(master_tables)} master tables")
         
