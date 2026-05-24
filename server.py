@@ -168,7 +168,7 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
         
         context = browser.new_context(
             user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
-            viewport={'width': 1280, 'height': 720}
+            viewport={'width': 1920, 'height': 1080}
         )
         page = context.new_page()
         page.set_default_timeout(90000)
@@ -239,7 +239,7 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
                                 let rowArr = [];
                                 Array.from(tr.querySelectorAll('td, th')).forEach(td => {
                                     let span = td.colSpan || 1;
-                                    let text = td.innerText.trim();
+                                    let text = (td.innerText || td.textContent || "").trim();
                                     for(let i=0; i<span; i++) rowArr.push(text);
                                 });
                                 return rowArr;
