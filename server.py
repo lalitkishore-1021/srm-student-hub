@@ -366,37 +366,58 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
                     idx_max = get_col_index(headers, "max")
                     idx_obt = get_col_index(headers, "obtained")
                     
-                    if idx_code == -1: continue
+                    if idx_code == -1 or idx_perf == -1: continue
+                    
+                    current_code = ""
+                    current_title = ""
                     
                     for row in table[h_idx+1:]:
-                        if idx_max != -1 and idx_obt != -1 and len(row) > max(idx_code, idx_obt, idx_max):
+                        code_val = row[idx_code].strip() if idx_code != -1 and len(row) > idx_code else ""
+                        title_val = row[idx_title].strip() if idx_title != -1 and len(row) > idx_title else ""
+                        
+                        # If a row has a valid code, update our tracker. Otherwise, inherit from previous row (handles rowspan).
+                        if code_val and len(code_val) > 2:
+                            current_code = code_val
+                            current_title = title_val if title_val else code_val
+                        
+                        if not current_code: continue
+                        
+                        if idx_max != -1 and idx_obt != -1 and len(row) > max(idx_perf, idx_obt, idx_max):
                             # New Format (Separate Max and Obtained columns)
-                            display_name = row[idx_title].strip() if idx_title != -1 else row[idx_code]
-                            perf_name = row[idx_perf].replace(' ', '') if idx_perf != -1 else "Test"
+                            perf_name = row[idx_perf].replace(' ', '')
                             max_val = str(row[idx_max]).strip()
                             obt_val = str(row[idx_obt]).strip()
                             
-                            if not obt_val: continue
+                            if not obt_val or not max_val: continue
                             
                             formatted_perf = f"{perf_name}/{max_val} | {obt_val}"
                             
-                            existing = next((item for item in parsed_marks if item["courseCode"] == row[idx_code]), None)
+                            existing = next((item for item in parsed_marks if item["courseCode"] == current_code), None)
                             if existing:
                                 existing["Test Performance"] += f" \n {formatted_perf}"
+                                # Upgrade title if we found a better one
+                                if len(current_title) > len(existing.get("courseTitle", "")):
+                                    existing["courseTitle"] = current_title
                             else:
                                 parsed_marks.append({
-                                    "courseTitle": display_name,
-                                    "courseCode": row[idx_code],
+                                    "courseTitle": current_title,
+                                    "courseCode": current_code,
                                     "Test Performance": formatted_perf
                                 })
-                        elif idx_perf != -1 and len(row) > idx_perf:
-                            # Old Format (Combined in one column)
-                            display_name = row[idx_title].strip() if idx_title != -1 else row[idx_code]
-                            parsed_marks.append({
-                                "courseTitle": display_name,
-                                "courseCode": row[idx_code],
-                                "Test Performance": row[idx_perf].replace('\n', ' | ')
-                            })
+                        elif len(row) > idx_perf:
+                            # Old Format Fallback
+                            perf_str = row[idx_perf].replace('\n', ' | ')
+                            if not perf_str.strip(): continue
+                            
+                            existing = next((item for item in parsed_marks if item["courseCode"] == current_code), None)
+                            if existing:
+                                existing["Test Performance"] += f" \n {perf_str}"
+                            else:
+                                parsed_marks.append({
+                                    "courseTitle": current_title,
+                                    "courseCode": current_code,
+                                    "Test Performance": perf_str
+                                })
                 except Exception as e:
                     print("Parsing error (Marks):", str(e))
                     continue
