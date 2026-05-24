@@ -584,6 +584,8 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
                         time_cols.append(f"{f_clean} - {t_clean}")
                     elif f_clean:
                         time_cols.append(f_clean)
+                    else:
+                        time_cols.append("")
             elif not time_cols and from_row and not to_row:
                 time_cols = from_row
                         
@@ -623,11 +625,19 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
                                         
                                         entry_key = f"{t_str}-{student_slots[s]['subject']}"
                                         if entry_key not in global_seen_entries[day_order]:
-                                            final_tt[day_order].append({
-                                                "time": t_str,
-                                                "subject": student_slots[s]['subject'],
-                                                "room": student_slots[s]['room']
-                                            })
+                                            last_entry = final_tt[day_order][-1] if final_tt[day_order] else None
+                                            
+                                            # Merge continuous identical slots to avoid unnecessary extra cards
+                                            if last_entry and last_entry["subject"] == student_slots[s]['subject']:
+                                                old_start = last_entry["time"].split('-')[0].strip()
+                                                new_end = t_str.split('-')[-1].strip() if '-' in t_str else t_str
+                                                last_entry["time"] = f"{old_start} - {new_end}"
+                                            else:
+                                                final_tt[day_order].append({
+                                                    "time": t_str,
+                                                    "subject": student_slots[s]['subject'],
+                                                    "room": student_slots[s]['room']
+                                                })
                                             global_seen_entries[day_order].add(entry_key)
                                             print(f"[{reg_no}]   Day {day_order}: slot {s} -> {t_str} | {student_slots[s]['subject']}")
                     except Exception as e:
