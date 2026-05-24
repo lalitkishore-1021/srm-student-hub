@@ -1419,32 +1419,34 @@
             }
         }
 
-        /* Event Popup Styles */
+        /* Premium Event Popup Styles */
+        @keyframes shineEvent { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+        
         .event-popup {
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            background: rgba(10, 10, 15, 0.95); z-index: 10000;
-            display: flex; align-items: center; justify-content: center;
-            flex-direction: column; text-align: center;
-            backdrop-filter: blur(10px);
-            animation: fadeInOut 5s forwards;
+            background: linear-gradient(-45deg, rgba(10,10,15,0.95), rgba(35,18,56,0.95), rgba(15,28,48,0.95), rgba(10,10,15,0.95));
+            background-size: 400% 400%;
+            z-index: 10000; display: flex; align-items: center; justify-content: center;
+            flex-direction: column; text-align: center; backdrop-filter: blur(15px);
+            animation: fadeInOut 5s forwards, shineEvent 4s ease infinite;
+            overflow: hidden;
         }
+        .event-popup-content { position: relative; z-index: 10; }
         .event-popup-content h1 {
-            font-size: 3rem; color: var(--accent);
-            animation: scalePop 1s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            margin: 0;
+            font-size: 3.5rem; 
+            background: linear-gradient(135deg, #ffaa00, #ff5500);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 0 15px rgba(255, 170, 0, 0.4));
+            animation: bounceIn 1s cubic-bezier(0.28, 0.84, 0.42, 1) forwards; margin: 0;
         }
         .event-popup-content p {
-            font-size: 1.2rem; color: var(--text-main); margin-top: 10px;
-            animation: slideUp 1s ease;
+            font-size: 1.3rem; color: #fff; margin-top: 15px; font-weight: 500;
+            animation: slideUp 1s ease forwards; animation-delay: 0.3s; opacity: 0;
         }
-        @keyframes scalePop { 0% { transform: scale(0.5); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+        @keyframes bounceIn { 0% { transform: scale(0); opacity: 0; } 50% { transform: scale(1.1); opacity: 1; } 70% { transform: scale(0.95); } 100% { transform: scale(1); opacity: 1; } }
         @keyframes slideUp { 0% { transform: translateY(20px); opacity: 0; } 100% { transform: translateY(0); opacity: 1; } }
-        @keyframes fadeInOut {
-            0% { opacity: 0; }
-            10% { opacity: 1; }
-            90% { opacity: 1; }
-            100% { opacity: 0; visibility: hidden; }
-        }
+        @keyframes fadeInOut { 0% { opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { opacity: 0; visibility: hidden; } }
+        @keyframes floatUpConfetti { 0% { transform: translateY(0) rotate(0deg); opacity: 1; } 100% { transform: translateY(-120vh) rotate(360deg); opacity: 0; } }
     </style>
 </head>
 
@@ -2471,6 +2473,17 @@
             return (dayIndex >= 1 && dayIndex <= 5) ? dayIndex : 0;
         }
 
+        function isSemesterVacation(dateStr) {
+            let d = new Date(dateStr);
+            let summerVacationStart = new Date("2026-05-07");
+            let summerVacationEnd = new Date("2026-07-19");
+            let winterVacationStart = new Date("2026-12-05");
+            let winterVacationEnd = new Date("2027-01-10");
+            
+            return (d >= summerVacationStart && d <= summerVacationEnd) || 
+                   (d >= winterVacationStart && d <= winterVacationEnd);
+        }
+
         // ================= INITIALIZATION =================
         updateHomeState();
         loadSavedData();
@@ -2921,11 +2934,19 @@
             let todayLocal = new Date();
             let tzoffset = todayLocal.getTimezoneOffset() * 60000;
             let dateStr = (new Date(todayLocal - tzoffset)).toISOString().slice(0, 10);
-            let isHoliday = srmPlanner[dateStr] && srmPlanner[dateStr].type === "Holiday";
+            let plan = srmPlanner[dateStr];
+            let isHoliday = plan && plan.type === "Holiday";
             
             let banner = document.getElementById(viewId);
             if (banner) {
-                if (isHoliday) {
+                if (isSemesterVacation(dateStr)) {
+                    banner.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg><div><strong>🌴 Semester Holidays!</strong><br><small>Enjoy your vacation!</small></div>`;
+                    banner.style.display = 'flex';
+                } else if (isHoliday) {
+                    banner.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg><div><strong>🎉 Today is a Holiday!</strong><br><small>${plan.title}</small></div>`;
+                    banner.style.display = 'flex';
+                } else if (todayLocal.getDay() === 0 || todayLocal.getDay() === 6) {
+                    banner.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg><div><strong>🏖️ Weekend!</strong><br><small>No classes today.</small></div>`;
                     banner.style.display = 'flex';
                 } else {
                     banner.style.display = 'none';
@@ -3025,7 +3046,9 @@
             let dayOrderDate = (new Date(todayLocal - tzoffset)).toISOString().slice(0, 10);
             let isHoliday = srmPlanner[dayOrderDate] && srmPlanner[dayOrderDate].type === "Holiday";
             
-            if (isHoliday) {
+            if (isSemesterVacation(dayOrderDate)) {
+                grid.innerHTML = `<div class="image-card" style="text-align:center; padding: 20px;"><h4 style="color:var(--accent); margin:0;">🌴 Semester Holidays!</h4><p style="color:var(--text-sub); font-size:0.9rem;">Enjoy your vacation!</p></div>`;
+            } else if (isHoliday) {
                 grid.innerHTML = `<div class="image-card" style="text-align:center; padding: 20px;"><h4 style="color:var(--accent); margin:0;">Today Holiday</h4><p style="color:var(--text-sub); font-size:0.9rem;">${srmPlanner[dayOrderDate].title}</p></div>`;
             } else if (classesForDay.length === 0) {
                 grid.innerHTML = `<div class="image-card" style="text-align:center; padding: 30px;"><h3 style="color:var(--text-sub); margin:0;">No classes scheduled for Day ${dayNumber}</h3></div>`;
@@ -3128,23 +3151,58 @@
             let tzoffset = todayLocal.getTimezoneOffset() * 60000;
             let curISOTime = (new Date(todayLocal - tzoffset)).toISOString().slice(0, 10);
             
+            if (sessionStorage.getItem('eventPopupShown')) return;
+
             let plan = srmPlanner[curISOTime];
-            if (plan && plan.title && !sessionStorage.getItem('eventPopupShown')) {
-                let show = false;
-                let t = "Notification";
-                let s = plan.title;
+            let show = false;
+            let t = "Notification";
+            let s = "";
+
+            let emojiList = ["🎉", "✨", "🔥"];
+
+            if (isSemesterVacation(curISOTime)) {
+                show = true;
+                t = "Semester Holidays! 🌴";
+                s = "Enjoy your vacation! Recharge and relax.";
+                emojiList = ["🌴", "🏖️", "☀️", "🍹", "😎", "✨"];
+            } else if (plan && plan.title) {
+                s = plan.title;
                 if (plan.title.includes("Enrolment") || plan.title.includes("Commencement")) {
                     show = true;
                     t = "Welcome Back! 🎉";
+                    emojiList = ["🎉", "🚀", "🎒", "✨", "🔥"];
                 } else if (plan.title.includes("Last Working Day")) {
                     show = true;
                     t = "Semester Complete! 🎓";
+                    emojiList = ["🎓", "🏆", "🎊", "🥂", "💯"];
                 }
+            }
+            
+            if (show) {
+                let popupTitle = document.getElementById('eventPopupTitle');
+                let popupSub = document.getElementById('eventPopupSub');
+                if (popupTitle) popupTitle.innerText = t;
+                if (popupSub) popupSub.innerText = s;
                 
-                if (show) {
-                    document.getElementById('eventPopupTitle').innerText = t;
-                    document.getElementById('eventPopupSub').innerText = s;
-                    const popup = document.getElementById('eventPopup');
+                const popup = document.getElementById('eventPopup');
+                if (popup) {
+                    // Generate floating emoji confetti
+                    document.querySelectorAll('.floating-emoji').forEach(e => e.remove());
+                    for (let i = 0; i < 40; i++) {
+                        let el = document.createElement('div');
+                        el.className = 'floating-emoji';
+                        el.innerText = emojiList[Math.floor(Math.random() * emojiList.length)];
+                        el.style.position = 'absolute';
+                        el.style.left = Math.random() * 100 + 'vw';
+                        el.style.top = '100vh';
+                        el.style.fontSize = (Math.random() * 2 + 1.5) + 'rem';
+                        el.style.opacity = Math.random() * 0.8 + 0.2;
+                        el.style.animation = `floatUpConfetti ${Math.random() * 2 + 3}s ease-in forwards`;
+                        el.style.animationDelay = (Math.random() * 1.5) + 's';
+                        el.style.zIndex = 0;
+                        popup.appendChild(el);
+                    }
+
                     popup.style.display = 'flex';
                     sessionStorage.setItem('eventPopupShown', 'true');
                     setTimeout(() => { popup.style.display = 'none'; }, 5000);
@@ -3430,7 +3488,17 @@
         }
 
         function initApp() {
-            setTimeout(() => { document.getElementById('splash-screen').style.display = 'none'; }, 1200);
+            setTimeout(() => {
+                const splash = document.getElementById('splash-screen');
+                const mainContent = document.getElementById('main-content');
+                const navBtn = document.getElementById('navButtons');
+                
+                if (splash) splash.classList.add('zoom-out');
+                if (mainContent) mainContent.classList.add('content-visible');
+                if (navBtn) navBtn.style.opacity = '1';
+                
+                setTimeout(() => { if (splash) splash.style.display = 'none'; }, 1000);
+            }, 1200);
 
             let storedProfile = localStorage.getItem('squadProfile');
             if (storedProfile) {
@@ -3439,12 +3507,16 @@
                 document.getElementById('welcomeName').innerText = "Hi, " + (profile.name ? profile.name.split(' ')[0] : 'User') + " 👋";
                 
                 checkAndShowEventPopup();
-
                 loadSavedData();
                 showTab('dashboard');
             }
-            checkAndScheduleNotifications();
+            if (typeof checkAndScheduleNotifications === 'function') {
+                checkAndScheduleNotifications();
+            }
         }
+        
+        // Execute initialization
+        initApp();
 
         function openLightbox(src) { document.getElementById("lightbox").style.display = "flex"; document.getElementById("lightbox-img").src = src; }
         function closeLightbox() { document.getElementById("lightbox").style.display = "none"; }
