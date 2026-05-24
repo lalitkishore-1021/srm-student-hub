@@ -320,7 +320,7 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
             if "attn" in header_str or "attendance" in header_str:
                 try:
                     idx_code = get_col_index(headers, "code")
-                    idx_title = get_col_index(headers, "title", "name")
+                    idx_title = get_col_index(headers, "title", "name", "description", "desc", "subject")
                     
                     # New UI has "attn %" or similar
                     idx_attn_perc = get_col_index(headers, "attn %", "attn", "attendance")
@@ -360,7 +360,7 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
             elif any(kw in header_str for kw in ["test performance", "assessment", "marks", "internal"]):
                 try:
                     idx_code = get_col_index(headers, "code")
-                    idx_title = get_col_index(headers, "title", "name", "course name")
+                    idx_title = get_col_index(headers, "title", "name", "course name", "description", "desc", "subject")
                     idx_perf = get_col_index(headers, "performance", "assessment", "marks", "internal")
                     
                     idx_max = get_col_index(headers, "max")
@@ -504,7 +504,7 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
             if "slot" in header_str and "code" in header_str:
                 try:
                     idx_code = get_col_index(headers, "code")
-                    idx_title = get_col_index(headers, "title")
+                    idx_title = get_col_index(headers, "title", "name", "description", "desc", "subject")
                     idx_slot = get_col_index(headers, "slot")
                     idx_room = get_col_index(headers, "room")
                     
@@ -519,7 +519,8 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
                                 subj_name = row[idx_title].strip() if idx_title != -1 and len(row) > idx_title and row[idx_title].strip() else row[idx_code].strip()
                                 student_slots[s] = {
                                     "subject": subj_name,
-                                    "room": row[idx_room]
+                                    "room": row[idx_room].strip() if idx_room != -1 and len(row) > idx_room else "TBA",
+                                    "code": row[idx_code].strip() if idx_code != -1 and len(row) > idx_code else ""
                                 }
                 except Exception as e:
                     print("Parsing error (Slots):", str(e))
@@ -642,20 +643,36 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
             except Exception as e:
                 print(f"Failed to write debug file: {str(e)}")
 
-        # --- POST-PROCESS MARKS TITLES ---
-        # If any mark is missing a real title (its title == its code), try to steal the title from Attendance.
-        att_titles = {}
+        # --- POST-PROCESS TITLES ---
+        # Collect the absolute best title for each course code across all three data sources
+        best_titles = {}
         for a in parsed_att:
-            c_code = a.get("courseCode", "")
-            c_title = a.get("courseTitle", "")
-            if c_code and c_title and "-" in c_title:
-                clean_title = c_title.split("-", 1)[1].strip()
-                if clean_title:
-                    att_titles[c_code] = clean_title
-                    
+            c = a.get("courseCode")
+            t = a.get("courseTitle", "")
+            if c and "-" in t:
+                clean = t.split("-", 1)[1].strip()
+                if clean and len(clean) > len(best_titles.get(c, "")): best_titles[c] = clean
+        
         for m in parsed_marks:
-            if m["courseTitle"] == m["courseCode"] and m["courseCode"] in att_titles:
-                m["courseTitle"] = att_titles[m["courseCode"]]
+            c = m.get("courseCode")
+            t = m.get("courseTitle", "")
+            if c and t and t != c and len(t) > len(best_titles.get(c, "")): best_titles[c] = t
+            
+        for s_data in student_slots.values():
+            c = s_data.get("code")
+            t = s_data.get("subject", "")
+            if c and t and t != c and len(t) > len(best_titles.get(c, "")): best_titles[c] = t
+
+        # Apply the best titles back to the data
+        for m in parsed_marks:
+            c = m.get("courseCode")
+            if c in best_titles and (m.get("courseTitle") == c or not m.get("courseTitle")):
+                m["courseTitle"] = best_titles[c]
+                
+        for a in parsed_att:
+            c = a.get("courseCode")
+            if c in best_titles:
+                a["courseTitle"] = f"{c} - {best_titles[c]}"
                 
         out_queue.put({
             'success': True, 
