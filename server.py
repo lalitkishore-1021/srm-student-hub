@@ -642,6 +642,21 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
             except Exception as e:
                 print(f"Failed to write debug file: {str(e)}")
 
+        # --- POST-PROCESS MARKS TITLES ---
+        # If any mark is missing a real title (its title == its code), try to steal the title from Attendance.
+        att_titles = {}
+        for a in parsed_att:
+            c_code = a.get("courseCode", "")
+            c_title = a.get("courseTitle", "")
+            if c_code and c_title and "-" in c_title:
+                clean_title = c_title.split("-", 1)[1].strip()
+                if clean_title:
+                    att_titles[c_code] = clean_title
+                    
+        for m in parsed_marks:
+            if m["courseTitle"] == m["courseCode"] and m["courseCode"] in att_titles:
+                m["courseTitle"] = att_titles[m["courseCode"]]
+                
         out_queue.put({
             'success': True, 
             'profile': profile_data,
