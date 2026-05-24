@@ -277,6 +277,16 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
         parsed_att = []
         parsed_marks = []
 
+        def get_table_headers(tbl):
+            if not tbl: return [], ""
+            for r_idx in range(min(4, len(tbl))):
+                hdrs = [str(h).lower() for h in tbl[r_idx]]
+                hdr_str = " ".join(hdrs)
+                if ("code" in hdr_str and ("title" in hdr_str or "name" in hdr_str)) or "attn" in hdr_str:
+                    return hdrs, hdr_str
+            hdrs = [str(h).lower() for h in tbl[0]]
+            return hdrs, " ".join(hdrs)
+
         # Profile Extraction
         profile_data = {
             "name": "STUDENT",
@@ -300,14 +310,13 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
 
         for table in raw_tables:
             if not table: continue
-            headers = [str(h).lower() for h in table[0]]
-            header_str = " ".join(headers)
+            headers, header_str = get_table_headers(table)
 
             # Dynamic Attendance Parsing
             if "attn" in header_str or "attendance" in header_str:
                 try:
                     idx_code = get_col_index(headers, "code")
-                    idx_title = get_col_index(headers, "title")
+                    idx_title = get_col_index(headers, "title", "name")
                     
                     # New UI has "attn %" or similar
                     idx_attn_perc = get_col_index(headers, "attn %", "attn", "attendance")
@@ -440,8 +449,7 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
         # --- PARSE STUDENT SLOTS ---
         for table in slot_tables:
             if not table: continue
-            headers = [str(h).lower() for h in table[0]]
-            header_str = " ".join(headers)
+            headers, header_str = get_table_headers(table)
             
             if "slot" in header_str and "code" in header_str:
                 try:
@@ -552,6 +560,12 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
                                 for s in slots_in_cell:
                                     if s in student_slots:
                                         t_str = time_cols[i] if i < len(time_cols) else f"Period {i+1}"
+                                        
+                                        # Validate if t_str actually contains a time. If it got corrupted with a slot string, fallback to standard SRM times.
+                                        if not re.search(r'\d{1,2}:\d{2}', t_str):
+                                            std_times = ["08:00 - 08:50", "08:50 - 09:40", "09:45 - 10:35", "10:35 - 11:25", "11:30 - 12:20", "12:20 - 13:10", "13:15 - 14:05", "14:05 - 14:55", "15:00 - 15:50", "15:50 - 16:40"]
+                                            t_str = std_times[i] if i < len(std_times) else f"Period {i+1}"
+                                            
                                         t_str = re.sub(r'\s+', ' ', t_str).strip()
                                         
                                         entry_key = f"{t_str}-{student_slots[s]['subject']}"
