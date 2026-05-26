@@ -1446,9 +1446,9 @@
         @keyframes slideUp { 0% { transform: translateY(30px) scale(0.8); opacity: 0; } 100% { transform: translateY(0) scale(1); opacity: 1; } }
         @keyframes fadeInOut { 0% { opacity: 0; backdrop-filter: blur(0px); } 10% { opacity: 1; backdrop-filter: blur(25px); } 90% { opacity: 1; backdrop-filter: blur(25px); } 100% { opacity: 0; backdrop-filter: blur(0px); visibility: hidden; } }
         @keyframes floatUpConfetti { 
-            0% { transform: translateY(10vh) scale(0.5) rotate3d(1, 1, 1, 0deg); opacity: 0; } 
+            0% { transform: translateY(0vh) scale(0.5) rotate(0deg); opacity: 0; } 
             10% { opacity: 1; }
-            100% { transform: translateY(-120vh) scale(1.5) rotate3d(1, 1, 1, 720deg); opacity: 0; } 
+            100% { transform: translateY(-120vh) scale(1.5) rotate(720deg); opacity: 0; } 
         }
     </style>
 </head>
@@ -2739,6 +2739,16 @@
             renderAttendance(attendanceData);
         }
 
+        let simulationState = {};
+
+        function simulateAttendance(id, action) {
+            if (!simulationState[id]) simulationState[id] = { bunked: 0, attended: 0 };
+            if (action === 'bunk') simulationState[id].bunked++;
+            else if (action === 'attend') simulationState[id].attended++;
+            else if (action === 'reset') simulationState[id] = { bunked: 0, attended: 0 };
+            renderAttendance(attendanceData);
+        }
+
         function renderAttendance(attData) {
             const list = document.getElementById('attendance-list');
             if (!list) return;
@@ -2749,8 +2759,12 @@
             attendanceData = attData || [];
 
             attendanceData.forEach(sub => {
-                let attended = parseInt(sub.attended) || 0;
-                let total = parseInt(sub.total) || 0;
+                let sim = simulationState[sub.id || sub.courseCode] || { bunked: 0, attended: 0 };
+                let baseAttended = parseInt(sub.attended) || 0;
+                let baseTotal = parseInt(sub.total) || 0;
+                
+                let attended = baseAttended + sim.attended;
+                let total = baseTotal + sim.bunked + sim.attended;
                 let name = sub.courseTitle || sub.name || "Unknown Subject";
 
                 totalAtt += attended;
@@ -2761,8 +2775,8 @@
                 const barColor = isGood ? 'var(--success)' : 'var(--danger)';
 
                 let statusText = isGood
-                    ? `You can safely bunk ${Math.floor((attended - (0.75 * total)) / 0.75)} classes.`
-                    : `Attend ${Math.ceil(((0.75 * total) - attended) / 0.25)} more classes to hit 75%.`;
+                    ? `You can safely bunk <strong>${Math.floor((attended - (0.75 * total)) / 0.75)}</strong> more classes.`
+                    : `Attend <strong>${Math.ceil(((0.75 * total) - attended) / 0.25)}</strong> more classes to hit 75%.`;
 
                 let redZoneWarning = '';
                 let cardStyleModifier = '';
@@ -2786,7 +2800,12 @@
                                 <div class="stat-text" style="color: var(--text-main); font-weight: bold;">${attended} / ${total} Attended</div>
                                 <div class="stat-text" style="color:var(--text-sub); margin-top: 5px; font-size: 0.85rem;">${statusText}</div>
                             </div>
-                            <button class="danger-btn" style="padding: 8px 15px; font-size: 0.85rem; margin-left: 10px;" onclick="deleteAttendance(${sub.id || Date.now()})">Drop</button>
+                            <!-- Bunk Meter Simulator UI -->
+                            <div style="background: rgba(0,0,0,0.3); border-radius: 8px; padding: 5px; display: flex; gap: 5px; border: 1px solid var(--glass-border);">
+                                <button onclick="simulateAttendance('${sub.id || sub.courseCode}', 'bunk')" style="background: rgba(255, 68, 68, 0.2); border: none; color: #ff4444; border-radius: 5px; padding: 5px 12px; font-weight: bold; cursor: pointer;">BUNK</button>
+                                <button onclick="simulateAttendance('${sub.id || sub.courseCode}', 'attend')" style="background: rgba(0, 204, 102, 0.2); border: none; color: #00cc66; border-radius: 5px; padding: 5px 12px; font-weight: bold; cursor: pointer;">ATTEND</button>
+                                ${(sim.bunked > 0 || sim.attended > 0) ? `<button onclick="simulateAttendance('${sub.id || sub.courseCode}', 'reset')" style="background: transparent; border: none; color: var(--text-sub); border-radius: 5px; padding: 5px; cursor: pointer;">↺</button>` : ''}
+                            </div>
                         </div>
                         ${redZoneWarning}
                     </div>
@@ -2820,6 +2839,29 @@
                     else if (op < 75) { attPercBadge.innerHTML = '⚠️ RISK ZONE'; attPercBadge.style.color = 'var(--danger)'; }
                     else { attPercBadge.innerHTML = '📈 AVERAGE'; attPercBadge.style.color = 'var(--text-sub)'; }
                 }
+            }
+        }
+
+        // ================= CGPA PREDICTOR LOGIC =================
+        function updateTargetLock(courseId, internalObtained, internalMax) {
+            const slider = document.getElementById('target-slider-' + courseId);
+            const targetVal = document.getElementById('target-val-' + courseId);
+            const reqVal = document.getElementById('req-val-' + courseId);
+            
+            if(!slider || !targetVal || !reqVal) return;
+            
+            let targetTotal = parseInt(slider.value);
+            targetVal.innerText = targetTotal;
+            
+            let finalMax = 100 - internalMax;
+            let required = targetTotal - internalObtained;
+            
+            if (required <= 0) {
+                reqVal.innerHTML = `<span style="color:var(--success)">Secured! 🎉</span>`;
+            } else if (required > finalMax) {
+                reqVal.innerHTML = `<span style="color:var(--danger)">Impossible (${required.toFixed(1)} / ${finalMax})</span>`;
+            } else {
+                reqVal.innerHTML = `<span style="color:var(--primary)">${required.toFixed(1)} / ${finalMax}</span> required in Finals`;
             }
         }
 
@@ -2879,6 +2921,7 @@
 
                 grandTotalMax += subjectMax; grandTotalObtained += subjectObtained;
                 let subjectPercent = subjectMax > 0 ? ((subjectObtained / subjectMax) * 100).toFixed(1) : 0;
+                let courseId = course.replace(/[^a-zA-Z0-9]/g, '');
 
                 subjectsHTML += `
                     <div class="image-card fade-in-up" style="margin-bottom: 20px; text-align: left; padding: 25px;">
@@ -2897,9 +2940,24 @@
                         <div class="progress-container">
                             <div class="progress-fill" style="background: var(--primary); width: ${subjectPercent}%;"></div>
                         </div>
+
+                        <!-- Target Lock UI -->
+                        <div style="margin-top: 20px; background: rgba(0,0,0,0.3); border-radius: 12px; padding: 15px; border: 1px solid var(--glass-border);">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                                <span style="font-size: 0.9rem; color: var(--text-main); font-weight: bold;">🎯 Target Lock</span>
+                                <span style="font-size: 0.9rem; color: var(--primary); font-weight: bold;"><span id="target-val-${courseId}">90</span>%</span>
+                            </div>
+                            <input type="range" id="target-slider-${courseId}" min="${Math.ceil(subjectObtained)}" max="100" value="90" style="width: 100%; accent-color: var(--primary); height: 6px; border-radius: 3px; outline: none; appearance: none; background: rgba(255,170,0,0.2);" oninput="updateTargetLock('${courseId}', ${subjectObtained}, ${subjectMax})">
+                            <div style="text-align: center; margin-top: 12px; font-size: 0.85rem; font-weight: bold; background: rgba(255,255,255,0.05); padding: 8px; border-radius: 6px;" id="req-val-${courseId}">
+                                Slide to predict final exam requirements
+                            </div>
+                        </div>
+                        
                         <div class="overview-title" style="margin: 20px 0 15px 0;"> Detailed Performance</div>
                         ` : ''}
-                        ${testsHtml}
+                        <div class="test-list">
+                            ${testsHtml}
+                        </div>
                     </div>
                 `;
             });
@@ -3196,8 +3254,8 @@
                         el.innerText = emojiList[Math.floor(Math.random() * emojiList.length)];
                         el.style.position = 'absolute';
                         el.style.left = Math.random() * 100 + 'vw';
-                        el.style.top = '100vh';
-                        el.style.fontSize = (Math.random() * 2 + 1.5) + 'rem';
+                        el.style.bottom = '-10vh';
+                        el.style.fontSize = (Math.random() * 2 + 2) + 'rem';
                         el.style.opacity = Math.random() * 0.8 + 0.2;
                         el.style.animation = `floatUpConfetti ${Math.random() * 2 + 3}s ease-in forwards`;
                         el.style.animationDelay = (Math.random() * 1.5) + 's';
@@ -3521,18 +3579,43 @@
         // Execute initialization
         initApp();
 
-        function openLightbox(src) { document.getElementById("lightbox").style.display = "flex"; document.getElementById("lightbox-img").src = src; }
-        function closeLightbox() { document.getElementById("lightbox").style.display = "none"; }
-
         function requestNotificationPermission() {
             if (!("Notification" in window)) alert("This browser does not support desktop notification");
-            else if (Notification.permission === "granted") { alert("Notifications are already enabled!"); checkAndScheduleNotifications(true); }
+            else if (Notification.permission === "granted") { 
+                alert("Notifications are already enabled!"); 
+                checkAndScheduleNotifications(true); 
+                registerPeriodicSync();
+            }
             else if (Notification.permission !== "denied") {
                 Notification.requestPermission().then(permission => {
-                    if (permission === "granted") alert("Notifications enabled! You will now receive daily mess updates.");
+                    if (permission === "granted") {
+                        alert("Notifications enabled! You will now receive daily mess updates.");
+                        checkAndScheduleNotifications(true);
+                        registerPeriodicSync();
+                    }
                 });
             }
         }
+
+        async function registerPeriodicSync() {
+            if ('serviceWorker' in navigator) {
+                const registration = await navigator.serviceWorker.ready;
+                if ('periodicSync' in registration) {
+                    try {
+                        const status = await navigator.permissions.query({ name: 'periodic-background-sync' });
+                        if (status.state === 'granted') {
+                            await registration.periodicSync.register('check-notifications', {
+                                minInterval: 12 * 60 * 60 * 1000 // Best effort 12 hours interval for true background wakeup
+                            });
+                            console.log('Periodic background sync registered!');
+                        }
+                    } catch (e) { console.error('Periodic Sync Error:', e); }
+                }
+            }
+        }
+
+        function openLightbox(src) { document.getElementById("lightbox").style.display = "flex"; document.getElementById("lightbox-img").src = src; }
+        function closeLightbox() { document.getElementById("lightbox").style.display = "none"; }
 
         function triggerLocalNotification(title, body) {
             if (Notification.permission === 'granted' && navigator.serviceWorker) {
