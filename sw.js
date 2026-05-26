@@ -72,12 +72,36 @@ self.addEventListener('message', (event) => {
         const title = event.data.title;
         const options = {
             body: event.data.body,
-            icon: '/images/app-icon.svg', // Shows your SRM Hub logo in the notification!
+            icon: '/images/app-icon.svg',
             badge: '/images/app-icon.svg',
-            vibrate: [200, 100, 200],     // Vibrate pattern for phones
+            vibrate: [200, 100, 200],
             requireInteraction: false
         };
         
         self.registration.showNotification(title, options);
     }
 });
+
+// 5. PERIODIC SYNC: Offline Background Notifications without opening the app!
+self.addEventListener('periodicsync', (event) => {
+    if (event.tag === 'check-notifications') {
+        event.waitUntil(checkAndTriggerBackgroundNotifications());
+    }
+});
+
+async function checkAndTriggerBackgroundNotifications() {
+    // This runs strictly in the background via Service Worker!
+    const now = new Date();
+    const hours = now.getHours();
+    const minutes = now.getMinutes();
+    const timeFloat = hours + (minutes / 60);
+
+    // Hardcoded mess timings for offline fallback
+    if (timeFloat >= 7.0 && timeFloat < 7.5) {
+        self.registration.showNotification("Good Morning! ☀️", { body: "Breakfast is being served right now in the mess!", icon: '/images/app-icon.svg' });
+    } else if (timeFloat >= 12.0 && timeFloat < 12.5) {
+        self.registration.showNotification("Lunch Time Approaching! 🍛", { body: "Time to grab some lunch!", icon: '/images/app-icon.svg' });
+    } else if (timeFloat >= 19.0 && timeFloat < 19.5) {
+        self.registration.showNotification("Dinner Time! 🍽️", { body: "Dinner is ready in the mess.", icon: '/images/app-icon.svg' });
+    }
+}
