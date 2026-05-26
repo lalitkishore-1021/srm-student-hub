@@ -1455,15 +1455,38 @@
 
 <body>
 
-    <div id="splash-screen">
-        <div class="css-loader"></div>
-        <div class="splash-text">Loading Hub...</div>
-    </div>
+
 
     <div id="eventPopup" class="event-popup" style="display: none;">
         <div class="event-popup-content">
             <h1 id="eventPopupTitle">Welcome Back!</h1>
             <p id="eventPopupSub">College has opened.</p>
+        </div>
+    </div>
+
+    <!-- HOLOGRAPHIC SHARE MODAL -->
+    <div id="holoShareModal" class="modal" style="display: none; z-index: 10000; align-items: center; justify-content: center; backdrop-filter: blur(20px);">
+        <div class="modal-content" style="background: transparent; border: none; box-shadow: none; display: flex; flex-direction: column; align-items: center; gap: 30px;">
+            <div id="holo-card-container" style="perspective: 1000px; width: 300px; height: 450px;">
+                <div id="holo-card" style="width: 100%; height: 100%; border-radius: 20px; background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05)); border: 1px solid rgba(255,170,0,0.4); box-shadow: 0 20px 50px rgba(0,0,0,0.5); display: flex; flex-direction: column; justify-content: center; align-items: center; position: relative; overflow: hidden; transition: transform 0.1s; transform-style: preserve-3d;">
+                    <!-- Holographic glare effect -->
+                    <div id="holo-glare" style="position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: linear-gradient(105deg, transparent 20%, rgba(255,255,255,0.4) 25%, transparent 30%); transform: rotate(45deg); pointer-events: none; opacity: 0; transition: opacity 0.3s;"></div>
+                    
+                    <h2 style="font-family: 'Montserrat', sans-serif; color: rgba(255,170,0,0.8); letter-spacing: 3px; font-size: 1rem; margin-bottom: 20px; text-transform: uppercase; transform: translateZ(30px);">SRM Student Hub</h2>
+                    <h3 id="holo-title" style="font-family: 'Montserrat', sans-serif; font-size: 1.5rem; color: #aaa; text-transform: uppercase; letter-spacing: 4px; margin: 0 0 20px 0; transform: translateZ(40px);">TITLE</h3>
+                    <h1 id="holo-value" style="font-family: 'Montserrat', sans-serif; font-size: 5rem; font-weight: 900; margin: 0; line-height: 1; filter: drop-shadow(0 10px 20px rgba(255,170,0,0.3)); transform: translateZ(60px);">0%</h1>
+                    <div style="position: absolute; bottom: 20px; right: 20px; opacity: 0.5; transform: translateZ(20px);">
+                        <svg width="40" height="40" viewBox="0 0 100 100"><path d="M 30 20 L 10 50 L 30 80 M 70 20 L 90 50 L 70 80 M 35 65 L 45 65 L 45 50 L 55 50 L 55 35 L 65 35" fill="none" stroke="#ffaa00" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="display: flex; gap: 15px;">
+                <button onclick="document.getElementById('holoShareModal').style.display='none'" class="action-btn" style="background: rgba(255,255,255,0.1); color: #fff;">Close</button>
+                <button id="downloadHoloBtn" class="action-btn" style="background: linear-gradient(135deg, #ffaa00, #ff8800); color: #000; font-weight: bold;">
+                    Download 2D Image
+                </button>
+            </div>
         </div>
     </div>
 
@@ -1549,6 +1572,10 @@
             </svg>
             <h1>SRM Student Hub</h1>
             <p class="subtitle">Your all-in-one portal for Step Class, CGPA, and more.</p>
+            <button onclick="logout()" id="logoutBtn" style="display: none; position: absolute; top: 15px; left: 15px; background: rgba(255, 68, 68, 0.2); border: 1px solid rgba(255, 68, 68, 0.4); color: #ff4444; border-radius: 8px; padding: 6px 12px; cursor: pointer; font-weight: bold; align-items: center; gap: 5px;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                Logout
+            </button>
         </header>
 
         <div id="home-view" class="app-view active">
@@ -2649,6 +2676,30 @@
 
         function openSyncModal() { document.getElementById('syncModal').style.display = 'flex'; }
         function closeSyncModal() { document.getElementById('syncModal').style.display = 'none'; }
+        
+        function logout() {
+            localStorage.clear();
+            sessionStorage.clear();
+            window.location.reload();
+        }
+
+        function showSyncToast() {
+            let toast = document.getElementById('sync-toast');
+            if (!toast) {
+                toast = document.createElement('div');
+                toast.id = 'sync-toast';
+                toast.innerHTML = `<div class="css-loader" style="width:15px;height:15px;margin:0 10px 0 0;border-width:2px;"></div> Syncing data in background...`;
+                toast.style.cssText = `position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,0.8); color:#fff; padding:10px 20px; border-radius:20px; font-size:0.9rem; z-index:9999; display:flex; align-items:center; border:1px solid var(--primary); font-family:'Montserrat', sans-serif;`;
+                document.body.appendChild(toast);
+            }
+        }
+        function hideSyncToast(success=true) {
+            let toast = document.getElementById('sync-toast');
+            if (toast) {
+                toast.innerHTML = success ? `✅ Data Synced Successfully` : `❌ Background Sync Failed`;
+                setTimeout(() => toast.remove(), 3000);
+            }
+        }
 
         async function startLiveSync() {
             const regNo = document.getElementById('srm-reg').value.trim();
@@ -2690,6 +2741,12 @@
 
                 isLoggedIn = true;
                 localStorage.setItem("isLoggedIn", "true");
+                
+                // Store credentials for auto background sync
+                localStorage.setItem("syncRegNo", regNo);
+                localStorage.setItem("syncPwd", pwd);
+                localStorage.setItem("syncBatch", currentBatch);
+
                 updateHomeState();
 
                 const attList = Array.isArray(result.data) ? result.data : [];
@@ -2713,8 +2770,46 @@
                 clearInterval(timerInterval);
                 statusText.innerText = "❌ Could not connect to backend server.";
                 statusText.style.color = "var(--danger)";
-            } finally {
-                document.getElementById('srm-pwd').value = '';
+            }
+        }
+
+        async function backgroundSync() {
+            const regNo = localStorage.getItem("syncRegNo");
+            const pwd = localStorage.getItem("syncPwd");
+            const batch = localStorage.getItem("syncBatch") || currentBatch;
+            
+            if (!regNo || !pwd) return; // Cannot auto sync
+
+            showSyncToast();
+            try {
+                const res = await fetch(`${BACKEND_URL}/api/start_session`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ regNo, pwd, batch })
+                });
+
+                const result = await res.json();
+                if (result.success) {
+                    const attList = Array.isArray(result.data) ? result.data : [];
+                    const marksList = Array.isArray(result.marks) ? result.marks : [];
+                    const ttDict = result.timetable || {};
+                    const profile = result.profile || {};
+
+                    localStorage.setItem('squadProfile', JSON.stringify(profile));
+                    localStorage.setItem('squadAttendance', JSON.stringify(attList));
+                    localStorage.setItem('squadMarks', JSON.stringify(marksList));
+                    localStorage.setItem('squadTimetable', JSON.stringify(ttDict));
+
+                    try { renderProfile(profile); } catch (e) {}
+                    try { renderAttendance(attList); } catch (e) {}
+                    try { renderMarks(marksList); } catch (e) {}
+                    try { renderTimetable(ttDict); } catch (e) {}
+                    hideSyncToast(true);
+                } else {
+                    hideSyncToast(false);
+                }
+            } catch (e) {
+                hideSyncToast(false);
             }
         }
 
@@ -3547,17 +3642,10 @@
         }
 
         function initApp() {
-            setTimeout(() => {
-                const splash = document.getElementById('splash-screen');
-                const mainContent = document.getElementById('main-content');
-                const navBtn = document.getElementById('navButtons');
-                
-                if (splash) splash.classList.add('zoom-out');
-                if (mainContent) mainContent.classList.add('content-visible');
-                if (navBtn) navBtn.style.opacity = '1';
-                
-                setTimeout(() => { if (splash) splash.style.display = 'none'; }, 1000);
-            }, 1200);
+            const mainContent = document.getElementById('main-content');
+            const navBtn = document.getElementById('navButtons');
+            if (mainContent) mainContent.classList.add('content-visible');
+            if (navBtn) navBtn.style.opacity = '1';
 
             let storedProfile = localStorage.getItem('squadProfile');
             if (storedProfile) {
@@ -3565,11 +3653,17 @@
                 const profile = JSON.parse(storedProfile);
                 document.getElementById('welcomeName').innerText = "Hi, " + (profile.name ? profile.name.split(' ')[0] : 'User') + " 👋";
                 
+                const logoutBtn = document.getElementById('logoutBtn');
+                if (logoutBtn) logoutBtn.style.display = 'flex';
+
                 loadSavedData();
                 showTab('dashboard');
                 
-                // Show event popup AFTER splash screen finishes (2200ms)
-                setTimeout(() => { checkAndShowEventPopup(); }, 2200);
+                // Start background sync
+                backgroundSync();
+
+                // Show event popup
+                setTimeout(() => { checkAndShowEventPopup(); }, 1000);
             }
             if (typeof checkAndScheduleNotifications === 'function') {
                 checkAndScheduleNotifications();
@@ -3654,13 +3748,71 @@
 
         // ================= SHARING =================
         async function generateShareImage(title, value, color) {
-            const btn = event.currentTarget;
+            // Setup Holographic Modal UI
+            document.getElementById('holoShareModal').style.display = 'flex';
+            document.getElementById('holo-title').innerText = title;
+            document.getElementById('holo-value').innerText = value;
+            document.getElementById('holo-value').style.background = `linear-gradient(to bottom, #fff, ${color})`;
+            document.getElementById('holo-value').style.webkitBackgroundClip = 'text';
+            document.getElementById('holo-value').style.webkitTextFillColor = 'transparent';
+
+            const card = document.getElementById('holo-card');
+            const glare = document.getElementById('holo-glare');
+            const container = document.getElementById('holo-card-container');
+
+            // 3D Tilt Effect logic
+            container.addEventListener('mousemove', (e) => {
+                const rect = container.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                
+                const centerX = rect.width / 2;
+                const centerY = rect.height / 2;
+                
+                const rotateX = ((y - centerY) / centerY) * -20;
+                const rotateY = ((x - centerX) / centerX) * 20;
+
+                card.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+                
+                // Move glare
+                glare.style.opacity = '1';
+                glare.style.transform = `translate(${x * 0.5}px, ${y * 0.5}px) rotate(45deg)`;
+            });
+
+            container.addEventListener('mouseleave', () => {
+                card.style.transform = `rotateX(0deg) rotateY(0deg)`;
+                card.style.transition = 'transform 0.5s ease';
+                glare.style.opacity = '0';
+                setTimeout(() => card.style.transition = 'transform 0.1s', 500);
+            });
+            
+            // Setup Device Orientation for Mobile Tilt
+            if (window.DeviceOrientationEvent) {
+                window.addEventListener("deviceorientation", function(e) {
+                    if (document.getElementById('holoShareModal').style.display === 'flex') {
+                        let tiltLR = e.gamma;
+                        let tiltFB = e.beta;
+                        if(tiltLR > 30) tiltLR = 30; if(tiltLR < -30) tiltLR = -30;
+                        if(tiltFB > 60) tiltFB = 60; if(tiltFB < 0) tiltFB = 0;
+                        
+                        const rotateY = (tiltLR / 30) * 20;
+                        const rotateX = ((tiltFB - 30) / 30) * -20;
+                        card.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+                    }
+                }, true);
+            }
+
+            // Hook up download button
+            const dlBtn = document.getElementById('downloadHoloBtn');
+            dlBtn.onclick = () => downloadShareImage(title, value, color, dlBtn);
+        }
+
+        async function downloadShareImage(title, value, color, btn) {
             const originalHTML = btn.innerHTML;
             btn.innerHTML = `<div class="css-loader" style="width: 20px; height: 20px; margin: 0;"></div>`;
             
             const template = document.getElementById('share-template');
             
-            // Temporarily reveal to html2canvas (kept hidden by z-index: -100)
             const originalTop = template.style.top;
             const originalLeft = template.style.left;
             const originalOpacity = template.style.opacity;
@@ -3692,7 +3844,6 @@
                         link.download = 'srm-hub-stats.png';
                         link.href = canvas.toDataURL();
                         link.click();
-                        alert("Image saved to your device!");
                     }
                     btn.innerHTML = originalHTML;
                 }, 'image/png');
@@ -3701,7 +3852,6 @@
                 alert("Failed to generate share image.");
                 btn.innerHTML = originalHTML;
             } finally {
-                // Restore hidden state
                 template.style.top = originalTop || '';
                 template.style.left = originalLeft || '';
                 template.style.opacity = originalOpacity || '';
