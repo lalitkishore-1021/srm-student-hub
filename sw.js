@@ -1,5 +1,5 @@
 // Change this version number every time you want to force phones to update!
-const CACHE_NAME = 'srm-hub-v11-speed-sync'; 
+const CACHE_NAME = 'srm-hub-v12-speed-sync'; 
 
 const ASSETS_TO_CACHE = [
     '/',
@@ -38,30 +38,31 @@ self.addEventListener('activate', (event) => {
     self.clients.claim(); 
 });
 
-// 3. FETCH EVENT: The "Bouncer"
+// 3. FETCH EVENT: Stale-While-Revalidate (Instant Load, Background Update)
 self.addEventListener('fetch', (event) => {
     const url = new URL(event.request.url);
 
-    // 🚨 CRITICAL BYPASS: Never, ever cache the Python API requests!
+    // 🚨 CRITICAL BYPASS: Never cache API requests
     if (url.pathname.startsWith('/api/')) {
-        return; // Let the request pass straight to the Render server
+        return; 
     }
 
-    // NETWORK-FIRST STRATEGY: Always try to get the freshest code from the internet.
-    // If the internet is down (offline mode), fallback to the cached version.
     event.respondWith(
-        fetch(event.request).then((response) => {
-            // If the network fetch is successful, save a copy in the cache for later
-            if (response && response.status === 200 && response.type === 'basic') {
-                const responseClone = response.clone();
-                caches.open(CACHE_NAME).then((cache) => {
-                    cache.put(event.request, responseClone);
-                });
-            }
-            return response;
-        }).catch(() => {
-            // If the network fails (offline), pull it from the cache
-            return caches.match(event.request);
+        caches.match(event.request).then((cachedResponse) => {
+            const fetchPromise = fetch(event.request).then((networkResponse) => {
+                if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
+                    const responseToCache = networkResponse.clone();
+                    caches.open(CACHE_NAME).then((cache) => {
+                        cache.put(event.request, responseToCache);
+                    });
+                }
+                return networkResponse;
+            }).catch(() => {
+                // Network failed, do nothing, the cached response is already returned.
+            });
+
+            // Return cached response immediately if available, otherwise wait for network
+            return cachedResponse || fetchPromise;
         })
     );
 });
