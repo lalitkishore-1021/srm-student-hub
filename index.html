@@ -1424,11 +1424,10 @@
         
         .event-popup {
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            background: linear-gradient(-45deg, rgba(10,10,15,0.95), rgba(35,18,56,0.95), rgba(15,28,48,0.95), rgba(10,10,15,0.95));
-            background-size: 400% 400%;
+            background: rgba(10, 10, 15, 0.4);
             z-index: 10000; display: flex; align-items: center; justify-content: center;
-            flex-direction: column; text-align: center; backdrop-filter: blur(15px);
-            animation: fadeInOut 5s forwards, shineEvent 4s ease infinite;
+            flex-direction: column; text-align: center; backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px);
+            animation: fadeInOut 5s forwards;
             overflow: hidden;
         }
         .event-popup-content { position: relative; z-index: 10; }
@@ -1443,10 +1442,14 @@
             font-size: 1.3rem; color: #fff; margin-top: 15px; font-weight: 500;
             animation: slideUp 1s ease forwards; animation-delay: 0.3s; opacity: 0;
         }
-        @keyframes bounceIn { 0% { transform: scale(0); opacity: 0; } 50% { transform: scale(1.1); opacity: 1; } 70% { transform: scale(0.95); } 100% { transform: scale(1); opacity: 1; } }
-        @keyframes slideUp { 0% { transform: translateY(20px); opacity: 0; } 100% { transform: translateY(0); opacity: 1; } }
-        @keyframes fadeInOut { 0% { opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { opacity: 0; visibility: hidden; } }
-        @keyframes floatUpConfetti { 0% { transform: translateY(0) rotate(0deg); opacity: 1; } 100% { transform: translateY(-120vh) rotate(360deg); opacity: 0; } }
+        @keyframes bounceIn { 0% { transform: scale(0); opacity: 0; } 50% { transform: scale(1.2); opacity: 1; } 70% { transform: scale(0.9); } 100% { transform: scale(1); opacity: 1; } }
+        @keyframes slideUp { 0% { transform: translateY(30px) scale(0.8); opacity: 0; } 100% { transform: translateY(0) scale(1); opacity: 1; } }
+        @keyframes fadeInOut { 0% { opacity: 0; backdrop-filter: blur(0px); } 10% { opacity: 1; backdrop-filter: blur(25px); } 90% { opacity: 1; backdrop-filter: blur(25px); } 100% { opacity: 0; backdrop-filter: blur(0px); visibility: hidden; } }
+        @keyframes floatUpConfetti { 
+            0% { transform: translateY(10vh) scale(0.5) rotate3d(1, 1, 1, 0deg); opacity: 0; } 
+            10% { opacity: 1; }
+            100% { transform: translateY(-120vh) scale(1.5) rotate3d(1, 1, 1, 720deg); opacity: 0; } 
+        }
     </style>
 </head>
 
@@ -3150,8 +3153,7 @@
             let todayLocal = new Date();
             let tzoffset = todayLocal.getTimezoneOffset() * 60000;
             let curISOTime = (new Date(todayLocal - tzoffset)).toISOString().slice(0, 10);
-            
-            if (sessionStorage.getItem('eventPopupShown')) return;
+
 
             let plan = srmPlanner[curISOTime];
             let show = false;
@@ -3204,7 +3206,6 @@
                     }
 
                     popup.style.display = 'flex';
-                    sessionStorage.setItem('eventPopupShown', 'true');
                     setTimeout(() => { popup.style.display = 'none'; }, 5000);
                 }
             }
@@ -3506,9 +3507,11 @@
                 const profile = JSON.parse(storedProfile);
                 document.getElementById('welcomeName').innerText = "Hi, " + (profile.name ? profile.name.split(' ')[0] : 'User') + " 👋";
                 
-                checkAndShowEventPopup();
                 loadSavedData();
                 showTab('dashboard');
+                
+                // Show event popup AFTER splash screen finishes (2200ms)
+                setTimeout(() => { checkAndShowEventPopup(); }, 2200);
             }
             if (typeof checkAndScheduleNotifications === 'function') {
                 checkAndScheduleNotifications();
