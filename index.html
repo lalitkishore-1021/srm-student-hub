@@ -4,8 +4,46 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SRM Student Hub</title>
+    <title>SRM Student Hub | Attendance, CGPA & Timetable</title>
+    
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="The ultimate student dashboard for SRM Institute of Science and Technology. Track attendance, predict CGPA, check your timetable, and view the mess menu instantly.">
+    <meta name="keywords" content="SRM Student Hub, SRM Attendance, SRM CGPA Predictor, SRM Timetable, SRM Mess Menu, Academia Sync, SRMIST Portal, Student Dashboard">
+    <meta name="author" content="SRM Student Hub">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://srm-student-hub.onrender.com/"> <!-- Update with actual domain later -->
 
+    <!-- Open Graph (WhatsApp, Discord, Facebook) -->
+    <meta property="og:title" content="SRM Student Hub | Your Ultimate Dashboard">
+    <meta property="og:description" content="Track your SRM attendance, predict CGPA, and view your daily timetable all in one beautiful app.">
+    <meta property="og:image" content="/images/app-icon.svg">
+    <meta property="og:url" content="https://srm-student-hub.onrender.com/">
+    <meta property="og:type" content="website">
+
+    <!-- Twitter Card Meta Tags -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="SRM Student Hub | Your Ultimate Dashboard">
+    <meta name="twitter:description" content="Track your SRM attendance, predict CGPA, and view your daily timetable all in one beautiful app.">
+    <meta name="twitter:image" content="/images/app-icon.svg">
+
+    <!-- JSON-LD Structured Data for Google -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "SRM Student Hub",
+      "url": "https://srm-student-hub.onrender.com/",
+      "description": "The ultimate student dashboard for SRM Institute of Science and Technology. Track attendance, predict CGPA, check your timetable, and view the mess menu instantly.",
+      "applicationCategory": "EducationalApplication",
+      "operatingSystem": "All",
+      "offers": {
+        "@type": "Offer",
+        "price": "0"
+      }
+    }
+    </script>
+
+    <!-- PWA Settings -->
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#ffaa00">
     <link rel="apple-touch-icon" href="images/app-icon.svg">
@@ -906,16 +944,16 @@
 
         .progress-container {
             width: 100%;
-            height: 6px;
+            height: 8px;
             background: rgba(255, 255, 255, 0.1);
-            border-radius: 3px;
+            border-radius: 10px;
             margin: 15px 0;
             overflow: hidden;
         }
 
         .progress-fill {
             height: 100%;
-            border-radius: 3px;
+            border-radius: 10px;
             transition: width 1s cubic-bezier(0.16, 1, 0.3, 1);
             box-shadow: 0 0 12px currentColor;
         }
@@ -3042,7 +3080,7 @@
                                 <span style="font-size: 0.9rem; color: var(--text-main); font-weight: bold;">🎯 Target Lock</span>
                                 <span style="font-size: 0.9rem; color: var(--primary); font-weight: bold;"><span id="target-val-${courseId}">90</span>%</span>
                             </div>
-                            <input type="range" id="target-slider-${courseId}" min="${Math.ceil(subjectObtained)}" max="100" value="90" style="width: 100%; accent-color: var(--primary); height: 6px; border-radius: 3px; outline: none; appearance: none; background: rgba(255,170,0,0.2);" oninput="updateTargetLock('${courseId}', ${subjectObtained}, ${subjectMax})">
+                            <input type="range" id="target-slider-${courseId}" min="${Math.ceil(subjectObtained)}" max="100" value="90" style="width: 100%; accent-color: var(--primary); height: 8px; border-radius: 10px; outline: none; appearance: none; background: rgba(255,170,0,0.2);" oninput="updateTargetLock('${courseId}', ${subjectObtained}, ${subjectMax})">
                             <div style="text-align: center; margin-top: 12px; font-size: 0.85rem; font-weight: bold; background: rgba(255,255,255,0.05); padding: 8px; border-radius: 6px;" id="req-val-${courseId}">
                                 Slide to predict final exam requirements
                             </div>
