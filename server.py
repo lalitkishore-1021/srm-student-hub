@@ -827,6 +827,41 @@ def submit_project():
 
     return jsonify({'success': True})
 
+@app.route('/api/projects/delete/<int:item_id>', methods=['DELETE'])
+def delete_project(item_id):
+    data = request.json or {}
+    net_id = data.get('net_id', '').lower().strip()
+    if not net_id:
+        return jsonify({'success': False, 'error': 'Authentication required'}), 401
+
+    conn = get_db()
+    cur = conn.cursor()
+    try:
+        if DATABASE_URL:
+            cur.execute("SELECT net_id FROM projects WHERE id = %s", (item_id,))
+        else:
+            cur.execute("SELECT net_id FROM projects WHERE id = ?", (item_id,))
+        row = cur.fetchone()
+        if not row:
+            return jsonify({'success': False, 'error': 'Project not found'}), 404
+
+        owner_id = (row[0] if DATABASE_URL else dict(row).get('net_id', '')).lower().strip()
+        if owner_id != net_id:
+            return jsonify({'success': False, 'error': 'You can only delete your own projects'}), 403
+
+        if DATABASE_URL:
+            cur.execute("DELETE FROM projects WHERE id = %s", (item_id,))
+        else:
+            cur.execute("DELETE FROM projects WHERE id = ?", (item_id,))
+        conn.commit()
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        cur.close()
+        conn.close()
+
+    return jsonify({'success': True})
+
 # --- NEW MARKETPLACE ROUTES ---
 
 @app.route('/api/marketplace', methods=['GET'])
@@ -903,7 +938,7 @@ def delete_marketplace(item_id):
         if not row:
             return jsonify({'success': False, 'error': 'Item not found'}), 404
 
-        owner_id = (dict(row) if DATABASE_URL else dict(row)).get('net_id', '').lower().strip()
+        owner_id = (row[0] if DATABASE_URL else dict(row).get('net_id', '')).lower().strip()
         if owner_id != net_id:
             return jsonify({'success': False, 'error': 'You can only delete your own listings'}), 403
 
@@ -1060,7 +1095,7 @@ def delete_cab(cab_id):
         if not row:
             return jsonify({'success': False, 'error': 'Ride not found'}), 404
 
-        owner_id = (dict(row) if DATABASE_URL else dict(row)).get('net_id', '').lower().strip()
+        owner_id = (row[0] if DATABASE_URL else dict(row).get('net_id', '')).lower().strip()
         if owner_id != net_id:
             return jsonify({'success': False, 'error': 'You can only delete your own rides'}), 403
 
@@ -1203,7 +1238,7 @@ def delete_lostfound(item_id):
         if not row:
             return jsonify({'success': False, 'error': 'Item not found'}), 404
 
-        owner_id = (dict(row) if DATABASE_URL else dict(row)).get('net_id', '').lower().strip()
+        owner_id = (row[0] if DATABASE_URL else dict(row).get('net_id', '')).lower().strip()
         if owner_id != net_id:
             return jsonify({'success': False, 'error': 'You can only delete your own posts'}), 403
 

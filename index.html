@@ -4315,7 +4315,10 @@
                     </div>
                 </div>`;
 
+                const myNetId = getCurrentNetId();
+
                 const dynamicCardsHTML = projects.map(p => {
+                    const isOwner = myNetId && p.net_id && myNetId === (p.net_id || '').toLowerCase();
                     const techTags = (p.tech_stack || '').split(',').filter(t => t.trim()).map(t =>
                         `<span style="background: rgba(255,255,255,0.07); padding: 3px 10px; border-radius: 5px; font-size: 0.8rem; color: #aaa;">${t.trim()}</span>`
                     ).join('');
@@ -4324,8 +4327,9 @@
                         p.demo_url ? `<a href="${p.demo_url}" target="_blank" style="color: #62d5ff; font-weight: bold; font-size: 0.9rem;">Live Demo →</a>` : ''
                     ].filter(Boolean).join('<span style="color: var(--text-sub); padding: 0 10px;">|</span>');
                     return `
-                    <div class="image-card fade-in-up" style="transform: none; text-align: left;">
-                        <h3 style="color: var(--text-main); margin: 0 0 8px 0; font-size: 1.15rem; font-family: 'Montserrat', sans-serif;">${p.title}</h3>
+                    <div class="image-card fade-in-up" style="transform: none; text-align: left; position: relative;">
+                        ${isOwner ? `<button onclick="deleteProject(${p.id})" style="position: absolute; top: 15px; right: 15px; background: rgba(255,68,68,0.15); border: 1px solid rgba(255,68,68,0.4); color: #ff4444; padding: 5px 12px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.8rem;">🗑️ Delete</button>` : ''}
+                        <h3 style="color: var(--text-main); margin: 0 0 8px 0; font-size: 1.15rem; font-family: 'Montserrat', sans-serif; padding-right: 80px;">${p.title}</h3>
                         ${p.submitted_by ? `<div style="font-size:0.8rem; color: var(--text-sub); margin-bottom: 10px;">By <b style="color: var(--primary);">${p.submitted_by}</b> · ${p.net_id ? p.net_id.toUpperCase() : ''}</div>` : ''}
                         <p style="color: var(--text-sub); font-size: 0.9rem; margin-bottom: 12px; line-height: 1.5;">${p.description || ''}</p>
                         ${techTags ? `<div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px;">${techTags}</div>` : ''}
@@ -4345,6 +4349,25 @@
             }
         }
 
+        async function deleteProject(id) {
+            if (!confirm("Delete this project?")) return;
+            try {
+                const res = await fetch(`${BACKEND_URL}/api/projects/delete/${id}`, {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ net_id: getCurrentNetId() })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    loadProjects();
+                } else {
+                    alert("Error: " + (data.error || "Could not delete"));
+                }
+            } catch (e) {
+                alert("Connection error");
+            }
+        }
+
         // ============ IMAGE COMPRESSION ============
         async function compressImage(file) {
             return new Promise((resolve, reject) => {
@@ -4356,16 +4379,14 @@
                     img.src = event.target.result;
                     img.onload = () => {
                         const canvas = document.createElement('canvas');
-                        const MAX_WIDTH = 600;
-                        const scaleSize = MAX_WIDTH / img.width;
-                        canvas.width = MAX_WIDTH;
-                        canvas.height = img.height * scaleSize;
+                        canvas.width = img.width;
+                        canvas.height = img.height;
                         
                         const ctx = canvas.getContext('2d');
                         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
                         
-                        // Compress to 0.7 quality JPEG
-                        const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
+                        // Compress to 0.8 quality JPEG without changing dimensions
+                        const compressedBase64 = canvas.toDataURL('image/jpeg', 0.8);
                         resolve(compressedBase64);
                     }
                 };
@@ -4426,7 +4447,7 @@
                     <h3 style="color: var(--text-main); margin: 0 0 5px 0; font-size: 1.25rem; font-family: 'Montserrat', sans-serif; padding-right: 80px;">${p.title}</h3>
                     <div style="font-size:0.8rem; color: var(--text-sub); margin-bottom: 12px;">By <b style="color: var(--primary);">${p.seller_name}</b> &bull; ${formatTime}</div>
                     
-                    ${p.image_url ? `<img src="${p.image_url}" alt="${p.title}" style="max-height: 250px; width: 100%; object-fit: cover; border-radius: 10px; margin-bottom: 15px; border: 1px solid var(--glass-border);" onerror="this.style.display='none'">` : ''}
+                    ${p.image_url ? `<img src="${p.image_url}" alt="${p.title}" style="width: 100%; height: auto; border-radius: 10px; margin-bottom: 15px; border: 1px solid var(--glass-border);" onerror="this.style.display='none'">` : ''}
                     
                     <p style="color: var(--text-sub); font-size: 0.95rem; margin-bottom: 15px; line-height: 1.5;">${p.description || ''}</p>
                     
@@ -4856,7 +4877,7 @@
                     
                     ${p.location ? `<div style="font-size: 0.85rem; color: var(--primary); margin-bottom: 10px;"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 5px;"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg> ${p.location}</div>` : ''}
                     
-                    ${p.image_url ? `<img src="${p.image_url}" alt="${p.title}" style="max-height: 250px; width: 100%; object-fit: cover; border-radius: 10px; margin-bottom: 12px; border: 1px solid var(--glass-border);" onerror="this.style.display='none'">` : ''}
+                    ${p.image_url ? `<img src="${p.image_url}" alt="${p.title}" style="width: 100%; height: auto; border-radius: 10px; margin-bottom: 12px; border: 1px solid var(--glass-border);" onerror="this.style.display='none'">` : ''}
                     
                     <p style="color: var(--text-sub); font-size: 0.95rem; line-height: 1.5; margin: 0;">${p.description || ''}</p>
                 </div>`;
