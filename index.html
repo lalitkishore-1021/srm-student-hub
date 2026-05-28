@@ -103,10 +103,13 @@
             position: fixed;
             border-radius: 50%;
             z-index: -1;
-            filter: blur(150px);
+            filter: blur(80px);
+            -webkit-filter: blur(80px);
             opacity: 0.5;
             animation: auroraFloat 20s infinite alternate ease-in-out;
             pointer-events: none;
+            transform: translateZ(0); /* Hardware acceleration */
+            will-change: transform;
         }
 
         body::before {
@@ -215,18 +218,22 @@
 
         .app-nav {
             position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
+            bottom: 20px;
+            left: 20px;
+            width: calc(100% - 40px);
             height: 70px;
             background: var(--nav-bg);
             backdrop-filter: blur(15px);
-            border-top: 1px solid var(--glass-border);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid var(--glass-border);
+            border-radius: 35px;
             display: flex;
             justify-content: space-around;
             align-items: center;
             z-index: 1000;
-            padding-bottom: env(safe-area-inset-bottom);
+            padding-bottom: 0;
+            box-shadow: 0 10px 30px var(--shadow), inset 0 0 15px rgba(255, 170, 0, 0.05);
+            box-sizing: border-box;
         }
 
         .nav-item {
@@ -3349,7 +3356,7 @@
             else if (estCGPA >= 9.0) percentileHTML = `<div style="margin-top: 15px;"><span style="background: rgba(255,255,255,0.1); color: #fff; padding: 5px 10px; border-radius: 8px; font-size: 0.8rem; font-weight: 900; letter-spacing: 1px; display: inline-block;">🔥 TOP 10% OF BATCH</span></div>`;
 
             list.innerHTML = `
-                <div class="dashboard-overview fade-in-up" style="background: linear-gradient(135deg, #2e7d32 0%, #1b5e20 100%); border-color: #4caf50; padding: 30px 20px; position: relative; overflow: hidden; border-radius: 24px;">
+                <div class="dashboard-overview image-card fade-in-up" style="padding: 30px 20px; position: relative; overflow: hidden; border-radius: 24px;">
                     <div style="position: absolute; top: 20px; right: 20px; width: 40px; height: 40px; background: rgba(255,255,255,0.1); border-radius: 50%; display: flex; justify-content: center; align-items: center;">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
                     </div>
