@@ -2695,15 +2695,19 @@
         }
 
         function loadSavedData() {
-            const savedProfile = JSON.parse(localStorage.getItem('squadProfile') || '{}');
-            const savedAtt = JSON.parse(localStorage.getItem('squadAttendance') || '[]');
-            const savedMarks = JSON.parse(localStorage.getItem('squadMarks') || '[]');
-            const savedTT = JSON.parse(localStorage.getItem('squadTimetable') || '{}');
+            try {
+                const savedProfile = JSON.parse(localStorage.getItem('squadProfile') || '{}');
+                const savedAtt = JSON.parse(localStorage.getItem('squadAttendance') || '[]');
+                const savedMarks = JSON.parse(localStorage.getItem('squadMarks') || '[]');
+                const savedTT = JSON.parse(localStorage.getItem('squadTimetable') || '{}');
 
-            renderProfile(savedProfile);
-            renderAttendance(savedAtt);
-            renderMarks(savedMarks);
-            renderTimetable(savedTT);
+                try { renderProfile(savedProfile); } catch (e) { console.error("Profile render failed:", e); }
+                try { renderAttendance(savedAtt); } catch (e) { console.error("Attendance render failed:", e); }
+                try { renderMarks(savedMarks); } catch (e) { console.error("Marks render failed:", e); }
+                try { renderTimetable(savedTT); } catch (e) { console.error("Timetable render failed:", e); }
+            } catch (e) {
+                console.error("Critical error loading saved data:", e);
+            }
         }
 
         // ================= LIVE SYNC API CALL =================
@@ -3681,30 +3685,41 @@
         }
 
         function initApp() {
-            const mainContent = document.getElementById('main-content');
-            const navBtn = document.getElementById('navButtons');
-            if (mainContent) mainContent.classList.add('content-visible');
-            if (navBtn) navBtn.style.opacity = '1';
+            try {
+                const mainContent = document.getElementById('main-content');
+                const navBtn = document.getElementById('navButtons');
+                if (mainContent) mainContent.classList.add('content-visible');
+                if (navBtn) navBtn.style.opacity = '1';
 
-            let storedProfile = localStorage.getItem('squadProfile');
-            if (storedProfile) {
-                isLoggedIn = true;
-                const profile = JSON.parse(storedProfile);
-                document.getElementById('welcomeName').innerText = "Hi, " + (profile.name ? profile.name.split(' ')[0] : 'User') + " 👋";
-                
-                const logoutBtn = document.getElementById('logoutBtn');
-                if (logoutBtn) logoutBtn.style.display = 'flex';
+                let storedProfile = localStorage.getItem('squadProfile');
+                if (storedProfile) {
+                    isLoggedIn = true;
+                    try {
+                        const profile = JSON.parse(storedProfile);
+                        let wn = document.getElementById('welcomeName');
+                        if (wn) wn.innerText = "Hi, " + (profile.name ? profile.name.split(' ')[0] : 'User') + " 👋";
+                    } catch (e) {
+                        console.error("Welcome name error:", e);
+                    }
+                    
+                    const logoutBtn = document.getElementById('logoutBtn');
+                    if (logoutBtn) logoutBtn.style.display = 'flex';
 
-                loadSavedData();
-                showTab('dashboard');
-                
-                // Start background sync
-                backgroundSync();
+                    loadSavedData();
+                    showTab('dashboard');
+                    
+                    // Start background sync
+                    backgroundSync();
 
-                // Event popup has been removed
-            }
-            if (typeof checkAndScheduleNotifications === 'function') {
-                checkAndScheduleNotifications();
+                    // Event popup has been removed
+                }
+                if (typeof checkAndScheduleNotifications === 'function') {
+                    checkAndScheduleNotifications();
+                }
+            } catch (err) {
+                console.error("Critical error in initApp:", err);
+                const mainContent = document.getElementById('main-content');
+                if (mainContent) mainContent.classList.add('content-visible');
             }
         }
         
