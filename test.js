@@ -289,19 +289,15 @@
         }
 
         function loadSavedData() {
-            try {
-                const savedProfile = JSON.parse(localStorage.getItem('squadProfile') || '{}');
-                const savedAtt = JSON.parse(localStorage.getItem('squadAttendance') || '[]');
-                const savedMarks = JSON.parse(localStorage.getItem('squadMarks') || '[]');
-                const savedTT = JSON.parse(localStorage.getItem('squadTimetable') || '{}');
+            const savedProfile = JSON.parse(localStorage.getItem('squadProfile') || '{}');
+            const savedAtt = JSON.parse(localStorage.getItem('squadAttendance') || '[]');
+            const savedMarks = JSON.parse(localStorage.getItem('squadMarks') || '[]');
+            const savedTT = JSON.parse(localStorage.getItem('squadTimetable') || '{}');
 
-                try { renderProfile(savedProfile); } catch (e) { console.error("Profile render failed:", e); }
-                try { renderAttendance(savedAtt); } catch (e) { console.error("Attendance render failed:", e); }
-                try { renderMarks(savedMarks); } catch (e) { console.error("Marks render failed:", e); }
-                try { renderTimetable(savedTT); } catch (e) { console.error("Timetable render failed:", e); }
-            } catch (e) {
-                console.error("Critical error loading saved data:", e);
-            }
+            renderProfile(savedProfile);
+            renderAttendance(savedAtt);
+            renderMarks(savedMarks);
+            renderTimetable(savedTT);
         }
 
         // ================= LIVE SYNC API CALL =================
@@ -474,61 +470,10 @@
         let simulationState = {};
 
         function simulateAttendance(id, action) {
-            let safeId = id ? id.toString().replace(/[^a-zA-Z0-9]/g, '') : 'unknown';
-            if (!simulationState[safeId]) simulationState[safeId] = { bunked: 0, attended: 0 };
-            if (action === 'bunk') simulationState[safeId].bunked++;
-            else if (action === 'attend') simulationState[safeId].attended++;
-            else if (action === 'reset') simulationState[safeId] = { bunked: 0, attended: 0 };
-            renderAttendance(attendanceData);
-        }
-
-        function predictDateRange() {
-            const start = document.getElementById('predict-start-date').value;
-            const end = document.getElementById('predict-end-date').value;
-            if (!start || !end) return alert('Please select both start and end dates.');
-            
-            const startDate = new Date(start);
-            const endDate = new Date(end);
-            if (endDate < startDate) return alert('End date must be after start date.');
-            
-            const ttDict = JSON.parse(localStorage.getItem('squadTimetable') || '{}');
-            if(Object.keys(ttDict).length === 0) return alert('No timetable data available to predict leave. Please sync timetable first.');
-            
-            let daysToSimulate = [];
-            let curr = new Date(startDate);
-            while (curr <= endDate) {
-                // Ignore Sundays (0) and Saturdays (6) if no classes usually
-                if(curr.getDay() !== 0 && curr.getDay() !== 6) {
-                    daysToSimulate.push(curr.getDay()); // 1 to 5 (Mon-Fri)
-                }
-                curr.setDate(curr.getDate() + 1);
-            }
-            
-            let bunkCounts = {};
-            daysToSimulate.forEach(dayIndex => {
-                let dayOrder = dayIndex; // Basic mapping Mon=1, Tue=2, etc. (Can be improved with actual academic calendar if available)
-                if (ttDict[dayOrder]) {
-                    ttDict[dayOrder].forEach(session => {
-                        if (session && session.title) {
-                            let cId = session.title.replace(/[^a-zA-Z0-9]/g, '');
-                            if(!bunkCounts[cId]) bunkCounts[cId] = 0;
-                            bunkCounts[cId]++;
-                        }
-                    });
-                }
-            });
-            
-            Object.keys(bunkCounts).forEach(cId => {
-                if (!simulationState[cId]) simulationState[cId] = { bunked: 0, attended: 0 };
-                simulationState[cId].bunked += bunkCounts[cId];
-            });
-            
-            renderAttendance(attendanceData);
-            alert(`Simulated absence for ${daysToSimulate.length} working days based on your timetable!`);
-        }
-
-        function resetAllPredictions() {
-            simulationState = {};
+            if (!simulationState[id]) simulationState[id] = { bunked: 0, attended: 0 };
+            if (action === 'bunk') simulationState[id].bunked++;
+            else if (action === 'attend') simulationState[id].attended++;
+            else if (action === 'reset') simulationState[id] = { bunked: 0, attended: 0 };
             renderAttendance(attendanceData);
         }
 
@@ -542,16 +487,13 @@
             attendanceData = attData || [];
 
             attendanceData.forEach(sub => {
-                let name = sub.courseTitle || sub.name || "Unknown Subject";
-                let rawId = sub.id || sub.courseCode || name;
-                let safeId = rawId.toString().replace(/[^a-zA-Z0-9]/g, '');
-                
-                let sim = simulationState[safeId] || { bunked: 0, attended: 0 };
+                let sim = simulationState[sub.id || sub.courseCode] || { bunked: 0, attended: 0 };
                 let baseAttended = parseInt(sub.attended) || 0;
                 let baseTotal = parseInt(sub.total) || 0;
                 
                 let attended = baseAttended + sim.attended;
                 let total = baseTotal + sim.bunked + sim.attended;
+                let name = sub.courseTitle || sub.name || "Unknown Subject";
 
                 totalAtt += attended;
                 totalClasses += total;
@@ -586,11 +528,11 @@
                                 <div class="stat-text" style="color: var(--text-main); font-weight: bold;">${attended} / ${total} Attended</div>
                                 <div class="stat-text" style="color:var(--text-sub); margin-top: 5px; font-size: 0.85rem;">${statusText}</div>
                             </div>
-                            <!-- Attendance Planner UI -->
+                            <!-- Bunk Meter Simulator UI -->
                             <div style="background: rgba(0,0,0,0.3); border-radius: 8px; padding: 5px; display: flex; gap: 5px; border: 1px solid var(--glass-border);">
-                                <button onclick="simulateAttendance('${safeId}', 'bunk')" style="background: rgba(255, 68, 68, 0.2); border: none; color: #ff4444; border-radius: 5px; padding: 5px 12px; font-weight: bold; cursor: pointer;">BUNK</button>
-                                <button onclick="simulateAttendance('${safeId}', 'attend')" style="background: rgba(0, 204, 102, 0.2); border: none; color: #00cc66; border-radius: 5px; padding: 5px 12px; font-weight: bold; cursor: pointer;">ATTEND</button>
-                                ${(sim.bunked > 0 || sim.attended > 0) ? `<button onclick="simulateAttendance('${safeId}', 'reset')" style="background: transparent; border: none; color: var(--text-sub); border-radius: 5px; padding: 5px; cursor: pointer;">↺</button>` : ''}
+                                <button onclick="simulateAttendance('${sub.id || sub.courseCode}', 'bunk')" style="background: rgba(255, 68, 68, 0.2); border: none; color: #ff4444; border-radius: 5px; padding: 5px 12px; font-weight: bold; cursor: pointer;">BUNK</button>
+                                <button onclick="simulateAttendance('${sub.id || sub.courseCode}', 'attend')" style="background: rgba(0, 204, 102, 0.2); border: none; color: #00cc66; border-radius: 5px; padding: 5px 12px; font-weight: bold; cursor: pointer;">ATTEND</button>
+                                ${(sim.bunked > 0 || sim.attended > 0) ? `<button onclick="simulateAttendance('${sub.id || sub.courseCode}', 'reset')" style="background: transparent; border: none; color: var(--text-sub); border-radius: 5px; padding: 5px; cursor: pointer;">↺</button>` : ''}
                             </div>
                         </div>
                         ${redZoneWarning}
@@ -629,118 +571,26 @@
         }
 
         // ================= CGPA PREDICTOR LOGIC =================
-        let cgpaState = {};
-
-        function openCGPACalculator() {
-            const marksData = JSON.parse(localStorage.getItem('squadMarks') || '[]');
-            if(!marksData.length) return alert('No marks data available');
+        function updateTargetLock(courseId, internalObtained, internalMax) {
+            const slider = document.getElementById('target-slider-' + courseId);
+            const targetVal = document.getElementById('target-val-' + courseId);
+            const reqVal = document.getElementById('req-val-' + courseId);
             
-            cgpaState = {};
-            let html = '';
+            if(!slider || !targetVal || !reqVal) return;
             
-            marksData.forEach((item, index) => {
-                const course = item.courseTitle || item.CourseTitle || item.name || "Subject";
-                let perfString = item['Test Performance'] || item.performance || item.marks || "";
-                if (!perfString && typeof item === 'object') {
-                    perfString = Object.values(item).filter(v => typeof v === 'string').join(' | ');
-                }
-
-                let subjectMax = 0; let subjectObtained = 0;
-                const regex = /([A-Za-z0-9-]+)\/([0-9.]+)\s*\|\s*([0-9.]+)/g;
-                let match;
-                while ((match = regex.exec(perfString)) !== null) {
-                    subjectMax += parseFloat(match[2]); 
-                    subjectObtained += parseFloat(match[3]);
-                }
-                
-                if (subjectMax === 0) return;
-                
-                let credits = 3; 
-                let courseId = course.replace(/[^a-zA-Z0-9]/g, '') + index;
-                
-                cgpaState[courseId] = {
-                    title: course,
-                    internalObtained: subjectObtained,
-                    internalMax: subjectMax,
-                    targetPercent: 90,
-                    credits: credits
-                };
-
-                html += `
-                <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 12px; margin-bottom: 15px; border: 1px solid var(--glass-border);">
-                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
-                        <div style="flex:1;">
-                            <h4 style="margin:0 0 5px 0; color: #fff; font-size: 0.95rem;">${course}</h4>
-                            <p style="margin:0; font-size:0.75rem; color: var(--text-sub);">Internal: ${subjectObtained.toFixed(1)} / ${subjectMax}</p>
-                        </div>
-                    </div>
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                        <span style="font-size: 0.8rem; color: var(--text-sub);">Target Grade:</span>
-                        <span style="font-size: 0.9rem; color: var(--primary); font-weight: bold;" id="cgpa-target-label-${courseId}">A+</span>
-                    </div>
-                    <input type="range" id="cgpa-slider-${courseId}" min="${Math.ceil(subjectObtained)}" max="100" value="90" step="1"
-                           style="width: 100%; accent-color: var(--primary); margin-bottom: 10px;" 
-                           oninput="updateCGPAState('${courseId}', this.value)">
-                    <div id="cgpa-req-${courseId}" style="background: rgba(0,0,0,0.3); padding: 10px; border-radius: 8px; font-size: 0.8rem;">
-                    </div>
-                </div>`;
-            });
+            let targetTotal = parseInt(slider.value);
+            targetVal.innerText = targetTotal;
             
-            document.getElementById('cgpa-list').innerHTML = html;
-            document.getElementById('cgpaModal').style.display = 'flex';
+            let finalMax = 100 - internalMax;
+            let required = targetTotal - internalObtained;
             
-            Object.keys(cgpaState).forEach(id => updateCGPAState(id, cgpaState[id].targetPercent, false));
-            recalculateTotalCGPA();
-        }
-
-        function updateCGPAState(courseId, targetVal, calcTotal=true) {
-            targetVal = parseInt(targetVal);
-            cgpaState[courseId].targetPercent = targetVal;
-            
-            let grade = 'C'; let gpa = 5;
-            if (targetVal >= 90) { grade = 'O'; gpa = 10; }
-            else if (targetVal >= 80) { grade = 'A+'; gpa = 9; }
-            else if (targetVal >= 70) { grade = 'A'; gpa = 8; }
-            else if (targetVal >= 60) { grade = 'B+'; gpa = 7; }
-            else if (targetVal >= 50) { grade = 'B'; gpa = 6; }
-            else { grade = 'F'; gpa = 0; }
-            
-            cgpaState[courseId].gpa = gpa;
-            
-            document.getElementById(`cgpa-target-label-${courseId}`).innerText = grade + ` (${targetVal}%)`;
-            
-            let state = cgpaState[courseId];
-            let required = targetVal - state.internalObtained;
-            let finalMax = 100 - state.internalMax;
-            
-            let reqDiv = document.getElementById(`cgpa-req-${courseId}`);
             if (required <= 0) {
-                reqDiv.innerHTML = `<span style="color:var(--success)">Secured! 🎉</span>`;
-                reqDiv.style.borderLeft = "4px solid var(--success)";
+                reqVal.innerHTML = `<span style="color:var(--success)">Secured! 🎉</span>`;
             } else if (required > finalMax) {
-                reqDiv.innerHTML = `<strong style="color:var(--danger)">Mathematically Impossible</strong><br><span style="color:var(--text-sub)">Requires ${required.toFixed(1)} marks over ${finalMax} final marks. Only relative grading can save you.</span>`;
-                reqDiv.style.borderLeft = "4px solid var(--danger)";
+                reqVal.innerHTML = `<span style="color:var(--danger)">Impossible (${required.toFixed(1)} / ${finalMax})</span>`;
             } else {
-                reqDiv.innerHTML = `Needs <strong style="color:var(--primary)">${required.toFixed(1)}</strong> out of ${finalMax} in final exam.`;
-                reqDiv.style.borderLeft = "4px solid var(--primary)";
+                reqVal.innerHTML = `<span style="color:var(--primary)">${required.toFixed(1)} / ${finalMax}</span> required in Finals`;
             }
-            
-            if(calcTotal) recalculateTotalCGPA();
-        }
-        
-        function recalculateTotalCGPA() {
-            let totalPoints = 0;
-            let totalCredits = 0;
-            Object.values(cgpaState).forEach(s => {
-                totalPoints += (s.gpa * s.credits);
-                totalCredits += s.credits;
-            });
-            let est = totalCredits > 0 ? (totalPoints / totalCredits).toFixed(2) : "0.00";
-            document.getElementById('cgpa-modal-est').innerText = est;
-        }
-
-        function closeCGPACalculator() {
-            document.getElementById('cgpaModal').style.display = 'none';
         }
 
         // ================= MARKS RENDERER =================
@@ -819,6 +669,18 @@
                             <div class="progress-fill" style="background: var(--primary); width: ${subjectPercent}%;"></div>
                         </div>
 
+                        <!-- Target Lock UI -->
+                        <div style="margin-top: 20px; background: rgba(0,0,0,0.3); border-radius: 12px; padding: 15px; border: 1px solid var(--glass-border);">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                                <span style="font-size: 0.9rem; color: var(--text-main); font-weight: bold;">🎯 Target Lock</span>
+                                <span style="font-size: 0.9rem; color: var(--primary); font-weight: bold;"><span id="target-val-${courseId}">90</span>%</span>
+                            </div>
+                            <input type="range" id="target-slider-${courseId}" min="${Math.ceil(subjectObtained)}" max="100" value="90" style="width: 100%; accent-color: var(--primary); height: 8px; border-radius: 10px; outline: none; appearance: none; background: rgba(255,170,0,0.2);" oninput="updateTargetLock('${courseId}', ${subjectObtained}, ${subjectMax})">
+                            <div style="text-align: center; margin-top: 12px; font-size: 0.85rem; font-weight: bold; background: rgba(255,255,255,0.05); padding: 8px; border-radius: 6px;" id="req-val-${courseId}">
+                                Slide to predict final exam requirements
+                            </div>
+                        </div>
+                        
                         <div class="overview-title" style="margin: 20px 0 15px 0;"> Detailed Performance</div>
                         ` : ''}
                         <div class="test-list">
@@ -840,31 +702,18 @@
             else if (estCGPA >= 9.0) percentileHTML = `<div style="margin-top: 15px;"><span style="background: rgba(255,255,255,0.1); color: #fff; padding: 5px 10px; border-radius: 8px; font-size: 0.8rem; font-weight: 900; letter-spacing: 1px; display: inline-block;">🔥 TOP 10% OF BATCH</span></div>`;
 
             list.innerHTML = `
-                <div class="dashboard-overview fade-in-up" style="background: linear-gradient(135deg, #2e7d32 0%, #1b5e20 100%); border-color: #4caf50; padding: 30px 20px; position: relative; overflow: hidden; border-radius: 24px;">
-                    <div style="position: absolute; top: 20px; right: 20px; width: 40px; height: 40px; background: rgba(255,255,255,0.1); border-radius: 50%; display: flex; justify-content: center; align-items: center;">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
+                <div class="dashboard-overview fade-in-up">
+                    <div class="overview-title">Academic Performance</div>
+                    <h1 class="overview-percent">${overallPercent}%</h1>
+                    <div class="overview-stats">
+                        <div class="stat-item"><h4>${estCGPA}</h4><p>Est. CGPA</p></div>
+                        <div class="stat-item" style="border-left: 1px solid var(--glass-border); border-right: 1px solid var(--glass-border);">
+                            <h4>${grandTotalObtained.toFixed(1)}</h4><p>Score / ${grandTotalMax}</p>
+                        </div>
+                        <div class="stat-item"><h4>${grade}</h4><p>Avg Grade</p></div>
                     </div>
-                    <div class="overview-title" style="color: rgba(255,255,255,0.8); text-transform: uppercase; letter-spacing: 2px; font-size: 0.8rem; text-align: left; margin-bottom: 5px;">Academic Performance</div>
-                    <h1 class="overview-percent" style="color: #fff; text-align: left; font-size: 4rem; margin-bottom: 30px;">${overallPercent}<span style="font-size: 1.5rem;">%</span></h1>
-                    <div class="overview-stats" style="background: rgba(0,0,0,0.15); border-radius: 16px; padding: 15px; margin-bottom: 15px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;">
-                        <div class="stat-item" style="border: none;">
-                            <h4 style="color: #fff; font-size: 1.2rem;">${estCGPA}</h4>
-                            <p style="color: rgba(255,255,255,0.7); font-size: 0.7rem; text-transform: uppercase;">Est. CGPA</p>
-                        </div>
-                        <div class="stat-item" style="border-left: 1px solid rgba(255,255,255,0.1); border-right: 1px solid rgba(255,255,255,0.1);">
-                            <h4 style="color: #fff; font-size: 1.2rem;">${grandTotalObtained.toFixed(1)}<span style="font-size: 0.8rem; color: rgba(255,255,255,0.5)">/${grandTotalMax}</span></h4>
-                            <p style="color: rgba(255,255,255,0.7); font-size: 0.7rem; text-transform: uppercase;">Score</p>
-                        </div>
-                        <div class="stat-item" style="border: none;">
-                            <h4 style="color: #fff; font-size: 1.2rem;">${grade}</h4>
-                            <p style="color: rgba(255,255,255,0.7); font-size: 0.7rem; text-transform: uppercase;">Grade</p>
-                        </div>
-                    </div>
-                    
-                    <button class="action-btn" onclick="openCGPACalculator()" style="width: 100%; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; margin-top: 10px; display: flex; justify-content: center; align-items: center; gap: 10px;">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
-                        Open CGPA Calculator
-                    </button>
+                    ${percentileHTML}
+                    <button class="share-btn" onclick="generateShareImage('My Est. CGPA', '${estCGPA}', '#ffaa00')" style="margin-top: 25px;"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg> Flex CGPA</button>
                 </div>
             ` + subjectsHTML;
         }
@@ -1426,41 +1275,31 @@
         }
 
         function initApp() {
-            try {
-                const mainContent = document.getElementById('main-content');
-                const navBtn = document.getElementById('navButtons');
-                if (mainContent) mainContent.classList.add('content-visible');
-                if (navBtn) navBtn.style.opacity = '1';
+            const mainContent = document.getElementById('main-content');
+            const navBtn = document.getElementById('navButtons');
+            if (mainContent) mainContent.classList.add('content-visible');
+            if (navBtn) navBtn.style.opacity = '1';
 
-                let storedProfile = localStorage.getItem('squadProfile');
-                if (storedProfile) {
-                    isLoggedIn = true;
-                    try {
-                        const profile = JSON.parse(storedProfile);
-                        let wn = document.getElementById('welcomeName');
-                        if (wn) wn.innerText = "Hi, " + (profile.name ? profile.name.split(' ')[0] : 'User') + " 👋";
-                    } catch (e) {
-                        console.error("Welcome name error:", e);
-                    }
-                    
-                    const logoutBtn = document.getElementById('logoutBtn');
-                    if (logoutBtn) logoutBtn.style.display = 'flex';
+            let storedProfile = localStorage.getItem('squadProfile');
+            if (storedProfile) {
+                isLoggedIn = true;
+                const profile = JSON.parse(storedProfile);
+                document.getElementById('welcomeName').innerText = "Hi, " + (profile.name ? profile.name.split(' ')[0] : 'User') + " 👋";
+                
+                const logoutBtn = document.getElementById('logoutBtn');
+                if (logoutBtn) logoutBtn.style.display = 'flex';
 
-                    loadSavedData();
-                    showTab('dashboard');
-                    
-                    // Start background sync
-                    backgroundSync();
+                loadSavedData();
+                showTab('dashboard');
+                
+                // Start background sync
+                backgroundSync();
 
-                    // Event popup has been removed
-                }
-                if (typeof checkAndScheduleNotifications === 'function') {
-                    checkAndScheduleNotifications();
-                }
-            } catch (err) {
-                console.error("Critical error in initApp:", err);
-                const mainContent = document.getElementById('main-content');
-                if (mainContent) mainContent.classList.add('content-visible');
+                // Show event popup
+                setTimeout(() => { checkAndShowEventPopup(); }, 1000);
+            }
+            if (typeof checkAndScheduleNotifications === 'function') {
+                checkAndScheduleNotifications();
             }
         }
         
