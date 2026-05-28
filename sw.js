@@ -105,4 +105,8 @@ async function checkAndTriggerBackgroundNotifications() {
     } else if (timeFloat >= 19.0 && timeFloat < 19.5) {
         self.registration.showNotification("Dinner Time! 🍽️", { body: "Dinner is ready in the mess.", icon: '/images/app-icon.svg' });
     }
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> 5ca31dcc7bf480941726abf56cc69c45226630ce
