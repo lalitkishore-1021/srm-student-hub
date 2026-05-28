@@ -105,11 +105,9 @@
             z-index: -1;
             filter: blur(80px);
             -webkit-filter: blur(80px);
-            opacity: 0.8;
+            opacity: 0.6;
             animation: auroraFloat 20s infinite alternate ease-in-out;
             pointer-events: none;
-            transform: translateZ(0); /* Hardware acceleration */
-            will-change: transform;
         }
 
         body::before {
@@ -1650,7 +1648,7 @@
 
 
     <div id="login-view" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 10000; flex-direction: column; justify-content: center; align-items: center; background: transparent; backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);">
-        <div class="image-card fade-in-up" style="max-width: 450px; width: 90%; padding: 40px; text-align: center;">
+        <div class="image-card" style="max-width: 450px; width: 90%; padding: 40px; text-align: center; animation: fadeInUp 0.8s ease forwards;">
             <svg viewBox="0 0 100 100" width="80" height="80" style="margin-bottom: 20px;">
                 <defs>
                     <linearGradient id="lockGradient" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -4021,15 +4019,15 @@
                 }
 
                 // Global click listener for Install Popup if not running in PWA
-                document.body.addEventListener('click', () => {
-                    if (!window.matchMedia('(display-mode: standalone)').matches && !localStorage.getItem('pwaPromptSeen')) {
+                document.body.addEventListener('click', (e) => {
+                    if (e.target.closest('#installModal') || e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON' || e.target.closest('.action-btn')) return;
+                    if (!window.matchMedia('(display-mode: standalone)').matches) {
                         let m = document.getElementById('installModal');
                         if (m && m.style.display !== 'flex') {
                             m.style.display = 'flex';
-                            localStorage.setItem('pwaPromptSeen', 'true');
                         }
                     }
-                }, { once: true });
+                });
 
             } catch (err) {
                 console.error("Critical error in initApp:", err);
