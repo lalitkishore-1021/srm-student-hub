@@ -1,5 +1,5 @@
 // Change this version number every time you want to force phones to update!
-const CACHE_NAME = 'srm-hub-v12-speed-sync'; 
+const CACHE_NAME = 'srm-hub-v13-speed-sync'; 
 
 const ASSETS_TO_CACHE = [
     '/',
@@ -105,8 +105,4 @@ async function checkAndTriggerBackgroundNotifications() {
     } else if (timeFloat >= 19.0 && timeFloat < 19.5) {
         self.registration.showNotification("Dinner Time! 🍽️", { body: "Dinner is ready in the mess.", icon: '/images/app-icon.svg' });
     }
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> 5ca31dcc7bf480941726abf56cc69c45226630ce
