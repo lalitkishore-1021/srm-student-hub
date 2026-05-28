@@ -1,5 +1,5 @@
 // Change this version number every time you want to force phones to update!
-const CACHE_NAME = 'srm-hub-v11-speed-sync'; 
+const CACHE_NAME = 'srm-hub-v12-speed-sync'; 
 
 const ASSETS_TO_CACHE = [
     '/',
@@ -38,30 +38,31 @@ self.addEventListener('activate', (event) => {
     self.clients.claim(); 
 });
 
-// 3. FETCH EVENT: The "Bouncer"
+// 3. FETCH EVENT: Stale-While-Revalidate (Instant Load, Background Update)
 self.addEventListener('fetch', (event) => {
     const url = new URL(event.request.url);
 
-    // 🚨 CRITICAL BYPASS: Never, ever cache the Python API requests!
+    // 🚨 CRITICAL BYPASS: Never cache API requests
     if (url.pathname.startsWith('/api/')) {
-        return; // Let the request pass straight to the Render server
+        return; 
     }
 
-    // NETWORK-FIRST STRATEGY: Always try to get the freshest code from the internet.
-    // If the internet is down (offline mode), fallback to the cached version.
     event.respondWith(
-        fetch(event.request).then((response) => {
-            // If the network fetch is successful, save a copy in the cache for later
-            if (response && response.status === 200 && response.type === 'basic') {
-                const responseClone = response.clone();
-                caches.open(CACHE_NAME).then((cache) => {
-                    cache.put(event.request, responseClone);
-                });
-            }
-            return response;
-        }).catch(() => {
-            // If the network fails (offline), pull it from the cache
-            return caches.match(event.request);
+        caches.match(event.request).then((cachedResponse) => {
+            const fetchPromise = fetch(event.request).then((networkResponse) => {
+                if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
+                    const responseToCache = networkResponse.clone();
+                    caches.open(CACHE_NAME).then((cache) => {
+                        cache.put(event.request, responseToCache);
+                    });
+                }
+                return networkResponse;
+            }).catch(() => {
+                // Network failed, do nothing, the cached response is already returned.
+            });
+
+            // Return cached response immediately if available, otherwise wait for network
+            return cachedResponse || fetchPromise;
         })
     );
 });
@@ -72,12 +73,36 @@ self.addEventListener('message', (event) => {
         const title = event.data.title;
         const options = {
             body: event.data.body,
-            icon: '/images/app-icon.svg', // Shows your SRM Hub logo in the notification!
+            icon: '/images/app-icon.svg',
             badge: '/images/app-icon.svg',
-            vibrate: [200, 100, 200],     // Vibrate pattern for phones
+            vibrate: [200, 100, 200],
             requireInteraction: false
         };
         
         self.registration.showNotification(title, options);
     }
 });
+
+// 5. PERIODIC SYNC: Offline Background Notifications without opening the app!
+self.addEventListener('periodicsync', (event) => {
+    if (event.tag === 'check-notifications') {
+        event.waitUntil(checkAndTriggerBackgroundNotifications());
+    }
+});
+
+async function checkAndTriggerBackgroundNotifications() {
+    // This runs strictly in the background via Service Worker!
+    const now = new Date();
+    const hours = now.getHours();
+    const minutes = now.getMinutes();
+    const timeFloat = hours + (minutes / 60);
+
+    // Hardcoded mess timings for offline fallback
+    if (timeFloat >= 7.0 && timeFloat < 7.5) {
+        self.registration.showNotification("Good Morning! ☀️", { body: "Breakfast is being served right now in the mess!", icon: '/images/app-icon.svg' });
+    } else if (timeFloat >= 12.0 && timeFloat < 12.5) {
+        self.registration.showNotification("Lunch Time Approaching! 🍛", { body: "Time to grab some lunch!", icon: '/images/app-icon.svg' });
+    } else if (timeFloat >= 19.0 && timeFloat < 19.5) {
+        self.registration.showNotification("Dinner Time! 🍽️", { body: "Dinner is ready in the mess.", icon: '/images/app-icon.svg' });
+    }
+}

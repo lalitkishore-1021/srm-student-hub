@@ -30,7 +30,7 @@ DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'hub.db')
 def get_db():
     if DATABASE_URL:
         return psycopg2.connect(DATABASE_URL)
-    conn = sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect(DB_PATH, timeout=20)
     conn.row_factory = sqlite3.Row
     return conn
 
@@ -102,6 +102,17 @@ def save_student_to_db(net_id, name, register_no, att_data, marks_data):
         for sub in (marks_data or []):
             try:
                 perf_string = sub.get('Test Performance') or sub.get('performance') or sub.get('marks') or ""
+                # Logic: extract max and obtained using regex matching `/([0-9.]+)\s*\|\s*([0-9.]+)/` (like frontend)
+                # But it's easier: split by '|', if it has '/', left is obtained, right is max?
+                # The frontend regex: `([A-Za-z0-9-]+)\/([0-9.]+)\s*\|\s*([0-9.]+)` 
+                # This seems like it was matching something else, let's look at the regex:
+                # regex = /([A-Za-z0-9-]+)\/([0-9.]+)\s*\|\s*([0-9.]+)/g
+                # match[1] = testName, match[2] = max, match[3] = obtained? 
+                
+                # Let's write a simple python regex that extracts all numbers around '/' and '|'
+                # The frontend is matching: "CT 1/50.0 | 45.0" or similar?
+                # Wait, let's just use Python re module
+                
                 matches = re.findall(r'([A-Za-z0-9-]+)/([0-9.]+)\s*\|\s*([0-9.]+)', perf_string)
                 for test_name, max_str, obtained_str in matches:
                     try:
@@ -144,149 +155,151 @@ def save_student_to_db(net_id, name, register_no, att_data, marks_data):
 
 
 def scrape_academia_worker(reg_no, pwd, batch, out_queue):
-    import time
-    import requests
-    import json
-    import re
-    from urllib.parse import parse_qs
-    from html.parser import HTMLParser
-
-    start_time = time.time()
-    def log_time(msg):
-        print(f"[{reg_no}] [{time.time() - start_time:.2f}s] {msg}", flush=True)
-
-    class TableParser(HTMLParser):
-        def __init__(self):
-            super().__init__()
-            self.tables = []
-            self.current_table = []
-            self.current_row = []
-            self.current_cell = ''
-            self.in_td = False
-            self.in_tr = False
-            self.in_table = False
-            self.colspan = 1
-
-        def handle_starttag(self, tag, attrs):
-            if tag == 'table':
-                self.in_table = True
-                self.current_table = []
-            elif tag == 'tr' and self.in_table:
-                self.in_tr = True
-                self.current_row = []
-            elif tag in ['td', 'th'] and self.in_tr:
-                self.in_td = True
-                self.current_cell = ''
-                self.colspan = 1
-                for attr in attrs:
-                    if attr[0].lower() == 'colspan':
-                        try:
-                            self.colspan = int(attr[1])
-                        except:
-                            pass
-
-        def handle_endtag(self, tag):
-            if tag == 'table':
-                self.in_table = False
-                if self.current_table:
-                    self.tables.append(self.current_table)
-            elif tag == 'tr' and self.in_table:
-                self.in_tr = False
-                if self.current_row:
-                    self.current_table.append(self.current_row)
-            elif tag in ['td', 'th'] and self.in_tr:
-                self.in_td = False
-                text = self.current_cell.strip()
-                text = re.sub(r'\s+', ' ', text).strip()
-                for _ in range(self.colspan):
-                    self.current_row.append(text)
-
-        def handle_data(self, data):
-            if self.in_td:
-                self.current_cell += data + ' '
-
-    def get_tables_from_html(html_data):
-        parser = TableParser()
-        parser.feed(html_data)
-        return [t for t in parser.tables if t and len(t) > 0]
-
-    def get_col_index(headers, *keywords):
-        for i, h in enumerate(headers):
-            h_lower = str(h).lower()
-            if any(kw in h_lower for kw in keywords):
-                return i
-        return -1
-
+    p = None
+    browser = None
     try:
-        log_time("Launching API-mode Sniper...")
-        if "@" not in reg_no: reg_no += "@srmist.edu.in"
+        p = sync_playwright().start()
+        print(f"[{reg_no}] Launching Academia Sniper...")
         
-        headers_auth = {
-            'Origin': 'https://academia.srmist.edu.in',
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36'
-        }
+        browser = p.chromium.launch(
+            headless=True,
+            args=['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
+        )
         
-        # 1. Login to get Auth Token
-        login_url = "https://academia.srmist.edu.in/accounts/signin.ac"
-        payload = {
-            'username': reg_no,
-            'password': pwd,
-            'client_portal': 'true',
-            'portal': '10002227248',
-            'servicename': 'ZohoCreator',
-            'serviceurl': 'https://academia.srmist.edu.in/',
-            'is_ajax': 'true',
-            'grant_type': 'password',
-            'service_language': 'en'
-        }
-        
-        log_time("1. Authenticating via API...")
-        session = requests.Session()
-        r = session.post(login_url, data=payload, headers=headers_auth, timeout=15)
-        
-        try:
-            json_data = r.json()
-        except:
-            raise Exception("Invalid response from Zoho servers.")
-            
-        if "error" in json_data:
-            error_m = json_data['error'].get('msg', 'Login Failed')
-            out_queue.put({'success': False, 'error': f"Auth Error: {error_m}"})
-            return
-            
-        params = parse_qs(json_data['data']['token_params'])
-        params = {k: v[0] for k, v in params.items()}
-        params['state'] = 'https://academia.srmist.edu.in/'
-        
-        r2 = session.get(json_data['data']['oauthorize_uri'], params=params, headers=headers_auth, timeout=15)
-        log_time("  ✓ API Session Established")
-        
-        req_headers = {
-            'Origin': 'https://academia.srmist.edu.in',
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-        }
-        
-        def fetch_view(view_name):
-            url = "https://academia.srmist.edu.in/liveViewHeader.do"
-            data = {
-                "sharedBy": "srm_university",
-                "appLinkName": "academia-academic-services",
-                "viewLinkName": view_name,
-                "urlParams": "{}",
-                "isPageLoad": "true"
-            }
-            res = session.post(url, data=data, headers=req_headers, timeout=15)
-            # The HTML payload is embedded in jQuery response, but HTMLParser can process the raw response payload securely
-            return get_tables_from_html(res.text)
+        context = browser.new_context(
+            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+            viewport={'width': 1920, 'height': 1080}
+        )
+        page = context.new_page()
+        page.set_default_timeout(90000)
 
-        log_time("5. Fetching Attendance via API...")
-        att_tables = fetch_view("My_Attendance")
+        if "@" not in reg_no: reg_no += "@srmist.edu.in"
+
+        print(f"[{reg_no}] 1. Loading Academia...")
+        try:
+            page.goto("https://academia.srmist.edu.in/", wait_until="networkidle", timeout=60000)
+        except Exception as e:
+            out_queue.put({'success': False, 'error': f'Portal failed to load: {str(e)}'})
+            return
+
+        def find_in_frames(selector, filter_text=None, filter_not_text=None):
+            loc = page.locator(selector)
+            if filter_text: loc = loc.filter(has_text=re.compile(filter_text, re.IGNORECASE))
+            if filter_not_text: loc = loc.filter(has_not_text=re.compile(filter_not_text, re.IGNORECASE))
+            if loc.count() > 0: return loc.first
+            for frame in page.frames:
+                try:
+                    loc = frame.locator(selector)
+                    if filter_text: loc = loc.filter(has_text=re.compile(filter_text, re.IGNORECASE))
+                    if filter_not_text: loc = loc.filter(has_not_text=re.compile(filter_not_text, re.IGNORECASE))
+                    if loc.count() > 0: return loc.first
+                except: continue
+            return None
+            
+        # Login Logic
+        try:
+            email_input = find_in_frames('input[type="email"], input[type="text"], input[name="LOGIN_ID"]', filter_not_text="hidden")
+            if not email_input: raise Exception("Email box not found")
+            email_input.fill(reg_no, force=True)
+            
+            next_btn = find_in_frames('button, input[type="submit"]', filter_text="next|continue")
+            if next_btn: next_btn.click(force=True, timeout=5000)
+            else: page.keyboard.press("Enter")
+
+            pwd_input = None
+            for _ in range(10): 
+                pwd_input = find_in_frames('input[type="password"], input[name="PASSWORD"]')
+                if pwd_input: break
+                page.wait_for_timeout(1000)
+                
+            if not pwd_input: raise Exception("Password box not found")
+            pwd_input.type(pwd, delay=30) 
+            
+            submit_btn = find_in_frames('button, input[type="submit"]', filter_text="sign in|login|submit|verify")
+            if submit_btn: submit_btn.click(force=True, timeout=5000)
+            else: page.keyboard.press("Enter")
+            page.wait_for_timeout(5000)
+
+            terminate_btn = page.locator('button, a').filter(has_text=re.compile(r"terminate", re.IGNORECASE)).first
+            if terminate_btn.count() > 0: terminate_btn.click(force=True); page.wait_for_timeout(4000)
+        except Exception as e:
+            out_queue.put({'success': False, 'error': f'Auth Failed: {str(e)}'})
+            return
+
+        def get_all_tables():
+            try:
+                page.wait_for_selector("iframe", state="attached", timeout=5000)
+            except: pass
+            all_tables = []
+            for frame in page.frames:
+                try:
+                    tables = frame.evaluate("""() => {
+                        return Array.from(document.querySelectorAll('table')).map(t => 
+                            Array.from(t.querySelectorAll('tr')).map(tr => {
+                                let rowArr = [];
+                                Array.from(tr.querySelectorAll('td, th')).forEach(td => {
+                                    let span = td.colSpan || 1;
+                                    let text = (td.innerText || td.textContent || "").trim();
+                                    for(let i=0; i<span; i++) rowArr.push(text);
+                                });
+                                return rowArr;
+                            }).filter(row => row.length > 0)
+                        ).filter(table => table.length > 0);
+                    }""")
+                    if tables: all_tables.extend(tables)
+                except: pass
+            return all_tables
+            
+        def wait_for_data_tables(keyword, timeout=15000):
+            start = time.time()
+            while time.time() - start < timeout / 1000.0:
+                tables = get_all_tables()
+                if tables:
+                    for t in tables:
+                        for row in t:
+                            if any(keyword.lower() in str(c).lower() for c in row):
+                                return tables
+                page.wait_for_timeout(500)
+            return get_all_tables()
+
+        def get_col_index(headers, *keywords):
+            for i, h in enumerate(headers):
+                h_lower = str(h).lower()
+                if any(kw in h_lower for kw in keywords):
+                    return i
+            return -1
+
+        # --- ATTENDANCE & MARKS ---
+        print(f"[{reg_no}] 5. Scoping Attendance...")
+        page.goto("https://academia.srmist.edu.in/#Page:My_Attendance")
         
-        profile_data = {"name": "STUDENT", "regNo": reg_no.split('@')[0].upper(), "course": "B.Tech", "semester": "Current"}
+        raw_tables = wait_for_data_tables("attn")
+        if not any("attn" in str(c).lower() for t in raw_tables for row in t for c in row):
+            page.reload(wait_until="networkidle")
+            raw_tables = wait_for_data_tables("attn")
+
         parsed_att = []
         parsed_marks = []
-        
-        for table in att_tables:
+
+        def get_table_headers(tbl):
+            if not tbl: return [], "", -1
+            for r_idx in range(min(4, len(tbl))):
+                hdrs = [str(h).lower() for h in tbl[r_idx]]
+                hdr_str = " ".join(hdrs)
+                if ("code" in hdr_str and ("title" in hdr_str or "name" in hdr_str)) or "attn" in hdr_str:
+                    return hdrs, hdr_str, r_idx
+            hdrs = [str(h).lower() for h in tbl[0]]
+            return hdrs, " ".join(hdrs), 0
+
+        # Profile Extraction
+        profile_data = {
+            "name": "STUDENT",
+            "regNo": reg_no.split('@')[0].upper(),
+            "course": "B.Tech",
+            "semester": "Current"
+        }
+        for table in raw_tables:
+            if not table: continue
             for row in table:
                 if len(row) >= 2:
                     for i in range(len(row) - 1):
@@ -299,83 +312,297 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
                         elif "semester" in k:
                             if len(v) > 0 and len(v) <= 2: profile_data["semester"] = v
 
-            headers = [str(h).lower() for h in table[0]]
-            header_str = " ".join(headers)
+        for table in raw_tables:
+            if not table: continue
+            headers, header_str, h_idx = get_table_headers(table)
 
-            if "hours conducted" in header_str and "absent" in header_str:
+            # Dynamic Attendance Parsing
+            if "attn" in header_str or "attendance" in header_str:
                 try:
                     idx_code = get_col_index(headers, "code")
-                    idx_title = get_col_index(headers, "title")
+                    idx_title = get_col_index(headers, "title", "name", "description", "desc", "subject")
+                    
+                    # New UI has "attn %" or similar
+                    idx_attn_perc = get_col_index(headers, "attn %", "attn", "attendance")
+                    # Fallback for old UI
                     idx_cond = get_col_index(headers, "conducted")
                     idx_abs = get_col_index(headers, "absent")
-                    if -1 not in (idx_code, idx_title, idx_cond, idx_abs):
-                        for row in table[1:]:
-                            if len(row) > max(idx_cond, idx_abs):
-                                cond = int(float(row[idx_cond] or 0))
-                                absent = int(float(row[idx_abs] or 0))
-                                parsed_att.append({
-                                    "courseTitle": f"{row[idx_code]} - {row[idx_title][:20]}",
-                                    "attended": max(0, cond - absent),
-                                    "total": cond
-                                })
-                except: pass
+                    
+                    if idx_code != -1 and idx_title != -1:
+                        for row in table[h_idx+1:]:
+                            if idx_attn_perc != -1 and len(row) > idx_attn_perc:
+                                # New Map: Just Attn %
+                                perc_str = str(row[idx_attn_perc]).replace('%', '').strip()
+                                try:
+                                    perc = float(perc_str)
+                                    parsed_att.append({
+                                        "courseTitle": f"{row[idx_code]} - {row[idx_title][:20]}",
+                                        "attended": perc,
+                                        "total": 100
+                                    })
+                                except: pass
+                            elif idx_cond != -1 and idx_abs != -1 and len(row) > max(idx_cond, idx_abs):
+                                # Old Map: Hours conducted & absent
+                                try:
+                                    cond = int(float(row[idx_cond] or 0))
+                                    absent = int(float(row[idx_abs] or 0))
+                                    parsed_att.append({
+                                        "courseTitle": f"{row[idx_code]} - {row[idx_title][:20]}",
+                                        "attended": max(0, cond - absent),
+                                        "total": cond
+                                    })
+                                except: pass
+                except Exception as e:
+                    print("Parsing error (Attendance):", str(e))
+                    continue
 
+            # Dynamic Marks Parsing
             elif any(kw in header_str for kw in ["test performance", "assessment", "marks", "internal"]):
                 try:
                     idx_code = get_col_index(headers, "code")
+                    idx_title = get_col_index(headers, "title", "name", "course name", "description", "desc", "subject")
                     idx_perf = get_col_index(headers, "performance", "assessment", "marks", "internal")
-                    if idx_code != -1 and idx_perf != -1:
-                        for row in table[1:]:
-                            if len(row) > idx_perf:
+                    
+                    idx_max = get_col_index(headers, "max")
+                    idx_obt = get_col_index(headers, "obtained")
+                    
+                    if idx_code == -1 or idx_perf == -1: continue
+                    
+                    current_code = ""
+                    current_title = ""
+                    
+                    for row in table[h_idx+1:]:
+                        code_val = row[idx_code].strip() if idx_code != -1 and len(row) > idx_code else ""
+                        title_val = row[idx_title].strip() if idx_title != -1 and len(row) > idx_title else ""
+                        
+                        # If a row has a valid code, update our tracker. Otherwise, inherit from previous row (handles rowspan).
+                        # Only accept valid course codes (no spaces, slashes, or decimals) to prevent parsing garbage tables.
+                        if code_val and len(code_val) > 2 and "/" not in code_val and "." not in code_val and " " not in code_val.strip():
+                            current_code = code_val
+                            current_title = title_val if title_val else code_val
+                        
+                        if not current_code: continue
+                        
+                        if idx_max != -1 and idx_obt != -1 and len(row) > max(idx_perf, idx_obt, idx_max):
+                            # New Format (Separate Max and Obtained columns)
+                            perf_name = row[idx_perf].replace(' ', '')
+                            max_val = str(row[idx_max]).strip()
+                            obt_val = str(row[idx_obt]).strip()
+                            
+                            if not obt_val or not max_val: continue
+                            
+                            formatted_perf = f"{perf_name}/{max_val} | {obt_val}"
+                            
+                            existing = next((item for item in parsed_marks if item["courseCode"] == current_code), None)
+                            if existing:
+                                if formatted_perf not in existing["Test Performance"]:
+                                    existing["Test Performance"] += f" \n {formatted_perf}"
+                                # Upgrade title if we found a better one
+                                if len(current_title) > len(existing.get("courseTitle", "")):
+                                    existing["courseTitle"] = current_title
+                            else:
                                 parsed_marks.append({
-                                    "courseTitle": row[idx_code],
-                                    "Test Performance": row[idx_perf].replace('\n', ' | ')
+                                    "courseTitle": current_title,
+                                    "courseCode": current_code,
+                                    "Test Performance": formatted_perf
                                 })
-                except: pass
+                        elif len(row) > idx_perf:
+                            # Old Format Fallback
+                            perf_str = row[idx_perf].replace('\n', ' | ')
+                            if not perf_str.strip(): continue
+                            
+                            existing = next((item for item in parsed_marks if item["courseCode"] == current_code), None)
+                            if existing:
+                                if perf_str not in existing["Test Performance"]:
+                                    existing["Test Performance"] += f" \n {perf_str}"
+                            else:
+                                parsed_marks.append({
+                                    "courseTitle": current_title,
+                                    "courseCode": current_code,
+                                    "Test Performance": perf_str
+                                })
+                except Exception as e:
+                    print("Parsing error (Marks):", str(e))
+                    continue
 
-        log_time("6. Fetching Registered Slots via API...")
+        # --- TIMETABLE STEP 1 (STUDENT SLOTS) ---
+        print(f"[{reg_no}] 6. Scoping Registered Slots...")
         student_slots = {}
-        slot_tables = fetch_view("My_Time_Table_2023_24")
+        # Reverted 2024_25 back to 2023_24 based on Academia's weird hardcoded URL hash
+        page.goto("https://academia.srmist.edu.in/#Page:My_Time_Table_2023_24")
+        
+        slot_tables = wait_for_data_tables("slot")
+        if not any("slot" in str(c).lower() for t in slot_tables for row in t for c in row):
+            page.reload(wait_until="networkidle")
+            slot_tables = wait_for_data_tables("slot")
+        
+        # --- EXTRACT RICH PROFILE DATA FROM TIMETABLE PAGE ---
         for table in slot_tables:
-            headers = [str(h).lower() for h in table[0]]
-            header_str = " ".join(headers)
+            if not table: continue
+            for row in table:
+                if len(row) >= 2:
+                    for i in range(len(row) - 1):
+                        k = str(row[i]).replace(':', '').strip().lower()
+                        v = str(row[i+1]).replace(':', '').strip()
+                        if "registration" in k and "number" in k:
+                            if len(v) > 5: profile_data["regNo"] = v.strip()
+                        elif "department" in k:
+                            if len(v) > 2: profile_data["department"] = v.strip()
+                        elif "combo" in k or "batch" in k:
+                            if len(v) > 0: profile_data["batch"] = v.strip()
+                        elif "class room" in k or "classroom" in k:
+                            if len(v) > 0: profile_data["classRoom"] = v.strip()
+                        elif "program" in k:
+                            if len(v) > 2: profile_data["course"] = v.strip()[:35]
+                        elif "semester" in k:
+                            if len(v) > 0 and len(v) <= 2: profile_data["semester"] = v.strip()
+                        elif "name" in k and "father" not in k and "mother" not in k and "faculty" not in k:
+                            if len(v) > 2 and profile_data["name"] == "STUDENT": profile_data["name"] = v.strip()
+        
+        # --- EXTRACT ADVISOR DATA FROM TIMETABLE PAGE ---
+        print(f"[{reg_no}] 6a. Extracting Advisor Details...")
+        for table in slot_tables:
+            if not table: continue
+            for r_idx, row in enumerate(table):
+                for c_idx, cell in enumerate(row):
+                    cell_str = str(cell).strip()
+                    cell_lower = cell_str.lower()
+                    
+                    # Faculty Advisor detection (usually in one multiline cell)
+                    if 'faculty advisor' in cell_lower:
+                        lines = [line.strip() for line in cell_str.split('\n') if line.strip()]
+                        for k, line in enumerate(lines):
+                            ll = line.lower()
+                            if 'faculty advisor' in ll:
+                                if k > 0 and len(lines[k-1]) > 3:
+                                    profile_data['fa_name'] = lines[k-1]
+                            elif '@' in ll and 'srmist' in ll:
+                                profile_data['fa_email'] = line
+                            elif re.match(r'^\+?[0-9\s-]{10,}$', line) and len(re.sub(r'\D', '', line)) >= 10:
+                                profile_data['fa_phone'] = re.sub(r'\D', '', line)[-10:]
+                    
+                    # Academic Advisor detection
+                    if 'academic advisor' in cell_lower:
+                        lines = [line.strip() for line in cell_str.split('\n') if line.strip()]
+                        for k, line in enumerate(lines):
+                            ll = line.lower()
+                            if 'academic advisor' in ll:
+                                if k > 0 and len(lines[k-1]) > 3:
+                                    profile_data['aa_name'] = lines[k-1]
+                            elif '@' in ll and 'srmist' in ll:
+                                profile_data['aa_email'] = line
+                            elif re.match(r'^\+?[0-9\s-]{10,}$', line) and len(re.sub(r'\D', '', line)) >= 10:
+                                profile_data['aa_phone'] = re.sub(r'\D', '', line)[-10:]
+        
+        print(f"[{reg_no}] Profile extracted: regNo={profile_data.get('regNo','?')}, dept={profile_data.get('department','?')}, FA={profile_data.get('fa_name','?')}, AA={profile_data.get('aa_name','?')}")
+        
+        # --- PARSE STUDENT SLOTS ---
+        for table in slot_tables:
+            if not table: continue
+            headers, header_str, h_idx = get_table_headers(table)
+            
             if "slot" in header_str and "code" in header_str:
                 try:
                     idx_code = get_col_index(headers, "code")
-                    idx_title = get_col_index(headers, "title")
+                    idx_title = get_col_index(headers, "title", "name", "description", "desc", "subject")
                     idx_slot = get_col_index(headers, "slot")
                     idx_room = get_col_index(headers, "room")
-                    if -1 not in (idx_code, idx_title, idx_slot, idx_room):
-                        for row in table[1:]:
-                            if len(row) > idx_room:
-                                slots_found = re.findall(r'\b[A-Z]{1,2}\d*\b', row[idx_slot])
-                                for s in slots_found:
-                                    student_slots[s] = {"subject": f"{row[idx_code]} - {row[idx_title]}", "room": row[idx_room]}
-                except: pass
-                
-        log_time(f"7. Fetching Master Timetable ({batch}) via API...")
+                    
+                    if -1 in (idx_code, idx_title, idx_slot, idx_room): continue
+                    
+                    for row in table[h_idx+1:]:
+                        if len(row) > idx_room:
+                            # Refined Regex matching (matches A, P49, PT2, etc)
+                            slots_found = re.findall(r'\b[A-Z]{1,2}\d*\b', row[idx_slot])
+                            for s in slots_found:
+                                # Use subject title if possible, else subject code
+                                subj_name = row[idx_title].strip() if idx_title != -1 and len(row) > idx_title and row[idx_title].strip() else row[idx_code].strip()
+                                student_slots[s] = {
+                                    "subject": subj_name,
+                                    "room": row[idx_room].strip() if idx_room != -1 and len(row) > idx_room else "TBA",
+                                    "code": row[idx_code].strip() if idx_code != -1 and len(row) > idx_code else ""
+                                }
+                except Exception as e:
+                    print("Parsing error (Slots):", str(e))
+                    continue
+
+        # --- TIMETABLE STEP 2 (MASTER TIMINGS) ---
+        print(f"[{reg_no}] 7. Mapping to Master (Batch {batch})...")
         final_tt = {"1": [], "2": [], "3": [], "4": [], "5": []}
-        master_tables = fetch_view(f"Unified_Time_Table_2025_Batch_{batch}")
+        global_seen_entries = {"1": set(), "2": set(), "3": set(), "4": set(), "5": set()}
         
-        for table in master_tables:
-            if len(table) < 3: continue
+        page.goto(f"https://academia.srmist.edu.in/#Page:Unified_Time_Table_2025_Batch_{batch}")
+        
+        master_tables = wait_for_data_tables("day 1")
+        if not any("day 1" in str(c).lower() for t in master_tables for row in t for c in row):
+            page.reload(wait_until="networkidle")
+            master_tables = wait_for_data_tables("day 1")
+        
+        print(f"[{reg_no}] Found {len(master_tables)} master tables")
+        
+        last_good_time_cols = []
+        for t_idx, table in enumerate(master_tables):
+            if not table: continue
             
-            time_cols, from_row, to_row, start_row = [], [], [], -1
+            time_cols = []
+            from_row = []
+            to_row = []
+            start_row = -1
+            
             for r_idx, row in enumerate(table):
                 first_cell = str(row[0]).lower().replace('\n', ' ').strip()
-                if "from" in first_cell and "to" not in first_cell: from_row = row[1:]
-                elif "to" in first_cell and "from" not in first_cell: to_row = row[1:]
-                elif "from" in first_cell and "to" in first_cell: time_cols = [str(c).replace('\n', ' ') for c in row[1:]]
-                elif any(x in first_cell for x in ["hour", "order", "time", "period"]):
-                    if not time_cols and not from_row: time_cols = [str(c).replace('\n', ' ') for c in row[1:]]
-                elif "day" in first_cell and any(str(i) in first_cell for i in range(1, 6)):
+                
+                # Check for \d+:\d+ pattern in the row to deeply detect timing rows
+                time_matches = [re.search(r'\d{1,2}:\d{2}', str(c)) for c in row[1:]]
+                has_times = sum(1 for m in time_matches if m is not None) >= 3
+                
+                if has_times:
+                    extracted = [str(c).replace('\n', ' ').strip() for c in row[1:]]
+                    if not from_row:
+                        from_row = extracted
+                    elif not to_row:
+                        to_row = extracted
+                    elif len(time_cols) == 0:
+                        # Fallback if both filled but another time row found
+                        time_cols = extracted
+                
+                # Sometimes a row has explicitly '8:00 - 8:50'
+                combined_match = [re.search(r'\d{1,2}:\d{2}\s*-\s*\d{1,2}:\d{2}', str(c)) for c in row[1:]]
+                if sum(1 for m in combined_match if m is not None) >= 3:
+                    time_cols = [str(c).replace('\n', ' ').strip() for c in row[1:]]
+                
+                # Identify where days start
+                if ("day" in first_cell or "order" in first_cell) and any(str(i) in first_cell for i in range(1, 6)):
                     start_row = r_idx
                     break
                     
             if not time_cols and from_row and to_row:
-                time_cols = [f"{f} - {t}" for f, t in zip(from_row, to_row)]
+                for f, t in zip(from_row, to_row):
+                    f_clean = f.strip()
+                    t_clean = t.strip()
+                    if f_clean and t_clean:
+                        time_cols.append(f"{f_clean} - {t_clean}")
+                    elif f_clean:
+                        time_cols.append(f_clean)
+                    else:
+                        time_cols.append("")
+            elif not time_cols and from_row and not to_row:
+                time_cols = from_row
+                        
+            # Inherit from previous tables if split
+            if time_cols:
+                last_good_time_cols = time_cols
+            elif last_good_time_cols:
+                time_cols = last_good_time_cols
+                
+            # Debug: print extracted time columns
+            if time_cols:
+                print(f"[{reg_no}] Table {t_idx}: time_cols ({len(time_cols)}) = {time_cols[:10]}")
+            elif from_row:
+                print(f"[{reg_no}] Table {t_idx}: fallback from_row ({len(from_row)}) = {from_row[:10]}")
                     
             if start_row != -1:
+                print(f"[{reg_no}] Table {t_idx}: Day rows start at row {start_row}")
                 for row in table[start_row:]:
                     try:
                         day_match = re.search(r'\d+', row[0])
@@ -383,19 +610,80 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
                         day_order = day_match.group()
                         
                         if day_order in final_tt:
-                            seen_entries = set()
                             for i, cell in enumerate(row[1:]):
                                 slots_in_cell = re.findall(r'\b[A-Z]{1,2}\d*\b', cell)
                                 for s in slots_in_cell:
                                     if s in student_slots:
                                         t_str = time_cols[i] if i < len(time_cols) else f"Period {i+1}"
+                                        
+                                        # Validate if t_str actually contains a time. If it got corrupted with a slot string, fallback to standard SRM times.
+                                        if not re.search(r'\d{1,2}:\d{2}', t_str):
+                                            std_times = ["08:00 - 08:50", "08:50 - 09:40", "09:45 - 10:35", "10:35 - 11:25", "11:30 - 12:20", "12:20 - 13:10", "13:15 - 14:05", "14:05 - 14:55", "15:00 - 15:50", "15:50 - 16:40"]
+                                            t_str = std_times[i] if i < len(std_times) else f"Period {i+1}"
+                                            
                                         t_str = re.sub(r'\s+', ' ', t_str).strip()
+                                        
                                         entry_key = f"{t_str}-{student_slots[s]['subject']}"
-                                        if entry_key not in seen_entries:
-                                            final_tt[day_order].append({"time": t_str, "subject": student_slots[s]['subject'], "room": student_slots[s]['room']})
-                                            seen_entries.add(entry_key)
-                    except: pass
+                                        if entry_key not in global_seen_entries[day_order]:
+                                            last_entry = final_tt[day_order][-1] if final_tt[day_order] else None
+                                            
+                                            # Merge continuous identical slots to avoid unnecessary extra cards
+                                            if last_entry and last_entry["subject"] == student_slots[s]['subject']:
+                                                old_start = last_entry["time"].split('-')[0].strip()
+                                                new_end = t_str.split('-')[-1].strip() if '-' in t_str else t_str
+                                                last_entry["time"] = f"{old_start} - {new_end}"
+                                            else:
+                                                final_tt[day_order].append({
+                                                    "time": t_str,
+                                                    "subject": student_slots[s]['subject'],
+                                                    "room": student_slots[s]['room']
+                                                })
+                                            global_seen_entries[day_order].add(entry_key)
+                                            print(f"[{reg_no}]   Day {day_order}: slot {s} -> {t_str} | {student_slots[s]['subject']}")
+                    except Exception as e:
+                        print("Parsing error (Master TT Row):", str(e))
+                        continue
 
+        # Debug Logging for Empty Parsing
+        if not parsed_att and not parsed_marks and not student_slots:
+            try:
+                with open("debug_tables.txt", "w", encoding="utf-8") as f:
+                    f.write("RAW TABLES:\n" + str(raw_tables) + "\n\nSLOT TABLES:\n" + str(slot_tables) + "\n\nMASTER TABLES:\n" + str(master_tables))
+                print(f"[{reg_no}] Empty arrays detected. Saved to debug_tables.txt")
+            except Exception as e:
+                print(f"Failed to write debug file: {str(e)}")
+
+        # --- POST-PROCESS TITLES ---
+        # Collect the absolute best title for each course code across all three data sources
+        best_titles = {}
+        for a in parsed_att:
+            c = a.get("courseCode")
+            t = a.get("courseTitle", "")
+            if c and "-" in t:
+                clean = t.split("-", 1)[1].strip()
+                if clean and len(clean) > len(best_titles.get(c, "")): best_titles[c] = clean
+        
+        for m in parsed_marks:
+            c = m.get("courseCode")
+            t = m.get("courseTitle", "")
+            if c and t and t != c and len(t) > len(best_titles.get(c, "")): best_titles[c] = t
+            
+        for s_data in student_slots.values():
+            c = s_data.get("code")
+            t = s_data.get("subject", "")
+            if c and t and t != c and len(t) > len(best_titles.get(c, "")): best_titles[c] = t
+
+        # Apply the best titles back to the data
+        for m in parsed_marks:
+            c = m.get("courseCode")
+            if c in best_titles and (m.get("courseTitle") == c or not m.get("courseTitle")):
+                m["courseTitle"] = best_titles[c]
+                
+        for a in parsed_att:
+            c = a.get("courseCode")
+            if c in best_titles:
+                a["courseTitle"] = f"{c} - {best_titles[c]}"
+                
         out_queue.put({
             'success': True, 
             'profile': profile_data,
@@ -403,10 +691,12 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
             'marks': parsed_marks,
             'timetable': final_tt
         })
-        log_time("Scrape Complete! Returning API data.")
 
     except Exception as e:
-        out_queue.put({'success': False, 'error': f"API Scraper Exception: {str(e)}"})
+        out_queue.put({'success': False, 'error': f"Scraper Exception: {str(e)}"})
+    finally:
+        if browser: browser.close()
+        if p: p.stop()
 
 @app.route('/api/start_session', methods=['POST'])
 def start_session():
