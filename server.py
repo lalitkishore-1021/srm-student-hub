@@ -58,6 +58,17 @@ def init_db():
         cur.execute('''CREATE TABLE IF NOT EXISTS lost_found (
             id SERIAL PRIMARY KEY, title TEXT NOT NULL, description TEXT, category TEXT, location TEXT, image_url TEXT,
             poster_name TEXT, net_id TEXT, created_at TEXT)''')
+        conn.commit()
+        try:
+            cur.execute("ALTER TABLE lost_found RENAME COLUMN item_name TO title")
+            conn.commit()
+        except Exception:
+            conn.rollback()
+        try:
+            cur.execute("ALTER TABLE lost_found ADD COLUMN title TEXT")
+            conn.commit()
+        except Exception:
+            conn.rollback()
     else:
         cur.execute('''CREATE TABLE IF NOT EXISTS students (
             net_id TEXT PRIMARY KEY, name TEXT, register_no TEXT,

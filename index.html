@@ -2394,8 +2394,8 @@
                 <input type="text" id="market-price" class="modal-input" placeholder="Price (e.g. ₹500 or Free)" style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; padding: 13px; border-radius: 12px;">
                 <input id="market-phone" class="modal-input" placeholder="WhatsApp Number *" style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; padding: 13px; border-radius: 12px;">
                 <label for="market-image-file" style="background: rgba(0,0,0,0.3); border: 1px dashed var(--glass-border); color: #fff; padding: 13px; border-radius: 12px; cursor: pointer; text-align: center;">
-                    📷 Click to select a photo from your device (Max 5MB)
-                    <input type="file" id="market-image-file" accept="image/*" style="display: none;" onchange="this.parentElement.innerHTML = '✅ Photo Selected: ' + this.files[0].name + '<input type=\\\'file\\\' id=\\\'market-image-file\\\' accept=\\\'image/*\\\' style=\\\'display: none;\\\'>'; document.getElementById('market-image-file').files = this.files;">
+                    <span id="market-image-text">📷 Click to select a photo from your device (Max 5MB)</span>
+                    <input type="file" id="market-image-file" accept="image/*" style="display: none;" onchange="document.getElementById('market-image-text').innerText = this.files.length ? '✅ Photo Selected: ' + this.files[0].name : '📷 Click to select a photo from your device (Max 5MB)';">
                 </label>
                 <button class="action-btn" onclick="submitMarketItem()" style="margin-top: 5px;">POST ITEM</button>
                 <p id="market-status" style="font-size: 0.85rem; font-weight: bold; text-align: center; min-height: 20px;"></p>
@@ -2455,8 +2455,8 @@
                 </select>
                 <input id="lf-location" class="modal-input" placeholder="Place / Location (e.g. TP Food Court, Library)" style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; padding: 13px; border-radius: 12px;">
                 <label for="lf-image-file" style="background: rgba(0,0,0,0.3); border: 1px dashed #e65c00; color: #fff; padding: 13px; border-radius: 12px; cursor: pointer; text-align: center;">
-                    📷 Upload a photo of the item
-                    <input type="file" id="lf-image-file" accept="image/*" style="display: none;" onchange="this.parentElement.innerHTML = '✅ Photo Selected: ' + this.files[0].name + '<input type=\\\'file\\\' id=\\\'lf-image-file\\\' accept=\\\'image/*\\\' style=\\\'display: none;\\\'>'; document.getElementById('lf-image-file').files = this.files;">
+                    <span id="lf-image-text">📷 Upload a photo of the item</span>
+                    <input type="file" id="lf-image-file" accept="image/*" style="display: none;" onchange="document.getElementById('lf-image-text').innerText = this.files.length ? '✅ Photo Selected: ' + this.files[0].name : '📷 Upload a photo of the item';">
                 </label>
                 <button class="action-btn" onclick="submitLostFound()" style="margin-top: 5px; background: linear-gradient(135deg, #e65c00, #f59e0b); color: #fff;">REPORT ITEM</button>
                 <p id="lf-status" style="font-size: 0.85rem; font-weight: bold; text-align: center; min-height: 20px;"></p>
