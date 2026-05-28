@@ -4,8 +4,46 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SRM Student Hub</title>
+    <title>SRM Student Hub | Attendance, CGPA & Timetable</title>
+    
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="The ultimate student dashboard for SRM Institute of Science and Technology. Track attendance, predict CGPA, check your timetable, and view the mess menu instantly.">
+    <meta name="keywords" content="SRM Student Hub, SRM Attendance, SRM CGPA Predictor, SRM Timetable, SRM Mess Menu, Academia Sync, SRMIST Portal, Student Dashboard">
+    <meta name="author" content="SRM Student Hub">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://srm-student-hub.onrender.com/"> <!-- Update with actual domain later -->
 
+    <!-- Open Graph (WhatsApp, Discord, Facebook) -->
+    <meta property="og:title" content="SRM Student Hub | Your Ultimate Dashboard">
+    <meta property="og:description" content="Track your SRM attendance, predict CGPA, and view your daily timetable all in one beautiful app.">
+    <meta property="og:image" content="/images/app-icon.svg">
+    <meta property="og:url" content="https://srm-student-hub.onrender.com/">
+    <meta property="og:type" content="website">
+
+    <!-- Twitter Card Meta Tags -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="SRM Student Hub | Your Ultimate Dashboard">
+    <meta name="twitter:description" content="Track your SRM attendance, predict CGPA, and view your daily timetable all in one beautiful app.">
+    <meta name="twitter:image" content="/images/app-icon.svg">
+
+    <!-- JSON-LD Structured Data for Google -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "SRM Student Hub",
+      "url": "https://srm-student-hub.onrender.com/",
+      "description": "The ultimate student dashboard for SRM Institute of Science and Technology. Track attendance, predict CGPA, check your timetable, and view the mess menu instantly.",
+      "applicationCategory": "EducationalApplication",
+      "operatingSystem": "All",
+      "offers": {
+        "@type": "Offer",
+        "price": "0"
+      }
+    }
+    </script>
+
+    <!-- PWA Settings -->
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#ffaa00">
     <link rel="apple-touch-icon" href="images/app-icon.svg">
@@ -906,16 +944,16 @@
 
         .progress-container {
             width: 100%;
-            height: 6px;
+            height: 8px;
             background: rgba(255, 255, 255, 0.1);
-            border-radius: 3px;
+            border-radius: 10px;
             margin: 15px 0;
             overflow: hidden;
         }
 
         .progress-fill {
             height: 100%;
-            border-radius: 3px;
+            border-radius: 10px;
             transition: width 1s cubic-bezier(0.16, 1, 0.3, 1);
             box-shadow: 0 0 12px currentColor;
         }
@@ -1418,14 +1456,76 @@
                 filter: drop-shadow(0 0 8px rgba(191, 90, 242, 0.8));
             }
         }
+
+        /* Premium Event Popup Styles */
+        @keyframes shineEvent { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+        
+        .event-popup {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(10, 10, 15, 0.4);
+            z-index: 10000; display: flex; align-items: center; justify-content: center;
+            flex-direction: column; text-align: center; backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px);
+            animation: fadeInOut 5s forwards;
+            overflow: hidden;
+        }
+        .event-popup-content { position: relative; z-index: 10; }
+        .event-popup-content h1 {
+            font-size: 3.5rem; 
+            background: linear-gradient(135deg, #ffaa00, #ff5500);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 0 15px rgba(255, 170, 0, 0.4));
+            animation: bounceIn 1s cubic-bezier(0.28, 0.84, 0.42, 1) forwards; margin: 0;
+        }
+        .event-popup-content p {
+            font-size: 1.3rem; color: #fff; margin-top: 15px; font-weight: 500;
+            animation: slideUp 1s ease forwards; animation-delay: 0.3s; opacity: 0;
+        }
+        @keyframes bounceIn { 0% { transform: scale(0); opacity: 0; } 50% { transform: scale(1.2); opacity: 1; } 70% { transform: scale(0.9); } 100% { transform: scale(1); opacity: 1; } }
+        @keyframes slideUp { 0% { transform: translateY(30px) scale(0.8); opacity: 0; } 100% { transform: translateY(0) scale(1); opacity: 1; } }
+        @keyframes fadeInOut { 0% { opacity: 0; backdrop-filter: blur(0px); } 10% { opacity: 1; backdrop-filter: blur(25px); } 90% { opacity: 1; backdrop-filter: blur(25px); } 100% { opacity: 0; backdrop-filter: blur(0px); visibility: hidden; } }
+        @keyframes floatUpConfetti { 
+            0% { transform: translateY(0vh) scale(0.5) rotate(0deg); opacity: 0; } 
+            10% { opacity: 1; }
+            100% { transform: translateY(-120vh) scale(1.5) rotate(720deg); opacity: 0; } 
+        }
     </style>
 </head>
 
 <body>
 
-    <div id="splash-screen">
-        <div class="css-loader"></div>
-        <div class="splash-text">Loading Hub...</div>
+
+
+    <div id="eventPopup" class="event-popup" style="display: none;">
+        <div class="event-popup-content">
+            <h1 id="eventPopupTitle">Welcome Back!</h1>
+            <p id="eventPopupSub">College has opened.</p>
+        </div>
+    </div>
+
+    <!-- HOLOGRAPHIC SHARE MODAL -->
+    <div id="holoShareModal" class="modal" style="display: none; z-index: 10000; align-items: center; justify-content: center; backdrop-filter: blur(20px);">
+        <div class="modal-content" style="background: transparent; border: none; box-shadow: none; display: flex; flex-direction: column; align-items: center; gap: 30px;">
+            <div id="holo-card-container" style="perspective: 1000px; width: 300px; height: 450px;">
+                <div id="holo-card" style="width: 100%; height: 100%; border-radius: 20px; background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05)); border: 1px solid rgba(255,170,0,0.4); box-shadow: 0 20px 50px rgba(0,0,0,0.5); display: flex; flex-direction: column; justify-content: center; align-items: center; position: relative; overflow: hidden; transition: transform 0.1s; transform-style: preserve-3d;">
+                    <!-- Holographic glare effect -->
+                    <div id="holo-glare" style="position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: linear-gradient(105deg, transparent 20%, rgba(255,255,255,0.4) 25%, transparent 30%); transform: rotate(45deg); pointer-events: none; opacity: 0; transition: opacity 0.3s;"></div>
+                    
+                    <h2 style="font-family: 'Montserrat', sans-serif; color: rgba(255,170,0,0.8); letter-spacing: 3px; font-size: 1rem; margin-bottom: 20px; text-transform: uppercase; transform: translateZ(30px);">SRM Student Hub</h2>
+                    <h3 id="holo-title" style="font-family: 'Montserrat', sans-serif; font-size: 1.5rem; color: #aaa; text-transform: uppercase; letter-spacing: 4px; margin: 0 0 20px 0; transform: translateZ(40px);">TITLE</h3>
+                    <h1 id="holo-value" style="font-family: 'Montserrat', sans-serif; font-size: 5rem; font-weight: 900; margin: 0; line-height: 1; filter: drop-shadow(0 10px 20px rgba(255,170,0,0.3)); transform: translateZ(60px);">0%</h1>
+                    <div style="position: absolute; bottom: 20px; right: 20px; opacity: 0.5; transform: translateZ(20px);">
+                        <svg width="40" height="40" viewBox="0 0 100 100"><path d="M 30 20 L 10 50 L 30 80 M 70 20 L 90 50 L 70 80 M 35 65 L 45 65 L 45 50 L 55 50 L 55 35 L 65 35" fill="none" stroke="#ffaa00" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="display: flex; gap: 15px;">
+                <button onclick="document.getElementById('holoShareModal').style.display='none'" class="action-btn" style="background: rgba(255,255,255,0.1); color: #fff;">Close</button>
+                <button id="downloadHoloBtn" class="action-btn" style="background: linear-gradient(135deg, #ffaa00, #ff8800); color: #000; font-weight: bold;">
+                    Download 2D Image
+                </button>
+            </div>
+        </div>
     </div>
 
     <div class="btn-container" id="navButtons">
@@ -1510,6 +1610,11 @@
             </svg>
             <h1>SRM Student Hub</h1>
             <p class="subtitle">Your all-in-one portal for Step Class, CGPA, and more.</p>
+            <h2 id="welcomeName" style="color: var(--primary); font-size: 1.2rem; margin-top: 5px; font-weight: bold;"></h2>
+            <button onclick="logout()" id="logoutBtn" style="display: none; position: absolute; top: 15px; left: 15px; background: rgba(255, 68, 68, 0.2); border: 1px solid rgba(255, 68, 68, 0.4); color: #ff4444; border-radius: 8px; padding: 6px 12px; cursor: pointer; font-weight: bold; align-items: center; gap: 5px;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                Logout
+            </button>
         </header>
 
         <div id="home-view" class="app-view active">
@@ -1535,26 +1640,26 @@
                                 </svg>
                             </div>
                             <div>
-                                <h2 class="id-name">BALAGA LALIT KISHORE</h2>
-                                <p class="id-reg">RA2511026010324</p>
+                                <h2 class="id-name">STUDENT</h2>
+                                <p class="id-reg">Syncing...</p>
                             </div>
                         </div>
                         <div class="id-details">
-                            <span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            <span id="id-detail-course"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                     stroke-width="2">
                                     <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
-                                </svg> B.Tech</span>
-                            <span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                </svg> --</span>
+                            <span id="id-detail-dept"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                     stroke-width="2">
                                     <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
                                     <line x1="3" y1="9" x2="21" y2="9" />
                                     <line x1="9" y1="21" x2="9" y2="9" />
-                                </svg> CS AIML</span>
-                            <span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                </svg> --</span>
+                            <span id="id-detail-sem"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                     stroke-width="2">
                                     <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
                                     <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
-                                </svg> Semester 2</span>
+                                </svg> --</span>
                         </div>
                     </div>
                     <div class="stats-bar">
@@ -1703,16 +1808,29 @@
 
             <div id="advisors-section" style="display: none;">
                 <h3 class="section-title">Advisors</h3>
-                <div class="glass-card" style="text-align: left;">
-                    <h5
-                        style="color: var(--primary); margin: 0 0 5px 0; font-size: 0.75rem; text-transform: uppercase;">
-                        Faculty Advisor</h5>
-                    <h3 style="margin: 0 0 10px 0; font-size: 1.2rem;">Nithya Devi S M</h3>
-                    <div style="font-size: 0.85rem; color: var(--text-sub); margin-bottom: 5px;">@
-                        nithyads2@srmist.edu.in</div>
-                    <div style="font-size: 0.85rem; color: var(--text-sub); margin-bottom: 15px;">📞 9487634094</div>
-                    <button class="btn-primary" style="background: rgba(255,255,255,0.05); color: var(--text-main);">📞
-                        Call Advisor</button>
+                <div style="display: flex; flex-direction: column; gap: 15px;">
+                    <!-- Faculty Advisor Card -->
+                    <div id="fa-card" class="glass-card" style="text-align: left; display: none;">
+                        <h5
+                            style="color: var(--primary); margin: 0 0 5px 0; font-size: 0.75rem; text-transform: uppercase;">
+                            Faculty Advisor</h5>
+                        <h3 id="fa-name" style="margin: 0 0 10px 0; font-size: 1.2rem;">--</h3>
+                        <div id="fa-email" style="font-size: 0.85rem; color: var(--text-sub); margin-bottom: 5px;">@ --</div>
+                        <div id="fa-phone-display" style="font-size: 0.85rem; color: var(--text-sub); margin-bottom: 15px;">📞 --</div>
+                        <a id="fa-call-btn" href="tel:" class="btn-primary" style="background: rgba(255,255,255,0.05); color: var(--text-main); text-decoration: none; display: block; text-align: center; padding: 12px; border-radius: 12px; font-family: 'Montserrat', sans-serif; font-weight: 700; text-transform: uppercase;">📞
+                            Call Advisor</a>
+                    </div>
+                    <!-- Academic Advisor Card -->
+                    <div id="aa-card" class="glass-card" style="text-align: left; display: none;">
+                        <h5
+                            style="color: #00cc66; margin: 0 0 5px 0; font-size: 0.75rem; text-transform: uppercase;">
+                            Academic Advisor</h5>
+                        <h3 id="aa-name" style="margin: 0 0 10px 0; font-size: 1.2rem;">--</h3>
+                        <div id="aa-email" style="font-size: 0.85rem; color: var(--text-sub); margin-bottom: 5px;">@ --</div>
+                        <div id="aa-phone-display" style="font-size: 0.85rem; color: var(--text-sub); margin-bottom: 15px;">📞 --</div>
+                        <a id="aa-call-btn" href="tel:" class="btn-primary" style="background: rgba(255,255,255,0.05); color: var(--text-main); text-decoration: none; display: block; text-align: center; padding: 12px; border-radius: 12px; font-family: 'Montserrat', sans-serif; font-weight: 700; text-transform: uppercase;">📞
+                            Call Advisor</a>
+                    </div>
                 </div>
             </div>
         </div>
@@ -2374,34 +2492,32 @@
 
         let currentCalDate = new Date();
         const srmPlanner = {
-            "2026-01-01": { type: "Holiday", title: "New Year's Day - Holiday" },
-            "2026-01-05": { type: "Event", title: "Enrolment Day - B.Tech" },
-            "2026-01-08": { type: "Event", title: "Commencement of Classes" },
-            "2026-01-15": { type: "Holiday", title: "Pongal - Holiday" },
-            "2026-01-16": { type: "Holiday", title: "Thiruvalluvar Day - Holiday" },
-            "2026-01-17": { type: "Holiday", title: "Uzhavar Thirunal - Holiday" },
-            "2026-01-26": { type: "Holiday", title: "Republic Day - Holiday" },
-            "2026-02-01": { type: "Holiday", title: "Thaipoosam - Holiday" },
-            "2026-03-04": { type: "Holiday", title: "Holi" },
-            "2026-03-19": { type: "Holiday", title: "Telugu New Year's Day - Holiday" },
-            "2026-03-21": { type: "Holiday", title: "Ramzan - Holiday" },
-            "2026-03-31": { type: "Holiday", title: "Mahaveer Jayanthi - Holiday" },
-            "2026-04-03": { type: "Holiday", title: "Good Friday - Holiday" },
-            "2026-04-14": { type: "Holiday", title: "Tamil New Year's Day / Dr. B.R. Ambedkar's Birthday - Holiday" },
-            "2026-05-01": { type: "Holiday", title: "May Day - Holiday" },
-            "2026-05-06": { type: "Event", title: "Last working Day" },
-            "2026-05-28": { type: "Holiday", title: "Bakrid - Holiday" },
-            "2026-06-26": { type: "Holiday", title: "Muharram - Holiday" }
+            "2026-07-20": { type: "Event", title: "Enrolment Day - B.Tech - II,III,IV / M.Tech" },
+            "2026-07-21": { type: "Event", title: "Commencement of Classes" },
+            "2026-08-01": { type: "Event", title: "Enrolment Day Starts B.Tech - I" },
+            "2026-08-07": { type: "Event", title: "Enrolment Day Ends with B.Tech - I" },
+            "2026-08-15": { type: "Holiday", title: "Independence Day - Holiday" },
+            "2026-08-17": { type: "Event", title: "Commencement of Classes for B.Tech - I" },
+            "2026-08-26": { type: "Holiday", title: "Milad - un - Nabi - Holiday" },
+            "2026-09-04": { type: "Holiday", title: "Krishna Jayanthi - Holiday" },
+            "2026-09-14": { type: "Holiday", title: "Vinayakar Chathurthi - Holiday" },
+            "2026-10-02": { type: "Holiday", title: "Gandhi Jayanthi - Holiday" },
+            "2026-10-19": { type: "Holiday", title: "Ayutha Pooja - Holiday" },
+            "2026-10-20": { type: "Holiday", title: "Vijaya Dasami - Holiday" },
+            "2026-11-08": { type: "Holiday", title: "Deepavali - Holiday" },
+            "2026-11-18": { type: "Event", title: "Last Working Day - B.Tech" },
+            "2026-12-04": { type: "Event", title: "Last Working Day - B.Tech - I" },
+            "2026-12-25": { type: "Holiday", title: "Christmas - Holiday" }
         };
 
-        // Auto-generate accurate Day Orders for 2026 Even Semester
-        const endDate = new Date(2026, 4, 6); // May 6th, 2026
-        const holidays = ["2026-01-15", "2026-01-16", "2026-01-17", "2026-01-26", "2026-02-01", "2026-03-04", "2026-03-19", "2026-03-21", "2026-03-31", "2026-04-03", "2026-04-14", "2026-05-01"];
+        // Auto-generate accurate Day Orders for 2026 Odd Semester
+        const endDate = new Date(2026, 11, 4); // Dec 4th, 2026
+        const holidays = ["2026-08-15", "2026-08-26", "2026-09-04", "2026-09-14", "2026-10-02", "2026-10-19", "2026-10-20", "2026-11-08", "2026-12-25"];
 
         let dOrder = 1;
         // Strictly deterministic integer loop completely avoiding Javascript DST / Timezone manipulation infinite loops!
         for (let i = 0; i < 150; i++) {
-            let d = new Date(2026, 0, 8 + i); // Jan 8th 2026 + i days
+            let d = new Date(2026, 6, 21 + i); // Jul 21st 2026 + i days
             if (d > endDate) break;
 
             let curISOTime = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, '0') + "-" + String(d.getDate()).padStart(2, '0');
@@ -2413,6 +2529,28 @@
 
                 dOrder = dOrder === 5 ? 1 : dOrder + 1;
             }
+        }
+
+        function getDayOrder(dateStr) {
+            let plan = srmPlanner[dateStr];
+            if (plan && plan.type === "Day Order") return plan.value;
+            if (plan && plan.value) return plan.value; // For Event type that holds Day Order
+            
+            // Fallback for dates outside the generated range
+            let d = new Date(dateStr);
+            let dayIndex = d.getDay();
+            return (dayIndex >= 1 && dayIndex <= 5) ? dayIndex : 0;
+        }
+
+        function isSemesterVacation(dateStr) {
+            let d = new Date(dateStr);
+            let summerVacationStart = new Date("2026-05-07");
+            let summerVacationEnd = new Date("2026-07-19");
+            let winterVacationStart = new Date("2026-12-05");
+            let winterVacationEnd = new Date("2027-01-10");
+            
+            return (d >= summerVacationStart && d <= summerVacationEnd) || 
+                   (d >= winterVacationStart && d <= winterVacationEnd);
         }
 
         // ================= INITIALIZATION =================
@@ -2482,16 +2620,77 @@
             if (nameEl) nameEl.innerText = (profile.name || 'STUDENT').toUpperCase();
             if (regEl) regEl.innerText = (profile.regNo || '').toUpperCase();
 
-            const detailSpans = document.querySelectorAll('.id-details span');
-            if (detailSpans.length >= 3) {
-                let courseStr = profile.course || 'B.Tech. General';
-                let deg = courseStr.split('.')[0] ? courseStr.split('.')[0].trim() : 'B.Tech';
-                let maj = courseStr.includes('.') ? courseStr.split('.').slice(1).join('.').trim() : courseStr;
-                if (deg.length < 2) deg = 'B.Tech';
+            // Use specific IDs for detail spans
+            const courseSpan = document.getElementById('id-detail-course');
+            const deptSpan = document.getElementById('id-detail-dept');
+            const semSpan = document.getElementById('id-detail-sem');
 
-                detailSpans[0].innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/></svg> ${deg}`;
-                detailSpans[1].innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg> ${maj.substring(0, 20)}`;
-                detailSpans[2].innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg> Semester ${profile.semester || 'N/A'}`;
+            let courseStr = profile.course || 'B.Tech';
+            let deg = courseStr;
+            // Try to extract degree program name
+            if (courseStr.includes('.')) {
+                deg = courseStr.split('.')[0].trim();
+                if (deg.length < 2) deg = 'B.Tech';
+            }
+
+            // Department: use scraped department field if available
+            let deptStr = profile.department || '';
+            if (!deptStr) {
+                // Fallback: try to extract from course string
+                if (courseStr.includes('.')) {
+                    deptStr = courseStr.split('.').slice(1).join('.').trim();
+                } else {
+                    deptStr = courseStr;
+                }
+            }
+
+            if (courseSpan) courseSpan.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/></svg> ${deg}`;
+            if (deptSpan) deptSpan.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg> ${deptStr}`;
+            if (semSpan) semSpan.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg> Semester ${profile.semester || 'N/A'}`;
+
+            // Also render advisors
+            renderAdvisors(profile);
+        }
+
+        function renderAdvisors(profile) {
+            if (!profile) return;
+
+            // Faculty Advisor
+            const faCard = document.getElementById('fa-card');
+            if (faCard && (profile.fa_name || profile.fa_email || profile.fa_phone)) {
+                faCard.style.display = 'block';
+                const faNameEl = document.getElementById('fa-name');
+                const faEmailEl = document.getElementById('fa-email');
+                const faPhoneEl = document.getElementById('fa-phone-display');
+                const faCallBtn = document.getElementById('fa-call-btn');
+
+                if (faNameEl) faNameEl.innerText = profile.fa_name || 'Faculty Advisor';
+                if (faEmailEl) faEmailEl.innerText = '@ ' + (profile.fa_email || 'N/A');
+                if (faPhoneEl) faPhoneEl.innerText = '📞 ' + (profile.fa_phone || 'N/A');
+                if (faCallBtn && profile.fa_phone) {
+                    faCallBtn.href = 'tel:' + profile.fa_phone;
+                } else if (faCallBtn) {
+                    faCallBtn.style.display = 'none';
+                }
+            }
+
+            // Academic Advisor
+            const aaCard = document.getElementById('aa-card');
+            if (aaCard && (profile.aa_name || profile.aa_email || profile.aa_phone)) {
+                aaCard.style.display = 'block';
+                const aaNameEl = document.getElementById('aa-name');
+                const aaEmailEl = document.getElementById('aa-email');
+                const aaPhoneEl = document.getElementById('aa-phone-display');
+                const aaCallBtn = document.getElementById('aa-call-btn');
+
+                if (aaNameEl) aaNameEl.innerText = profile.aa_name || 'Academic Advisor';
+                if (aaEmailEl) aaEmailEl.innerText = '@ ' + (profile.aa_email || 'N/A');
+                if (aaPhoneEl) aaPhoneEl.innerText = '📞 ' + (profile.aa_phone || 'N/A');
+                if (aaCallBtn && profile.aa_phone) {
+                    aaCallBtn.href = 'tel:' + profile.aa_phone;
+                } else if (aaCallBtn) {
+                    aaCallBtn.style.display = 'none';
+                }
             }
         }
 
@@ -2516,6 +2715,30 @@
 
         function openSyncModal() { document.getElementById('syncModal').style.display = 'flex'; }
         function closeSyncModal() { document.getElementById('syncModal').style.display = 'none'; }
+        
+        function logout() {
+            localStorage.clear();
+            sessionStorage.clear();
+            window.location.reload();
+        }
+
+        function showSyncToast() {
+            let toast = document.getElementById('sync-toast');
+            if (!toast) {
+                toast = document.createElement('div');
+                toast.id = 'sync-toast';
+                toast.innerHTML = `<div class="css-loader" style="width:15px;height:15px;margin:0 10px 0 0;border-width:2px;"></div> Syncing data in background...`;
+                toast.style.cssText = `position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,0.8); color:#fff; padding:10px 20px; border-radius:20px; font-size:0.9rem; z-index:9999; display:flex; align-items:center; border:1px solid var(--primary); font-family:'Montserrat', sans-serif;`;
+                document.body.appendChild(toast);
+            }
+        }
+        function hideSyncToast(success=true) {
+            let toast = document.getElementById('sync-toast');
+            if (toast) {
+                toast.innerHTML = success ? `✅ Data Synced Successfully` : `❌ Background Sync Failed`;
+                setTimeout(() => toast.remove(), 3000);
+            }
+        }
 
         async function startLiveSync() {
             const regNo = document.getElementById('srm-reg').value.trim();
@@ -2557,6 +2780,12 @@
 
                 isLoggedIn = true;
                 localStorage.setItem("isLoggedIn", "true");
+                
+                // Store credentials for auto background sync
+                localStorage.setItem("syncRegNo", regNo);
+                localStorage.setItem("syncPwd", pwd);
+                localStorage.setItem("syncBatch", currentBatch);
+
                 updateHomeState();
 
                 const attList = Array.isArray(result.data) ? result.data : [];
@@ -2580,8 +2809,46 @@
                 clearInterval(timerInterval);
                 statusText.innerText = "❌ Could not connect to backend server.";
                 statusText.style.color = "var(--danger)";
-            } finally {
-                document.getElementById('srm-pwd').value = '';
+            }
+        }
+
+        async function backgroundSync() {
+            const regNo = localStorage.getItem("syncRegNo");
+            const pwd = localStorage.getItem("syncPwd");
+            const batch = localStorage.getItem("syncBatch") || currentBatch;
+            
+            if (!regNo || !pwd) return; // Cannot auto sync
+
+            showSyncToast();
+            try {
+                const res = await fetch(`${BACKEND_URL}/api/start_session`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ regNo, pwd, batch })
+                });
+
+                const result = await res.json();
+                if (result.success) {
+                    const attList = Array.isArray(result.data) ? result.data : [];
+                    const marksList = Array.isArray(result.marks) ? result.marks : [];
+                    const ttDict = result.timetable || {};
+                    const profile = result.profile || {};
+
+                    localStorage.setItem('squadProfile', JSON.stringify(profile));
+                    localStorage.setItem('squadAttendance', JSON.stringify(attList));
+                    localStorage.setItem('squadMarks', JSON.stringify(marksList));
+                    localStorage.setItem('squadTimetable', JSON.stringify(ttDict));
+
+                    try { renderProfile(profile); } catch (e) {}
+                    try { renderAttendance(attList); } catch (e) {}
+                    try { renderMarks(marksList); } catch (e) {}
+                    try { renderTimetable(ttDict); } catch (e) {}
+                    hideSyncToast(true);
+                } else {
+                    hideSyncToast(false);
+                }
+            } catch (e) {
+                hideSyncToast(false);
             }
         }
 
@@ -2606,6 +2873,16 @@
             renderAttendance(attendanceData);
         }
 
+        let simulationState = {};
+
+        function simulateAttendance(id, action) {
+            if (!simulationState[id]) simulationState[id] = { bunked: 0, attended: 0 };
+            if (action === 'bunk') simulationState[id].bunked++;
+            else if (action === 'attend') simulationState[id].attended++;
+            else if (action === 'reset') simulationState[id] = { bunked: 0, attended: 0 };
+            renderAttendance(attendanceData);
+        }
+
         function renderAttendance(attData) {
             const list = document.getElementById('attendance-list');
             if (!list) return;
@@ -2616,8 +2893,12 @@
             attendanceData = attData || [];
 
             attendanceData.forEach(sub => {
-                let attended = parseInt(sub.attended) || 0;
-                let total = parseInt(sub.total) || 0;
+                let sim = simulationState[sub.id || sub.courseCode] || { bunked: 0, attended: 0 };
+                let baseAttended = parseInt(sub.attended) || 0;
+                let baseTotal = parseInt(sub.total) || 0;
+                
+                let attended = baseAttended + sim.attended;
+                let total = baseTotal + sim.bunked + sim.attended;
                 let name = sub.courseTitle || sub.name || "Unknown Subject";
 
                 totalAtt += attended;
@@ -2628,8 +2909,8 @@
                 const barColor = isGood ? 'var(--success)' : 'var(--danger)';
 
                 let statusText = isGood
-                    ? `You can safely bunk ${Math.floor((attended - (0.75 * total)) / 0.75)} classes.`
-                    : `Attend ${Math.ceil(((0.75 * total) - attended) / 0.25)} more classes to hit 75%.`;
+                    ? `You can safely bunk <strong>${Math.floor((attended - (0.75 * total)) / 0.75)}</strong> more classes.`
+                    : `Attend <strong>${Math.ceil(((0.75 * total) - attended) / 0.25)}</strong> more classes to hit 75%.`;
 
                 let redZoneWarning = '';
                 let cardStyleModifier = '';
@@ -2653,7 +2934,12 @@
                                 <div class="stat-text" style="color: var(--text-main); font-weight: bold;">${attended} / ${total} Attended</div>
                                 <div class="stat-text" style="color:var(--text-sub); margin-top: 5px; font-size: 0.85rem;">${statusText}</div>
                             </div>
-                            <button class="danger-btn" style="padding: 8px 15px; font-size: 0.85rem; margin-left: 10px;" onclick="deleteAttendance(${sub.id || Date.now()})">Drop</button>
+                            <!-- Bunk Meter Simulator UI -->
+                            <div style="background: rgba(0,0,0,0.3); border-radius: 8px; padding: 5px; display: flex; gap: 5px; border: 1px solid var(--glass-border);">
+                                <button onclick="simulateAttendance('${sub.id || sub.courseCode}', 'bunk')" style="background: rgba(255, 68, 68, 0.2); border: none; color: #ff4444; border-radius: 5px; padding: 5px 12px; font-weight: bold; cursor: pointer;">BUNK</button>
+                                <button onclick="simulateAttendance('${sub.id || sub.courseCode}', 'attend')" style="background: rgba(0, 204, 102, 0.2); border: none; color: #00cc66; border-radius: 5px; padding: 5px 12px; font-weight: bold; cursor: pointer;">ATTEND</button>
+                                ${(sim.bunked > 0 || sim.attended > 0) ? `<button onclick="simulateAttendance('${sub.id || sub.courseCode}', 'reset')" style="background: transparent; border: none; color: var(--text-sub); border-radius: 5px; padding: 5px; cursor: pointer;">↺</button>` : ''}
+                            </div>
                         </div>
                         ${redZoneWarning}
                     </div>
@@ -2687,6 +2973,29 @@
                     else if (op < 75) { attPercBadge.innerHTML = '⚠️ RISK ZONE'; attPercBadge.style.color = 'var(--danger)'; }
                     else { attPercBadge.innerHTML = '📈 AVERAGE'; attPercBadge.style.color = 'var(--text-sub)'; }
                 }
+            }
+        }
+
+        // ================= CGPA PREDICTOR LOGIC =================
+        function updateTargetLock(courseId, internalObtained, internalMax) {
+            const slider = document.getElementById('target-slider-' + courseId);
+            const targetVal = document.getElementById('target-val-' + courseId);
+            const reqVal = document.getElementById('req-val-' + courseId);
+            
+            if(!slider || !targetVal || !reqVal) return;
+            
+            let targetTotal = parseInt(slider.value);
+            targetVal.innerText = targetTotal;
+            
+            let finalMax = 100 - internalMax;
+            let required = targetTotal - internalObtained;
+            
+            if (required <= 0) {
+                reqVal.innerHTML = `<span style="color:var(--success)">Secured! 🎉</span>`;
+            } else if (required > finalMax) {
+                reqVal.innerHTML = `<span style="color:var(--danger)">Impossible (${required.toFixed(1)} / ${finalMax})</span>`;
+            } else {
+                reqVal.innerHTML = `<span style="color:var(--primary)">${required.toFixed(1)} / ${finalMax}</span> required in Finals`;
             }
         }
 
@@ -2746,6 +3055,7 @@
 
                 grandTotalMax += subjectMax; grandTotalObtained += subjectObtained;
                 let subjectPercent = subjectMax > 0 ? ((subjectObtained / subjectMax) * 100).toFixed(1) : 0;
+                let courseId = course.replace(/[^a-zA-Z0-9]/g, '');
 
                 subjectsHTML += `
                     <div class="image-card fade-in-up" style="margin-bottom: 20px; text-align: left; padding: 25px;">
@@ -2764,9 +3074,24 @@
                         <div class="progress-container">
                             <div class="progress-fill" style="background: var(--primary); width: ${subjectPercent}%;"></div>
                         </div>
+
+                        <!-- Target Lock UI -->
+                        <div style="margin-top: 20px; background: rgba(0,0,0,0.3); border-radius: 12px; padding: 15px; border: 1px solid var(--glass-border);">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                                <span style="font-size: 0.9rem; color: var(--text-main); font-weight: bold;">🎯 Target Lock</span>
+                                <span style="font-size: 0.9rem; color: var(--primary); font-weight: bold;"><span id="target-val-${courseId}">90</span>%</span>
+                            </div>
+                            <input type="range" id="target-slider-${courseId}" min="${Math.ceil(subjectObtained)}" max="100" value="90" style="width: 100%; accent-color: var(--primary); height: 8px; border-radius: 10px; outline: none; appearance: none; background: rgba(255,170,0,0.2);" oninput="updateTargetLock('${courseId}', ${subjectObtained}, ${subjectMax})">
+                            <div style="text-align: center; margin-top: 12px; font-size: 0.85rem; font-weight: bold; background: rgba(255,255,255,0.05); padding: 8px; border-radius: 6px;" id="req-val-${courseId}">
+                                Slide to predict final exam requirements
+                            </div>
+                        </div>
+                        
                         <div class="overview-title" style="margin: 20px 0 15px 0;"> Detailed Performance</div>
                         ` : ''}
-                        ${testsHtml}
+                        <div class="test-list">
+                            ${testsHtml}
+                        </div>
                     </div>
                 `;
             });
@@ -2804,11 +3129,19 @@
             let todayLocal = new Date();
             let tzoffset = todayLocal.getTimezoneOffset() * 60000;
             let dateStr = (new Date(todayLocal - tzoffset)).toISOString().slice(0, 10);
-            let isHoliday = srmPlanner[dateStr] && srmPlanner[dateStr].type === "Holiday";
+            let plan = srmPlanner[dateStr];
+            let isHoliday = plan && plan.type === "Holiday";
             
             let banner = document.getElementById(viewId);
             if (banner) {
-                if (isHoliday) {
+                if (isSemesterVacation(dateStr)) {
+                    banner.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg><div><strong>🌴 Semester Holidays!</strong><br><small>Enjoy your vacation!</small></div>`;
+                    banner.style.display = 'flex';
+                } else if (isHoliday) {
+                    banner.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg><div><strong>🎉 Today is a Holiday!</strong><br><small>${plan.title}</small></div>`;
+                    banner.style.display = 'flex';
+                } else if (todayLocal.getDay() === 0 || todayLocal.getDay() === 6) {
+                    banner.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg><div><strong>🏖️ Weekend!</strong><br><small>No classes today.</small></div>`;
                     banner.style.display = 'flex';
                 } else {
                     banner.style.display = 'none';
@@ -2903,85 +3236,67 @@
             const classesForDay = timetableData[dayNumber.toString()] || [];
             grid.innerHTML = '';
 
-            if (classesForDay.length === 0) {
+            let todayLocal = new Date();
+            let tzoffset = todayLocal.getTimezoneOffset() * 60000;
+            let dayOrderDate = (new Date(todayLocal - tzoffset)).toISOString().slice(0, 10);
+            let isHoliday = srmPlanner[dayOrderDate] && srmPlanner[dayOrderDate].type === "Holiday";
+            
+            if (isSemesterVacation(dayOrderDate)) {
+                grid.innerHTML = `<div class="image-card" style="text-align:center; padding: 20px;"><h4 style="color:var(--accent); margin:0;">🌴 Semester Holidays!</h4><p style="color:var(--text-sub); font-size:0.9rem;">Enjoy your vacation!</p></div>`;
+            } else if (isHoliday) {
+                grid.innerHTML = `<div class="image-card" style="text-align:center; padding: 20px;"><h4 style="color:var(--accent); margin:0;">Today Holiday</h4><p style="color:var(--text-sub); font-size:0.9rem;">${srmPlanner[dayOrderDate].title}</p></div>`;
+            } else if (classesForDay.length === 0) {
                 grid.innerHTML = `<div class="image-card" style="text-align:center; padding: 30px;"><h3 style="color:var(--text-sub); margin:0;">No classes scheduled for Day ${dayNumber}</h3></div>`;
-                
-                let todayLocal = new Date();
-                let tzoffset = todayLocal.getTimezoneOffset() * 60000;
-                let dayOrderDate = (new Date(todayLocal - tzoffset)).toISOString().slice(0, 10);
-                let currentDayOrder = todayLocal.getDay();
-                if (srmPlanner[dayOrderDate] && srmPlanner[dayOrderDate].type === "Day Order") {
-                    currentDayOrder = srmPlanner[dayOrderDate].value;
-                } else {
-                    currentDayOrder = (currentDayOrder >= 1 && currentDayOrder <= 5) ? currentDayOrder : 0;
-                }
-                
-                let isHoliday = srmPlanner[dayOrderDate] && srmPlanner[dayOrderDate].type === "Holiday";
-                if (dayNumber == currentDayOrder || currentDayOrder === 0 || isHoliday) {
-                    checkAndShowHolidayBanner('timetable-holiday-banner');
-                }
-                return;
-            }
-            // Remove duplicates and fallback "Period" classes if real times exist
-            let normalizeStr = (s) => String(s || '').replace(/\s+/g, ' ').trim().toLowerCase();
-            let realSubjects = new Set(classesForDay.filter(c => !String(c.time).toLowerCase().includes('period')).map(c => normalizeStr(c.subject)));
+            } else {
+                // Remove duplicates and fallback "Period" classes if real times exist
+                let normalizeStr = (s) => String(s || '').replace(/\s+/g, ' ').trim().toLowerCase();
+                let realSubjects = new Set(classesForDay.filter(c => !String(c.time).toLowerCase().includes('period')).map(c => normalizeStr(c.subject)));
 
-            let deduplicated = classesForDay.filter(c => {
-                let isPeriod = String(c.time).toLowerCase().includes('period');
-                if (isPeriod && realSubjects.has(normalizeStr(c.subject))) return false;
-                return true;
-            });
+                let deduplicated = classesForDay.filter(c => {
+                    let isPeriod = String(c.time).toLowerCase().includes('period');
+                    if (isPeriod && realSubjects.has(normalizeStr(c.subject))) return false;
+                    return true;
+                });
 
-            // Enforce exact uniqueness
-            let uniqueSet = new Set();
-            deduplicated = deduplicated.filter(c => {
-                let str = `${c.time}|${normalizeStr(c.subject)}`;
-                if (uniqueSet.has(str)) return false;
-                uniqueSet.add(str);
-                return true;
-            });
+                let uniqueSet = new Set();
+                deduplicated = deduplicated.filter(c => {
+                    let str = `${c.time}|${normalizeStr(c.subject)}`;
+                    if (uniqueSet.has(str)) return false;
+                    uniqueSet.add(str);
+                    return true;
+                });
 
-            // GROUPING LOGIC FOR IDENTICAL BACK-TO-BACK CLASSES
-            let mergedClasses = [];
-            deduplicated.forEach(cls => {
-                if (mergedClasses.length > 0) {
-                    let last = mergedClasses[mergedClasses.length - 1];
-                    if (normalizeStr(last.subject) === normalizeStr(cls.subject) && last.room === cls.room) {
-                        let timePartsLast = String(last.time).split(/[-]|to/i);
-                        let timePartsCls = String(cls.time).split(/[-]|to/i);
-                        let start1 = timePartsLast[0]?.trim() || last.time;
-                        let end2 = timePartsCls[1]?.trim() || String(cls.time).replace(/Period/i, '').trim();
-                        last.time = `${start1} - ${end2}`;
-                        return;
+                let mergedClasses = [];
+                deduplicated.forEach(cls => {
+                    if (mergedClasses.length > 0) {
+                        let last = mergedClasses[mergedClasses.length - 1];
+                        if (normalizeStr(last.subject) === normalizeStr(cls.subject) && last.room === cls.room) {
+                            let timePartsLast = String(last.time).split(/[-]|to/i);
+                            let timePartsCls = String(cls.time).split(/[-]|to/i);
+                            let start1 = timePartsLast[0]?.trim() || last.time;
+                            let end2 = timePartsCls[1]?.trim() || String(cls.time).replace(/Period/i, '').trim();
+                            last.time = `${start1} - ${end2}`;
+                            return;
+                        }
                     }
-                }
-                mergedClasses.push({ ...cls });
-            });
+                    mergedClasses.push({ ...cls });
+                });
 
-            mergedClasses.forEach(cls => {
-                let todayLocal = new Date();
-                let tzoffset = todayLocal.getTimezoneOffset() * 60000;
-                let dayOrderDate = (new Date(todayLocal - tzoffset)).toISOString().slice(0, 10);
+                mergedClasses.forEach(cls => {
+                    let currentDayOrder = getDayOrder(dayOrderDate);
+                    let isActive = isClassActive(cls.time) && dayNumber == currentDayOrder;
+                    let activeClass = isActive ? 'active-highlight' : '';
+                    let badge = isActive ? '<span class="active-badge">HAPPENING NOW</span>' : '';
 
-                let currentDayOrder = todayLocal.getDay();
-                if (srmPlanner[dayOrderDate] && srmPlanner[dayOrderDate].type === "Day Order") {
-                    currentDayOrder = srmPlanner[dayOrderDate].value;
-                } else {
-                    currentDayOrder = (currentDayOrder >= 1 && currentDayOrder <= 5) ? currentDayOrder : 0; // 0 for weekends
-                }
-
-                let isActive = isClassActive(cls.time) && dayNumber == currentDayOrder;
-                let activeClass = isActive ? 'active-highlight' : '';
-                let badge = isActive ? '<span class="active-badge">HAPPENING NOW</span>' : '';
-
-                grid.innerHTML += `
-                    <div class="tt-card fade-in-up ${activeClass}">
-                        <div class="tt-time"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> ${cls.time || 'N/A'} ${badge}</div>
-                        <h3 class="tt-subject">${cls.subject || 'Unknown Subject'}</h3>
-                        <div class="tt-room"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg> ${cls.room || 'Online/Unknown'}</div>
-                    </div>
-                `;
-            });
+                    grid.innerHTML += `
+                        <div class="tt-card fade-in-up ${activeClass}">
+                            <div class="tt-time"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> ${cls.time || 'N/A'} ${badge}</div>
+                            <h3 class="tt-subject">${cls.subject || 'Unknown Subject'}</h3>
+                            <div class="tt-room"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg> ${cls.room || 'Online/Unknown'}</div>
+                        </div>
+                    `;
+                });
+            }
         }
 
         // ================= CALENDAR LOGIC =================
@@ -3026,6 +3341,68 @@
             renderCalendar();
         }
 
+        function checkAndShowEventPopup() {
+            let todayLocal = new Date();
+            let tzoffset = todayLocal.getTimezoneOffset() * 60000;
+            let curISOTime = (new Date(todayLocal - tzoffset)).toISOString().slice(0, 10);
+
+
+            let plan = srmPlanner[curISOTime];
+            let show = false;
+            let t = "Notification";
+            let s = "";
+
+            let emojiList = ["🎉", "✨", "🔥"];
+
+            if (isSemesterVacation(curISOTime)) {
+                show = true;
+                t = "Semester Holidays! 🌴";
+                s = "Enjoy your vacation! Recharge and relax.";
+                emojiList = ["🌴", "🏖️", "☀️", "🍹", "😎", "✨"];
+            } else if (plan && plan.title) {
+                s = plan.title;
+                if (plan.title.includes("Enrolment") || plan.title.includes("Commencement")) {
+                    show = true;
+                    t = "Welcome Back! 🎉";
+                    emojiList = ["🎉", "🚀", "🎒", "✨", "🔥"];
+                } else if (plan.title.includes("Last Working Day")) {
+                    show = true;
+                    t = "Semester Complete! 🎓";
+                    emojiList = ["🎓", "🏆", "🎊", "🥂", "💯"];
+                }
+            }
+            
+            if (show) {
+                let popupTitle = document.getElementById('eventPopupTitle');
+                let popupSub = document.getElementById('eventPopupSub');
+                if (popupTitle) popupTitle.innerText = t;
+                if (popupSub) popupSub.innerText = s;
+                
+                const popup = document.getElementById('eventPopup');
+                if (popup) {
+                    // Generate floating emoji confetti
+                    document.querySelectorAll('.floating-emoji').forEach(e => e.remove());
+                    for (let i = 0; i < 40; i++) {
+                        let el = document.createElement('div');
+                        el.className = 'floating-emoji';
+                        el.innerText = emojiList[Math.floor(Math.random() * emojiList.length)];
+                        el.style.position = 'absolute';
+                        el.style.left = Math.random() * 100 + 'vw';
+                        el.style.bottom = '-10vh';
+                        el.style.fontSize = (Math.random() * 2 + 2) + 'rem';
+                        el.style.opacity = Math.random() * 0.8 + 0.2;
+                        el.style.animation = `floatUpConfetti ${Math.random() * 2 + 3}s ease-in forwards`;
+                        el.style.animationDelay = (Math.random() * 1.5) + 's';
+                        el.style.zIndex = 0;
+                        popup.appendChild(el);
+                    }
+
+                    popup.style.display = 'flex';
+                    setTimeout(() => { popup.style.display = 'none'; }, 5000);
+                }
+            }
+        }
+
         let userReminders = JSON.parse(localStorage.getItem('userReminders') || '{}');
         let currentEditingDate = null;
 
@@ -3060,7 +3437,7 @@
 
             let plan = srmPlanner[dateStr];
             if (plan) {
-                let badge = plan.type === 'Holiday' ? '<span class="special-badge" style="background: linear-gradient(135deg, #00cc66, #00994d);">Holiday</span>' : `<span class="special-badge" style="background: linear-gradient(135deg, #bf5af2, #9432c7); text-transform: uppercase;">Day Order ${plan.value}</span>`;
+                let badge = plan.type === 'Holiday' ? '<span class="special-badge" style="background: linear-gradient(135deg, #00cc66, #00994d);">Holiday</span>' : `<span class="special-badge" style="background: linear-gradient(135deg, #bf5af2, #9432c7); text-transform: uppercase;">${plan.type}</span>`;
                 document.getElementById('event-desc').innerHTML = `${badge} <br><br> ${plan.title || 'No additional details.'}`;
             } else {
                 document.getElementById('event-desc').innerText = "No events scheduled for this day.";
@@ -3069,11 +3446,12 @@
 
         // ================= GALLERY & PROJECTS =================
         const projectsDatabase = {
-            'oopsBanner': { title: 'OOPS Banner App', subProjects: [{ id: 'ucsFolder', title: "UC's" }, { id: 'week1Problem', title: 'Week 1 & 2 Problems' }, { id: 'week34Problem', title: 'Week 3 & 4 Problems' }, { id: 'helloAppFolder', title: 'HelloApp UC\'s' }] },
+            'oopsBanner': { title: 'OOPS Banner App', subProjects: [{ id: 'ucsFolder', title: "UC's" }, { id: 'week1Problem', title: 'Week 1 & 2 Problems' }, { id: 'week34Problem', title: 'Week 3 & 4 Problems' }, { id: 'helloAppFolder', title: "HelloApp UC's" }, { id: 'week78ProblemI', title: 'week 7 and 8 problems i' }] },
             'ucsFolder': { title: "OOPS Banner App UC's", parent: 'oopsBanner', images: [{ src: 'images/oops-banner/uc1.png', label: '1' }, { src: 'images/oops-banner/uc2.png', label: '2' }, { src: 'images/oops-banner/uc3.png', label: '3' }, { src: 'images/oops-banner/uc4.png', label: '4' }, { src: 'images/oops-banner/uc5.png', label: '5' }, { src: 'images/oops-banner/uc6.png', label: '6' }, { src: 'images/oops-banner/uc7.png', label: '7' }, { src: 'images/oops-banner/uc8.png', label: '8' }, { src: 'images/oops-banner/uc9.png', label: '9' }, { src: 'images/oops-banner/uc10.png', label: '10' }, { src: 'images/oops-banner/end.png', label: 'end' }] },
             'week1Problem': { title: 'Week 1 and 2 Problems', parent: 'oopsBanner', images: [{ src: 'images/oops-banner/Basic-step1.png', label: 'Basic-Step' }, { src: 'images/oops-banner/Basic-step2.png', label: 'Basic-Step' }, { src: 'images/oops-banner/level1.png', label: 'Part 1' }, { src: 'images/oops-banner/level12.png', label: 'Part 2' }, { src: 'images/oops-banner/level13.png', label: 'Part 3' }, { src: 'images/oops-banner/bash.png', label: 'Bash' }, { src: 'images/oops-banner/level21.png', label: 'Part 4' }, { src: 'images/oops-banner/level22.png', label: 'Part 5' }, { src: 'images/oops-banner/level3.png', label: 'Part 6' }] },
             'week34Problem': { title: 'Week 3 and 4 Problems', parent: 'oopsBanner', images: [{ src: 'images/oops-banner/w31.png', label: 'Step1' }, { src: 'images/oops-banner/w32.png', label: 'Step2' }, { src: 'images/oops-banner/w33.png', label: 'Step3' }, { src: 'images/oops-banner/w34.png', label: 'Step4' }, { src: 'images/oops-banner/w35.png', label: 'Step5' }, { src: 'images/oops-banner/w36.png', label: 'Step6' }, { src: 'images/oops-banner/end.png', label: 'end' }] },
-            'helloAppFolder': { title: 'HelloApp UC\'s', parent: 'oopsBanner', video: 'https://www.youtube.com/embed/k8eX_rkQxPk', images: [{ src: 'images/oops-banner/ha1.png', label: 'uc 1 Step 1' }, { src: 'images/oops-banner/ha2.png', label: 'Step 2' }, { src: 'images/oops-banner/ha3.png', label: 'Step 3' }, { src: 'images/oops-banner/ha4.png', label: 'Step 4' }, { src: 'images/oops-banner/ha5.png', label: 'uc 2 Step 5' }, { src: 'images/oops-banner/ha6.png', label: 'Step 6' }, { src: 'images/oops-banner/ha7.png', label: 'uc 3 Step 7' }, { src: 'images/oops-banner/ha8.png', label: 'Step 8' }, { src: 'images/oops-banner/ha9.png', label: 'Step 8' }, { src: 'images/oops-banner/ha10.png', label: 'Step 9' }, { src: 'images/oops-banner/ha11.png', label: 'Step 10' }, { src: 'images/oops-banner/ha12.png', label: 'Step 11' }, { src: 'images/oops-banner/ha13.png', label: 'Step 12' }, { src: 'images/oops-banner/ha14.png', label: 'Step 13' }, { src: 'images/oops-banner/end.png', label: 'end' }] }
+            'helloAppFolder': { title: "HelloApp UC's", parent: 'oopsBanner', video: 'https://www.youtube.com/embed/k8eX_rkQxPk', images: [{ src: 'images/oops-banner/ha1.png', label: 'uc 1 Step 1' }, { src: 'images/oops-banner/ha2.png', label: 'Step 2' }, { src: 'images/oops-banner/ha3.png', label: 'Step 3' }, { src: 'images/oops-banner/ha4.png', label: 'Step 4' }, { src: 'images/oops-banner/ha5.png', label: 'uc 2 Step 5' }, { src: 'images/oops-banner/ha6.png', label: 'Step 6' }, { src: 'images/oops-banner/ha7.png', label: 'uc 3 Step 7' }, { src: 'images/oops-banner/ha8.png', label: 'Step 8' }, { src: 'images/oops-banner/ha9.png', label: 'Step 8' }, { src: 'images/oops-banner/ha10.png', label: 'Step 9' }, { src: 'images/oops-banner/ha11.png', label: 'Step 10' }, { src: 'images/oops-banner/ha12.png', label: 'Step 11' }, { src: 'images/oops-banner/ha13.png', label: 'Step 12' }, { src: 'images/oops-banner/ha14.png', label: 'Step 13' }, { src: 'images/oops-banner/end.png', label: 'end' }] },
+            'week78ProblemI': { title: 'week 7 and 8 problems ', parent: 'oopsBanner', images: [{ src: 'images/oops-banner/aa1.png', label: 'Step1' }, { src: 'images/oops-banner/aa2.png', label: 'Step1' }, { src: 'images/oops-banner/aa3.png', label: 'Step1' }, { src: 'images/oops-banner/end.png', label: 'end' }] }
         };
 
         function openProject(projectId) {
@@ -3219,10 +3597,6 @@
             });
         }
 
-        // ================= STUDY HELPER DEPRECATED =================
-        // Helper UI has been replaced with the embedded iframe above
-        // Legacy init function removed
-
         // ================= UTILITIES & HELPERS =================
         // ================= PULL TO REFRESH =================
         let pStart = { y: 0 };
@@ -3287,12 +3661,7 @@
                 let tzoffset = todayLocal.getTimezoneOffset() * 60000;
                 let localISOTime = (new Date(todayLocal - tzoffset)).toISOString().slice(0, 10);
 
-                let expectedDayOrder = todayLocal.getDay();
-                if (srmPlanner[localISOTime] && srmPlanner[localISOTime].type === "Day Order") {
-                    expectedDayOrder = srmPlanner[localISOTime].value;
-                } else {
-                    expectedDayOrder = (expectedDayOrder >= 1 && expectedDayOrder <= 5) ? expectedDayOrder : 1;
-                }
+                let expectedDayOrder = getDayOrder(localISOTime) || 1;
 
                 // If currently viewing "Today's" Day Order, refresh to update the "Happening Now" highlights
                 if (activeDay == expectedDayOrder) {
@@ -3311,26 +3680,75 @@
             document.getElementById('themeToggle').innerText = document.body.classList.contains('light-mode') ? '🌙' : '☀️';
         }
 
-        setTimeout(() => {
-            document.getElementById('splash-screen').classList.add('zoom-out');
-            document.getElementById('main-content').classList.add('content-visible');
-            document.getElementById('navButtons').style.opacity = '1';
-            setTimeout(() => document.getElementById('splash-screen').style.display = 'none', 1000);
-            checkAndScheduleNotifications();
-        }, 1200);
+        function initApp() {
+            const mainContent = document.getElementById('main-content');
+            const navBtn = document.getElementById('navButtons');
+            if (mainContent) mainContent.classList.add('content-visible');
+            if (navBtn) navBtn.style.opacity = '1';
 
-        function openLightbox(src) { document.getElementById("lightbox").style.display = "flex"; document.getElementById("lightbox-img").src = src; }
-        function closeLightbox() { document.getElementById("lightbox").style.display = "none"; }
+            let storedProfile = localStorage.getItem('squadProfile');
+            if (storedProfile) {
+                isLoggedIn = true;
+                const profile = JSON.parse(storedProfile);
+                document.getElementById('welcomeName').innerText = "Hi, " + (profile.name ? profile.name.split(' ')[0] : 'User') + " 👋";
+                
+                const logoutBtn = document.getElementById('logoutBtn');
+                if (logoutBtn) logoutBtn.style.display = 'flex';
+
+                loadSavedData();
+                showTab('dashboard');
+                
+                // Start background sync
+                backgroundSync();
+
+                // Show event popup
+                setTimeout(() => { checkAndShowEventPopup(); }, 1000);
+            }
+            if (typeof checkAndScheduleNotifications === 'function') {
+                checkAndScheduleNotifications();
+            }
+        }
+        
+        // Execute initialization
+        initApp();
 
         function requestNotificationPermission() {
             if (!("Notification" in window)) alert("This browser does not support desktop notification");
-            else if (Notification.permission === "granted") { alert("Notifications are already enabled!"); checkAndScheduleNotifications(true); }
+            else if (Notification.permission === "granted") { 
+                alert("Notifications are already enabled!"); 
+                checkAndScheduleNotifications(true); 
+                registerPeriodicSync();
+            }
             else if (Notification.permission !== "denied") {
                 Notification.requestPermission().then(permission => {
-                    if (permission === "granted") alert("Notifications enabled! You will now receive daily mess updates.");
+                    if (permission === "granted") {
+                        alert("Notifications enabled! You will now receive daily mess updates.");
+                        checkAndScheduleNotifications(true);
+                        registerPeriodicSync();
+                    }
                 });
             }
         }
+
+        async function registerPeriodicSync() {
+            if ('serviceWorker' in navigator) {
+                const registration = await navigator.serviceWorker.ready;
+                if ('periodicSync' in registration) {
+                    try {
+                        const status = await navigator.permissions.query({ name: 'periodic-background-sync' });
+                        if (status.state === 'granted') {
+                            await registration.periodicSync.register('check-notifications', {
+                                minInterval: 12 * 60 * 60 * 1000 // Best effort 12 hours interval for true background wakeup
+                            });
+                            console.log('Periodic background sync registered!');
+                        }
+                    } catch (e) { console.error('Periodic Sync Error:', e); }
+                }
+            }
+        }
+
+        function openLightbox(src) { document.getElementById("lightbox").style.display = "flex"; document.getElementById("lightbox-img").src = src; }
+        function closeLightbox() { document.getElementById("lightbox").style.display = "none"; }
 
         function triggerLocalNotification(title, body) {
             if (Notification.permission === 'granted' && navigator.serviceWorker) {
@@ -3369,13 +3787,71 @@
 
         // ================= SHARING =================
         async function generateShareImage(title, value, color) {
-            const btn = event.currentTarget;
+            // Setup Holographic Modal UI
+            document.getElementById('holoShareModal').style.display = 'flex';
+            document.getElementById('holo-title').innerText = title;
+            document.getElementById('holo-value').innerText = value;
+            document.getElementById('holo-value').style.background = `linear-gradient(to bottom, #fff, ${color})`;
+            document.getElementById('holo-value').style.webkitBackgroundClip = 'text';
+            document.getElementById('holo-value').style.webkitTextFillColor = 'transparent';
+
+            const card = document.getElementById('holo-card');
+            const glare = document.getElementById('holo-glare');
+            const container = document.getElementById('holo-card-container');
+
+            // 3D Tilt Effect logic
+            container.addEventListener('mousemove', (e) => {
+                const rect = container.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                
+                const centerX = rect.width / 2;
+                const centerY = rect.height / 2;
+                
+                const rotateX = ((y - centerY) / centerY) * -20;
+                const rotateY = ((x - centerX) / centerX) * 20;
+
+                card.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+                
+                // Move glare
+                glare.style.opacity = '1';
+                glare.style.transform = `translate(${x * 0.5}px, ${y * 0.5}px) rotate(45deg)`;
+            });
+
+            container.addEventListener('mouseleave', () => {
+                card.style.transform = `rotateX(0deg) rotateY(0deg)`;
+                card.style.transition = 'transform 0.5s ease';
+                glare.style.opacity = '0';
+                setTimeout(() => card.style.transition = 'transform 0.1s', 500);
+            });
+            
+            // Setup Device Orientation for Mobile Tilt
+            if (window.DeviceOrientationEvent) {
+                window.addEventListener("deviceorientation", function(e) {
+                    if (document.getElementById('holoShareModal').style.display === 'flex') {
+                        let tiltLR = e.gamma;
+                        let tiltFB = e.beta;
+                        if(tiltLR > 30) tiltLR = 30; if(tiltLR < -30) tiltLR = -30;
+                        if(tiltFB > 60) tiltFB = 60; if(tiltFB < 0) tiltFB = 0;
+                        
+                        const rotateY = (tiltLR / 30) * 20;
+                        const rotateX = ((tiltFB - 30) / 30) * -20;
+                        card.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+                    }
+                }, true);
+            }
+
+            // Hook up download button
+            const dlBtn = document.getElementById('downloadHoloBtn');
+            dlBtn.onclick = () => downloadShareImage(title, value, color, dlBtn);
+        }
+
+        async function downloadShareImage(title, value, color, btn) {
             const originalHTML = btn.innerHTML;
             btn.innerHTML = `<div class="css-loader" style="width: 20px; height: 20px; margin: 0;"></div>`;
             
             const template = document.getElementById('share-template');
             
-            // Temporarily reveal to html2canvas (kept hidden by z-index: -100)
             const originalTop = template.style.top;
             const originalLeft = template.style.left;
             const originalOpacity = template.style.opacity;
@@ -3407,7 +3883,6 @@
                         link.download = 'srm-hub-stats.png';
                         link.href = canvas.toDataURL();
                         link.click();
-                        alert("Image saved to your device!");
                     }
                     btn.innerHTML = originalHTML;
                 }, 'image/png');
@@ -3416,7 +3891,6 @@
                 alert("Failed to generate share image.");
                 btn.innerHTML = originalHTML;
             } finally {
-                // Restore hidden state
                 template.style.top = originalTop || '';
                 template.style.left = originalLeft || '';
                 template.style.opacity = originalOpacity || '';
