@@ -1570,6 +1570,43 @@
 
 <body>
 
+    <div id="login-view" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 10000; flex-direction: column; justify-content: center; align-items: center; background: transparent; backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);">
+        <div class="image-card" style="max-width: 450px; width: 90%; padding: 40px; text-align: center; animation: fadeInUp 0.8s ease forwards;">
+            <svg viewBox="0 0 100 100" width="80" height="80" style="margin-bottom: 20px;">
+                <defs>
+                    <linearGradient id="lockGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="#ffaa00" />
+                        <stop offset="100%" stop-color="#8a2be2" />
+                    </linearGradient>
+                </defs>
+                <path d="M 30 20 L 10 50 L 30 80 M 70 20 L 90 50 L 70 80 M 35 65 L 45 65 L 45 50 L 55 50 L 55 35 L 65 35" fill="none" stroke="url(#lockGradient)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+            <h2 style="margin: 0 0 10px 0; font-size: 1.8rem; font-family: 'Montserrat', sans-serif; text-transform: uppercase;">Login Required</h2>
+            <p style="color: var(--text-sub); margin-bottom: 30px; font-size: 0.9rem;">Sync with Academia to access your dashboard.</p>
+            
+            <div id="login-form-container">
+                <input type="text" id="srm-reg" placeholder="Registration No. (RA...)" class="modal-input" style="width: 100%; box-sizing: border-box; margin-bottom: 15px; background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; padding: 15px; border-radius: 12px;">
+                <input type="password" id="srm-pwd" placeholder="Academia Password" class="modal-input" style="width: 100%; box-sizing: border-box; margin-bottom: 15px; background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; padding: 15px; border-radius: 12px;">
+                
+                <div class="batch-toggle" style="margin-bottom: 25px;">
+                    <div class="batch-btn active" onclick="toggleBatch(this, 1)">Batch 1</div>
+                    <div class="batch-btn" onclick="toggleBatch(this, 2)">Batch 2</div>
+                </div>
+                
+                <button class="action-btn" onclick="startLiveSync()" style="width: 100%; background: linear-gradient(135deg, #ffaa00, #ff8800); color: #000; font-weight: 900; letter-spacing: 1px;">AUTHENTICATE & SYNC</button>
+            </div>
+
+            <div id="login-loader-container" style="display: none; flex-direction: column; align-items: center; justify-content: center; margin-top: 20px;">
+                <div class="css-loader" style="margin-bottom: 20px;"></div>
+                <h3 id="sync-status" style="margin: 0 0 10px 0; font-size: 1.2rem; color: var(--primary);">🔄 Connecting... <span id="sync-timer" style="background: rgba(255,170,0,0.2); padding: 2px 8px; border-radius: 6px;">0s</span></h3>
+                <div style="width: 100%; height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; overflow: hidden; margin-bottom: 20px;">
+                    <div id="login-progress-bar" style="width: 0%; height: 100%; background: var(--primary); transition: width 1s linear;"></div>
+                </div>
+                <div id="login-tip" style="color: var(--text-sub); font-size: 0.9rem; font-style: italic; min-height: 40px; padding: 0 10px;">💡 Did you know? The library has a massive collection of e-books available for free.</div>
+            </div>
+        </div>
+    </div>
+
 
 
     <div id="eventPopup" class="event-popup" style="display: none;">
@@ -1646,43 +1683,6 @@
         <div class="st-footer">Made with SRM Student Hub</div>
     </div>
 
-
-    <div id="login-view" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 10000; flex-direction: column; justify-content: center; align-items: center; background: transparent; backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);">
-        <div class="image-card" style="max-width: 450px; width: 90%; padding: 40px; text-align: center; animation: fadeInUp 0.8s ease forwards;">
-            <svg viewBox="0 0 100 100" width="80" height="80" style="margin-bottom: 20px;">
-                <defs>
-                    <linearGradient id="lockGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                        <stop offset="0%" stop-color="#ffaa00" />
-                        <stop offset="100%" stop-color="#8a2be2" />
-                    </linearGradient>
-                </defs>
-                <path d="M 30 20 L 10 50 L 30 80 M 70 20 L 90 50 L 70 80 M 35 65 L 45 65 L 45 50 L 55 50 L 55 35 L 65 35" fill="none" stroke="url(#lockGradient)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" />
-            </svg>
-            <h2 style="margin: 0 0 10px 0; font-size: 1.8rem; font-family: 'Montserrat', sans-serif; text-transform: uppercase;">Login Required</h2>
-            <p style="color: var(--text-sub); margin-bottom: 30px; font-size: 0.9rem;">Sync with Academia to access your dashboard.</p>
-            
-            <div id="login-form-container">
-                <input type="text" id="srm-reg" placeholder="Registration No. (RA...)" class="modal-input" style="width: 100%; box-sizing: border-box; margin-bottom: 15px; background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; padding: 15px; border-radius: 12px;">
-                <input type="password" id="srm-pwd" placeholder="Academia Password" class="modal-input" style="width: 100%; box-sizing: border-box; margin-bottom: 15px; background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; padding: 15px; border-radius: 12px;">
-                
-                <div class="batch-toggle" style="margin-bottom: 25px;">
-                    <div class="batch-btn active" onclick="toggleBatch(this, 1)">Batch 1</div>
-                    <div class="batch-btn" onclick="toggleBatch(this, 2)">Batch 2</div>
-                </div>
-                
-                <button class="action-btn" onclick="startLiveSync()" style="width: 100%; background: linear-gradient(135deg, #ffaa00, #ff8800); color: #000; font-weight: 900; letter-spacing: 1px;">AUTHENTICATE & SYNC</button>
-            </div>
-
-            <div id="login-loader-container" style="display: none; flex-direction: column; align-items: center; justify-content: center; margin-top: 20px;">
-                <div class="css-loader" style="margin-bottom: 20px;"></div>
-                <h3 id="sync-status" style="margin: 0 0 10px 0; font-size: 1.2rem; color: var(--primary);">🔄 Connecting... <span id="sync-timer" style="background: rgba(255,170,0,0.2); padding: 2px 8px; border-radius: 6px;">0s</span></h3>
-                <div style="width: 100%; height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; overflow: hidden; margin-bottom: 20px;">
-                    <div id="login-progress-bar" style="width: 0%; height: 100%; background: var(--primary); transition: width 1s linear;"></div>
-                </div>
-                <div id="login-tip" style="color: var(--text-sub); font-size: 0.9rem; font-style: italic; min-height: 40px; padding: 0 10px;">💡 Did you know? The library has a massive collection of e-books available for free.</div>
-            </div>
-        </div>
-    </div>
 
     <header class="site-header" style="display: none;">
             <svg id="logoInstallTrigger" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" class="main-logo"
