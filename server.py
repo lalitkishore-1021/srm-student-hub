@@ -58,6 +58,9 @@ def init_db():
         cur.execute('''CREATE TABLE IF NOT EXISTS lost_found (
             id SERIAL PRIMARY KEY, title TEXT NOT NULL, description TEXT, category TEXT, location TEXT, image_url TEXT,
             poster_name TEXT, net_id TEXT, created_at TEXT)''')
+        cur.execute('''CREATE TABLE IF NOT EXISTS music_hub (
+            id SERIAL PRIMARY KEY, title TEXT NOT NULL, artist TEXT, audio_data TEXT NOT NULL, cover_data TEXT,
+            uploaded_by TEXT, net_id TEXT, created_at TEXT)''')
         conn.commit()
         try:
             cur.execute("ALTER TABLE lost_found RENAME COLUMN item_name TO title")
@@ -90,6 +93,9 @@ def init_db():
         cur.execute('''CREATE TABLE IF NOT EXISTS lost_found (
             id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT NOT NULL, description TEXT, category TEXT, location TEXT, image_url TEXT,
             poster_name TEXT, net_id TEXT, created_at TEXT)''')
+        cur.execute('''CREATE TABLE IF NOT EXISTS music_hub (
+            id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT NOT NULL, artist TEXT, audio_data TEXT NOT NULL, cover_data TEXT,
+            uploaded_by TEXT, net_id TEXT, created_at TEXT)''')
     conn.commit()
     cur.close()
     conn.close()
@@ -1257,6 +1263,103 @@ def delete_lostfound(item_id):
             cur.execute("DELETE FROM lost_found WHERE id = %s", (item_id,))
         else:
             cur.execute("DELETE FROM lost_found WHERE id = ?", (item_id,))
+        conn.commit()
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        cur.close()
+        conn.close()
+    return jsonify({'success': True})
+
+# --- MUSIC LOUNGE ROUTES ---
+
+@app.route('/api/music', methods=['GET'])
+def get_music():
+    conn = get_db()
+    if DATABASE_URL:
+        cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cur.execute("SELECT id, title, artist, cover_data, uploaded_by, net_id, created_at FROM music_hub ORDER BY id DESC")
+    else:
+        cur = conn.cursor()
+        cur.execute("SELECT id, title, artist, cover_data, uploaded_by, net_id, created_at FROM music_hub ORDER BY id DESC")
+    
+    rows = cur.fetchall()
+    items = [dict(row) for row in rows]
+    cur.close()
+    conn.close()
+    return jsonify(items)
+
+@app.route('/api/music/audio/<int:track_id>', methods=['GET'])
+def get_music_audio(track_id):
+    conn = get_db()
+    cur = conn.cursor()
+    if DATABASE_URL:
+        cur.execute("SELECT audio_data FROM music_hub WHERE id = %s", (track_id,))
+    else:
+        cur.execute("SELECT audio_data FROM music_hub WHERE id = ?", (track_id,))
+    
+    row = cur.fetchone()
+    cur.close()
+    conn.close()
+    if row:
+        return jsonify({'audio_data': row[0]})
+    return jsonify({'error': 'Track not found'}), 404
+
+@app.route('/api/music/submit', methods=['POST'])
+def submit_music():
+    data = request.json
+    required = ['title', 'artist', 'audio_data', 'uploaded_by', 'net_id']
+    if not all(k in data for k in required) or not data['audio_data']:
+        return jsonify({'success': False, 'error': 'Missing required fields'}), 400
+
+    conn = get_db()
+    cur = conn.cursor()
+    now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    try:
+        if DATABASE_URL:
+            cur.execute("""
+                INSERT INTO music_hub (title, artist, audio_data, cover_data, uploaded_by, net_id, created_at)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
+            """, (data.get('title'), data.get('artist'), data.get('audio_data'), data.get('cover_data'),
+                  data.get('uploaded_by'), data.get('net_id'), now_str))
+        else:
+            cur.execute("""
+                INSERT INTO music_hub (title, artist, audio_data, cover_data, uploaded_by, net_id, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            """, (data.get('title'), data.get('artist'), data.get('audio_data'), data.get('cover_data'),
+                  data.get('uploaded_by'), data.get('net_id'), now_str))
+        conn.commit()
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        cur.close()
+        conn.close()
+    return jsonify({'success': True})
+
+@app.route('/api/music/delete/<int:track_id>', methods=['DELETE'])
+def delete_music(track_id):
+    data = request.json or {}
+    net_id = data.get('net_id', '').lower().strip()
+    if not net_id: return jsonify({'success': False, 'error': 'Authentication required'}), 401
+    
+    conn = get_db()
+    cur = conn.cursor()
+    try:
+        if DATABASE_URL:
+            cur.execute("SELECT net_id FROM music_hub WHERE id = %s", (track_id,))
+        else:
+            cur.execute("SELECT net_id FROM music_hub WHERE id = ?", (track_id,))
+        row = cur.fetchone()
+        if not row: return jsonify({'success': False, 'error': 'Track not found'}), 404
+        
+        owner_id = (row[0] if DATABASE_URL else dict(row).get('net_id', '')).lower().strip()
+        if owner_id != net_id: return jsonify({'success': False, 'error': 'Unauthorized'}), 403
+        
+        if DATABASE_URL:
+            cur.execute("DELETE FROM music_hub WHERE id = %s", (track_id,))
+        else:
+            cur.execute("DELETE FROM music_hub WHERE id = ?", (track_id,))
         conn.commit()
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500

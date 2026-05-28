@@ -1566,6 +1566,35 @@
             100% { transform: translateY(-120vh) scale(1.5) rotate(720deg); opacity: 0; } 
         }
     </style>
+    <style>
+        /* Music Lounge Styles */
+        .music-card { background: rgba(0, 0, 0, 0.5); border: 1px solid var(--glass-border); border-radius: 12px; padding: 15px; display: flex; align-items: center; gap: 15px; margin-bottom: 12px; transition: transform 0.2s, background 0.2s; cursor: pointer; position: relative; }
+        .music-card:hover { background: rgba(29, 185, 84, 0.1); transform: translateX(5px); }
+        .music-cover { width: 60px; height: 60px; border-radius: 8px; object-fit: cover; background: #333; }
+        .music-info { flex: 1; overflow: hidden; }
+        .music-title { color: #fff; font-size: 1rem; font-weight: bold; margin: 0 0 5px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .music-artist { color: var(--text-sub); font-size: 0.85rem; margin: 0; }
+        .music-play-btn { background: #1DB954; color: #fff; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: none; cursor: pointer; transition: transform 0.2s; flex-shrink: 0; }
+        .music-play-btn:hover { transform: scale(1.1); }
+        .music-player-bar { position: fixed; bottom: 0; left: 0; width: 100%; height: 90px; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(15px); border-top: 1px solid var(--glass-border); display: flex; align-items: center; padding: 0 20px; z-index: 2000; transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .music-player-bar.active { transform: translateY(0); }
+        .player-cover { width: 60px; height: 60px; border-radius: 8px; margin-right: 15px; object-fit: cover; }
+        .player-controls { display: flex; align-items: center; gap: 20px; flex: 1; justify-content: center; }
+        .ctrl-btn { background: none; border: none; color: #fff; cursor: pointer; opacity: 0.7; transition: opacity 0.2s, transform 0.2s; display: flex; align-items: center; justify-content: center; }
+        .ctrl-btn:hover { opacity: 1; transform: scale(1.1); }
+        .play-pause-btn { width: 45px; height: 45px; border-radius: 50%; background: #1DB954; color: #fff; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: transform 0.2s; opacity: 1; }
+        .play-pause-btn:hover { transform: scale(1.1); }
+        .progress-container { flex: 2; margin-left: 20px; display: flex; align-items: center; gap: 10px; font-size: 0.8rem; color: #aaa; max-width: 500px; }
+        .progress-bar { flex: 1; height: 5px; background: rgba(255, 255, 255, 0.1); border-radius: 5px; cursor: pointer; position: relative; }
+        .progress-fill { height: 100%; background: #1DB954; border-radius: 5px; width: 0%; pointer-events: none; }
+        
+        @media (max-width: 768px) {
+            .progress-container { display: none; }
+            .player-controls { justify-content: flex-end; }
+            .music-player-bar { padding: 0 15px; height: 80px; }
+            .player-cover { width: 50px; height: 50px; }
+        }
+    </style>
 </head>
 
 <body>
@@ -1869,6 +1898,17 @@
                         <p class="action-sub">Upcoming SRM Events</p>
                     </div>
                 </div>
+                <div class="action-card" onclick="switchView('music-view'); loadMusicList();">
+                    <div class="action-icon" style="color: #1DB954;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M9 18V5l12-2v13"></path>
+                        <circle cx="6" cy="18" r="3"></circle>
+                        <circle cx="18" cy="16" r="3"></circle>
+                    </svg></div>
+                    <div>
+                        <h4 class="action-title">Music Lounge</h4>
+                        <p class="action-sub">Stream & share vibes</p>
+                    </div>
+                </div>
                 <div class="action-card" onclick="switchView('cgpa-view')">
                     <div class="action-icon"><svg viewBox="0 0 24 24">
                             <rect x="4" y="2" width="16" height="20" rx="2" />
@@ -2050,6 +2090,18 @@
             </div>
 
             <div id="lf-list" style="max-width: 800px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px;"></div>
+        </div>
+
+        <div id="music-view" class="app-view">
+            <div class="view-header">
+                <button class="back-btn" onclick="switchNav('home-view', document.querySelector('.nav-item'))">&#8592; Back to Home</button>
+                <h2 class="gallery-title" style="color: #1DB954;">Music Lounge 🎵</h2>
+                <p class="subtitle" style="margin-bottom: 20px;">Vibe with the campus playlist</p>
+            </div>
+            <div style="text-align: center; margin-bottom: 30px;">
+                <button class="action-btn" onclick="document.getElementById('musicSubmitModal').style.display='flex'; document.getElementById('music-status').innerText='';" style="background: linear-gradient(135deg, #1DB954, #12823b); color: #fff; font-weight: 900; font-size: 1rem; padding: 14px 30px; border-radius: 30px; box-shadow: 0 10px 20px rgba(29,185,84,0.4); text-transform: uppercase; max-width: 300px; margin: 0 auto;">+ Upload Track</button>
+            </div>
+            <div id="music-list" style="max-width: 800px; margin: 0 auto 100px auto; display: flex; flex-direction: column; padding: 0 15px;"></div>
         </div>
 
         <div id="events-view" class="app-view">
@@ -2462,6 +2514,55 @@
                 <p id="lf-status" style="font-size: 0.85rem; font-weight: bold; text-align: center; min-height: 20px;"></p>
             </div>
         </div>
+    </div>
+
+    <!-- MUSIC SUBMIT MODAL -->
+    <div id="musicSubmitModal" class="lightbox" onclick="if(event.target===this) document.getElementById('musicSubmitModal').style.display='none'">
+        <div class="sync-modal-content">
+            <span class="close-btn" style="top:10px;right:15px;font-size:30px;" onclick="document.getElementById('musicSubmitModal').style.display='none'">&times;</span>
+            <h3 style="color:#1DB954; font-family:'Montserrat',sans-serif; margin-bottom: 20px;">Upload to Music Lounge</h3>
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+                <input id="music-title" class="modal-input" placeholder="Song Title *" style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; padding: 13px; border-radius: 12px;">
+                <input id="music-artist" class="modal-input" placeholder="Artist Name *" style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; padding: 13px; border-radius: 12px;">
+                
+                <label for="music-cover-file" style="background: rgba(0,0,0,0.3); border: 1px dashed var(--glass-border); color: #fff; padding: 13px; border-radius: 12px; cursor: pointer; text-align: center;">
+                    <span id="music-cover-text">🖼️ Upload Cover Art (Optional)</span>
+                    <input type="file" id="music-cover-file" accept="image/*" style="display: none;" onchange="document.getElementById('music-cover-text').innerText = this.files.length ? '✅ Cover Selected: ' + this.files[0].name : '🖼️ Upload Cover Art (Optional)';">
+                </label>
+                
+                <label for="music-audio-file" style="background: rgba(29, 185, 84, 0.1); border: 1px dashed #1DB954; color: #fff; padding: 13px; border-radius: 12px; cursor: pointer; text-align: center;">
+                    <span id="music-audio-text">🎵 Upload MP3 File *</span>
+                    <input type="file" id="music-audio-file" accept="audio/*" style="display: none;" onchange="document.getElementById('music-audio-text').innerText = this.files.length ? '✅ Audio Selected: ' + this.files[0].name : '🎵 Upload MP3 File *';">
+                </label>
+                
+                <button class="action-btn" onclick="submitMusic()" style="margin-top: 5px; background: #1DB954; color: #fff;">UPLOAD TRACK</button>
+                <p id="music-status" style="font-size: 0.85rem; font-weight: bold; text-align: center; min-height: 20px;"></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- MUSIC PLAYER BAR -->
+    <div id="music-player-bar" class="music-player-bar">
+        <img id="player-cover" class="player-cover" src="" alt="Cover" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMzMzIi8+PC9zdmc+'">
+        <div style="flex: 1; overflow: hidden; max-width: 150px;">
+            <div id="player-title" style="color: #fff; font-weight: bold; font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">No track</div>
+            <div id="player-artist" style="color: #aaa; font-size: 0.8rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">-</div>
+        </div>
+        <div class="player-controls">
+            <button class="ctrl-btn" onclick="prevMusicTrack()"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg></button>
+            <button class="play-pause-btn" id="player-play-btn" onclick="toggleMusicPlay()">
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+            </button>
+            <button class="ctrl-btn" onclick="nextMusicTrack()"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg></button>
+        </div>
+        <div class="progress-container">
+            <span id="player-time-current">0:00</span>
+            <div class="progress-bar" id="player-progress-bar" onclick="seekMusic(event)">
+                <div class="progress-fill" id="player-progress-fill"></div>
+            </div>
+            <span id="player-time-total">0:00</span>
+        </div>
+        <audio id="music-audio-element" style="display: none;" ontimeupdate="updateMusicProgress()" onended="nextMusicTrack()"></audio>
     </div>
 
     <div id="cgpaModal" class="lightbox" onclick="if(event.target === this) closeCGPACalculator()">
@@ -4964,6 +5065,192 @@
             }, 2000); // Ask after 2 sec so the user sees the app first
         });
 
+
+        // ============ MUSIC LOUNGE ============
+        let currentPlaylist = [];
+        let currentTrackIndex = -1;
+        let isPlaying = false;
+        
+        async function loadMusicList() {
+            const list = document.getElementById('music-list');
+            if(!list) return;
+            list.innerHTML = '<div class="css-loader" style="margin: 40px auto;"></div>';
+            try {
+                const res = await fetch(`${BACKEND_URL}/api/music`);
+                currentPlaylist = await res.json();
+                
+                if (currentPlaylist.length === 0) {
+                    list.innerHTML = `<div style="text-align: center; color: var(--text-sub); padding: 40px;">No tracks found. Upload the first one!</div>`;
+                    return;
+                }
+                
+                const myNetId = getCurrentNetId();
+                list.innerHTML = currentPlaylist.map((p, index) => {
+                    const isOwner = myNetId && p.net_id && myNetId === (p.net_id || '').toLowerCase();
+                    const cover = p.cover_data || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMzMzIi8+PC9zdmc+';
+                    return `
+                    <div class="music-card fade-in-up" onclick="playMusicTrack(${index})" style="transform: none;">
+                        <img src="${cover}" class="music-cover" alt="${p.title}">
+                        <div class="music-info">
+                            <h4 class="music-title">${p.title}</h4>
+                            <p class="music-artist">${p.artist}</p>
+                            ${p.uploaded_by ? `<div style="font-size:0.7rem; color: rgba(255,255,255,0.4); margin-top: 5px;">Uploaded by ${p.uploaded_by}</div>` : ''}
+                        </div>
+                        ${isOwner ? `<button onclick="event.stopPropagation(); deleteMusicTrack(${p.id})" style="background: rgba(255,68,68,0.15); border: 1px solid rgba(255,68,68,0.4); color: #ff4444; padding: 5px; border-radius: 8px; cursor: pointer; margin-right: 10px;">🗑️</button>` : ''}
+                        <button class="music-play-btn"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></button>
+                    </div>`;
+                }).join('');
+            } catch (e) {
+                list.innerHTML = '<div style="text-align:center; color: var(--danger); padding: 40px;">Could not load music.</div>';
+            }
+        }
+        
+        async function playMusicTrack(index) {
+            if (index < 0 || index >= currentPlaylist.length) return;
+            currentTrackIndex = index;
+            const track = currentPlaylist[index];
+            
+            document.getElementById('music-player-bar').classList.add('active');
+            document.getElementById('player-title').innerText = track.title;
+            document.getElementById('player-artist').innerText = track.artist;
+            document.getElementById('player-cover').src = track.cover_data || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMzMzIi8+PC9zdmc+';
+            
+            const audioEl = document.getElementById('music-audio-element');
+            document.getElementById('player-play-btn').innerHTML = '<div class="css-loader" style="width:15px;height:15px;border-width:2px;border-top-color:#fff;"></div>';
+            
+            try {
+                const res = await fetch(`${BACKEND_URL}/api/music/audio/${track.id}`);
+                const data = await res.json();
+                if (data.audio_data) {
+                    audioEl.src = data.audio_data;
+                    audioEl.play();
+                    isPlaying = true;
+                    updatePlayPauseBtn();
+                } else {
+                    alert("Audio not found.");
+                    document.getElementById('player-play-btn').innerHTML = '<svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>';
+                }
+            } catch(e) {
+                alert("Error loading audio.");
+                document.getElementById('player-play-btn').innerHTML = '<svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>';
+            }
+        }
+        
+        function toggleMusicPlay() {
+            const audioEl = document.getElementById('music-audio-element');
+            if (!audioEl.src) return;
+            if (isPlaying) { audioEl.pause(); } else { audioEl.play(); }
+            isPlaying = !isPlaying;
+            updatePlayPauseBtn();
+        }
+        
+        function updatePlayPauseBtn() {
+            const btn = document.getElementById('player-play-btn');
+            if (isPlaying) {
+                btn.innerHTML = '<svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>';
+            } else {
+                btn.innerHTML = '<svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>';
+            }
+        }
+        
+        function nextMusicTrack() {
+            if (currentTrackIndex < currentPlaylist.length - 1) {
+                playMusicTrack(currentTrackIndex + 1);
+            } else if (currentPlaylist.length > 0) {
+                playMusicTrack(0);
+            }
+        }
+        
+        function prevMusicTrack() {
+            if (currentTrackIndex > 0) { playMusicTrack(currentTrackIndex - 1); }
+        }
+        
+        function formatTime(seconds) {
+            if (isNaN(seconds)) return "0:00";
+            const min = Math.floor(seconds / 60);
+            const sec = Math.floor(seconds % 60);
+            return `${min}:${sec < 10 ? '0' : ''}${sec}`;
+        }
+        
+        function updateMusicProgress() {
+            const audioEl = document.getElementById('music-audio-element');
+            const fill = document.getElementById('player-progress-fill');
+            if (audioEl.duration) {
+                fill.style.width = `${(audioEl.currentTime / audioEl.duration) * 100}%`;
+                document.getElementById('player-time-current').innerText = formatTime(audioEl.currentTime);
+                document.getElementById('player-time-total').innerText = formatTime(audioEl.duration);
+            }
+        }
+        
+        function seekMusic(e) {
+            const audioEl = document.getElementById('music-audio-element');
+            if (!audioEl.duration) return;
+            const bar = document.getElementById('player-progress-bar');
+            audioEl.currentTime = (e.offsetX / bar.clientWidth) * audioEl.duration;
+        }
+        
+        async function submitMusic() {
+            const title = document.getElementById('music-title').value.trim();
+            const artist = document.getElementById('music-artist').value.trim();
+            const audioFile = document.getElementById('music-audio-file')?.files[0];
+            const coverFile = document.getElementById('music-cover-file')?.files[0];
+            const status = document.getElementById('music-status');
+            
+            if (!title || !artist || !audioFile) {
+                status.innerText = "Title, Artist, and Audio File are required!";
+                status.style.color = 'var(--danger)';
+                return;
+            }
+            if (audioFile.size > 8 * 1024 * 1024) {
+                status.innerText = "Audio file too large (Max 8MB)";
+                status.style.color = 'var(--danger)';
+                return;
+            }
+            status.innerText = "Processing audio... Please wait.";
+            status.style.color = 'var(--primary)';
+            
+            try {
+                let coverData = '';
+                if (coverFile) { coverData = await compressImage(coverFile); }
+                const audioBase64 = await new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.readAsDataURL(audioFile);
+                    reader.onload = () => resolve(reader.result);
+                    reader.onerror = e => reject(e);
+                });
+                status.innerText = "Uploading... This may take a moment.";
+                const payload = {
+                    title: title, artist: artist, audio_data: audioBase64, cover_data: coverData,
+                    uploaded_by: 'Student', net_id: getCurrentNetId()
+                };
+                const res = await fetch(`${BACKEND_URL}/api/music/submit`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
+                const data = await res.json();
+                if (data.success) {
+                    status.innerText = "Successfully uploaded!";
+                    status.style.color = '#1DB954';
+                    setTimeout(() => {
+                        document.getElementById('musicSubmitModal').style.display = 'none';
+                        loadMusicList();
+                    }, 1500);
+                } else {
+                    status.innerText = "Error: " + (data.error || "Upload failed");
+                    status.style.color = 'var(--danger)';
+                }
+            } catch (e) {
+                status.innerText = "Connection error. File might be too large.";
+                status.style.color = 'var(--danger)';
+            }
+        }
+        
+        async function deleteMusicTrack(id) {
+            if (!confirm("Delete this track?")) return;
+            try {
+                const res = await fetch(`${BACKEND_URL}/api/music/delete/${id}`, { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ net_id: getCurrentNetId() }) });
+                const data = await res.json();
+                if (data.success) { loadMusicList(); } 
+                else { alert("Error: " + (data.error || "Could not delete")); }
+            } catch (e) { alert("Connection error"); }
+        }
 
     </script>
 
