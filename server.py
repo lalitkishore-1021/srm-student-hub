@@ -5,6 +5,7 @@ import os
 import re
 import sqlite3
 import json
+import requests
 from datetime import datetime
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
@@ -61,6 +62,8 @@ def init_db():
         cur.execute('''CREATE TABLE IF NOT EXISTS music_hub (
             id SERIAL PRIMARY KEY, title TEXT NOT NULL, artist TEXT, audio_data TEXT NOT NULL, cover_data TEXT,
             uploaded_by TEXT, net_id TEXT, created_at TEXT)''')
+        cur.execute('''CREATE TABLE IF NOT EXISTS secret_crushes (
+            id SERIAL PRIMARY KEY, user_net_id TEXT NOT NULL, crush_ra TEXT NOT NULL, created_at TEXT)''')
         conn.commit()
         try:
             cur.execute("ALTER TABLE lost_found RENAME COLUMN item_name TO title")
@@ -96,6 +99,8 @@ def init_db():
         cur.execute('''CREATE TABLE IF NOT EXISTS music_hub (
             id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT NOT NULL, artist TEXT, audio_data TEXT NOT NULL, cover_data TEXT,
             uploaded_by TEXT, net_id TEXT, created_at TEXT)''')
+        cur.execute('''CREATE TABLE IF NOT EXISTS secret_crushes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT, user_net_id TEXT NOT NULL, crush_ra TEXT NOT NULL, created_at TEXT)''')
     conn.commit()
     cur.close()
     conn.close()
@@ -1367,6 +1372,90 @@ def delete_music(track_id):
         cur.close()
         conn.close()
     return jsonify({'success': True})
+
+GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY', '')
+
+def call_gemini(prompt):
+    if not GEMINI_API_KEY:
+        return None
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
+    payload = {"contents": [{"parts": [{"text": prompt}]}]}
+    try:
+        response = requests.post(url, json=payload, headers={'Content-Type': 'application/json'})
+        data = response.json()
+        if 'candidates' in data and data['candidates']:
+            return data['candidates'][0]['content']['parts'][0]['text']
+        return "Sorry, I could not generate a response."
+    except Exception as e:
+        return str(e)
+
+@app.route('/api/ai/chat', methods=['POST'])
+def ai_chat():
+    data = request.json
+    user_msg = data.get('prompt', '')
+    if not user_msg: return jsonify({'success': False, 'error': 'Empty prompt'})
+    sys_prompt = "You are SRM Hub AI, an assistant for SRM University students. Answer concisely and accurately, especially for Previous Year Questions (PYQs) and engineering topics.\nUser: " + user_msg
+    reply = call_gemini(sys_prompt)
+    if reply: return jsonify({'success': True, 'reply': reply})
+    return jsonify({'success': False, 'error': 'AI failed to respond.'})
+
+@app.route('/api/ai/predict', methods=['POST'])
+def ai_predict():
+    data = request.json
+    cgpa = data.get('cgpa', '')
+    skills = data.get('skills', '')
+    projects = data.get('projects', '')
+    prompt = f"Act as a strict Placement Predictor for SRM University students. Given CGPA: {cgpa}, Skills: {skills}, Projects: {projects}. Briefly list 3 target tech companies they are eligible for, and give a 6-month strict roadmap to secure a Super Dream offer. Keep it very concise."
+    reply = call_gemini(prompt)
+    if reply: return jsonify({'success': True, 'reply': reply})
+    return jsonify({'success': False, 'error': 'AI failed to predict.'})
+
+@app.route('/api/crush/submit', methods=['POST'])
+def submit_crush():
+    data = request.json
+    user_net_id = data.get('net_id', '').lower().strip()
+    crush_ra = data.get('crush_ra', '').strip().upper()
+    if not user_net_id or not crush_ra:
+        return jsonify({'success': False, 'error': 'Missing fields'})
+    
+    conn = get_db()
+    cur = conn.cursor()
+    try:
+        if DATABASE_URL:
+            cur.execute("SELECT register_no FROM students WHERE net_id = %s", (user_net_id,))
+        else:
+            cur.execute("SELECT register_no FROM students WHERE net_id = ?", (user_net_id,))
+        row = cur.fetchone()
+        if not row:
+            return jsonify({'success': False, 'error': 'Your RA number not found in database. Sync attendance first.'})
+        my_ra = (row[0] if DATABASE_URL else dict(row).get('register_no', '')).strip().upper()
+        
+        now = datetime.now().isoformat()
+        if DATABASE_URL:
+            cur.execute("INSERT INTO secret_crushes (user_net_id, crush_ra, created_at) VALUES (%s, %s, %s)", (user_net_id, crush_ra, now))
+            cur.execute("SELECT net_id FROM students WHERE register_no = %s", (crush_ra,))
+        else:
+            cur.execute("INSERT INTO secret_crushes (user_net_id, crush_ra, created_at) VALUES (?, ?, ?)", (user_net_id, crush_ra, now))
+            cur.execute("SELECT net_id FROM students WHERE register_no = ?", (crush_ra,))
+        
+        crush_user_row = cur.fetchone()
+        if crush_user_row:
+            crush_net_id = (crush_user_row[0] if DATABASE_URL else dict(crush_user_row).get('net_id', '')).lower().strip()
+            if DATABASE_URL:
+                cur.execute("SELECT id FROM secret_crushes WHERE user_net_id = %s AND crush_ra = %s", (crush_net_id, my_ra))
+            else:
+                cur.execute("SELECT id FROM secret_crushes WHERE user_net_id = ? AND crush_ra = ?", (crush_net_id, my_ra))
+            match_row = cur.fetchone()
+            if match_row:
+                conn.commit()
+                return jsonify({'success': True, 'match': True, 'message': 'It\'s a Match! ❤️'})
+        conn.commit()
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+    finally:
+        cur.close()
+        conn.close()
+    return jsonify({'success': True, 'match': False, 'message': 'Crush secretly logged! 🤫'})
 
 @app.route('/ping')
 def ping(): return 'pong', 200

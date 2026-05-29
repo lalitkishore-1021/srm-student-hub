@@ -1601,8 +1601,8 @@
         .fs-bg-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; background: radial-gradient(circle at 0% 0%, rgba(255, 170, 0, 0.15) 0%, transparent 50%), radial-gradient(circle at 100% 100%, rgba(138, 43, 226, 0.15) 0%, transparent 50%); animation: pulseBg 10s infinite alternate; }
         .fs-header { display: flex; justify-content: space-between; align-items: center; color: #fff; font-weight: bold; font-size: 1rem; letter-spacing: 1px; z-index: 10; position: relative; }
         .fs-close { background: none; border: none; color: #fff; font-size: 30px; cursor: pointer; }
-        .fs-cover-container { flex: 1; display: flex; align-items: center; justify-content: center; margin: 30px 0; min-height: 0; z-index: 10; position: relative; }
-        .fs-cover { width: 100%; max-width: 350px; max-height: 100%; aspect-ratio: 1/1; object-fit: cover; border-radius: 12px; box-shadow: 0 20px 40px rgba(0,0,0,0.5); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease; }
+        .fs-cover-container { flex: 1; display: flex; align-items: center; justify-content: center; margin: 30px 0; min-height: 0; z-index: 10; position: relative; width: 100%; }
+        .fs-cover { width: 100%; max-width: 350px; max-height: 100%; aspect-ratio: 1/1; object-fit: cover; border-radius: 12px; box-shadow: 0 20px 40px rgba(0,0,0,0.5); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease; margin: 0 auto; display: block; }
         .fs-cover.swipe-left { transform: translateX(-50px) scale(0.95); opacity: 0; }
         .fs-cover.swipe-right { transform: translateX(50px) scale(0.95); opacity: 0; }
         .fs-info { margin-bottom: 30px; text-align: left; max-width: 400px; margin-inline: auto; width: 100%; z-index: 10; position: relative; }
@@ -1857,6 +1857,46 @@
                     <div>
                         <h4 class="action-title">Step Class</h4>
                         <p class="action-sub">View OOPs banners & projects</p>
+                    </div>
+                </div>
+                <div class="action-card" onclick="document.getElementById('crushModal').style.display='flex'">
+                    <div class="action-icon" style="color: #ff4757;"><svg viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                    </svg></div>
+                    <div>
+                        <h4 class="action-title">Secret Crush</h4>
+                        <p class="action-sub">Match with your crush!</p>
+                    </div>
+                </div>
+                <div class="action-card" onclick="document.getElementById('predictModal').style.display='flex'">
+                    <div class="action-icon" style="color: #00cec9;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                        <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+                        <line x1="12" y1="22.08" x2="12" y2="12"/>
+                    </svg></div>
+                    <div>
+                        <h4 class="action-title">AI Placement</h4>
+                        <p class="action-sub">Predict salary & roadmap</p>
+                    </div>
+                </div>
+                <div class="action-card" onclick="document.getElementById('crushModal').style.display='flex'">
+                    <div class="action-icon" style="color: #ff4757;"><svg viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                    </svg></div>
+                    <div>
+                        <h4 class="action-title">Secret Crush</h4>
+                        <p class="action-sub">Match with your crush!</p>
+                    </div>
+                </div>
+                <div class="action-card" onclick="document.getElementById('predictModal').style.display='flex'">
+                    <div class="action-icon" style="color: #00cec9;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                        <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+                        <line x1="12" y1="22.08" x2="12" y2="12"/>
+                    </svg></div>
+                    <div>
+                        <h4 class="action-title">AI Placement</h4>
+                        <p class="action-sub">Predict salary & roadmap</p>
                     </div>
                 </div>
                 <div class="action-card" onclick="switchView('music-view'); loadMusicList();">
@@ -5547,5 +5587,167 @@
         </button>
         <button onclick="document.getElementById('mobile-lock').style.display='none'" style="margin-top: 20px; background: transparent; border: none; color: var(--text-sub); font-size: 1rem; text-decoration: underline;">Continue in browser (Not Recommended)</button>
     </div>
+    
+    <!-- AI CHATBOT FAB -->
+    <div id="ai-fab" onclick="document.getElementById('chatModal').style.display='flex'" style="position: fixed; bottom: 85px; right: 20px; width: 60px; height: 60px; background: linear-gradient(135deg, #8a2be2, #ffaa00); border-radius: 50%; box-shadow: 0 10px 30px rgba(138,43,226,0.5); display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 2000; animation: pulseBg 2s infinite alternate;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" style="width:30px;height:30px;"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+    </div>
+
+    <!-- Secret Crush Modal -->
+    <div id="crushModal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 10000; flex-direction: column; justify-content: center; align-items: center; background: rgba(0,0,0,0.8); backdrop-filter: blur(10px);">
+        <div class="image-card" style="max-width: 400px; width: 90%; padding: 30px; text-align: center; background: rgba(20,20,20,0.9); border: 1px solid rgba(255, 71, 87, 0.3); position: relative; overflow: hidden;" id="crush-modal-inner">
+            <button onclick="document.getElementById('crushModal').style.display='none'" style="position: absolute; top: 15px; right: 15px; background: none; border: none; color: #fff; font-size: 1.5rem; cursor: pointer; z-index: 10;">&times;</button>
+            <h2 style="color: #ff4757; margin-bottom: 10px; font-family: 'Montserrat', sans-serif; position: relative; z-index: 10;">Secret Crush Matcher ❤️</h2>
+            <p style="color: var(--text-sub); font-size: 0.9rem; margin-bottom: 20px; position: relative; z-index: 10;">Enter the exact Registration Number (RA...) of your crush. If they also enter yours, it's a match! 100% anonymous.</p>
+            <input type="text" id="crush-ra" placeholder="RA22110030..." style="width: 100%; padding: 12px; margin-bottom: 15px; border-radius: 8px; border: 1px solid var(--glass-border); background: rgba(255,255,255,0.1); color: #fff; text-transform: uppercase; position: relative; z-index: 10;">
+            <button onclick="submitCrush()" class="action-btn" style="background: #ff4757; color: #fff; width: 100%; margin: 0; border-radius: 8px; font-weight: bold; position: relative; z-index: 10;">Shoot Your Shot 💘</button>
+            <p id="crush-status" style="margin-top: 15px; font-weight: bold; position: relative; z-index: 10;"></p>
+        </div>
+    </div>
+
+    <!-- AI Placement Predictor Modal -->
+    <div id="predictModal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 10000; flex-direction: column; justify-content: center; align-items: center; background: rgba(0,0,0,0.8); backdrop-filter: blur(10px);">
+        <div class="image-card" style="max-width: 450px; width: 90%; padding: 30px; text-align: center; background: rgba(20,20,20,0.9); border: 1px solid rgba(0, 206, 201, 0.3); max-height: 90vh; overflow-y: auto; position: relative;">
+            <button onclick="document.getElementById('predictModal').style.display='none'" style="position: absolute; top: 15px; right: 15px; background: none; border: none; color: #fff; font-size: 1.5rem; cursor: pointer;">&times;</button>
+            <h2 style="color: #00cec9; margin-bottom: 10px; font-family: 'Montserrat', sans-serif;">AI Placement Predictor 🚀</h2>
+            <p style="color: var(--text-sub); font-size: 0.9rem; margin-bottom: 20px;">Enter your details and our AI will predict your target companies and generate a 6-month roadmap!</p>
+            <input type="text" id="ai-cgpa" placeholder="Current CGPA (e.g. 8.5)" style="width: 100%; padding: 12px; margin-bottom: 10px; border-radius: 8px; border: 1px solid var(--glass-border); background: rgba(255,255,255,0.1); color: #fff;">
+            <input type="text" id="ai-skills" placeholder="Skills (e.g. React, Python, C++)" style="width: 100%; padding: 12px; margin-bottom: 10px; border-radius: 8px; border: 1px solid var(--glass-border); background: rgba(255,255,255,0.1); color: #fff;">
+            <textarea id="ai-projects" placeholder="Describe your top 2 projects briefly..." rows="2" style="width: 100%; padding: 12px; margin-bottom: 15px; border-radius: 8px; border: 1px solid var(--glass-border); background: rgba(255,255,255,0.1); color: #fff; font-family: inherit; resize: none;"></textarea>
+            <button onclick="submitPredict()" class="action-btn" style="background: #00cec9; color: #fff; width: 100%; margin: 0; border-radius: 8px; font-weight: bold;">Predict My Future ✨</button>
+            <div id="predict-result" style="margin-top: 15px; text-align: left; font-size: 0.9rem; color: #fff; white-space: pre-wrap; background: rgba(0,0,0,0.5); padding: 15px; border-radius: 8px; display: none; line-height: 1.6;"></div>
+            <p id="predict-status" style="margin-top: 10px; font-weight: bold; color: var(--primary);"></p>
+        </div>
+    </div>
+
+    <!-- AI Chatbot Modal -->
+    <div id="chatModal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 10000; flex-direction: column; justify-content: center; align-items: center; background: rgba(0,0,0,0.8); backdrop-filter: blur(10px);">
+        <div class="image-card" style="max-width: 500px; width: 95%; height: 80vh; padding: 20px; display: flex; flex-direction: column; background: rgba(20,20,20,0.95); border: 1px solid rgba(138,43,226, 0.3); position: relative;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--glass-border); padding-bottom: 10px; margin-bottom: 10px;">
+                <h2 style="color: #ffaa00; margin: 0; font-family: 'Montserrat', sans-serif;">SRM PYQ AI 🧠</h2>
+                <button onclick="document.getElementById('chatModal').style.display='none'" style="background: none; border: none; color: #fff; font-size: 1.5rem; cursor: pointer;">&times;</button>
+            </div>
+            <div id="chat-history" style="flex: 1; overflow-y: auto; padding: 10px; display: flex; flex-direction: column; gap: 10px;">
+                <div style="background: rgba(138,43,226,0.2); padding: 10px 15px; border-radius: 15px; border-bottom-left-radius: 0; align-self: flex-start; max-width: 80%; color: #fff;">Hello! I am your AI assistant. Ask me to explain concepts, give you important questions for tomorrow's exam, or summarize notes!</div>
+            </div>
+            <div style="display: flex; gap: 10px; margin-top: 10px;">
+                <input type="text" id="chat-input" placeholder="Ask anything..." style="flex: 1; padding: 12px; border-radius: 20px; border: 1px solid var(--glass-border); background: rgba(255,255,255,0.1); color: #fff;" onkeypress="if(event.key==='Enter') submitChat()">
+                <button onclick="submitChat()" style="background: linear-gradient(135deg, #8a2be2, #ffaa00); color: #fff; border: none; border-radius: 50%; width: 45px; height: 45px; cursor: pointer; display: flex; align-items: center; justify-content: center;"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg></button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============ MASSIVE AI FEATURES ============
+        async function submitCrush() {
+            const ra = document.getElementById('crush-ra').value.trim();
+            const status = document.getElementById('crush-status');
+            if (!ra) { status.style.color = '#ff4757'; status.innerText = 'Please enter an RA number.'; return; }
+            status.style.color = 'var(--text-main)'; status.innerText = 'Encrypting and matching...';
+            
+            try {
+                const res = await fetch(`${BACKEND_URL}/api/crush/submit`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ net_id: getCurrentNetId(), crush_ra: ra })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    if (data.match) {
+                        status.style.color = '#ff4757'; status.innerText = 'IT\'S A MATCH! ❤️ They like you back!';
+                        const modalInner = document.getElementById('crush-modal-inner');
+                        const emojis = ['❤️', '💘', '😍', '✨', '🔥'];
+                        for (let i = 0; i < 30; i++) {
+                            let el = document.createElement('div');
+                            el.innerText = emojis[Math.floor(Math.random() * emojis.length)];
+                            el.style.position = 'absolute';
+                            el.style.left = Math.random() * 100 + '%';
+                            el.style.top = '-10%';
+                            el.style.fontSize = (Math.random() * 1.5 + 1) + 'rem';
+                            el.style.opacity = Math.random() * 0.8 + 0.2;
+                            el.style.animation = `floatUpConfetti ${Math.random() * 2 + 2}s linear forwards`;
+                            el.style.animationDelay = (Math.random() * 1) + 's';
+                            el.style.zIndex = 0;
+                            modalInner.appendChild(el);
+                        }
+                    } else {
+                        status.style.color = '#00cc66'; status.innerText = 'Crush secretly logged! 🤫 We will notify you if they also log you.';
+                    }
+                } else {
+                    status.style.color = '#ff4757'; status.innerText = data.error || 'Failed to submit.';
+                }
+            } catch(e) {
+                status.style.color = '#ff4757'; status.innerText = 'Network error.';
+            }
+        }
+
+        async function submitPredict() {
+            const cgpa = document.getElementById('ai-cgpa').value.trim();
+            const skills = document.getElementById('ai-skills').value.trim();
+            const projects = document.getElementById('ai-projects').value.trim();
+            const status = document.getElementById('predict-status');
+            const resDiv = document.getElementById('predict-result');
+            
+            if (!cgpa || !skills) { status.style.color = 'var(--danger)'; status.innerText = 'CGPA and Skills are required!'; return; }
+            status.style.color = 'var(--primary)'; status.innerText = 'AI is analyzing your profile...';
+            resDiv.style.display = 'none';
+            
+            try {
+                const res = await fetch(`${BACKEND_URL}/api/ai/predict`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ cgpa, skills, projects })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    status.innerText = '';
+                    resDiv.style.display = 'block';
+                    resDiv.innerText = data.reply;
+                } else {
+                    status.style.color = 'var(--danger)'; status.innerText = data.error || 'Prediction failed.';
+                }
+            } catch(e) {
+                status.style.color = 'var(--danger)'; status.innerText = 'Network error.';
+            }
+        }
+
+        async function submitChat() {
+            const inputEl = document.getElementById('chat-input');
+            const msg = inputEl.value.trim();
+            if(!msg) return;
+            inputEl.value = '';
+            
+            const history = document.getElementById('chat-history');
+            const userBubble = document.createElement('div');
+            userBubble.style.cssText = 'background: rgba(255,170,0,0.8); padding: 10px 15px; border-radius: 15px; border-bottom-right-radius: 0; align-self: flex-end; max-width: 80%; color: #fff;';
+            userBubble.innerText = msg;
+            history.appendChild(userBubble);
+            
+            const loadingBubble = document.createElement('div');
+            loadingBubble.style.cssText = 'background: rgba(138,43,226,0.2); padding: 10px 15px; border-radius: 15px; border-bottom-left-radius: 0; align-self: flex-start; max-width: 80%; color: #aaa;';
+            loadingBubble.innerText = 'Thinking...';
+            history.appendChild(loadingBubble);
+            history.scrollTop = history.scrollHeight;
+            
+            try {
+                const res = await fetch(`${BACKEND_URL}/api/ai/chat`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ prompt: msg })
+                });
+                const data = await res.json();
+                history.removeChild(loadingBubble);
+                const botBubble = document.createElement('div');
+                botBubble.style.cssText = 'background: rgba(138,43,226,0.2); padding: 10px 15px; border-radius: 15px; border-bottom-left-radius: 0; align-self: flex-start; max-width: 80%; color: #fff; white-space: pre-wrap; line-height: 1.5; font-size: 0.95rem;';
+                if(data.success) {
+                    botBubble.innerHTML = data.reply.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
+                } else {
+                    botBubble.innerText = "Error: " + data.error;
+                    botBubble.style.color = "#ff4757";
+                }
+                history.appendChild(botBubble);
+                history.scrollTop = history.scrollHeight;
+            } catch(e) {
+                history.removeChild(loadingBubble);
+            }
+        }
+    </script>
 </body>
 </html>
