@@ -1853,6 +1853,7 @@
                         <p class="action-sub">View OOPs banners & projects</p>
                     </div>
                 </div>
+                <!-- Music Lounge was moved above -->
                 <div class="action-card" onclick="openTodayMessMenu()">
                     <div class="action-icon"><svg viewBox="0 0 24 24">
                             <path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2" />
@@ -2616,10 +2617,11 @@
         <div class="fs-header">
             <button class="fs-close" onclick="closeFullscreenPlayer()"><svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg></button>
             <span>Now Playing</span>
-            <div style="width:24px"></div>
+            <button class="fs-close" onclick="downloadCurrentTrack()" style="font-size:24px;" title="Download Offline"><svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg></button>
         </div>
-        <div class="fs-cover-container">
-            <img id="fs-cover" class="fs-cover" src="" alt="Cover">
+        <div class="fs-cover-container" style="position: relative;">
+            <canvas id="visualizer-canvas" style="position: absolute; bottom: -30px; left: 0; width: 100%; height: 120px; z-index: 0; pointer-events: none; opacity: 0.7; filter: blur(0.5px);"></canvas>
+            <img id="fs-cover" class="fs-cover" src="" alt="Cover" style="position: relative; z-index: 1;">
         </div>
         <div class="fs-info">
             <h2 id="fs-title" class="fs-title">No track</h2>
@@ -5396,6 +5398,76 @@
                 else { alert("Error: " + (data.error || "Could not delete")); }
             } catch (e) { alert("Connection error"); }
         }
+        
+        // --- PREMIUM AUDIO VISUALIZER & OFFLINE ---
+        let audioCtx;
+        let analyser;
+        let dataArray;
+        
+        function initVisualizer() {
+            if (audioCtx) return;
+            const audioEl = document.getElementById('music-audio-element');
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            analyser = audioCtx.createAnalyser();
+            const source = audioCtx.createMediaElementSource(audioEl);
+            source.connect(analyser);
+            analyser.connect(audioCtx.destination);
+            
+            analyser.fftSize = 128;
+            const bufferLength = analyser.frequencyBinCount;
+            dataArray = new Uint8Array(bufferLength);
+            
+            const canvas = document.getElementById('visualizer-canvas');
+            if(!canvas) return;
+            canvas.width = 400;
+            canvas.height = 120;
+            const ctx = canvas.getContext('2d');
+            
+            function draw() {
+                requestAnimationFrame(draw);
+                if (!isPlaying) return;
+                analyser.getByteFrequencyData(dataArray);
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                const barWidth = (canvas.width / bufferLength) * 2.5;
+                let x = 0;
+                for(let i = 0; i < bufferLength; i++) {
+                    const barHeight = dataArray[i] / 2;
+                    ctx.fillStyle = \`rgb(\${barHeight + 100}, 185, 84)\`;
+                    ctx.fillRect(x, canvas.height - barHeight, barWidth, barHeight);
+                    x += barWidth + 2;
+                }
+            }
+            draw();
+        }
+        
+        async function downloadCurrentTrack() {
+            if (currentTrackIndex < 0) return;
+            const track = currentPlaylist[currentTrackIndex];
+            try {
+                const res = await fetch(\`\${BACKEND_URL}/api/music/audio/\${track.id}\`);
+                const data = await res.json();
+                if (data.audio_data) {
+                    const a = document.createElement('a');
+                    a.href = data.audio_data;
+                    a.download = \`\${track.title} - \${track.artist}.mp3\`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                }
+            } catch (e) {
+                alert("Could not download track.");
+            }
+        }
+        
+        document.addEventListener('click', () => {
+            if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+        }, { once: true });
+        
+        const originalPlayMusicTrack = playMusicTrack;
+        playMusicTrack = async function(index) {
+            await originalPlayMusicTrack(index);
+            initVisualizer();
+        };
         
         // Fullscreen Swipe Logic
         let touchstartX = 0;
