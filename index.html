@@ -1593,6 +1593,7 @@
         .progress-fill { height: 100%; background: #fff; border-radius: 5px; width: 0%; pointer-events: none; transition: width 0.1s linear; }
         
         .player-right { flex: 1; display: flex; justify-content: flex-end; align-items: center; gap: 15px; }
+        .volume-slider { width: 80px; margin-right: 15px; cursor: pointer; accent-color: #1DB954; }
         
         /* Fullscreen Player */
         .music-fullscreen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 3000; background: linear-gradient(180deg, #333 0%, #000 100%); display: none; flex-direction: column; padding: 30px; padding-top: max(30px, env(safe-area-inset-top)); animation: slideUp 0.3s ease forwards; }
@@ -1623,6 +1624,7 @@
             .player-right { gap: 15px; }
             .fs-cover { max-width: 100%; border-radius: 8px; }
             .music-fullscreen { padding: 20px; padding-top: max(20px, env(safe-area-inset-top)); }
+            .volume-slider { display: none; }
         }
         @media (min-width: 769px) {
             .mobile-progress-bar { display: none; }
@@ -2604,6 +2606,7 @@
             </div>
         </div>
         <div class="player-right">
+            <input type="range" id="volume-slider" min="0" max="1" step="0.01" value="1" class="volume-slider" oninput="changeVolume(this.value); event.stopPropagation();" onclick="event.stopPropagation();">
             <button class="ctrl-btn" id="mobile-play-btn" onclick="toggleMusicPlay(); event.stopPropagation();" style="display: flex;">
                 <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
             </button>
@@ -5182,6 +5185,22 @@
                         <button class="music-play-btn"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></button>
                     </div>`;
                 }).join('');
+                
+                const lastId = localStorage.getItem('lastPlayedTrackId');
+                if (lastId && !isPlaying && currentTrackIndex === -1) {
+                    const idx = currentPlaylist.findIndex(t => t.id == lastId);
+                    if (idx !== -1) {
+                        currentTrackIndex = idx;
+                        const track = currentPlaylist[idx];
+                        document.getElementById('player-title').innerText = track.title;
+                        document.getElementById('player-artist').innerText = track.artist;
+                        document.getElementById('player-cover').src = track.cover_data || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMzMzIi8+PC9zdmc+';
+                        document.getElementById('music-player-bar').classList.add('active');
+                        fetch(`${BACKEND_URL}/api/music/audio/${track.id}`).then(r=>r.json()).then(d=>{
+                            if(d.audio_data) document.getElementById('music-audio-element').src = d.audio_data;
+                        });
+                    }
+                }
             } catch (e) {
                 list.innerHTML = '<div style="text-align:center; color: var(--danger); padding: 40px;">Could not load music.</div>';
             }
@@ -5218,6 +5237,20 @@
                     audioEl.play();
                     isPlaying = true;
                     updatePlayPauseBtn();
+                    localStorage.setItem('lastPlayedTrackId', track.id);
+                    
+                    if ('mediaSession' in navigator) {
+                        navigator.mediaSession.metadata = new MediaMetadata({
+                            title: track.title,
+                            artist: track.artist,
+                            album: 'SRM Student Hub',
+                            artwork: [ { src: track.cover_data || 'https://via.placeholder.com/512', sizes: '512x512', type: 'image/png' } ]
+                        });
+                        navigator.mediaSession.setActionHandler('play', toggleMusicPlay);
+                        navigator.mediaSession.setActionHandler('pause', toggleMusicPlay);
+                        navigator.mediaSession.setActionHandler('previoustrack', prevMusicTrack);
+                        navigator.mediaSession.setActionHandler('nexttrack', nextMusicTrack);
+                    }
                 } else {
                     alert("Audio not found.");
                     updatePlayPauseBtn();
@@ -5234,6 +5267,11 @@
             if (isPlaying) { audioEl.pause(); } else { audioEl.play(); }
             isPlaying = !isPlaying;
             updatePlayPauseBtn();
+        }
+        
+        function changeVolume(val) {
+            const audioEl = document.getElementById('music-audio-element');
+            if (audioEl) audioEl.volume = val;
         }
         
         function updatePlayPauseBtn() {
@@ -5432,7 +5470,7 @@
                 let x = 0;
                 for(let i = 0; i < bufferLength; i++) {
                     const barHeight = dataArray[i] / 2;
-                    ctx.fillStyle = \`rgb(\${barHeight + 100}, 185, 84)\`;
+                    ctx.fillStyle = `rgb(${barHeight + 100}, 185, 84)`;
                     ctx.fillRect(x, canvas.height - barHeight, barWidth, barHeight);
                     x += barWidth + 2;
                 }
@@ -5444,12 +5482,12 @@
             if (currentTrackIndex < 0) return;
             const track = currentPlaylist[currentTrackIndex];
             try {
-                const res = await fetch(\`\${BACKEND_URL}/api/music/audio/\${track.id}\`);
+                const res = await fetch(`${BACKEND_URL}/api/music/audio/${track.id}`);
                 const data = await res.json();
                 if (data.audio_data) {
                     const a = document.createElement('a');
                     a.href = data.audio_data;
-                    a.download = \`\${track.title} - \${track.artist}.mp3\`;
+                    a.download = `${track.title} - ${track.artist}.mp3`;
                     document.body.appendChild(a);
                     a.click();
                     document.body.removeChild(a);
