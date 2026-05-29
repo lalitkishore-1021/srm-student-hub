@@ -1576,8 +1576,8 @@
         .music-artist { color: var(--text-sub); font-size: 0.85rem; margin: 0; }
         .music-play-btn { background: #1DB954; color: #fff; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: none; cursor: pointer; transition: transform 0.2s; flex-shrink: 0; }
         .music-play-btn:hover { transform: scale(1.1); }
-        .music-player-bar { position: fixed; bottom: 0; left: 0; width: 100%; height: 90px; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(15px); border-top: 1px solid var(--glass-border); display: flex; align-items: center; justify-content: space-between; padding: 0 20px; z-index: 2000; transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); cursor: pointer; }
-        .music-player-bar.active { transform: translateY(0); }
+        .music-player-bar { position: fixed; bottom: -100px; left: 0; width: 100%; height: 90px; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(15px); border-top: 1px solid var(--glass-border); display: flex; align-items: center; justify-content: space-between; padding: 0 20px; z-index: 2000; transition: bottom 0.3s cubic-bezier(0.4, 0, 0.2, 1); cursor: pointer; }
+        .music-player-bar.active { bottom: 0; }
         .player-left { display: flex; align-items: center; flex: 1; min-width: 0; }
         .player-cover { width: 60px; height: 60px; border-radius: 8px; margin-right: 15px; object-fit: cover; }
         .player-info { flex: 1; overflow: hidden; }
@@ -1614,7 +1614,8 @@
         @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
         
         @media (max-width: 768px) {
-            .music-player-bar { padding: 0 10px; height: 65px; border-radius: 8px; width: calc(100% - 20px); left: 10px; bottom: 80px; background: #222; }
+            .music-player-bar { padding: 0 10px; height: 65px; border-radius: 8px; width: calc(100% - 20px); left: 10px; bottom: -100px; background: rgba(0, 0, 0, 0.65); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.1); }
+            .music-player-bar.active { bottom: 80px; }
             .player-cover { width: 45px; height: 45px; margin-right: 10px; }
             .player-middle { flex: 0; display: none; }
             .mobile-progress-bar { position: absolute; bottom: 0; left: 10px; width: calc(100% - 20px); height: 2px; background: rgba(255,255,255,0.2); border-radius: 2px; overflow: hidden; pointer-events: none; }
@@ -5395,6 +5396,24 @@
                 else { alert("Error: " + (data.error || "Could not delete")); }
             } catch (e) { alert("Connection error"); }
         }
+        
+        // Fullscreen Swipe Logic
+        let touchstartX = 0;
+        let touchendX = 0;
+        
+        window.addEventListener('load', () => {
+            const fsContainer = document.getElementById('music-fullscreen');
+            if(fsContainer) {
+                fsContainer.addEventListener('touchstart', e => {
+                    touchstartX = e.changedTouches[0].screenX;
+                });
+                fsContainer.addEventListener('touchend', e => {
+                    touchendX = e.changedTouches[0].screenX;
+                    if (touchendX < touchstartX - 50) nextMusicTrack();
+                    if (touchendX > touchstartX + 50) prevMusicTrack();
+                });
+            }
+        });
 
     </script>
 
