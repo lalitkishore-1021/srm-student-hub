@@ -52,6 +52,7 @@
         href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;700;900&family=Open+Sans:wght@400;600&display=swap"
         rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
 
     <style>
         :root {
@@ -1564,6 +1565,9 @@
             0% { transform: translateY(0vh) scale(0.5) rotate(0deg); opacity: 0; } 
             10% { opacity: 1; }
             100% { transform: translateY(-120vh) scale(1.5) rotate(720deg); opacity: 0; } 
+        }        .sortable-ghost {
+            opacity: 0.4;
+            background: rgba(255,170,0,0.1);
         }
     </style>
     <style>
@@ -5199,21 +5203,41 @@
                     const isOwner = myNetId && p.net_id && myNetId === (p.net_id || '').toLowerCase();
                     const cover = p.cover_data || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMzMzIi8+PC9zdmc+';
                     return `
-                    <div class="music-card fade-in-up" onclick="playMusicTrack(${index})" style="transform: none;">
+                    <div class="music-card fade-in-up" data-id="${p.id}" onclick="playMusicTrack(${index})" style="transform: none; cursor: grab;">
+                        <div style="color: rgba(255,255,255,0.2); margin-right: 10px; font-size: 1.2rem;">⋮⋮</div>
                         <img src="${cover}" class="music-cover" alt="${p.title}">
                         <div class="music-info">
                             <h4 class="music-title">${p.title}</h4>
                             <p class="music-artist">${p.artist}</p>
                             ${p.uploaded_by ? `<div style="font-size:0.7rem; color: rgba(255,255,255,0.4); margin-top: 5px;">Uploaded by ${p.uploaded_by}</div>` : ''}
                         </div>
-                        <div style="display: flex; flex-direction: column; gap: 5px; margin-right: 15px; align-items: center;">
-                            ${index > 0 ? `<button onclick="event.stopPropagation(); moveMusicTrack(${index}, -1)" style="background: none; border: none; color: #aaa; cursor: pointer; font-size: 1.2rem;">▲</button>` : `<div style="height:24px;"></div>`}
-                            ${index < currentPlaylist.length - 1 ? `<button onclick="event.stopPropagation(); moveMusicTrack(${index}, 1)" style="background: none; border: none; color: #aaa; cursor: pointer; font-size: 1.2rem;">▼</button>` : `<div style="height:24px;"></div>`}
-                        </div>
                         ${isOwner ? `<button onclick="event.stopPropagation(); deleteMusicTrack(${p.id})" style="background: rgba(255,68,68,0.15); border: 1px solid rgba(255,68,68,0.4); color: #ff4444; padding: 5px; border-radius: 8px; cursor: pointer; margin-right: 10px;">🗑️</button>` : ''}
                         <button class="music-play-btn"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></button>
                     </div>`;
                 }).join('');
+                
+                if (window.musicSortable) {
+                    window.musicSortable.destroy();
+                }
+                window.musicSortable = Sortable.create(list, {
+                    animation: 250,
+                    delay: 200,
+                    delayOnTouchOnly: true,
+                    ghostClass: 'sortable-ghost',
+                    onEnd: async function (evt) {
+                        const newOrder = Array.from(list.children).map(child => parseInt(child.getAttribute('data-id')));
+                        try {
+                            await fetch(`${BACKEND_URL}/api/music/reorder`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ order: newOrder })
+                            });
+                            // Re-sync array without full reload to keep UI fast
+                            const oldPlaylist = [...currentPlaylist];
+                            currentPlaylist = newOrder.map(id => oldPlaylist.find(t => t.id === id)).filter(Boolean);
+                        } catch(e) { console.error(e); }
+                    }
+                });
                 
                 const lastId = localStorage.getItem('lastPlayedTrackId');
                 if (lastId && !isPlaying && currentTrackIndex === -1) {
@@ -5468,29 +5492,6 @@
             }
         }
         
-        async function moveMusicTrack(index, dir) {
-            const newIndex = index + dir;
-            if (newIndex < 0 || newIndex >= currentPlaylist.length) return;
-            const temp = currentPlaylist[index];
-            currentPlaylist[index] = currentPlaylist[newIndex];
-            currentPlaylist[newIndex] = temp;
-            
-            // Update UI optimistically
-            const list = document.getElementById('music-list');
-            const scrollPos = list.scrollTop;
-            
-            // Re-render
-            const order = currentPlaylist.map(t => t.id);
-            try {
-                await fetch(`${BACKEND_URL}/api/music/reorder`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ order })
-                });
-                loadMusicList();
-            } catch(e) { console.error(e); }
-        }
-
         async function deleteMusicTrack(id) {
             if (!confirm("Delete this track?")) return;
             try {
