@@ -67,8 +67,9 @@ def init_db():
         conn.commit()
         try:
             cur.execute("ALTER TABLE music_hub ADD COLUMN order_index INTEGER DEFAULT 0")
+            conn.commit()
         except Exception:
-            pass
+            conn.rollback()
         try:
             cur.execute("ALTER TABLE lost_found RENAME COLUMN item_name TO title")
             conn.commit()
@@ -108,8 +109,9 @@ def init_db():
         
         try:
             cur.execute("ALTER TABLE music_hub ADD COLUMN order_index INTEGER DEFAULT 0")
+            conn.commit()
         except Exception:
-            pass
+            conn.rollback()
     conn.commit()
     cur.close()
     conn.close()
