@@ -5206,6 +5206,10 @@
                             <p class="music-artist">${p.artist}</p>
                             ${p.uploaded_by ? `<div style="font-size:0.7rem; color: rgba(255,255,255,0.4); margin-top: 5px;">Uploaded by ${p.uploaded_by}</div>` : ''}
                         </div>
+                        <div style="display: flex; flex-direction: column; gap: 5px; margin-right: 15px; align-items: center;">
+                            ${index > 0 ? `<button onclick="event.stopPropagation(); moveMusicTrack(${index}, -1)" style="background: none; border: none; color: #aaa; cursor: pointer; font-size: 1.2rem;">▲</button>` : `<div style="height:24px;"></div>`}
+                            ${index < currentPlaylist.length - 1 ? `<button onclick="event.stopPropagation(); moveMusicTrack(${index}, 1)" style="background: none; border: none; color: #aaa; cursor: pointer; font-size: 1.2rem;">▼</button>` : `<div style="height:24px;"></div>`}
+                        </div>
                         ${isOwner ? `<button onclick="event.stopPropagation(); deleteMusicTrack(${p.id})" style="background: rgba(255,68,68,0.15); border: 1px solid rgba(255,68,68,0.4); color: #ff4444; padding: 5px; border-radius: 8px; cursor: pointer; margin-right: 10px;">🗑️</button>` : ''}
                         <button class="music-play-btn"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></button>
                     </div>`;
@@ -5464,6 +5468,29 @@
             }
         }
         
+        async function moveMusicTrack(index, dir) {
+            const newIndex = index + dir;
+            if (newIndex < 0 || newIndex >= currentPlaylist.length) return;
+            const temp = currentPlaylist[index];
+            currentPlaylist[index] = currentPlaylist[newIndex];
+            currentPlaylist[newIndex] = temp;
+            
+            // Update UI optimistically
+            const list = document.getElementById('music-list');
+            const scrollPos = list.scrollTop;
+            
+            // Re-render
+            const order = currentPlaylist.map(t => t.id);
+            try {
+                await fetch(`${BACKEND_URL}/api/music/reorder`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ order })
+                });
+                loadMusicList();
+            } catch(e) { console.error(e); }
+        }
+
         async function deleteMusicTrack(id) {
             if (!confirm("Delete this track?")) return;
             try {

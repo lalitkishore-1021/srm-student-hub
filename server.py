@@ -61,10 +61,14 @@ def init_db():
             poster_name TEXT, net_id TEXT, created_at TEXT)''')
         cur.execute('''CREATE TABLE IF NOT EXISTS music_hub (
             id SERIAL PRIMARY KEY, title TEXT NOT NULL, artist TEXT, audio_data TEXT NOT NULL, cover_data TEXT,
-            uploaded_by TEXT, net_id TEXT, created_at TEXT)''')
+            uploaded_by TEXT, net_id TEXT, created_at TEXT, order_index INTEGER DEFAULT 0)''')
         cur.execute('''CREATE TABLE IF NOT EXISTS secret_crushes (
             id SERIAL PRIMARY KEY, user_net_id TEXT NOT NULL, crush_ra TEXT NOT NULL, created_at TEXT)''')
         conn.commit()
+        try:
+            cur.execute("ALTER TABLE music_hub ADD COLUMN order_index INTEGER DEFAULT 0")
+        except Exception:
+            pass
         try:
             cur.execute("ALTER TABLE lost_found RENAME COLUMN item_name TO title")
             conn.commit()
@@ -98,9 +102,14 @@ def init_db():
             poster_name TEXT, net_id TEXT, created_at TEXT)''')
         cur.execute('''CREATE TABLE IF NOT EXISTS music_hub (
             id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT NOT NULL, artist TEXT, audio_data TEXT NOT NULL, cover_data TEXT,
-            uploaded_by TEXT, net_id TEXT, created_at TEXT)''')
+            uploaded_by TEXT, net_id TEXT, created_at TEXT, order_index INTEGER DEFAULT 0)''')
         cur.execute('''CREATE TABLE IF NOT EXISTS secret_crushes (
             id INTEGER PRIMARY KEY AUTOINCREMENT, user_net_id TEXT NOT NULL, crush_ra TEXT NOT NULL, created_at TEXT)''')
+        
+        try:
+            cur.execute("ALTER TABLE music_hub ADD COLUMN order_index INTEGER DEFAULT 0")
+        except Exception:
+            pass
     conn.commit()
     cur.close()
     conn.close()
@@ -1283,10 +1292,10 @@ def get_music():
     conn = get_db()
     if DATABASE_URL:
         cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-        cur.execute("SELECT id, title, artist, cover_data, uploaded_by, net_id, created_at FROM music_hub ORDER BY id DESC")
+        cur.execute("SELECT id, title, artist, cover_data, uploaded_by, net_id, created_at FROM music_hub ORDER BY order_index ASC, created_at DESC")
     else:
         cur = conn.cursor()
-        cur.execute("SELECT id, title, artist, cover_data, uploaded_by, net_id, created_at FROM music_hub ORDER BY id DESC")
+        cur.execute("SELECT id, title, artist, cover_data, uploaded_by, net_id, created_at FROM music_hub ORDER BY order_index ASC, created_at DESC")
     
     rows = cur.fetchall()
     items = [dict(row) for row in rows]
@@ -1373,6 +1382,28 @@ def delete_music(track_id):
         conn.close()
     return jsonify({'success': True})
 
+@app.route('/api/music/reorder', methods=['POST'])
+def reorder_music():
+    data = request.json
+    order = data.get('order', []) # array of track IDs
+    if not order: return jsonify({'success': False, 'error': 'No order provided'})
+    
+    conn = get_db()
+    cur = conn.cursor()
+    try:
+        for idx, track_id in enumerate(order):
+            if DATABASE_URL:
+                cur.execute("UPDATE music_hub SET order_index = %s WHERE id = %s", (idx, track_id))
+            else:
+                cur.execute("UPDATE music_hub SET order_index = ? WHERE id = ?", (idx, track_id))
+        conn.commit()
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+    finally:
+        cur.close()
+        conn.close()
+    return jsonify({'success': True})
+
 GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY', '')
 
 def call_gemini(prompt):
@@ -1383,9 +1414,11 @@ def call_gemini(prompt):
     try:
         response = requests.post(url, json=payload, headers={'Content-Type': 'application/json'})
         data = response.json()
+        if 'error' in data:
+            return "API Error: " + data['error'].get('message', str(data['error']))
         if 'candidates' in data and data['candidates']:
             return data['candidates'][0]['content']['parts'][0]['text']
-        return "Sorry, I could not generate a response."
+        return "Sorry, I could not generate a response. Details: " + str(data)
     except Exception as e:
         return str(e)
 
