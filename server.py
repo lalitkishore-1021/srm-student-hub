@@ -1394,10 +1394,11 @@ def ai_chat():
     data = request.json
     user_msg = data.get('prompt', '')
     if not user_msg: return jsonify({'success': False, 'error': 'Empty prompt'})
-    sys_prompt = "You are SRM Hub AI, an assistant for SRM University students. Answer concisely and accurately, especially for Previous Year Questions (PYQs) and engineering topics.\nUser: " + user_msg
+    sys_prompt = "You are SRM Hub AI, a friendly, casual, and helpful AI assistant for SRM University students built by Lalit Kishore. You can answer study questions, PYQs, coding doubts, casual/personal questions, and anything else. Be friendly, concise, and smart.\nUser: " + user_msg
     reply = call_gemini(sys_prompt)
-    if reply: return jsonify({'success': True, 'reply': reply})
-    return jsonify({'success': False, 'error': 'AI failed to respond.'})
+    if reply and not reply.startswith("Sorry, I could not generate a response"):
+        return jsonify({'success': True, 'reply': reply})
+    return jsonify({'success': False, 'error': reply or 'AI failed to respond.'})
 
 @app.route('/api/ai/predict', methods=['POST'])
 def ai_predict():
@@ -1405,10 +1406,11 @@ def ai_predict():
     cgpa = data.get('cgpa', '')
     skills = data.get('skills', '')
     projects = data.get('projects', '')
-    prompt = f"Act as a strict Placement Predictor for SRM University students. Given CGPA: {cgpa}, Skills: {skills}, Projects: {projects}. Briefly list 3 target tech companies they are eligible for, and give a 6-month strict roadmap to secure a Super Dream offer. Keep it very concise."
+    prompt = f"Act as a friendly Placement Predictor for SRM University students. Given CGPA: {cgpa}, Skills: {skills}, Projects: {projects}. Briefly list 3 target tech companies they are eligible for, and give a 6-month strict roadmap to secure a Super Dream offer. Keep it very concise."
     reply = call_gemini(prompt)
-    if reply: return jsonify({'success': True, 'reply': reply})
-    return jsonify({'success': False, 'error': 'AI failed to predict.'})
+    if reply and not reply.startswith("Sorry, I could not generate a response"):
+        return jsonify({'success': True, 'reply': reply})
+    return jsonify({'success': False, 'error': reply or 'AI failed to predict.'})
 
 @app.route('/api/crush/submit', methods=['POST'])
 def submit_crush():
