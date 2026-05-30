@@ -62,8 +62,10 @@ def init_db():
         cur.execute('''CREATE TABLE IF NOT EXISTS music_hub (
             id SERIAL PRIMARY KEY, title TEXT NOT NULL, artist TEXT, audio_data TEXT NOT NULL, cover_data TEXT,
             uploaded_by TEXT, net_id TEXT, created_at TEXT, order_index INTEGER DEFAULT 0)''')
-        cur.execute('''CREATE TABLE IF NOT EXISTS secret_crushes (
-            id SERIAL PRIMARY KEY, user_net_id TEXT NOT NULL, crush_ra TEXT NOT NULL, created_at TEXT)''')
+        cur.execute('''CREATE TABLE IF NOT EXISTS class_chats (
+            id SERIAL PRIMARY KEY, section TEXT NOT NULL, sender_name TEXT, sender_net_id TEXT, message TEXT, image_url TEXT, deleted_for_all INTEGER DEFAULT 0, deleted_by TEXT, created_at TEXT)''')
+        cur.execute('''CREATE TABLE IF NOT EXISTS spotted_feed (
+            id SERIAL PRIMARY KEY, message TEXT NOT NULL, likes INTEGER DEFAULT 0, net_id TEXT, created_at TEXT)''')
         conn.commit()
         try:
             cur.execute("ALTER TABLE music_hub ADD COLUMN order_index INTEGER DEFAULT 0")
@@ -104,8 +106,10 @@ def init_db():
         cur.execute('''CREATE TABLE IF NOT EXISTS music_hub (
             id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT NOT NULL, artist TEXT, audio_data TEXT NOT NULL, cover_data TEXT,
             uploaded_by TEXT, net_id TEXT, created_at TEXT, order_index INTEGER DEFAULT 0)''')
-        cur.execute('''CREATE TABLE IF NOT EXISTS secret_crushes (
-            id INTEGER PRIMARY KEY AUTOINCREMENT, user_net_id TEXT NOT NULL, crush_ra TEXT NOT NULL, created_at TEXT)''')
+        cur.execute('''CREATE TABLE IF NOT EXISTS class_chats (
+            id INTEGER PRIMARY KEY AUTOINCREMENT, section TEXT NOT NULL, sender_name TEXT, sender_net_id TEXT, message TEXT, image_url TEXT, deleted_for_all INTEGER DEFAULT 0, deleted_by TEXT, created_at TEXT)''')
+        cur.execute('''CREATE TABLE IF NOT EXISTS spotted_feed (
+            id INTEGER PRIMARY KEY AUTOINCREMENT, message TEXT NOT NULL, likes INTEGER DEFAULT 0, net_id TEXT, created_at TEXT)''')
         
         try:
             cur.execute("ALTER TABLE music_hub ADD COLUMN order_index INTEGER DEFAULT 0")
@@ -1447,52 +1451,147 @@ def ai_predict():
         return jsonify({'success': True, 'reply': reply})
     return jsonify({'success': False, 'error': reply or 'AI failed to predict.'})
 
-@app.route('/api/crush/submit', methods=['POST'])
-def submit_crush():
+# --- CHAT & SPOTTED ENDPOINTS ---
+
+@app.route('/api/chat/<section>', methods=['GET'])
+def get_chat(section):
+    conn = get_db()
+    if DATABASE_URL:
+        cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cur.execute("SELECT * FROM class_chats WHERE section = %s ORDER BY created_at ASC", (section,))
+    else:
+        cur = conn.cursor()
+        cur.execute("SELECT * FROM class_chats WHERE section = ? ORDER BY created_at ASC", (section,))
+    rows = cur.fetchall()
+    items = [dict(row) for row in rows]
+    cur.close()
+    conn.close()
+    return jsonify(items)
+
+@app.route('/api/chat/<section>', methods=['POST'])
+def post_chat(section):
     data = request.json
-    user_net_id = data.get('net_id', '').lower().strip()
-    crush_ra = data.get('crush_ra', '').strip().upper()
-    if not user_net_id or not crush_ra:
-        return jsonify({'success': False, 'error': 'Missing fields'})
+    sender_name = data.get('sender_name', 'Anonymous').strip()
+    sender_net_id = data.get('sender_net_id', '').lower().strip()
+    message = data.get('message', '').strip()
+    image_url = data.get('image_url', '')
+    now = datetime.now().isoformat()
     
+    if not message and not image_url:
+        return jsonify({'success': False, 'error': 'Empty message'})
+        
     conn = get_db()
     cur = conn.cursor()
     try:
         if DATABASE_URL:
-            cur.execute("SELECT register_no FROM students WHERE net_id = %s", (user_net_id,))
+            cur.execute("INSERT INTO class_chats (section, sender_name, sender_net_id, message, image_url, created_at) VALUES (%s, %s, %s, %s, %s, %s)",
+                        (section, sender_name, sender_net_id, message, image_url, now))
         else:
-            cur.execute("SELECT register_no FROM students WHERE net_id = ?", (user_net_id,))
-        row = cur.fetchone()
-        if not row:
-            return jsonify({'success': False, 'error': 'Your RA number not found in database. Sync attendance first.'})
-        my_ra = (row[0] if DATABASE_URL else dict(row).get('register_no', '')).strip().upper()
-        
-        now = datetime.now().isoformat()
-        if DATABASE_URL:
-            cur.execute("INSERT INTO secret_crushes (user_net_id, crush_ra, created_at) VALUES (%s, %s, %s)", (user_net_id, crush_ra, now))
-            cur.execute("SELECT net_id FROM students WHERE register_no = %s", (crush_ra,))
-        else:
-            cur.execute("INSERT INTO secret_crushes (user_net_id, crush_ra, created_at) VALUES (?, ?, ?)", (user_net_id, crush_ra, now))
-            cur.execute("SELECT net_id FROM students WHERE register_no = ?", (crush_ra,))
-        
-        crush_user_row = cur.fetchone()
-        if crush_user_row:
-            crush_net_id = (crush_user_row[0] if DATABASE_URL else dict(crush_user_row).get('net_id', '')).lower().strip()
-            if DATABASE_URL:
-                cur.execute("SELECT id FROM secret_crushes WHERE user_net_id = %s AND crush_ra = %s", (crush_net_id, my_ra))
-            else:
-                cur.execute("SELECT id FROM secret_crushes WHERE user_net_id = ? AND crush_ra = ?", (crush_net_id, my_ra))
-            match_row = cur.fetchone()
-            if match_row:
-                conn.commit()
-                return jsonify({'success': True, 'match': True, 'message': 'It\'s a Match! ❤️'})
+            cur.execute("INSERT INTO class_chats (section, sender_name, sender_net_id, message, image_url, created_at) VALUES (?, ?, ?, ?, ?, ?)",
+                        (section, sender_name, sender_net_id, message, image_url, now))
         conn.commit()
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)})
     finally:
         cur.close()
         conn.close()
-    return jsonify({'success': True, 'match': False, 'message': 'Crush secretly logged! 🤫'})
+    return jsonify({'success': True})
+
+@app.route('/api/chat/delete/<int:msg_id>', methods=['POST'])
+def delete_chat(msg_id):
+    data = request.json
+    net_id = data.get('net_id', '').lower().strip()
+    mode = data.get('mode', 'me') # 'me' or 'everyone'
+    
+    conn = get_db()
+    cur = conn.cursor()
+    try:
+        if DATABASE_URL:
+            cur.execute("SELECT sender_net_id, deleted_by FROM class_chats WHERE id = %s", (msg_id,))
+        else:
+            cur.execute("SELECT sender_net_id, deleted_by FROM class_chats WHERE id = ?", (msg_id,))
+            
+        row = cur.fetchone()
+        if not row: return jsonify({'success': False, 'error': 'Message not found'})
+        
+        sender = row[0]
+        deleted_by_list = row[1] or ""
+        
+        if mode == 'everyone':
+            if sender != net_id:
+                return jsonify({'success': False, 'error': 'Cannot delete others message for everyone'})
+            if DATABASE_URL:
+                cur.execute("UPDATE class_chats SET deleted_for_all = 1, message = '🚫 This message was deleted', image_url = '' WHERE id = %s", (msg_id,))
+            else:
+                cur.execute("UPDATE class_chats SET deleted_for_all = 1, message = '🚫 This message was deleted', image_url = '' WHERE id = ?", (msg_id,))
+        else:
+            new_deleted = deleted_by_list + f",{net_id}" if deleted_by_list else net_id
+            if DATABASE_URL:
+                cur.execute("UPDATE class_chats SET deleted_by = %s WHERE id = %s", (new_deleted, msg_id))
+            else:
+                cur.execute("UPDATE class_chats SET deleted_by = ? WHERE id = ?", (new_deleted, msg_id))
+        conn.commit()
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+    finally:
+        cur.close()
+        conn.close()
+    return jsonify({'success': True})
+
+@app.route('/api/spotted', methods=['GET'])
+def get_spotted():
+    conn = get_db()
+    if DATABASE_URL:
+        cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cur.execute("SELECT * FROM spotted_feed ORDER BY created_at DESC LIMIT 100")
+    else:
+        cur = conn.cursor()
+        cur.execute("SELECT * FROM spotted_feed ORDER BY created_at DESC LIMIT 100")
+    rows = cur.fetchall()
+    items = [dict(row) for row in rows]
+    cur.close()
+    conn.close()
+    return jsonify(items)
+
+@app.route('/api/spotted', methods=['POST'])
+def post_spotted():
+    data = request.json
+    message = data.get('message', '').strip()
+    net_id = data.get('net_id', '').lower().strip()
+    now = datetime.now().isoformat()
+    if not message: return jsonify({'success': False, 'error': 'Empty message'})
+    
+    conn = get_db()
+    cur = conn.cursor()
+    try:
+        if DATABASE_URL:
+            cur.execute("INSERT INTO spotted_feed (message, net_id, created_at) VALUES (%s, %s, %s)", (message, net_id, now))
+        else:
+            cur.execute("INSERT INTO spotted_feed (message, net_id, created_at) VALUES (?, ?, ?)", (message, net_id, now))
+        conn.commit()
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+    finally:
+        cur.close()
+        conn.close()
+    return jsonify({'success': True})
+
+@app.route('/api/spotted/like/<int:post_id>', methods=['POST'])
+def like_spotted(post_id):
+    conn = get_db()
+    cur = conn.cursor()
+    try:
+        if DATABASE_URL:
+            cur.execute("UPDATE spotted_feed SET likes = likes + 1 WHERE id = %s", (post_id,))
+        else:
+            cur.execute("UPDATE spotted_feed SET likes = likes + 1 WHERE id = ?", (post_id,))
+        conn.commit()
+    except Exception as e:
+        return jsonify({'success': False})
+    finally:
+        cur.close()
+        conn.close()
+    return jsonify({'success': True})
 
 @app.route('/ping')
 def ping(): return 'pong', 200
