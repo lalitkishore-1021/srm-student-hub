@@ -5731,9 +5731,12 @@
             <div id="chat-history" style="flex: 1; overflow-y: auto; padding: 10px; display: flex; flex-direction: column; gap: 10px;">
                 <div style="background: rgba(138,43,226,0.2); padding: 10px 15px; border-radius: 15px; border-bottom-left-radius: 0; align-self: flex-start; max-width: 80%; color: #fff;">Hello! I am your AI assistant. Ask me to explain concepts, give you important questions for tomorrow's exam, or summarize notes!</div>
             </div>
-            <div style="display: flex; gap: 10px; margin-top: 10px;">
+            <div style="display: flex; gap: 10px; margin-top: 10px; align-items: center;">
+                <button id="ai-voice-btn" onclick="toggleVoiceAI()" style="background: rgba(255,170,0,0.2); color: #ffaa00; border: 1px solid #ffaa00; border-radius: 50%; width: 45px; height: 45px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.3s;">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>
+                </button>
                 <input type="text" id="chat-input" placeholder="Ask anything..." style="flex: 1; padding: 12px; border-radius: 20px; border: 1px solid var(--glass-border); background: rgba(255,255,255,0.1); color: #fff;" onkeypress="if(event.key==='Enter') submitChat()">
-                <button onclick="submitChat()" style="background: linear-gradient(135deg, #8a2be2, #ffaa00); color: #fff; border: none; border-radius: 50%; width: 45px; height: 45px; cursor: pointer; display: flex; align-items: center; justify-content: center;"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg></button>
+                <button onclick="submitChat()" style="background: linear-gradient(135deg, #8a2be2, #ffaa00); color: #fff; border: none; border-radius: 50%; width: 45px; height: 45px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0;"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg></button>
             </div>
         </div>
     </div>
@@ -5843,6 +5846,8 @@
                     botBubble.innerHTML = data.reply
                         .replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')
                         .replace(/!\[.*?\]\((.*?)\)/g, '<br><img src="$1" style="max-width: 100%; border-radius: 10px; margin-top: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.5);"><br>');
+                    
+                    if (typeof speakAIResponse === 'function') speakAIResponse(data.reply);
                 } else {
                     botBubble.innerText = "Error: " + data.error;
                     botBubble.style.color = "#ff4757";
@@ -5877,6 +5882,78 @@
                 </body></html>
             `);
             printWindow.document.close();
+        }
+
+        // ============ VOICE AI ============
+        let aiRecognition = null;
+        let isVoiceAIListening = false;
+        
+        function toggleVoiceAI() {
+            const btn = document.getElementById('ai-voice-btn');
+            if (isVoiceAIListening) {
+                if (aiRecognition) aiRecognition.stop();
+                return;
+            }
+            
+            if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+                alert("Voice recognition is not supported in this browser. Try Chrome or Edge!");
+                return;
+            }
+            
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            aiRecognition = new SpeechRecognition();
+            aiRecognition.continuous = false;
+            aiRecognition.interimResults = false;
+            aiRecognition.lang = 'en-US';
+            
+            aiRecognition.onstart = function() {
+                isVoiceAIListening = true;
+                btn.style.background = '#ff4757';
+                btn.style.color = '#fff';
+                btn.style.border = '1px solid #ff4757';
+                btn.style.animation = 'pulse 1s infinite';
+                document.getElementById('chat-input').placeholder = "Listening... Speak now!";
+            };
+            
+            aiRecognition.onresult = function(event) {
+                const transcript = event.results[0][0].transcript;
+                document.getElementById('chat-input').value = transcript;
+                submitChat();
+            };
+            
+            aiRecognition.onerror = function(event) {
+                console.error("Speech recognition error", event.error);
+                resetVoiceBtn();
+            };
+            
+            aiRecognition.onend = function() {
+                resetVoiceBtn();
+            };
+            
+            aiRecognition.start();
+        }
+        
+        function resetVoiceBtn() {
+            isVoiceAIListening = false;
+            const btn = document.getElementById('ai-voice-btn');
+            if(btn) {
+                btn.style.background = 'rgba(255,170,0,0.2)';
+                btn.style.color = '#ffaa00';
+                btn.style.border = '1px solid #ffaa00';
+                btn.style.animation = 'none';
+            }
+            const input = document.getElementById('chat-input');
+            if(input) input.placeholder = "Ask anything...";
+        }
+        
+        function speakAIResponse(text) {
+            if (!window.speechSynthesis) return;
+            window.speechSynthesis.cancel();
+            const cleanText = text.replace(/[*_#`]/g, '').replace(/!\[.*?\]\(.*?\)/g, 'Generated an image for you.');
+            const utterance = new SpeechSynthesisUtterance(cleanText);
+            utterance.rate = 1.05;
+            utterance.pitch = 1.1;
+            window.speechSynthesis.speak(utterance);
         }
 
         // ================= TIMETABLE PUSH NOTIFICATIONS =================
@@ -6036,7 +6113,7 @@
                 return;
             }
             const section = getUserSection();
-            const myNetId = document.getElementById('net-id').value.toLowerCase().trim();
+            const myNetId = getCurrentNetId();
             const history = document.getElementById('class-chat-history');
             const wasAtBottom = history.scrollHeight - history.scrollTop <= history.clientHeight + 50;
 
