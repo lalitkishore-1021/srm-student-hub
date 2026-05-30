@@ -5724,6 +5724,7 @@
             <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--glass-border); padding-bottom: 10px; margin-bottom: 10px;">
                 <h2 style="color: #ffaa00; margin: 0; font-family: 'Montserrat', sans-serif;">Hub AI Assistant 🧠</h2>
                 <div style="display: flex; gap: 15px; align-items: center;">
+                    <button onclick="startLiveAI()" style="background: linear-gradient(135deg, #ff4757, #ffaa00); border: none; color: #fff; border-radius: 20px; padding: 5px 15px; cursor: pointer; font-size: 0.8rem; font-weight: bold; box-shadow: 0 4px 15px rgba(255, 71, 87, 0.4); animation: pulseBg 2s infinite;">Live Mode 🎙️</button>
                     <button onclick="downloadChatPDF()" style="background: rgba(255,170,0,0.2); border: 1px solid #ffaa00; color: #ffaa00; border-radius: 8px; padding: 5px 10px; cursor: pointer; font-size: 0.8rem; font-weight: bold;">Export PDF</button>
                     <button onclick="document.getElementById('chatModal').style.display='none'" style="background: none; border: none; color: #fff; font-size: 1.5rem; cursor: pointer; padding: 0;">&times;</button>
                 </div>
@@ -5740,6 +5741,41 @@
             </div>
         </div>
     </div>
+
+    <!-- Gemini Live Style Modal -->
+    <div id="liveAiModal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 20000; flex-direction: column; justify-content: center; align-items: center; background: #000; overflow: hidden;">
+        <button onclick="stopLiveAI()" style="position: absolute; top: 30px; right: 30px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 50%; width: 50px; height: 50px; color: #fff; font-size: 1.5rem; cursor: pointer; z-index: 10; display: flex; align-items: center; justify-content: center;">&times;</button>
+        <h2 style="position: absolute; top: 30px; left: 30px; color: #fff; font-family: 'Montserrat', sans-serif; font-size: 1.2rem; opacity: 0.7;">Hub Live</h2>
+        
+        <div id="live-orb" style="width: 200px; height: 200px; border-radius: 50%; background: linear-gradient(135deg, #8a2be2, #00cec9, #ffaa00); box-shadow: 0 0 50px rgba(138,43,226,0.5), inset 0 0 30px rgba(255,255,255,0.5); position: relative; transition: all 0.5s ease;">
+        </div>
+        
+        <p id="live-status-text" style="color: #fff; font-size: 1.2rem; margin-top: 60px; font-weight: 300; opacity: 0.8; font-family: 'Montserrat', sans-serif;">Connecting...</p>
+        <p id="live-transcript" style="color: #fff; font-size: 1.5rem; margin-top: 20px; max-width: 80%; text-align: center; height: 100px; overflow: hidden; opacity: 0.6; font-weight: bold;"></p>
+        
+        <button id="live-interrupt-btn" onclick="interruptLiveAI()" style="margin-top: 20px; padding: 15px 30px; border-radius: 30px; background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2); font-size: 1rem; cursor: pointer; display: none;">Interrupt</button>
+    </div>
+    
+    <style>
+        @keyframes liveOrbListen {
+            0% { transform: scale(1); box-shadow: 0 0 50px rgba(138,43,226,0.5); }
+            50% { transform: scale(1.1); box-shadow: 0 0 100px rgba(138,43,226,0.8); }
+            100% { transform: scale(1); box-shadow: 0 0 50px rgba(138,43,226,0.5); }
+        }
+        @keyframes liveOrbThink {
+            0% { transform: rotate(0deg) scale(1); border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%; }
+            100% { transform: rotate(360deg) scale(1); border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%; }
+        }
+        @keyframes liveOrbSpeak {
+            0%, 100% { transform: scale(1); border-radius: 50%; box-shadow: 0 0 50px #ffaa00; background: linear-gradient(135deg, #ffaa00, #ff4757); }
+            25% { transform: scale(1.15) scaleY(1.05); border-radius: 45% 55% 45% 55%; box-shadow: 0 0 120px #ffaa00; }
+            50% { transform: scale(1.05) scaleX(1.1); border-radius: 55% 45% 55% 45%; box-shadow: 0 0 80px #ffaa00; }
+            75% { transform: scale(1.2) scaleY(0.95); border-radius: 50%; box-shadow: 0 0 150px #ffaa00; }
+        }
+        .orb-listening { animation: liveOrbListen 2s infinite ease-in-out; background: linear-gradient(135deg, #8a2be2, #4a69bd) !important; }
+        .orb-thinking { animation: liveOrbThink 1.5s infinite linear; background: linear-gradient(135deg, #00cec9, #8a2be2) !important; }
+        .orb-speaking { animation: liveOrbSpeak 0.3s infinite ease-in-out; }
+    </style>
 
     <script>
         // ============ MASSIVE AI FEATURES ============
@@ -5954,6 +5990,131 @@
             utterance.rate = 1.05;
             utterance.pitch = 1.1;
             window.speechSynthesis.speak(utterance);
+        }
+
+        // ============ HUB LIVE (GEMINI-STYLE) ============
+        let liveRecognition = null;
+        let isLiveActive = false;
+
+        function startLiveAI() {
+            if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+                alert("Voice recognition is not supported in this browser.");
+                return;
+            }
+            document.getElementById('liveAiModal').style.display = 'flex';
+            document.getElementById('chatModal').style.display = 'none'; // Close text chat
+            isLiveActive = true;
+            
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            liveRecognition = new SpeechRecognition();
+            liveRecognition.continuous = false;
+            liveRecognition.interimResults = true;
+            liveRecognition.lang = 'en-US';
+            
+            liveRecognition.onstart = function() {
+                setLiveState('listening');
+            };
+            
+            liveRecognition.onresult = function(event) {
+                let finalTranscript = '';
+                let interimTranscript = '';
+                for (let i = event.resultIndex; i < event.results.length; ++i) {
+                    if (event.results[i].isFinal) {
+                        finalTranscript += event.results[i][0].transcript;
+                    } else {
+                        interimTranscript += event.results[i][0].transcript;
+                    }
+                }
+                document.getElementById('live-transcript').innerText = finalTranscript || interimTranscript;
+                if(finalTranscript) {
+                    sendLivePrompt(finalTranscript);
+                }
+            };
+            
+            liveRecognition.onerror = function(event) {
+                if(isLiveActive) setTimeout(() => liveRecognition.start(), 1000);
+            };
+            
+            liveRecognition.onend = function() {
+                if (isLiveActive && document.getElementById('live-orb').className.includes('orb-listening')) {
+                    liveRecognition.start();
+                }
+            };
+            
+            liveRecognition.start();
+        }
+        
+        function stopLiveAI() {
+            isLiveActive = false;
+            if(liveRecognition) liveRecognition.stop();
+            if(window.speechSynthesis) window.speechSynthesis.cancel();
+            document.getElementById('liveAiModal').style.display = 'none';
+        }
+        
+        function interruptLiveAI() {
+            if(window.speechSynthesis) window.speechSynthesis.cancel();
+            if(liveRecognition) liveRecognition.start();
+        }
+        
+        function setLiveState(state) {
+            const orb = document.getElementById('live-orb');
+            const txt = document.getElementById('live-status-text');
+            const btn = document.getElementById('live-interrupt-btn');
+            orb.className = '';
+            
+            if (state === 'listening') {
+                orb.classList.add('orb-listening');
+                txt.innerText = 'Listening...';
+                btn.style.display = 'none';
+                document.getElementById('live-transcript').innerText = '';
+            } else if (state === 'thinking') {
+                orb.classList.add('orb-thinking');
+                txt.innerText = 'Thinking...';
+                btn.style.display = 'none';
+            } else if (state === 'speaking') {
+                orb.classList.add('orb-speaking');
+                txt.innerText = 'Speaking...';
+                btn.style.display = 'block';
+            }
+        }
+        
+        async function sendLivePrompt(msg) {
+            if(liveRecognition) liveRecognition.stop();
+            setLiveState('thinking');
+            
+            try {
+                const attData = localStorage.getItem('squadAttendance') || "[]";
+                const ttData = localStorage.getItem('squadTimetable') || "{}";
+                const res = await fetch(`${BACKEND_URL}/api/ai/chat`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ prompt: msg + " (Reply briefly as if in a live voice conversation. Maximum 2-3 sentences. No markdown.)", attendance: attData, timetable: ttData })
+                });
+                const data = await res.json();
+                
+                if(!isLiveActive) return;
+                
+                if(data.success) {
+                    setLiveState('speaking');
+                    const cleanText = data.reply.replace(/[*_#`]/g, '').replace(/!\[.*?\]\(.*?\)/g, '');
+                    document.getElementById('live-transcript').innerText = cleanText;
+                    
+                    const utterance = new SpeechSynthesisUtterance(cleanText);
+                    utterance.rate = 1.05;
+                    utterance.pitch = 1.1;
+                    utterance.onend = function() {
+                        if(isLiveActive) liveRecognition.start();
+                    };
+                    window.speechSynthesis.speak(utterance);
+                } else {
+                    setLiveState('listening');
+                    document.getElementById('live-transcript').innerText = "Error: " + data.error;
+                    setTimeout(() => { if(isLiveActive) liveRecognition.start(); }, 2000);
+                }
+            } catch(e) {
+                setLiveState('listening');
+                document.getElementById('live-transcript').innerText = "Network Error.";
+                setTimeout(() => { if(isLiveActive) liveRecognition.start(); }, 2000);
+            }
         }
 
         // ================= TIMETABLE PUSH NOTIFICATIONS =================
