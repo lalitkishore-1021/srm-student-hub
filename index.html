@@ -5293,6 +5293,19 @@
         }
         
         let isRepeat = false;
+        let nextTrackCache = { index: -1, audio_data: null };
+
+        async function preloadNextMusicTrack(index) {
+            if (index < 0 || index >= currentPlaylist.length) return;
+            const track = currentPlaylist[index];
+            try {
+                const res = await fetch(`${BACKEND_URL}/api/music/audio/${track.id}`);
+                const data = await res.json();
+                if (data.audio_data) {
+                    nextTrackCache = { index: index, audio_data: data.audio_data };
+                }
+            } catch(e) {}
+        }
         
         async function playMusicTrack(index) {
             if (index < 0 || index >= currentPlaylist.length) return;
@@ -5302,9 +5315,6 @@
             const currentReqId = playRequestId;
             
             const audioEl = document.getElementById('music-audio-element');
-            audioEl.pause();
-            audioEl.src = '';
-            isPlaying = false;
             
             document.getElementById('music-player-bar').classList.add('active');
             document.getElementById('player-title').innerText = track.title;
@@ -5320,6 +5330,48 @@
             } else {
                 document.getElementById('fs-cover').src = coverSrc;
             }
+
+            const playAudioData = async (audioData) => {
+                audioEl.pause();
+                audioEl.src = audioData;
+                const playPromise = audioEl.play();
+                if (playPromise !== undefined) {
+                    playPromise.then(_ => {
+                        isPlaying = true;
+                        updatePlayPauseBtn();
+                    }).catch(e => console.error("Playback prevented:", e));
+                }
+                localStorage.setItem('lastPlayedTrackId', track.id);
+                
+                if ('mediaSession' in navigator) {
+                    navigator.mediaSession.metadata = new MediaMetadata({
+                        title: track.title,
+                        artist: track.artist,
+                        album: 'SRM Student Hub',
+                        artwork: [ { src: track.cover_data || 'https://via.placeholder.com/512', sizes: '512x512', type: 'image/png' } ]
+                    });
+                    navigator.mediaSession.setActionHandler('play', toggleMusicPlay);
+                    navigator.mediaSession.setActionHandler('pause', toggleMusicPlay);
+                    navigator.mediaSession.setActionHandler('previoustrack', prevMusicTrack);
+                    navigator.mediaSession.setActionHandler('nexttrack', nextMusicTrack);
+                }
+                
+                // Preload the next track so it can play synchronously in the background later
+                let nextIdx = index + 1;
+                if (nextIdx >= currentPlaylist.length && currentPlaylist.length > 0) nextIdx = 0;
+                if (nextIdx !== index) preloadNextMusicTrack(nextIdx);
+            };
+
+            // If we have it cached, play IMMEDIATELY (synchronously) to bypass mobile background restrictions
+            if (nextTrackCache.index === index && nextTrackCache.audio_data) {
+                playAudioData(nextTrackCache.audio_data);
+                return;
+            }
+
+            // Otherwise, fetch it (this might fail in background if user gesture expires)
+            audioEl.pause();
+            audioEl.src = '';
+            isPlaying = false;
             document.getElementById('player-play-btn').innerHTML = '<div class="css-loader" style="width:15px;height:15px;border-width:2px;border-top-color:#000;"></div>';
             if(document.getElementById('mobile-play-btn')) document.getElementById('mobile-play-btn').innerHTML = '<div class="css-loader" style="width:15px;height:15px;border-width:2px;border-top-color:#fff;"></div>';
             document.getElementById('fs-play-btn').innerHTML = '<div class="css-loader" style="width:20px;height:20px;border-width:2px;border-top-color:#000;"></div>';
@@ -5331,24 +5383,7 @@
                 if (currentReqId !== playRequestId) return;
                 
                 if (data.audio_data) {
-                    audioEl.src = data.audio_data;
-                    audioEl.play();
-                    isPlaying = true;
-                    updatePlayPauseBtn();
-                    localStorage.setItem('lastPlayedTrackId', track.id);
-                    
-                    if ('mediaSession' in navigator) {
-                        navigator.mediaSession.metadata = new MediaMetadata({
-                            title: track.title,
-                            artist: track.artist,
-                            album: 'SRM Student Hub',
-                            artwork: [ { src: track.cover_data || 'https://via.placeholder.com/512', sizes: '512x512', type: 'image/png' } ]
-                        });
-                        navigator.mediaSession.setActionHandler('play', toggleMusicPlay);
-                        navigator.mediaSession.setActionHandler('pause', toggleMusicPlay);
-                        navigator.mediaSession.setActionHandler('previoustrack', prevMusicTrack);
-                        navigator.mediaSession.setActionHandler('nexttrack', nextMusicTrack);
-                    }
+                    playAudioData(data.audio_data);
                 } else {
                     alert("Audio not found.");
                     updatePlayPauseBtn();
