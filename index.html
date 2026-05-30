@@ -474,10 +474,10 @@
         }
 
         .id-card {
-            background: linear-gradient(135deg, #ffb74d 0%, #f57c00 100%);
+            background: #050505;
             border-radius: 24px;
             padding: 25px;
-            color: #000;
+            color: #fff;
             display: flex;
             flex-direction: column;
             gap: 15px;
@@ -488,30 +488,34 @@
             text-align: left;
         }
 
-        /* Holographic Shimmer for ID card */
+        /* Black hole animation background */
+        .id-card::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: conic-gradient(from 0deg at 50% 50%, #ff8800, #ff007f, #7f00ff, #00ffff, #ff8800);
+            animation: blackhole-spin 6s linear infinite;
+            z-index: 0;
+            opacity: 0.8;
+            filter: blur(25px);
+        }
+
         .id-card::before {
             content: '';
             position: absolute;
-            top: -100%;
-            left: -100%;
-            width: 300%;
-            height: 300%;
-            background: linear-gradient(
-                135deg, 
-                transparent 0%, 
-                transparent 40%, 
-                rgba(255, 255, 255, 0.4) 50%, 
-                transparent 60%, 
-                transparent 100%
-            );
-            animation: shimmer-bg 6s infinite linear;
-            z-index: 0;
-            pointer-events: none;
+            inset: 3px;
+            background: rgba(10, 10, 15, 0.9);
+            border-radius: 21px;
+            z-index: 1;
+            backdrop-filter: blur(10px);
         }
 
-        @keyframes shimmer-bg {
-            0% { transform: translate(-30%, -30%); }
-            100% { transform: translate(30%, 30%); }
+        @keyframes blackhole-spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
 
         .id-card > * {
@@ -3360,6 +3364,7 @@
                 const percentage = total === 0 ? 0 : ((attended / total) * 100).toFixed(1);
                 const isGood = percentage >= 75;
                 const barColor = isGood ? 'var(--success)' : 'var(--danger)';
+                const cardStyleModifier = isGood ? 'border: 1px solid var(--glass-border);' : 'border: 1px solid var(--danger); box-shadow: 0 0 15px rgba(255, 68, 68, 0.2);';
 
                 let marginValue = 0;
                 let marginLabel = 'Margin';
@@ -5936,20 +5941,33 @@
 
         // ================= CLASS CHAT =================
         function getUserSection() {
+            try {
+                const profile = JSON.parse(localStorage.getItem('squadProfile') || '{}');
+                if (profile.batch && profile.batch.trim() !== '') {
+                    return profile.batch.trim().toUpperCase();
+                }
+            } catch(e) {}
+            
             let savedSec = localStorage.getItem('userSection');
             if (savedSec) return savedSec;
-            const attData = JSON.parse(localStorage.getItem('squadAttendance') || '[]');
-            let section = 'General';
-            for (const sub of attData) {
-                const title = sub.courseTitle || sub.name || "";
-                const match = title.match(/[\(\[\s_]([A-Z][0-9])[\)\]\s_]/i);
-                if (match) {
-                    section = match[1].toUpperCase();
-                    break;
+            
+            try {
+                const attData = JSON.parse(localStorage.getItem('squadAttendance') || '[]');
+                if (!Array.isArray(attData)) return 'General';
+                let section = 'General';
+                for (const sub of attData) {
+                    const title = sub.courseTitle || sub.name || "";
+                    const match = title.match(/[\(\[\s_]([A-Z][0-9])[\)\]\s_]/i);
+                    if (match) {
+                        section = match[1].toUpperCase();
+                        break;
+                    }
                 }
+                localStorage.setItem('userSection', section);
+                return section;
+            } catch(e) {
+                return 'General';
             }
-            localStorage.setItem('userSection', section);
-            return section;
         }
 
         let chatInterval = null;
