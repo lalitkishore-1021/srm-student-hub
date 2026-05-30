@@ -1411,7 +1411,7 @@ GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY', '')
 def call_gemini(prompt):
     if not GEMINI_API_KEY:
         return None
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key={GEMINI_API_KEY}"
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key={GEMINI_API_KEY}"
     payload = {"contents": [{"parts": [{"text": prompt}]}]}
     try:
         response = requests.post(url, json=payload, headers={'Content-Type': 'application/json'})
