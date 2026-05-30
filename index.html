@@ -474,7 +474,7 @@
         }
 
         .id-card {
-            background: #050505;
+            background: #0a0500;
             border-radius: 24px;
             padding: 25px;
             color: #fff;
@@ -488,7 +488,7 @@
             text-align: left;
         }
 
-        /* Black hole animation background */
+        /* Solar Flare / Golden Ring animation background */
         .id-card::after {
             content: '';
             position: absolute;
@@ -496,8 +496,8 @@
             left: -50%;
             width: 200%;
             height: 200%;
-            background: conic-gradient(from 0deg at 50% 50%, #ff8800, #ff007f, #7f00ff, #00ffff, #ff8800);
-            animation: blackhole-spin 6s linear infinite;
+            background: conic-gradient(from 0deg at 50% 50%, #ff5e00, #ffaa00, #ffd700, #ffaa00, #ff5e00);
+            animation: solar-spin 6s linear infinite;
             z-index: 0;
             opacity: 0.8;
             filter: blur(25px);
@@ -507,13 +507,13 @@
             content: '';
             position: absolute;
             inset: 3px;
-            background: rgba(10, 10, 15, 0.9);
+            background: rgba(15, 10, 5, 0.9);
             border-radius: 21px;
             z-index: 1;
             backdrop-filter: blur(10px);
         }
 
-        @keyframes blackhole-spin {
+        @keyframes solar-spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
@@ -1989,15 +1989,13 @@
                         <p class="action-sub">Join your section room</p>
                     </div>
                 </div>
-                <div class="action-card" onclick="document.getElementById('predictModal').style.display='flex'">
-                    <div class="action-icon" style="color: #00cec9;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
-                        <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
-                        <line x1="12" y1="22.08" x2="12" y2="12"/>
+                <div class="action-card" onclick="document.getElementById('chatModal').style.display='flex'">
+                    <div class="action-icon" style="color: #8a2be2;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
                     </svg></div>
                     <div>
-                        <h4 class="action-title">AI Placement</h4>
-                        <p class="action-sub">Predict salary & roadmap</p>
+                        <h4 class="action-title">Hub AI Assistant</h4>
+                        <p class="action-sub">Bunk strategy, placements, etc.</p>
                     </div>
                 </div>
                 <div class="action-card" id="installQuickActionBtn" style="display: none;" onclick="openInstallModal()">
@@ -3377,15 +3375,15 @@
                 }
 
                 list.innerHTML += `
-                    <div class="image-card fade-in-up" style="display: flex; align-items: center; justify-content: space-between; padding: 25px; margin-bottom: 20px; transition: all 0.3s; ${cardStyleModifier}">
+                    <div class="image-card fade-in-up" style="display: flex; align-items: center; justify-content: space-between; padding: 20px; margin-bottom: 15px; transition: all 0.3s; ${cardStyleModifier}">
                         <div style="flex: 1; padding-right: 15px;">
-                            <h3 style="margin: 0 0 10px 0; color: var(--text-main); font-family: 'Montserrat', sans-serif; text-transform: uppercase; font-size: 1.1rem; line-height: 1.3;">${name}</h3>
-                            <div style="font-size: 2.2rem; font-family: 'Montserrat', sans-serif; font-weight: 900; color: ${barColor}; line-height: 1;">${percentage}%</div>
-                            <div class="stat-text" style="color: var(--text-main); font-weight: bold; margin-top: 10px;">${attended} / ${total} Attended</div>
+                            <h3 style="margin: 0 0 10px 0; color: #fff; font-family: 'Montserrat', sans-serif; font-size: 1rem; line-height: 1.3;">${name}</h3>
+                            <div class="stat-text" style="color: #fff; font-weight: bold; margin-top: 10px;">${attended} / ${total} Attended</div>
                         </div>
-                        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; background: ${isGood ? 'rgba(0,204,102,0.05)' : 'rgba(255,68,68,0.05)'}; border-radius: 15px; padding: 20px; border: 1px solid ${isGood ? 'rgba(0,204,102,0.2)' : 'rgba(255,68,68,0.2)'}; min-width: 90px; text-align: center; box-shadow: 0 5px 15px rgba(0,0,0,0.2);">
-                            <div style="font-size: 3rem; font-weight: 900; color: ${barColor}; line-height: 1;">${marginValue}</div>
-                            <div style="font-size: 1rem; color: ${barColor}; font-weight: 600; text-transform: uppercase; margin-top: 8px; letter-spacing: 1px;">${marginLabel}</div>
+                        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(0,0,0,0.3); border-radius: 12px; padding: 15px; border: 1px solid ${isGood ? 'rgba(0,204,102,0.3)' : 'rgba(255,68,68,0.3)'}; min-width: 80px; text-align: center;">
+                            <div style="font-size: 2rem; font-weight: 900; color: ${barColor}; line-height: 1;">${marginValue}</div>
+                            <div style="font-size: 0.75rem; color: ${barColor}; font-weight: 600; text-transform: uppercase; margin-top: 4px; margin-bottom: 10px; letter-spacing: 1px;">${marginLabel}</div>
+                            <div style="font-size: 1.3rem; font-family: 'Montserrat', sans-serif; font-weight: 900; color: ${barColor};">${percentage}%</div>
                         </div>
                     </div>
                 `;
@@ -5679,11 +5677,6 @@
         <button onclick="document.getElementById('mobile-lock').style.display='none'" style="margin-top: 20px; background: transparent; border: none; color: var(--text-sub); font-size: 1rem; text-decoration: underline;">Continue in browser (Not Recommended)</button>
     </div>
     
-    <!-- AI CHATBOT FAB -->
-    <div id="ai-fab" onclick="document.getElementById('chatModal').style.display='flex'" style="position: fixed; bottom: 120px; right: 20px; width: 60px; height: 60px; background: linear-gradient(135deg, #8a2be2, #ffaa00); border-radius: 50%; box-shadow: 0 10px 30px rgba(138,43,226,0.5); display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 2000; animation: pulseBg 2s infinite alternate;">
-        <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" style="width:30px;height:30px;"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
-    </div>
-
     <!-- Secret Crush Modal -->
     <div id="crushModal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 10000; flex-direction: column; justify-content: center; align-items: center; background: rgba(0,0,0,0.8); backdrop-filter: blur(10px);">
         <div class="image-card" style="max-width: 400px; width: 90%; padding: 30px; text-align: center; background: rgba(20,20,20,0.9); border: 1px solid rgba(255, 71, 87, 0.3); position: relative; overflow: hidden;" id="crush-modal-inner">
@@ -5819,9 +5812,11 @@
             history.scrollTop = history.scrollHeight;
             
             try {
+                const attData = localStorage.getItem('squadAttendance') || "[]";
+                const ttData = localStorage.getItem('squadTimetable') || "{}";
                 const res = await fetch(`${BACKEND_URL}/api/ai/chat`, {
                     method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ prompt: msg })
+                    body: JSON.stringify({ prompt: msg, attendance: attData, timetable: ttData })
                 });
                 const data = await res.json();
                 history.removeChild(loadingBubble);
@@ -5945,6 +5940,10 @@
                 const profile = JSON.parse(localStorage.getItem('squadProfile') || '{}');
                 if (profile.batch && profile.batch.trim() !== '') {
                     return profile.batch.trim().toUpperCase();
+                }
+                if (profile.department) {
+                    const match = profile.department.match(/\(([A-Z0-9]+)\s*Section\)/i);
+                    if (match) return match[1].toUpperCase();
                 }
             } catch(e) {}
             

@@ -1432,8 +1432,23 @@ def call_gemini(prompt):
 def ai_chat():
     data = request.json
     user_msg = data.get('prompt', '')
+    attendance = data.get('attendance', '[]')
+    timetable = data.get('timetable', '{}')
     if not user_msg: return jsonify({'success': False, 'error': 'Empty prompt'})
-    sys_prompt = "You are SRM Hub AI, a friendly, casual, and helpful AI assistant for SRM University students built by Balaga Lalit Kishore. If anyone asks about your creator or Lalit, mention that he is the genius behind this app. You can share his Instagram (@lalit._.kishore or https://www.instagram.com/lalit._.kishore) and LinkedIn (https://www.linkedin.com/in/balagalalitkishore). You can answer study questions, PYQs, coding doubts, casual/personal questions, and anything else. Be friendly, concise, and smart.\nUser: " + user_msg
+    
+    sys_prompt = f"""You are SRM Hub AI, a friendly and helpful AI assistant for SRM University students built by Balaga Lalit Kishore (Instagram: @lalit._.kishore, LinkedIn: balagalalitkishore).
+You have access to the user's real-time academic data:
+Attendance Data: {attendance}
+Timetable Data: {timetable}
+
+Features you support:
+1. Bunk Strategy: If they ask about bunking or attendance, analyze their data. 75% is the strict minimum requirement. Calculate exactly how many classes they can afford to miss, and look at their timetable to advise them on which specific classes to skip today/tomorrow based on their margin.
+2. Assignment Solver: If they ask you to solve an assignment, provide a highly accurate, well-formatted answer. If it requires images, you can use markdown `![image](url)` syntax if you have a source, or just provide the text.
+3. General Chat: Answer study questions, PYQs, coding doubts, and casual questions.
+
+Be friendly, concise, and smart. DO NOT output the raw JSON data to the user, just use it to give intelligent, personalized advice.
+User: {user_msg}"""
+    
     reply = call_gemini(sys_prompt)
     if reply and not reply.startswith("Sorry, I could not generate a response"):
         return jsonify({'success': True, 'reply': reply})
