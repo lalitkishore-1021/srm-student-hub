@@ -5754,17 +5754,23 @@
         <p id="live-transcript" style="color: #fff; font-size: 1.5rem; margin-top: 20px; max-width: 80%; text-align: center; height: 100px; overflow: hidden; opacity: 0.6; font-weight: bold;"></p>
         
         <button id="live-interrupt-btn" onclick="interruptLiveAI()" style="margin-top: 20px; padding: 15px 30px; border-radius: 30px; background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2); font-size: 1rem; cursor: pointer; display: none;">Interrupt</button>
+        <button id="live-manual-btn" onclick="manualLiveRestart()" style="margin-top: 20px; padding: 10px 20px; border-radius: 20px; background: rgba(138,43,226,0.2); color: #fff; border: 1px solid rgba(138,43,226,0.5); font-size: 0.9rem; cursor: pointer; display: none;">Tap to Speak 🎤</button>
     </div>
     
     <style>
         @keyframes liveOrbListen {
-            0% { box-shadow: 0 0 50px rgba(138,43,226,0.5); }
-            50% { box-shadow: 0 0 100px rgba(138,43,226,0.8); }
-            100% { box-shadow: 0 0 50px rgba(138,43,226,0.5); }
+            0% { transform: scale(1); box-shadow: 0 0 50px rgba(138,43,226,0.5); }
+            50% { transform: scale(1.15); box-shadow: 0 0 100px rgba(138,43,226,0.8); }
+            100% { transform: scale(1); box-shadow: 0 0 50px rgba(138,43,226,0.5); }
+        }
+        @keyframes liveOrbHearing {
+            0% { transform: scale(1.1); box-shadow: 0 0 80px rgba(0,206,201,0.5); }
+            50% { transform: scale(1.3); box-shadow: 0 0 150px rgba(0,206,201,0.9); }
+            100% { transform: scale(1.1); box-shadow: 0 0 80px rgba(0,206,201,0.5); }
         }
         @keyframes liveOrbThink {
-            0% { transform: rotate(0deg); border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%; }
-            100% { transform: rotate(360deg); border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%; }
+            0% { transform: rotate(0deg) scale(1); border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%; }
+            100% { transform: rotate(360deg) scale(1); border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%; }
         }
         @keyframes liveOrbSpeak {
             0%, 100% { transform: scale(1); border-radius: 50%; box-shadow: 0 0 50px #ffaa00; background: linear-gradient(135deg, #ffaa00, #ff4757); }
@@ -5772,7 +5778,8 @@
             50% { transform: scale(1.05) scaleX(1.1); border-radius: 55% 45% 55% 45%; box-shadow: 0 0 80px #ffaa00; }
             75% { transform: scale(1.2) scaleY(0.95); border-radius: 50%; box-shadow: 0 0 150px #ffaa00; }
         }
-        .orb-listening { animation: liveOrbListen 2s infinite ease-in-out; background: linear-gradient(135deg, #8a2be2, #4a69bd) !important; }
+        .orb-listening { animation: liveOrbListen 2.5s infinite ease-in-out; background: linear-gradient(135deg, #8a2be2, #4a69bd) !important; }
+        .orb-hearing { animation: liveOrbHearing 0.5s infinite ease-in-out; background: linear-gradient(135deg, #00cec9, #8a2be2) !important; }
         .orb-thinking { animation: liveOrbThink 1.5s infinite linear; background: linear-gradient(135deg, #00cec9, #8a2be2) !important; }
         .orb-speaking { animation: liveOrbSpeak 0.3s infinite ease-in-out; }
     </style>
@@ -5996,69 +6003,32 @@
         let liveRecognition = null;
         let isLiveActive = false;
         let silenceTimer = null;
-        
-        let liveAudioContext = null;
-        let liveAnalyser = null;
-        let liveMicrophone = null;
-        let liveDataArray = null;
-        let animationFrameId = null;
-
-        async function setupMicAnimation() {
-            try {
-                if(liveAudioContext) return;
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                liveAudioContext = new (window.AudioContext || window.webkitAudioContext)();
-                liveAnalyser = liveAudioContext.createAnalyser();
-                liveMicrophone = liveAudioContext.createMediaStreamSource(stream);
-                liveMicrophone.connect(liveAnalyser);
-                liveAnalyser.fftSize = 256;
-                const bufferLength = liveAnalyser.frequencyBinCount;
-                liveDataArray = new Uint8Array(bufferLength);
-                
-                function animateOrb() {
-                    if(!isLiveActive) return;
-                    liveAnalyser.getByteFrequencyData(liveDataArray);
-                    let sum = 0;
-                    for(let i=0; i<bufferLength; i++) sum += liveDataArray[i];
-                    let average = sum / bufferLength;
-                    
-                    const orb = document.getElementById('live-orb');
-                    if(orb.className.includes('orb-listening')) {
-                        let scale = 1 + (average / 200); 
-                        if(scale > 1.4) scale = 1.4;
-                        orb.style.transform = `scale(${scale})`;
-                    } else if (orb.className.includes('orb-speaking')) {
-                        orb.style.transform = ''; // Handled by CSS
-                    } else {
-                        orb.style.transform = ''; // Thinking
-                    }
-                    animationFrameId = requestAnimationFrame(animateOrb);
-                }
-                animateOrb();
-            } catch(e) { console.warn("Mic anim error", e); }
-        }
+        let isThinkingOrSpeaking = false;
 
         function startLiveAI() {
             if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-                alert("Voice recognition is not supported in this browser.");
+                alert("Voice recognition is not supported in this browser. Try Chrome for Android or Desktop!");
                 return;
             }
+            
             document.getElementById('liveAiModal').style.display = 'flex';
-            document.getElementById('chatModal').style.display = 'none'; // Close text chat
+            document.getElementById('chatModal').style.display = 'none';
             isLiveActive = true;
-            setupMicAnimation();
+            isThinkingOrSpeaking = false;
             
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
             liveRecognition = new SpeechRecognition();
             liveRecognition.continuous = true;
             liveRecognition.interimResults = true;
-            liveRecognition.lang = 'en-US';
+            liveRecognition.lang = 'en-IN'; 
             
             liveRecognition.onstart = function() {
-                setLiveState('listening');
+                if(!isThinkingOrSpeaking) setLiveState('listening');
             };
             
             liveRecognition.onresult = function(event) {
+                if (isThinkingOrSpeaking) return;
+                
                 let finalTranscript = '';
                 let interimTranscript = '';
                 for (let i = event.resultIndex; i < event.results.length; ++i) {
@@ -6070,7 +6040,10 @@
                 }
                 
                 let currentText = finalTranscript || interimTranscript;
-                document.getElementById('live-transcript').innerText = "You: " + currentText;
+                if(currentText.trim() !== '') {
+                    document.getElementById('live-transcript').innerText = "You: " + currentText;
+                    setLiveState('hearing'); 
+                }
                 
                 clearTimeout(silenceTimer);
                 
@@ -6079,19 +6052,20 @@
                 } else if (interimTranscript) {
                     silenceTimer = setTimeout(() => {
                         sendLivePrompt(interimTranscript);
-                    }, 2000); // 2s of silence = send
+                    }, 2500); 
                 }
             };
             
             liveRecognition.onerror = function(event) {
+                console.warn("Live Speech Error: ", event.error);
                 if(isLiveActive && event.error !== 'aborted') {
-                    setTimeout(() => liveRecognition.start(), 1000);
+                    setTimeout(() => { if(isLiveActive && !isThinkingOrSpeaking) { try{ liveRecognition.start(); }catch(e){} } }, 1000);
                 }
             };
             
             liveRecognition.onend = function() {
-                if (isLiveActive && document.getElementById('live-orb').className.includes('orb-listening')) {
-                    liveRecognition.start();
+                if (isLiveActive && !isThinkingOrSpeaking) {
+                    setTimeout(() => { if(isLiveActive && !isThinkingOrSpeaking) { try{ liveRecognition.start(); }catch(e){} } }, 200);
                 }
             };
             
@@ -6100,48 +6074,70 @@
         
         function stopLiveAI() {
             isLiveActive = false;
+            isThinkingOrSpeaking = false;
             clearTimeout(silenceTimer);
-            if(liveRecognition) liveRecognition.stop();
+            if(liveRecognition) {
+                try { liveRecognition.stop(); } catch(e){}
+            }
             if(window.speechSynthesis) window.speechSynthesis.cancel();
-            if(animationFrameId) cancelAnimationFrame(animationFrameId);
-            if(liveAudioContext) { liveAudioContext.close(); liveAudioContext = null; }
             document.getElementById('liveAiModal').style.display = 'none';
         }
         
-        function interruptLiveAI() {
+        function manualLiveRestart() {
+            isThinkingOrSpeaking = false;
             if(window.speechSynthesis) window.speechSynthesis.cancel();
             if(liveRecognition) {
-                liveRecognition.stop();
-                setTimeout(() => { if(isLiveActive) liveRecognition.start(); }, 500);
+                try { liveRecognition.abort(); } catch(e){}
+                setTimeout(() => { if(isLiveActive) { try{ liveRecognition.start(); }catch(e){} } }, 300);
             }
+        }
+        
+        function interruptLiveAI() {
+            manualLiveRestart();
+            setLiveState('listening');
         }
         
         function setLiveState(state) {
             const orb = document.getElementById('live-orb');
             const txt = document.getElementById('live-status-text');
             const btn = document.getElementById('live-interrupt-btn');
+            const manualBtn = document.getElementById('live-manual-btn');
+            
             orb.className = '';
             
             if (state === 'listening') {
                 orb.classList.add('orb-listening');
                 txt.innerText = 'Listening...';
                 btn.style.display = 'none';
+                if(manualBtn) manualBtn.style.display = 'block';
                 if(!document.getElementById('live-transcript').innerText.startsWith("You:")) {
                     document.getElementById('live-transcript').innerText = '';
                 }
+            } else if (state === 'hearing') {
+                orb.classList.add('orb-hearing');
+                txt.innerText = 'Hearing...';
+                btn.style.display = 'none';
+                if(manualBtn) manualBtn.style.display = 'none';
             } else if (state === 'thinking') {
                 orb.classList.add('orb-thinking');
                 txt.innerText = 'Thinking...';
                 btn.style.display = 'none';
+                if(manualBtn) manualBtn.style.display = 'none';
             } else if (state === 'speaking') {
                 orb.classList.add('orb-speaking');
                 txt.innerText = 'Speaking...';
                 btn.style.display = 'block';
+                if(manualBtn) manualBtn.style.display = 'none';
             }
         }
         
         async function sendLivePrompt(msg) {
-            if(liveRecognition) liveRecognition.stop();
+            msg = msg.trim();
+            if(!msg) return;
+            
+            isThinkingOrSpeaking = true;
+            clearTimeout(silenceTimer);
+            try { liveRecognition.stop(); } catch(e){}
             setLiveState('thinking');
             
             try {
@@ -6165,20 +6161,30 @@
                     utterance.pitch = 1.1;
                     utterance.onend = function() {
                         if(isLiveActive) {
-                            liveRecognition.start();
+                            isThinkingOrSpeaking = false;
                             setLiveState('listening');
+                            try { liveRecognition.start(); } catch(e){}
+                        }
+                    };
+                    utterance.onerror = function() {
+                        if(isLiveActive) {
+                            isThinkingOrSpeaking = false;
+                            setLiveState('listening');
+                            try { liveRecognition.start(); } catch(e){}
                         }
                     };
                     window.speechSynthesis.speak(utterance);
                 } else {
+                    isThinkingOrSpeaking = false;
                     setLiveState('listening');
                     document.getElementById('live-transcript').innerText = "Error: " + data.error;
-                    setTimeout(() => { if(isLiveActive) liveRecognition.start(); }, 2000);
+                    setTimeout(() => { if(isLiveActive) { try{ liveRecognition.start(); }catch(e){} } }, 1500);
                 }
             } catch(e) {
+                isThinkingOrSpeaking = false;
                 setLiveState('listening');
                 document.getElementById('live-transcript').innerText = "Network Error.";
-                setTimeout(() => { if(isLiveActive) liveRecognition.start(); }, 2000);
+                setTimeout(() => { if(isLiveActive) { try{ liveRecognition.start(); }catch(e){} } }, 1500);
             }
         }
 
