@@ -5779,18 +5779,18 @@
     </div>
 
     <!-- Gemini Live Style Modal -->
-    <div id="liveAiModal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 20000; flex-direction: column; justify-content: center; align-items: center; background: #000; overflow: hidden;">
-        <button onclick="stopLiveAI()" style="position: absolute; top: 30px; right: 30px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 50%; width: 50px; height: 50px; color: #fff; font-size: 1.5rem; cursor: pointer; z-index: 10; display: flex; align-items: center; justify-content: center;">&times;</button>
-        <h2 style="position: absolute; top: 30px; left: 30px; color: #fff; font-family: 'Montserrat', sans-serif; font-size: 1.2rem; opacity: 0.7;">Hub Live</h2>
+    <div id="liveAiModal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 20000; flex-direction: column; justify-content: center; align-items: center; background: radial-gradient(circle at center, #111, #000); overflow: hidden;">
+        <button onclick="stopLiveAI()" style="position: absolute; top: 30px; right: 30px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 50%; width: 50px; height: 50px; color: #fff; font-size: 1.5rem; cursor: pointer; z-index: 10; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(10px);">&times;</button>
+        <h2 style="position: absolute; top: 30px; left: 30px; color: #fff; font-family: 'Montserrat', sans-serif; font-size: 1.2rem; font-weight: 300; letter-spacing: 2px;">HUB LIVE <span style="font-weight:bold; color: #ffaa00;">PRO</span></h2>
         
-        <div id="live-orb" style="width: 200px; height: 200px; border-radius: 50%; background: linear-gradient(135deg, #8a2be2, #00cec9, #ffaa00); box-shadow: 0 0 50px rgba(138,43,226,0.5), inset 0 0 30px rgba(255,255,255,0.5); position: relative; transition: all 0.5s ease;">
+        <div id="live-orb" style="width: 220px; height: 220px; border-radius: 50%; background: linear-gradient(135deg, #8a2be2, #00cec9, #ffaa00); box-shadow: 0 0 60px rgba(138,43,226,0.5), inset 0 0 40px rgba(255,255,255,0.6); position: relative; transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); cursor: pointer; display: flex; align-items: center; justify-content: center;" onmousedown="startLiveRecord(event)" onmouseup="stopLiveRecord(event)" ontouchstart="startLiveRecord(event)" ontouchend="stopLiveRecord(event)">
+            <svg id="live-mic-icon" viewBox="0 0 24 24" width="60" height="60" fill="none" stroke="rgba(255,255,255,0.8)" stroke-width="1.5"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>
         </div>
         
-        <p id="live-status-text" style="color: #fff; font-size: 1.2rem; margin-top: 60px; font-weight: 300; opacity: 0.8; font-family: 'Montserrat', sans-serif;">Connecting...</p>
-        <p id="live-transcript" style="color: #fff; font-size: 1.5rem; margin-top: 20px; max-width: 80%; text-align: center; height: 100px; overflow: hidden; opacity: 0.6; font-weight: bold;"></p>
+        <p id="live-status-text" style="color: #fff; font-size: 1.3rem; margin-top: 60px; font-weight: 300; opacity: 0.9; font-family: 'Montserrat', sans-serif; letter-spacing: 1px;">Hold the Orb to Speak</p>
+        <p id="live-transcript" style="color: #fff; font-size: 1.4rem; margin-top: 20px; max-width: 80%; text-align: center; height: 120px; overflow-y: auto; opacity: 0.8; font-weight: 400; line-height: 1.5;"></p>
         
-        <button id="live-interrupt-btn" onclick="interruptLiveAI()" style="margin-top: 20px; padding: 15px 30px; border-radius: 30px; background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2); font-size: 1rem; cursor: pointer; display: none;">Interrupt</button>
-        <button id="live-manual-btn" onclick="manualLiveRestart()" style="margin-top: 20px; padding: 10px 20px; border-radius: 20px; background: rgba(138,43,226,0.2); color: #fff; border: 1px solid rgba(138,43,226,0.5); font-size: 0.9rem; cursor: pointer; display: none;">Tap to Speak 🎤</button>
+        <button id="live-interrupt-btn" onclick="interruptLiveAI()" style="margin-top: 20px; padding: 15px 40px; border-radius: 30px; background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2); font-size: 1rem; cursor: pointer; display: none; backdrop-filter: blur(10px); transition: background 0.3s;">Interrupt</button>
     </div>
     
     <style>
@@ -5818,9 +5818,22 @@
         .orb-hearing { animation: liveOrbHearing 0.5s infinite ease-in-out; background: linear-gradient(135deg, #00cec9, #8a2be2) !important; }
         .orb-thinking { animation: liveOrbThink 1.5s infinite linear; background: linear-gradient(135deg, #00cec9, #8a2be2) !important; }
         .orb-speaking { animation: liveOrbSpeak 0.3s infinite ease-in-out; }
+
+        .chat-bubble-anim { animation: chatPopIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; opacity: 0; transform-origin: bottom center; }
+        @keyframes chatPopIn {
+            0% { opacity: 0; transform: scale(0.8) translateY(20px); }
+            100% { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        .ctx-item:hover { background: rgba(255,255,255,0.1) !important; }
     </style>
 
     <script>
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.chat-ctx-menu') && !e.target.closest('.chat-menu-btn')) {
+                document.querySelectorAll('.chat-ctx-menu').forEach(m => m.style.display = 'none');
+            }
+        });
+
         // ============ MASSIVE AI FEATURES ============
         async function submitCrush() {
             const ra = document.getElementById('crush-ra').value.trim();
@@ -6068,100 +6081,113 @@
         // ============ HUB LIVE (GEMINI-STYLE) ============
         let liveRecognition = null;
         let isLiveActive = false;
-        let silenceTimer = null;
         let isThinkingOrSpeaking = false;
+        let liveMediaRecorder = null;
+        let liveAudioChunks = [];
+        let isLiveRecording = false;
 
         function startLiveAI() {
-            if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-                alert("Voice recognition is not supported in this browser. Try Chrome for Android or Desktop!");
-                return;
-            }
-            
             document.getElementById('liveAiModal').style.display = 'flex';
             document.getElementById('chatModal').style.display = 'none';
             isLiveActive = true;
             isThinkingOrSpeaking = false;
-            
-            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            liveRecognition = new SpeechRecognition();
-            liveRecognition.continuous = true;
-            liveRecognition.interimResults = true;
-            liveRecognition.lang = 'en-IN'; 
-            
-            liveRecognition.onstart = function() {
-                if(!isThinkingOrSpeaking) setLiveState('listening');
-            };
-            
-            liveRecognition.onresult = function(event) {
-                if (isThinkingOrSpeaking) return;
-                
-                let finalTranscript = '';
-                let interimTranscript = '';
-                for (let i = event.resultIndex; i < event.results.length; ++i) {
-                    if (event.results[i].isFinal) {
-                        finalTranscript += event.results[i][0].transcript;
-                    } else {
-                        interimTranscript += event.results[i][0].transcript;
-                    }
-                }
-                
-                let currentText = finalTranscript || interimTranscript;
-                if(currentText.trim() !== '') {
-                    document.getElementById('live-transcript').innerText = "You: " + currentText;
-                    setLiveState('hearing'); 
-                }
-                
-                clearTimeout(silenceTimer);
-                
-                if(finalTranscript) {
-                    sendLivePrompt(finalTranscript);
-                } else if (interimTranscript) {
-                    silenceTimer = setTimeout(() => {
-                        sendLivePrompt(interimTranscript);
-                    }, 2500); 
-                }
-            };
-            
-            liveRecognition.onerror = function(event) {
-                console.warn("Live Speech Error: ", event.error);
-                if(isLiveActive && event.error !== 'aborted') {
-                    document.getElementById('live-transcript').innerText = "Mic Error: " + event.error + " (Try changing browser)";
-                    setTimeout(() => { if(isLiveActive && !isThinkingOrSpeaking) { try{ liveRecognition.start(); }catch(e){} } }, 3000);
-                }
-            };
-            
-            liveRecognition.onend = function() {
-                if (isLiveActive && !isThinkingOrSpeaking) {
-                    setTimeout(() => { if(isLiveActive && !isThinkingOrSpeaking) { try{ liveRecognition.start(); }catch(e){} } }, 200);
-                }
-            };
-            
-            liveRecognition.start();
+            setLiveState('listening');
+            document.getElementById('live-transcript').innerText = "";
         }
-        
+
+        async function startLiveRecord(e) {
+            if(e) e.preventDefault();
+            if(isThinkingOrSpeaking) return;
+            try {
+                if(window.speechSynthesis) window.speechSynthesis.cancel();
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                liveMediaRecorder = new MediaRecorder(stream);
+                liveAudioChunks = [];
+                liveMediaRecorder.ondataavailable = event => liveAudioChunks.push(event.data);
+                liveMediaRecorder.onstop = () => {
+                    const blob = new Blob(liveAudioChunks, { type: 'audio/webm' });
+                    const reader = new FileReader();
+                    reader.onload = (ev) => {
+                        sendLiveAudioPrompt(ev.target.result, blob.type);
+                    };
+                    reader.readAsDataURL(blob);
+                    stream.getTracks().forEach(t => t.stop());
+                };
+                liveMediaRecorder.start();
+                isLiveRecording = true;
+                setLiveState('hearing');
+                document.getElementById('live-transcript').innerText = "Listening... Release orb to send.";
+            } catch(err) {
+                document.getElementById('live-transcript').innerText = "Mic Error: " + err.message + " (Please allow microphone access)";
+            }
+        }
+
+        function stopLiveRecord(e) {
+            if(e) e.preventDefault();
+            if(isLiveRecording && liveMediaRecorder) {
+                liveMediaRecorder.stop();
+                isLiveRecording = false;
+                setLiveState('thinking');
+                document.getElementById('live-transcript').innerText = "Sending audio to AI...";
+            }
+        }
+
+        async function sendLiveAudioPrompt(base64Data, mimeType) {
+            isThinkingOrSpeaking = true;
+            setLiveState('thinking');
+            document.getElementById('live-transcript').innerText = "AI is thinking...";
+            try {
+                const attData = localStorage.getItem('squadAttendance') || "[]";
+                const ttData = localStorage.getItem('squadTimetable') || "{}";
+                const res = await fetch(`${BACKEND_URL}/api/ai/chat`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ prompt: "The user sent an audio message. Respond briefly to it as if in a live voice conversation. Maximum 2-3 sentences. No markdown.", attendance: attData, timetable: ttData, file_base64: base64Data, mime_type: mimeType })
+                });
+                const data = await res.json();
+                
+                if(!isLiveActive) return;
+                
+                if(data.success) {
+                    setLiveState('speaking');
+                    const cleanText = data.reply.replace(/[*_#`]/g, '').replace(/!\[.*?\]\(.*?\)/g, '');
+                    document.getElementById('live-transcript').innerText = "AI: " + cleanText;
+                    
+                    const utterance = new SpeechSynthesisUtterance(cleanText);
+                    utterance.rate = 1.05;
+                    utterance.pitch = 1.1;
+                    utterance.onend = function() {
+                        if(isLiveActive) {
+                            isThinkingOrSpeaking = false;
+                            setLiveState('listening');
+                        }
+                    };
+                    window.speechSynthesis.speak(utterance);
+                } else {
+                    document.getElementById('live-transcript').innerText = "Error: " + data.error;
+                    isThinkingOrSpeaking = false;
+                    setLiveState('listening');
+                }
+            } catch(err) {
+                document.getElementById('live-transcript').innerText = "Network Error.";
+                isThinkingOrSpeaking = false;
+                setLiveState('listening');
+            }
+        }
+
         function stopLiveAI() {
             isLiveActive = false;
             isThinkingOrSpeaking = false;
-            clearTimeout(silenceTimer);
-            if(liveRecognition) {
-                try { liveRecognition.stop(); } catch(e){}
-            }
+            isLiveRecording = false;
+            if(liveMediaRecorder && liveMediaRecorder.state !== 'inactive') liveMediaRecorder.stop();
             if(window.speechSynthesis) window.speechSynthesis.cancel();
             document.getElementById('liveAiModal').style.display = 'none';
         }
-        
-        function manualLiveRestart() {
+
+        function interruptLiveAI() {
             isThinkingOrSpeaking = false;
             if(window.speechSynthesis) window.speechSynthesis.cancel();
-            if(liveRecognition) {
-                try { liveRecognition.abort(); } catch(e){}
-                setTimeout(() => { if(isLiveActive) { try{ liveRecognition.start(); }catch(e){} } }, 300);
-            }
-        }
-        
-        function interruptLiveAI() {
-            manualLiveRestart();
             setLiveState('listening');
+            document.getElementById('live-transcript').innerText = "Interrupted. Hold orb to speak again.";
         }
         
         function setLiveState(state) {
@@ -6356,6 +6382,56 @@
         }
 
         // ================= CLASS CHAT =================
+        function copyClassChat(msg) {
+            navigator.clipboard.writeText(msg).then(() => alert('Message copied!'));
+        }
+        function deleteClassChat(id, isMe) {
+            let action = 'me';
+            if (isMe) {
+                if (confirm("Delete this message for EVERYONE?")) action = 'everyone';
+                else return;
+            } else {
+                if (!confirm("Delete this message for yourself?")) return;
+            }
+            fetch(`${BACKEND_URL}/api/chat/delete/${id}`, {
+                method: 'POST', headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ net_id: getCurrentNetId(), mode: action })
+            }).then(() => loadClassChat());
+        }
+        
+        let currentCustomAudio = null;
+        let currentAudioWaveInterval = null;
+        function toggleCustomAudio(btn, url) {
+            const container = btn.parentElement;
+            const waves = container.querySelectorAll('.wave-bar');
+            
+            if (currentCustomAudio && currentCustomAudio.src === url && !currentCustomAudio.paused) {
+                currentCustomAudio.pause();
+                btn.innerText = '▶';
+                clearInterval(currentAudioWaveInterval);
+                waves.forEach(w => w.style.height = (Math.random()*15+5)+'px');
+                return;
+            }
+            if (currentCustomAudio) {
+                currentCustomAudio.pause();
+                clearInterval(currentAudioWaveInterval);
+                document.querySelectorAll('.custom-audio-player button').forEach(b => b.innerText = '▶');
+            }
+            
+            currentCustomAudio = new Audio(url);
+            currentCustomAudio.play();
+            btn.innerText = '⏸';
+            
+            currentAudioWaveInterval = setInterval(() => {
+                waves.forEach(w => w.style.height = (Math.random()*20+5)+'px');
+            }, 100);
+            
+            currentCustomAudio.onended = () => {
+                btn.innerText = '▶';
+                clearInterval(currentAudioWaveInterval);
+                waves.forEach(w => w.style.height = (Math.random()*15+5)+'px');
+            };
+        }
         function getUserSection() {
             try {
                 const profile = JSON.parse(localStorage.getItem('squadProfile') || '{}');
@@ -6444,39 +6520,53 @@
                     const timeStr = dt.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
                     
                     const bubble = document.createElement('div');
-                    bubble.style.cssText = `max-width: 85%; padding: 10px 15px; border-radius: 15px; display: flex; flex-direction: column; gap: 5px; position: relative; ${isMe ? 'background: linear-gradient(135deg, #00cc66, #00994d); color: white; align-self: flex-end; border-bottom-right-radius: 0;' : 'background: rgba(255,255,255,0.1); color: white; align-self: flex-start; border-bottom-left-radius: 0;'}`;
+                    bubble.className = "chat-bubble-anim fade-in-up";
+                    bubble.style.cssText = `max-width: 85%; padding: 12px 16px; border-radius: 18px; display: flex; flex-direction: column; gap: 5px; position: relative; box-shadow: 0 4px 15px rgba(0,0,0,0.2); backdrop-filter: blur(10px); ${isMe ? 'background: linear-gradient(135deg, rgba(0, 204, 102, 0.8), rgba(0, 153, 77, 0.9)); color: white; align-self: flex-end; border-bottom-right-radius: 4px; border: 1px solid rgba(0,255,100,0.3);' : 'background: rgba(255,255,255,0.1); color: white; align-self: flex-start; border-bottom-left-radius: 4px; border: 1px solid rgba(255,255,255,0.1);'}`;
                     
                     if (m.deleted_for_all) {
-                        bubble.innerHTML = `<div style="font-style: italic; color: rgba(255,255,255,0.6);">🚫 This message was deleted</div>`;
+                        bubble.innerHTML = `<div style="font-style: italic; color: rgba(255,255,255,0.6); display:flex; align-items:center; gap:5px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line></svg> This message was deleted</div>`;
                     } else {
                         let html = '';
-                        if (!isMe) html += `<div style="font-size: 0.75rem; font-weight: bold; color: #ffaa00; margin-bottom: 2px;">${m.sender_name}</div>`;
-                        if (m.image_url) html += `<img src="${m.image_url}" style="max-width: 100%; border-radius: 10px; margin-bottom: 5px;" onclick="window.open('${m.image_url}')">`;
-                        if (m.audio_url) html += `<audio controls src="${m.audio_url}" style="max-width: 100%; margin-bottom: 5px; height: 40px; border-radius: 20px;"></audio>`;
-                        if (m.message) html += `<div style="word-wrap: break-word; line-height: 1.4;">${m.message}</div>`;
-                        html += `<div style="font-size: 0.65rem; color: rgba(255,255,255,0.6); align-self: flex-end; margin-top: 2px;">${timeStr}</div>`;
+                        html += `<div style="font-size: 0.75rem; font-weight: bold; color: ${isMe ? 'rgba(255,255,255,0.9)' : '#ffaa00'}; margin-bottom: 4px; display:flex; justify-content:space-between; align-items:center;">
+                            <span>${isMe ? 'You' : m.sender_name}</span>
+                            <span class="chat-menu-btn" style="cursor:pointer; opacity:0.6; padding:0 5px;">▼</span>
+                        </div>`;
+
+                        const safeMsg = m.message ? m.message.replace(/'/g, "\\'").replace(/"/g, '&quot;') : '';
+                        const menuHtml = `<div class="chat-ctx-menu" style="display:none; position:absolute; top:25px; right:10px; background:rgba(20,20,20,0.95); border:1px solid rgba(255,255,255,0.1); border-radius:10px; padding:5px 0; z-index:100; box-shadow:0 10px 25px rgba(0,0,0,0.5); backdrop-filter:blur(15px); flex-direction:column; min-width:120px;">
+                            <div class="ctx-item" onclick="copyClassChat('${safeMsg}')" style="padding:10px 15px; cursor:pointer; font-size:0.9rem; transition:background 0.2s;">Copy</div>
+                            <div class="ctx-item" onclick="deleteClassChat('${m.id}', ${isMe})" style="padding:10px 15px; cursor:pointer; font-size:0.9rem; color:#ff4757; transition:background 0.2s;">Delete</div>
+                        </div>`;
+                        html += menuHtml;
+
+                        if (m.image_url) html += `<img src="${m.image_url}" style="max-width: 100%; border-radius: 12px; margin-bottom: 5px; box-shadow: 0 5px 15px rgba(0,0,0,0.3);" onclick="window.open('${m.image_url}')">`;
                         
-                        // Delete Button
-                        const delBtn = document.createElement('button');
-                        delBtn.innerHTML = '🗑️';
-                        delBtn.style.cssText = `position: absolute; top: 5px; ${isMe ? 'left: -35px;' : 'right: -35px;'} background: rgba(255,0,0,0.2); border: 1px solid rgba(255,0,0,0.5); border-radius: 50%; color: #ff4444; cursor: pointer; font-size: 0.8rem; padding: 5px; display: block; opacity: 0.7; transition: opacity 0.2s;`;
+                        if (m.audio_url) {
+                            html += `
+                            <div class="custom-audio-player" style="display:flex; align-items:center; gap:10px; background:rgba(0,0,0,0.2); padding:8px 12px; border-radius:30px; margin-bottom:5px;">
+                                <button onclick="toggleCustomAudio(this, '${m.audio_url}')" style="background:#fff; color:#000; border:none; border-radius:50%; width:35px; height:35px; display:flex; align-items:center; justify-content:center; cursor:pointer; flex-shrink:0;">▶</button>
+                                <div class="audio-waves" style="flex:1; display:flex; gap:3px; align-items:center; height:20px;">
+                                    ${Array(15).fill(0).map(()=>`<div class="wave-bar" style="width:4px; height:${Math.random()*15+5}px; background:rgba(255,255,255,0.5); border-radius:2px; transition:height 0.2s;"></div>`).join('')}
+                                </div>
+                            </div>`;
+                        }
                         
-                        delBtn.onclick = () => {
-                            let action = 'me';
-                            if (isMe) {
-                                if (confirm("Delete this message for EVERYONE?")) action = 'everyone';
-                                else return;
-                            } else {
-                                if (!confirm("Delete this message for yourself?")) return;
+                        if (m.message) html += `<div style="word-wrap: break-word; line-height: 1.5; font-size: 0.95rem;">${m.message}</div>`;
+                        html += `<div style="font-size: 0.65rem; color: rgba(255,255,255,0.7); align-self: flex-end; margin-top: 4px;">${timeStr}</div>`;
+                        
+                        bubble.innerHTML = html;
+                        
+                        setTimeout(() => {
+                            const menuBtn = bubble.querySelector('.chat-menu-btn');
+                            const menu = bubble.querySelector('.chat-ctx-menu');
+                            if (menuBtn && menu) {
+                                menuBtn.onclick = (e) => {
+                                    e.stopPropagation();
+                                    document.querySelectorAll('.chat-ctx-menu').forEach(m => m !== menu ? m.style.display='none' : null);
+                                    menu.style.display = menu.style.display === 'none' ? 'flex' : 'none';
+                                };
                             }
-                            
-                            fetch(`${BACKEND_URL}/api/chat/delete/${m.id}`, {
-                                method: 'POST', headers: {'Content-Type': 'application/json'},
-                                body: JSON.stringify({ net_id: myNetId, mode: action })
-                            }).then(() => loadClassChat());
-                        };
-                        bubble.appendChild(delBtn);
-                        bubble.innerHTML = html + bubble.innerHTML;
+                        }, 0);
                     }
                     history.appendChild(bubble);
                 });
