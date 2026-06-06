@@ -92,6 +92,11 @@ def init_db():
             conn.commit()
         except Exception:
             conn.rollback()
+        try:
+            cur.execute("ALTER TABLE lost_found ADD COLUMN image_url TEXT")
+            conn.commit()
+        except Exception:
+            conn.rollback()
     else:
         cur.execute('''CREATE TABLE IF NOT EXISTS students (
             net_id TEXT PRIMARY KEY, name TEXT, register_no TEXT,
@@ -123,6 +128,31 @@ def init_db():
         
         try:
             cur.execute("ALTER TABLE music_hub ADD COLUMN order_index INTEGER DEFAULT 0")
+            conn.commit()
+        except Exception:
+            conn.rollback()
+        try:
+            cur.execute("ALTER TABLE lost_found RENAME COLUMN item_name TO title")
+            conn.commit()
+        except Exception:
+            conn.rollback()
+        try:
+            cur.execute("ALTER TABLE lost_found ADD COLUMN title TEXT")
+            conn.commit()
+        except Exception:
+            conn.rollback()
+        try:
+            cur.execute("ALTER TABLE lost_found ADD COLUMN category TEXT")
+            conn.commit()
+        except Exception:
+            conn.rollback()
+        try:
+            cur.execute("ALTER TABLE lost_found ADD COLUMN location TEXT")
+            conn.commit()
+        except Exception:
+            conn.rollback()
+        try:
+            cur.execute("ALTER TABLE lost_found ADD COLUMN image_url TEXT")
             conn.commit()
         except Exception:
             conn.rollback()
