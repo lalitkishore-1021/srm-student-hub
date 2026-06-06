@@ -1490,7 +1490,7 @@ GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY', '')
 def call_gemini(prompt, file_base64=None, mime_type=None):
     if not GEMINI_API_KEY:
         return None
-    url = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
     parts = [{"text": prompt}]
     if file_base64 and mime_type:
         b64_data = file_base64.split(',')[1] if ',' in file_base64 else file_base64

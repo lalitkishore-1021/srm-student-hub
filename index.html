@@ -6558,15 +6558,17 @@
                 const res = await fetch(`${BACKEND_URL}/api/chat/${section}`);
                 const msgs = await res.json();
                 
+                const noMsg = document.getElementById('no-msg-txt');
+                if (noMsg) noMsg.remove();
+                const spinner = history.querySelector('div[style*="animation: spin"]');
+                if (spinner) spinner.remove();
+
                 if (!msgs || msgs.length === 0) {
                     if (history.children.length === 0) {
                         history.innerHTML = '<div style="text-align:center; color:var(--text-sub); margin-top: auto; margin-bottom: auto;" id="no-msg-txt">No messages yet. Say hi! 👋</div>';
                     }
                     return;
                 }
-
-                const noMsg = document.getElementById('no-msg-txt');
-                if (noMsg) noMsg.remove();
 
                 const currentIds = new Set(msgs.map(m => m.id));
                 Array.from(history.children).forEach(child => {
