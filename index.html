@@ -6504,26 +6504,53 @@
             try {
                 const res = await fetch(`${BACKEND_URL}/api/chat/${section}`);
                 const msgs = await res.json();
-                history.innerHTML = '';
                 
                 if (!msgs || msgs.length === 0) {
-                    history.innerHTML = '<div style="text-align:center; color:var(--text-sub); margin-top: auto; margin-bottom: auto;">No messages yet. Say hi! 👋</div>';
+                    if (history.children.length === 0) {
+                        history.innerHTML = '<div style="text-align:center; color:var(--text-sub); margin-top: auto; margin-bottom: auto;" id="no-msg-txt">No messages yet. Say hi! 👋</div>';
+                    }
                     return;
                 }
+
+                const noMsg = document.getElementById('no-msg-txt');
+                if (noMsg) noMsg.remove();
+
+                const currentIds = new Set(msgs.map(m => m.id));
+                Array.from(history.children).forEach(child => {
+                    if (child.dataset.msgId && !currentIds.has(parseInt(child.dataset.msgId))) {
+                        child.remove();
+                    }
+                });
 
                 msgs.forEach(m => {
                     const isMe = m.sender_net_id === myNetId;
                     const deletedByMe = m.deleted_by && m.deleted_by.includes(myNetId);
-                    if (deletedByMe && !m.deleted_for_all) return;
+                    if (deletedByMe && !m.deleted_for_all) {
+                        const ex = document.getElementById('chat-msg-' + m.id);
+                        if(ex) ex.remove();
+                        return;
+                    }
+
+                    let existing = document.getElementById('chat-msg-' + m.id);
+                    if (existing) {
+                        if (m.deleted_for_all && existing.dataset.deleted !== "true") {
+                            existing.dataset.deleted = "true";
+                            existing.innerHTML = `<div style="font-style: italic; color: rgba(255,255,255,0.6); display:flex; align-items:center; gap:5px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line></svg> This message was deleted</div>`;
+                        }
+                        return;
+                    }
                     
                     const dt = new Date(m.created_at);
                     const timeStr = dt.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
                     
                     const bubble = document.createElement('div');
+                    bubble.id = 'chat-msg-' + m.id;
+                    bubble.dataset.msgId = m.id;
                     bubble.className = "chat-bubble-anim fade-in-up";
                     bubble.style.cssText = `max-width: 85%; padding: 12px 16px; border-radius: 18px; display: flex; flex-direction: column; gap: 5px; position: relative; box-shadow: 0 4px 15px rgba(0,0,0,0.2); backdrop-filter: blur(10px); ${isMe ? 'background: linear-gradient(135deg, rgba(0, 204, 102, 0.8), rgba(0, 153, 77, 0.9)); color: white; align-self: flex-end; border-bottom-right-radius: 4px; border: 1px solid rgba(0,255,100,0.3);' : 'background: rgba(255,255,255,0.1); color: white; align-self: flex-start; border-bottom-left-radius: 4px; border: 1px solid rgba(255,255,255,0.1);'}`;
                     
                     if (m.deleted_for_all) {
+                        bubble.dataset.deleted = "true";
                         bubble.innerHTML = `<div style="font-style: italic; color: rgba(255,255,255,0.6); display:flex; align-items:center; gap:5px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line></svg> This message was deleted</div>`;
                     } else {
                         let html = '';
@@ -6562,7 +6589,7 @@
                             if (menuBtn && menu) {
                                 menuBtn.onclick = (e) => {
                                     e.stopPropagation();
-                                    document.querySelectorAll('.chat-ctx-menu').forEach(m => m !== menu ? m.style.display='none' : null);
+                                    document.querySelectorAll('.chat-ctx-menu').forEach(mx => { if(mx !== menu) mx.style.display='none'; });
                                     menu.style.display = menu.style.display === 'none' ? 'flex' : 'none';
                                 };
                             }
