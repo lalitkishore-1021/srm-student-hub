@@ -3186,17 +3186,48 @@
             }, 1000);
 
             try {
-                const res = await fetch(`${BACKEND_URL}/api/start_session`, {
+                const initRes = await fetch(`${BACKEND_URL}/api/start_session`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ regNo: regNo, pwd: pwd, batch: currentBatch })
                 });
 
-                const result = await res.json();
+                const initData = await initRes.json();
+                if (!initData.success) {
+                    clearInterval(timerInterval);
+                    statusText.innerText = `❌ ${initData.error}`;
+                    statusText.style.color = "var(--danger)";
+                    return;
+                }
+
+                const syncId = initData.sync_id;
+                let result = null;
+
+                // Polling loop
+                while (true) {
+                    await new Promise(r => setTimeout(r, 3000)); // wait 3 seconds
+                    try {
+                        const statusRes = await fetch(`${BACKEND_URL}/api/sync_status/${syncId}`);
+                        const statusData = await statusRes.json();
+                        
+                        if (statusData.status === 'completed' || statusData.status === 'failed') {
+                            result = statusData.result;
+                            break;
+                        }
+                    } catch (err) {
+                        console.warn("Polling error (will retry):", err);
+                    }
+                    
+                    if (secondsPassed > 240) { // Hard limit 4 minutes
+                        result = { success: false, error: "Sync timed out. Academia is too slow today." };
+                        break;
+                    }
+                }
+
                 clearInterval(timerInterval);
 
-                if (!result.success) {
-                    statusText.innerText = `❌ ${result.error} (Failed after ${secondsPassed}s)`;
+                if (!result || !result.success) {
+                    statusText.innerText = `❌ ${result ? result.error : 'Unknown error'} (Failed after ${secondsPassed}s)`;
                     statusText.style.color = "var(--danger)";
                     return;
                 }
@@ -3258,14 +3289,36 @@
 
             showSyncToast();
             try {
-                const res = await fetch(`${BACKEND_URL}/api/start_session`, {
+                const initRes = await fetch(`${BACKEND_URL}/api/start_session`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ regNo, pwd, batch })
                 });
 
-                const result = await res.json();
-                if (result.success) {
+                const initData = await initRes.json();
+                if (!initData.success) {
+                    hideSyncToast(false);
+                    return;
+                }
+                
+                const syncId = initData.sync_id;
+                let result = null;
+                let polls = 0;
+                
+                while (polls < 80) { // Max ~4 mins
+                    await new Promise(r => setTimeout(r, 3000));
+                    polls++;
+                    try {
+                        const statusRes = await fetch(`${BACKEND_URL}/api/sync_status/${syncId}`);
+                        const statusData = await statusRes.json();
+                        if (statusData.status === 'completed' || statusData.status === 'failed') {
+                            result = statusData.result;
+                            break;
+                        }
+                    } catch (err) {}
+                }
+
+                if (result && result.success) {
                     const attList = Array.isArray(result.data) ? result.data : [];
                     const marksList = Array.isArray(result.marks) ? result.marks : [];
                     const ttDict = result.timetable || {};

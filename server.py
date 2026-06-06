@@ -6,6 +6,7 @@ import re
 import sqlite3
 import json
 import requests
+import uuid
 from datetime import datetime
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
@@ -785,25 +786,49 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
         if browser: browser.close()
         if p: p.stop()
 
+sync_jobs = {}
+
 @app.route('/api/start_session', methods=['POST'])
 def start_session():
     data = request.json
-    out_queue = queue.Queue()
-    t = threading.Thread(target=scrape_academia_worker, args=(data.get('regNo'), data.get('pwd'), data.get('batch', 1), out_queue))
+    sync_id = str(uuid.uuid4())
+    sync_jobs[sync_id] = {'status': 'processing', 'timestamp': time.time()}
+    
+    def worker_wrapper(reg_no, pwd, batch, sid):
+        out_queue = queue.Queue()
+        # We start the scraper normally
+        scrape_academia_worker(reg_no, pwd, batch, out_queue)
+        try:
+            # We wait for the scraper to finish without holding the HTTP response
+            result = out_queue.get(timeout=10)
+            if result.get('success'):
+                profile = result.get('profile', {})
+                raw_reg = reg_no or ''
+                net_id = raw_reg.split('@')[0]
+                register_no = net_id.upper()
+                name = profile.get('name', 'Student')
+                save_student_to_db(net_id, name, register_no, result.get('data', []), result.get('marks', []))
+            sync_jobs[sid] = {'status': 'completed', 'result': result, 'timestamp': time.time()}
+        except queue.Empty:
+            sync_jobs[sid] = {'status': 'failed', 'result': {'success': False, 'error': 'Background task crashed.'}, 'timestamp': time.time()}
+        except Exception as e:
+            sync_jobs[sid] = {'status': 'failed', 'result': {'success': False, 'error': f'Background task exception: {str(e)}'}, 'timestamp': time.time()}
+
+    t = threading.Thread(target=worker_wrapper, args=(data.get('regNo'), data.get('pwd'), data.get('batch', 1), sync_id))
     t.start()
-    try:
-        result = out_queue.get(timeout=150)
-        # Auto-save student to DB on every successful sync
-        if result.get('success'):
-            profile = result.get('profile', {})
-            raw_reg = data.get('regNo', '')
-            net_id = raw_reg.split('@')[0]          # e.g. ra2511026010324
-            register_no = net_id.upper()            # e.g. RA2511026010324
-            name = profile.get('name', 'Student')
-            save_student_to_db(net_id, name, register_no, result.get('data', []), result.get('marks', []))
-        return jsonify(result)
-    except queue.Empty:
-        return jsonify({'success': False, 'error': 'Server Timeout. Check internet speed.'})
+    return jsonify({'success': True, 'sync_id': sync_id})
+
+@app.route('/api/sync_status/<sync_id>', methods=['GET'])
+def sync_status(sync_id):
+    job = sync_jobs.get(sync_id)
+    if not job:
+        return jsonify({'status': 'failed', 'result': {'success': False, 'error': 'Job not found or expired.'}})
+    
+    if job['status'] == 'completed' or job['status'] == 'failed':
+        res = sync_jobs.pop(sync_id, None)
+        return jsonify({'status': res['status'], 'result': res.get('result')})
+    
+    return jsonify({'status': 'processing'})
 
 @app.route('/api/save_student', methods=['POST'])
 def save_student():
