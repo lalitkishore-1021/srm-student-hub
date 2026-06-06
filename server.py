@@ -248,13 +248,13 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
             viewport={'width': 1920, 'height': 1080}
         )
         page = context.new_page()
-        page.set_default_timeout(90000)
+        page.set_default_timeout(20000)
 
         if "@" not in reg_no: reg_no += "@srmist.edu.in"
 
         print(f"[{reg_no}] 1. Loading Academia...")
         try:
-            page.goto("https://academia.srmist.edu.in/", wait_until="networkidle", timeout=60000)
+            page.goto("https://academia.srmist.edu.in/", wait_until="domcontentloaded", timeout=30000)
         except Exception as e:
             out_queue.put({'success': False, 'error': f'Portal failed to load: {str(e)}'})
             return
