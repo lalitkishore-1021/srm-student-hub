@@ -82,6 +82,16 @@ def init_db():
             conn.commit()
         except Exception:
             conn.rollback()
+        try:
+            cur.execute("ALTER TABLE lost_found ADD COLUMN category TEXT")
+            conn.commit()
+        except Exception:
+            conn.rollback()
+        try:
+            cur.execute("ALTER TABLE lost_found ADD COLUMN location TEXT")
+            conn.commit()
+        except Exception:
+            conn.rollback()
     else:
         cur.execute('''CREATE TABLE IF NOT EXISTS students (
             net_id TEXT PRIMARY KEY, name TEXT, register_no TEXT,
@@ -1412,11 +1422,16 @@ def reorder_music():
 
 GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY', '')
 
-def call_gemini(prompt):
+def call_gemini(prompt, file_base64=None, mime_type=None):
     if not GEMINI_API_KEY:
         return None
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key={GEMINI_API_KEY}"
-    payload = {"contents": [{"parts": [{"text": prompt}]}]}
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
+    parts = [{"text": prompt}]
+    if file_base64 and mime_type:
+        b64_data = file_base64.split(',')[1] if ',' in file_base64 else file_base64
+        parts.append({"inline_data": {"mime_type": mime_type, "data": b64_data}})
+        
+    payload = {"contents": [{"parts": parts}]}
     try:
         response = requests.post(url, json=payload, headers={'Content-Type': 'application/json'})
         data = response.json()
@@ -1424,9 +1439,9 @@ def call_gemini(prompt):
             return "API Error: " + data['error'].get('message', str(data['error']))
         if 'candidates' in data and data['candidates']:
             return data['candidates'][0]['content']['parts'][0]['text']
-        return "Sorry, I could not generate a response. Details: " + str(data)
+        return "Sorry, I could not generate a response."
     except Exception as e:
-        return str(e)
+        return f"Error connecting to AI service: {e}"
 
 @app.route('/api/ai/chat', methods=['POST'])
 def ai_chat():
@@ -1434,22 +1449,24 @@ def ai_chat():
     user_msg = data.get('prompt', '')
     attendance = data.get('attendance', '[]')
     timetable = data.get('timetable', '{}')
-    if not user_msg: return jsonify({'success': False, 'error': 'Empty prompt'})
+    file_base64 = data.get('file_base64', None)
+    mime_type = data.get('mime_type', None)
+    if not user_msg and not file_base64: return jsonify({'success': False, 'error': 'Empty prompt'})
     
-    sys_prompt = f"""You are SRM Hub AI, a friendly and helpful AI assistant for SRM University students built by Balaga Lalit Kishore (Instagram: @lalit._.kishore, LinkedIn: balagalalitkishore).
+    sys_prompt = f"""You are SRM Hub AI, a friendly and helpful AI assistant for SRM University students built by Balaga Lalit Kishore. ONLY mention his social media (Instagram: @lalit._.kishore, LinkedIn: balagalalitkishore) IF explicitly asked.
 You have access to the user's real-time academic data:
 Attendance Data: {attendance}
 Timetable Data: {timetable}
 
 Features you support:
 1. Bunk Strategy: If they ask about bunking or attendance, analyze their data. 75% is the strict minimum requirement. Calculate exactly how many classes they can afford to miss, and look at their timetable to advise them on which specific classes to skip today/tomorrow based on their margin.
-2. Assignment Solver: If they ask you to solve an assignment, provide a highly accurate, well-formatted answer. If it requires images, you can use markdown `![image](url)` syntax if you have a source, or just provide the text.
+2. Assignment Solver: If they ask you to solve an assignment, provide a highly accurate, well-formatted answer. If it requires images, you can use markdown `![image](url)` syntax if you have a source, or just provide the text. If they provided an image or PDF, analyze it accurately.
 3. General Chat: Answer study questions, PYQs, coding doubts, and casual questions.
 
 Be friendly, concise, and smart. DO NOT output the raw JSON data to the user, just use it to give intelligent, personalized advice.
 User: {user_msg}"""
     
-    reply = call_gemini(sys_prompt)
+    reply = call_gemini(sys_prompt, file_base64, mime_type)
     if reply and not reply.startswith("Sorry, I could not generate a response"):
         return jsonify({'success': True, 'reply': reply})
     return jsonify({'success': False, 'error': reply or 'AI failed to respond.'})
@@ -1490,20 +1507,21 @@ def post_chat(section):
     sender_net_id = data.get('sender_net_id', '').lower().strip()
     message = data.get('message', '').strip()
     image_url = data.get('image_url', '')
+    audio_url = data.get('audio_url', '')
     now = datetime.now().isoformat()
     
-    if not message and not image_url:
+    if not message and not image_url and not audio_url:
         return jsonify({'success': False, 'error': 'Empty message'})
         
     conn = get_db()
     cur = conn.cursor()
     try:
         if DATABASE_URL:
-            cur.execute("INSERT INTO class_chats (section, sender_name, sender_net_id, message, image_url, created_at) VALUES (%s, %s, %s, %s, %s, %s)",
-                        (section, sender_name, sender_net_id, message, image_url, now))
+            cur.execute("INSERT INTO class_chats (section, sender_name, sender_net_id, message, image_url, audio_url, created_at) VALUES (%s, %s, %s, %s, %s, %s, %s)",
+                        (section, sender_name, sender_net_id, message, image_url, audio_url, now))
         else:
-            cur.execute("INSERT INTO class_chats (section, sender_name, sender_net_id, message, image_url, created_at) VALUES (?, ?, ?, ?, ?, ?)",
-                        (section, sender_name, sender_net_id, message, image_url, now))
+            cur.execute("INSERT INTO class_chats (section, sender_name, sender_net_id, message, image_url, audio_url, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                        (section, sender_name, sender_net_id, message, image_url, audio_url, now))
         conn.commit()
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)})
