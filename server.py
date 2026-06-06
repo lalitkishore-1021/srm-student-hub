@@ -143,6 +143,11 @@ def init_db():
         except Exception:
             conn.rollback()
         try:
+            cur.execute("ALTER TABLE class_chats ADD COLUMN audio_url TEXT")
+            conn.commit()
+        except Exception:
+            conn.rollback()
+        try:
             cur.execute("ALTER TABLE lost_found ADD COLUMN title TEXT")
             conn.commit()
         except Exception:
@@ -338,7 +343,7 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
                 except: pass
             return all_tables
             
-        def wait_for_data_tables(keyword, timeout=15000):
+        def wait_for_data_tables(keyword, timeout=60000):
             start = time.time()
             while time.time() - start < timeout / 1000.0:
                 tables = get_all_tables()
