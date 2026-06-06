@@ -103,6 +103,11 @@ def init_db():
             conn.commit()
         except Exception:
             conn.rollback()
+        try:
+            cur.execute("ALTER TABLE class_chats ADD COLUMN audio_url TEXT")
+            conn.commit()
+        except Exception:
+            conn.rollback()
     else:
         cur.execute('''CREATE TABLE IF NOT EXISTS students (
             net_id TEXT PRIMARY KEY, name TEXT, register_no TEXT,
@@ -184,8 +189,10 @@ def save_student_to_db(net_id, name, register_no, att_data, marks_data):
         total_att = 0; total_cls = 0
         for sub in (att_data or []):
             try:
-                total_att += int(sub.get('attended', 0) or 0)
-                total_cls += int(sub.get('total', 0) or 0)
+                att_val = float(sub.get('attended', 0) or 0)
+                tot_val = float(sub.get('total', 0) or 0)
+                total_att += int(att_val)
+                total_cls += int(tot_val)
             except: continue
         overall_att = round((total_att / total_cls) * 100, 1) if total_cls > 0 else 0.0
 
@@ -313,8 +320,11 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
             else: page.keyboard.press("Enter")
             page.wait_for_timeout(5000)
 
-            terminate_btn = page.locator('button, a').filter(has_text=re.compile(r"terminate", re.IGNORECASE)).first
-            if terminate_btn.count() > 0: terminate_btn.click(force=True); page.wait_for_timeout(4000)
+            terminate_btn = find_in_frames('button, a, input[type="button"], input[type="submit"]', filter_text='terminate')
+            if terminate_btn:
+                print(f"[{reg_no}] Found active session warning. Clicking terminate...")
+                terminate_btn.click(force=True)
+                page.wait_for_timeout(4000)
         except Exception as e:
             out_queue.put({'success': False, 'error': f'Auth Failed: {str(e)}'})
             return
@@ -343,15 +353,27 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
                 except: pass
             return all_tables
             
-        def wait_for_data_tables(keyword, timeout=60000):
+        def wait_for_data_tables(keywords, timeout=20000):
+            if isinstance(keywords, str):
+                keywords = [keywords]
+            keywords = [k.lower() for k in keywords]
+            
             start = time.time()
+            tables_seen_start = None
             while time.time() - start < timeout / 1000.0:
                 tables = get_all_tables()
                 if tables:
                     for t in tables:
                         for row in t:
-                            if any(keyword.lower() in str(c).lower() for c in row):
-                                return tables
+                            for c in row:
+                                c_str = str(c).lower()
+                                if any(k in c_str for k in keywords):
+                                    return tables
+                    if tables_seen_start is None:
+                        tables_seen_start = time.time()
+                    elif time.time() - tables_seen_start > 5.0:
+                        print(f"[{reg_no}] Tables found but keywords {keywords} not matched. Returning tables anyway.")
+                        return tables
                 page.wait_for_timeout(500)
             return get_all_tables()
 
@@ -366,10 +388,11 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
         print(f"[{reg_no}] 5. Scoping Attendance...")
         page.goto("https://academia.srmist.edu.in/#Page:My_Attendance")
         
-        raw_tables = wait_for_data_tables("attn")
-        if not any("attn" in str(c).lower() for t in raw_tables for row in t for c in row):
+        raw_tables = wait_for_data_tables(["attn", "attendance", "att"], timeout=20000)
+        if not any(k in str(c).lower() for k in ["attn", "attendance", "att"] for t in raw_tables for row in t for c in row):
+            print(f"[{reg_no}] Attendance keyword not found. Reloading page...")
             page.reload(wait_until="networkidle")
-            raw_tables = wait_for_data_tables("attn")
+            raw_tables = wait_for_data_tables(["attn", "attendance", "att"], timeout=15000)
 
         parsed_att = []
         parsed_marks = []
@@ -522,12 +545,26 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
         print(f"[{reg_no}] 6. Scoping Registered Slots...")
         student_slots = {}
         # Reverted 2024_25 back to 2023_24 based on Academia's weird hardcoded URL hash
-        page.goto("https://academia.srmist.edu.in/#Page:My_Time_Table_2023_24")
+        timetable_urls = [
+            "https://academia.srmist.edu.in/#Page:My_Time_Table_2023_24",
+            "https://academia.srmist.edu.in/#Page:My_Time_Table_2024_25",
+            "https://academia.srmist.edu.in/#Page:My_Time_Table_2025_26",
+            "https://academia.srmist.edu.in/#Page:My_Time_Table"
+        ]
         
-        slot_tables = wait_for_data_tables("slot")
-        if not any("slot" in str(c).lower() for t in slot_tables for row in t for c in row):
+        slot_tables = []
+        for url in timetable_urls:
+            print(f"[{reg_no}] Trying timetable URL: {url}")
+            page.goto(url)
+            slot_tables = wait_for_data_tables(["slot", "course", "code"], timeout=8000)
+            if any(k in str(c).lower() for k in ["slot", "course", "code"] for t in slot_tables for row in t for c in row):
+                print(f"[{reg_no}] Successfully loaded timetable from {url}")
+                break
+        else:
+            print(f"[{reg_no}] Warning: No slot tables found with primary URLs. Attempting page reload on primary...")
+            page.goto(timetable_urls[0])
             page.reload(wait_until="networkidle")
-            slot_tables = wait_for_data_tables("slot")
+            slot_tables = wait_for_data_tables(["slot", "course", "code"], timeout=15000)
         
         # --- EXTRACT RICH PROFILE DATA FROM TIMETABLE PAGE ---
         for table in slot_tables:
@@ -624,12 +661,32 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
         final_tt = {"1": [], "2": [], "3": [], "4": [], "5": []}
         global_seen_entries = {"1": set(), "2": set(), "3": set(), "4": set(), "5": set()}
         
-        page.goto(f"https://academia.srmist.edu.in/#Page:Unified_Time_Table_2025_Batch_{batch}")
+        reg_match = re.search(r'[A-Za-z]+(\d{2})', reg_no)
+        joining_year = "2025"  # Default fallback
+        if reg_match:
+            year_short = reg_match.group(1)
+            joining_year = f"20{year_short}"
+            
+        print(f"[{reg_no}] Guessed joining year: {joining_year} from reg_no")
         
-        master_tables = wait_for_data_tables("day 1")
-        if not any("day 1" in str(c).lower() for t in master_tables for row in t for c in row):
+        timetable_years = [joining_year, "2025", "2024", "2023"]
+        timetable_years = list(dict.fromkeys(timetable_years))
+        
+        master_tables = []
+        for y in timetable_years:
+            url = f"https://academia.srmist.edu.in/#Page:Unified_Time_Table_{y}_Batch_{batch}"
+            print(f"[{reg_no}] Trying unified timetable URL: {url}")
+            page.goto(url)
+            master_tables = wait_for_data_tables(["day 1", "day order", "timings", "time"], timeout=8000)
+            if any("day 1" in str(c).lower() for t in master_tables for row in t for c in row):
+                print(f"[{reg_no}] Successfully loaded unified timetable from {url}")
+                break
+        else:
+            print(f"[{reg_no}] Warning: No unified timetable tables found. Reloading primary...")
+            url = f"https://academia.srmist.edu.in/#Page:Unified_Time_Table_{joining_year}_Batch_{batch}"
+            page.goto(url)
             page.reload(wait_until="networkidle")
-            master_tables = wait_for_data_tables("day 1")
+            master_tables = wait_for_data_tables(["day 1", "day order", "timings", "time"], timeout=15000)
         
         print(f"[{reg_no}] Found {len(master_tables)} master tables")
         
