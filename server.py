@@ -486,6 +486,25 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
                 out_queue.put({'success': False, 'error': 'Login failed - still on login page. Check credentials.'})
                 return
                 
+            # DIAGNOSTIC: Print all available sidebar links
+            try:
+                print(f"[{reg_no}] DIAGNOSTIC: Scanning for available menu pages...")
+                page.wait_for_timeout(3000)
+                links = page.evaluate("""() => {
+                    return Array.from(document.querySelectorAll('a')).map(a => a.href).filter(h => h.includes('#Page:'));
+                }""")
+                for f in page.frames:
+                    try:
+                        frame_links = f.evaluate("""() => {
+                            return Array.from(document.querySelectorAll('a')).map(a => a.href).filter(h => h.includes('#Page:'));
+                        }""")
+                        if frame_links: links.extend(frame_links)
+                    except: pass
+                unique_links = list(set(links))
+                print(f"[{reg_no}] DIAGNOSTIC Available Pages: {unique_links}")
+            except Exception as e:
+                print(f"[{reg_no}] DIAGNOSTIC Failed to scan links: {e}")
+                
         except Exception as e:
             out_queue.put({'success': False, 'error': f'Auth Failed: {str(e)}'})
             return
