@@ -462,13 +462,29 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
             print(f"[{reg_no}] 4d. Post-login URL: {page.url}")
             
             # Handle "Terminate other session" popup
-            for _ in range(3):
-                terminate_btn = find_in_frames('button, a, input[type="button"], input[type="submit"]', filter_text='terminate')
-                if terminate_btn:
-                    print(f"[{reg_no}] Found active session warning. Clicking terminate...")
-                    terminate_btn.click(force=True)
-                    page.wait_for_timeout(4000)
-                    break
+            # Zoho uses /announcement/sessions-reminder
+            for _ in range(8):  # Try for 8 seconds
+                current_url = page.url
+                if 'sessions-reminder' in current_url.lower() or 'terminate' in page.content().lower():
+                    print(f"[{reg_no}] Found active session warning. Looking for terminate button...")
+                    terminate_btn = find_in_frames('button, a, div, span, input', filter_text='terminate')
+                    if terminate_btn:
+                        try:
+                            print(f"[{reg_no}] Clicking terminate button...")
+                            terminate_btn.click(force=True, timeout=5000)
+                            page.wait_for_timeout(4000)
+                        except Exception as e:
+                            print(f"[{reg_no}] Failed to click terminate: {e}")
+                            
+                        # If terminate fails or isn't there, try "Skip for now"
+                        skip_btn = find_in_frames('button, a, div, span', filter_text='skip')
+                        if skip_btn:
+                            try:
+                                print(f"[{reg_no}] Clicking skip button...")
+                                skip_btn.click(force=True, timeout=5000)
+                                page.wait_for_timeout(4000)
+                            except: pass
+                        break
                 page.wait_for_timeout(1000)
             
             # Verify we are actually logged in by checking URL or page content
