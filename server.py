@@ -547,13 +547,48 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
 
         # --- ATTENDANCE & MARKS ---
         print(f"[{reg_no}] 5. Scoping Attendance...")
-        page.goto("https://academia.srmist.edu.in/#Page:My_Attendance")
         
-        raw_tables = wait_for_data_tables(["attn", "attendance", "att"], timeout=20000)
-        if not any(k in str(c).lower() for k in ["attn", "attendance", "att"] for t in raw_tables for row in t for c in row):
-            print(f"[{reg_no}] Attendance keyword not found. Reloading page...")
+        # Try multiple attendance page URLs
+        att_urls = [
+            "https://academia.srmist.edu.in/#Page:My_Attendance",
+            "https://academia.srmist.edu.in/#Page:My_Attendance_2024_25",
+            "https://academia.srmist.edu.in/#Page:My_Attendance_2025_26"
+        ]
+        
+        raw_tables = []
+        for att_url in att_urls:
+            print(f"[{reg_no}] Trying attendance URL: {att_url}")
+            page.goto(att_url)
+            raw_tables = wait_for_data_tables(["attn", "attendance", "conducted", "absent", "hour", "code"], timeout=12000)
+            if raw_tables and len(raw_tables) > 0:
+                # Check if any table actually has attendance-like data
+                has_att_data = False
+                for t in raw_tables:
+                    for row in t:
+                        row_str = ' '.join(str(c).lower() for c in row)
+                        if any(k in row_str for k in ["attn", "attendance", "conducted", "absent", "hour"]):
+                            has_att_data = True
+                            break
+                    if has_att_data: break
+                if has_att_data:
+                    print(f"[{reg_no}] Found attendance data from {att_url}")
+                    break
+        
+        # If still no data, try a reload on the primary URL
+        if not raw_tables or not any(k in str(c).lower() for k in ["attn", "attendance", "conducted", "absent"] for t in raw_tables for row in t for c in row):
+            print(f"[{reg_no}] Attendance data not found on any URL. Trying reload...")
+            page.goto(att_urls[0])
             page.reload(wait_until="networkidle")
-            raw_tables = wait_for_data_tables(["attn", "attendance", "att"], timeout=15000)
+            raw_tables = wait_for_data_tables(["attn", "attendance", "conducted", "absent", "code"], timeout=15000)
+        
+        # Log what we found
+        if raw_tables:
+            print(f"[{reg_no}] Found {len(raw_tables)} tables on attendance page")
+            for idx, t in enumerate(raw_tables):
+                if t and len(t) > 0:
+                    print(f"[{reg_no}]   Table {idx}: {len(t)} rows, headers: {t[0][:5] if t[0] else '?'}")
+        else:
+            print(f"[{reg_no}] WARNING: No tables found on attendance page at all. Semester holidays?")
 
         parsed_att = []
         parsed_marks = []
@@ -822,16 +857,45 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
         final_tt = {"1": [], "2": [], "3": [], "4": [], "5": []}
         global_seen_entries = {"1": set(), "2": set(), "3": set(), "4": set(), "5": set()}
         
-        reg_match = re.search(r'[A-Za-z]+(\d{2})', reg_no)
-        joining_year = "2025"  # Default fallback
-        if reg_match:
-            year_short = reg_match.group(1)
-            joining_year = f"20{year_short}"
-            
-        print(f"[{reg_no}] Guessed joining year: {joining_year} from reg_no")
+        # Smart year extraction from registration number
+        # Formats: RA2311003010123 (RA + 23 = 2023), KR4495 (KR + 44 = invalid)
+        # Only accept years between 2018 and current_year+1
+        import datetime as dt_module
+        current_year = dt_module.datetime.now().year
+        joining_year = str(current_year)  # Default to current year
         
-        timetable_years = [joining_year, "2025", "2024", "2023"]
-        timetable_years = list(dict.fromkeys(timetable_years))
+        # Try to extract year from common SRM reg number formats
+        # Format 1: RA23xxxxxxx - 2 letter prefix + 2 digit year
+        reg_clean = reg_no.split('@')[0].upper()
+        year_found = False
+        
+        # Try matching RA23, RM24 etc (2 letter + 2 digit year)
+        reg_year_match = re.match(r'^[A-Z]{2}(\d{2})', reg_clean)
+        if reg_year_match:
+            y = int(reg_year_match.group(1))
+            full_year = 2000 + y
+            if 2018 <= full_year <= current_year + 1:
+                joining_year = str(full_year)
+                year_found = True
+                print(f"[{reg_no}] Extracted joining year {joining_year} from reg prefix")
+        
+        # If that didn't work, try longer patterns like RA2311003...
+        if not year_found:
+            reg_year_match2 = re.search(r'(20[12]\d)', reg_clean)
+            if reg_year_match2:
+                full_year = int(reg_year_match2.group(1))
+                if 2018 <= full_year <= current_year + 1:
+                    joining_year = str(full_year)
+                    year_found = True
+                    print(f"[{reg_no}] Extracted joining year {joining_year} from 4-digit pattern")
+        
+        if not year_found:
+            print(f"[{reg_no}] Could not extract valid year from reg number. Using current year: {joining_year}")
+            
+        print(f"[{reg_no}] Using joining year: {joining_year}")
+        
+        timetable_years = [joining_year, str(current_year), str(current_year - 1), str(current_year - 2)]
+        timetable_years = list(dict.fromkeys(timetable_years))  # Remove duplicates
         
         master_tables = []
         for y in timetable_years:
