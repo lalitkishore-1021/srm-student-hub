@@ -263,21 +263,57 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
         
         browser = p.chromium.launch(
             headless=True,
-            args=['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
+            args=[
+                '--no-sandbox',
+                '--disable-setuid-sandbox',
+                '--disable-dev-shm-usage',
+                '--disable-blink-features=AutomationControlled',
+                '--disable-infobars',
+                '--window-size=1920,1080'
+            ]
         )
         
         context = browser.new_context(
-            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
-            viewport={'width': 1920, 'height': 1080}
+            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+            viewport={'width': 1920, 'height': 1080},
+            locale='en-US',
+            timezone_id='Asia/Kolkata'
         )
+        
+        # --- STEALTH: Hide automation flags from Zoho bot detection ---
+        context.add_init_script("""
+            // Remove webdriver flag
+            Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
+            // Fake plugins array
+            Object.defineProperty(navigator, 'plugins', {
+                get: () => [
+                    { name: 'Chrome PDF Plugin', filename: 'internal-pdf-viewer' },
+                    { name: 'Chrome PDF Viewer', filename: 'mhjfbmdgcfjbbpaeojofohoefgiehjai' },
+                    { name: 'Native Client', filename: 'internal-nacl-plugin' }
+                ]
+            });
+            // Fake languages
+            Object.defineProperty(navigator, 'languages', { get: () => ['en-US', 'en'] });
+            // Hide automation-related Chrome properties
+            window.chrome = { runtime: {}, loadTimes: function(){}, csi: function(){} };
+            // Override permissions query
+            const originalQuery = window.navigator.permissions.query;
+            window.navigator.permissions.query = (parameters) => (
+                parameters.name === 'notifications' ?
+                Promise.resolve({ state: Notification.permission }) :
+                originalQuery(parameters)
+            );
+        """)
+        
         page = context.new_page()
-        page.set_default_timeout(20000)
+        page.set_default_timeout(30000)
 
         if "@" not in reg_no: reg_no += "@srmist.edu.in"
 
         print(f"[{reg_no}] 1. Loading Academia...")
         try:
-            page.goto("https://academia.srmist.edu.in/", wait_until="domcontentloaded", timeout=30000)
+            page.goto("https://academia.srmist.edu.in/", wait_until="domcontentloaded", timeout=45000)
+            print(f"[{reg_no}] 2. Page loaded. Current URL: {page.url}")
         except Exception as e:
             out_queue.put({'success': False, 'error': f'Portal failed to load: {str(e)}'})
             return
@@ -286,7 +322,9 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
             loc = page.locator(selector)
             if filter_text: loc = loc.filter(has_text=re.compile(filter_text, re.IGNORECASE))
             if filter_not_text: loc = loc.filter(has_not_text=re.compile(filter_not_text, re.IGNORECASE))
-            if loc.count() > 0: return loc.first
+            try:
+                if loc.count() > 0: return loc.first
+            except: pass
             for frame in page.frames:
                 try:
                     loc = frame.locator(selector)
@@ -296,35 +334,158 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
                 except: continue
             return None
             
-        # Login Logic
+        # ============ LOGIN LOGIC (Zoho-aware) ============
         try:
-            email_input = find_in_frames('input[type="email"], input[type="text"], input[name="LOGIN_ID"]', filter_not_text="hidden")
-            if not email_input: raise Exception("Email box not found")
-            email_input.fill(reg_no, force=True)
+            # Wait for login page to fully render (Zoho redirect may take time)
+            print(f"[{reg_no}] 3. Waiting for login form to appear...")
+            page.wait_for_timeout(3000)
             
-            next_btn = find_in_frames('button, input[type="submit"]', filter_text="next|continue")
-            if next_btn: next_btn.click(force=True, timeout=5000)
-            else: page.keyboard.press("Enter")
-
-            pwd_input = None
-            for _ in range(10): 
-                pwd_input = find_in_frames('input[type="password"], input[name="PASSWORD"]')
-                if pwd_input: break
+            # Try multiple strategies to find the email field
+            email_input = None
+            for attempt in range(15):
+                # Strategy 1: Zoho-specific LOGIN_ID field
+                email_input = find_in_frames('input[name="LOGIN_ID"]')
+                if email_input:
+                    print(f"[{reg_no}] Found LOGIN_ID field (attempt {attempt+1})")
+                    break
+                # Strategy 2: Standard email input
+                email_input = find_in_frames('input[type="email"]')
+                if email_input:
+                    print(f"[{reg_no}] Found email input (attempt {attempt+1})")
+                    break
+                # Strategy 3: Text input with login-like attributes
+                for frame in page.frames:
+                    try:
+                        for inp in ['input[name="LOGIN_ID"]', 'input[type="email"]', 'input[id="login_id"]', 'input[placeholder*="email" i]', 'input[placeholder*="Email" i]', 'input[placeholder*="ID" i]']:
+                            loc = frame.locator(inp)
+                            if loc.count() > 0 and loc.first.is_visible():
+                                email_input = loc.first
+                                print(f"[{reg_no}] Found email via selector '{inp}' in frame (attempt {attempt+1})")
+                                break
+                    except: continue
+                    if email_input: break
+                if email_input: break
                 page.wait_for_timeout(1000)
                 
-            if not pwd_input: raise Exception("Password box not found")
-            pwd_input.type(pwd, delay=30) 
+            if not email_input:
+                print(f"[{reg_no}] ERROR: Email box not found after 15 attempts. Current URL: {page.url}")
+                # Take screenshot for debugging
+                try:
+                    all_frames_text = []
+                    for f in page.frames:
+                        try: all_frames_text.append(f.url)
+                        except: pass
+                    print(f"[{reg_no}] Active frames: {all_frames_text}")
+                except: pass
+                raise Exception("Email box not found - login page may not have loaded")
             
-            submit_btn = find_in_frames('button, input[type="submit"]', filter_text="sign in|login|submit|verify")
-            if submit_btn: submit_btn.click(force=True, timeout=5000)
-            else: page.keyboard.press("Enter")
-            page.wait_for_timeout(5000)
+            # Fill email with human-like behavior
+            email_input.click(force=True)
+            page.wait_for_timeout(300)
+            email_input.fill(reg_no, force=True)
+            print(f"[{reg_no}] 3a. Email filled: {reg_no}")
+            page.wait_for_timeout(500)
+            
+            # Click Next/Continue button
+            next_btn = find_in_frames('button#nextbtn', filter_text=None)
+            if not next_btn:
+                next_btn = find_in_frames('button, input[type="submit"]', filter_text="next|continue")
+            if next_btn:
+                print(f"[{reg_no}] 3b. Clicking Next button...")
+                next_btn.click(force=True, timeout=10000)
+            else:
+                print(f"[{reg_no}] 3b. No Next button found, pressing Enter...")
+                page.keyboard.press("Enter")
+            
+            page.wait_for_timeout(3000)
+            
+            # Check for login errors after entering email
+            error_el = find_in_frames('.error, .alert-danger, #errormsg, .zloginerror', filter_text=None)
+            if error_el:
+                try:
+                    err_text = error_el.inner_text(timeout=2000)
+                    if err_text and len(err_text.strip()) > 2:
+                        print(f"[{reg_no}] Login error detected after email: {err_text}")
+                        out_queue.put({'success': False, 'error': f'Login Error: {err_text.strip()}'})
+                        return
+                except: pass
 
-            terminate_btn = find_in_frames('button, a, input[type="button"], input[type="submit"]', filter_text='terminate')
-            if terminate_btn:
-                print(f"[{reg_no}] Found active session warning. Clicking terminate...")
-                terminate_btn.click(force=True)
-                page.wait_for_timeout(4000)
+            # Wait for password field to appear
+            print(f"[{reg_no}] 4. Waiting for password field...")
+            pwd_input = None
+            for attempt in range(20):
+                pwd_input = find_in_frames('input[type="password"]')
+                if not pwd_input:
+                    pwd_input = find_in_frames('input[name="PASSWORD"]')
+                if pwd_input:
+                    print(f"[{reg_no}] Found password field (attempt {attempt+1})")
+                    break
+                page.wait_for_timeout(1000)
+                
+            if not pwd_input:
+                print(f"[{reg_no}] ERROR: Password box not found. Current URL: {page.url}")
+                raise Exception("Password box not found - Zoho may have blocked this login")
+            
+            # Type password with human-like delay
+            pwd_input.click(force=True)
+            page.wait_for_timeout(300)
+            pwd_input.type(pwd, delay=50)
+            print(f"[{reg_no}] 4a. Password typed")
+            page.wait_for_timeout(500)
+            
+            # Click Sign In button
+            submit_btn = find_in_frames('button#nextbtn', filter_text=None)
+            if not submit_btn:
+                submit_btn = find_in_frames('button, input[type="submit"]', filter_text="sign.?in|login|submit|verify|next")
+            if submit_btn:
+                print(f"[{reg_no}] 4b. Clicking Sign In button...")
+                submit_btn.click(force=True, timeout=10000)
+            else:
+                print(f"[{reg_no}] 4b. No Sign In button found, pressing Enter...")
+                page.keyboard.press("Enter")
+            
+            # Wait for login to process
+            print(f"[{reg_no}] 4c. Waiting for login to process...")
+            page.wait_for_timeout(6000)
+            
+            # Check for post-login errors
+            error_el = find_in_frames('.error, .alert-danger, #errormsg, .zloginerror, .errormsg', filter_text=None)
+            if error_el:
+                try:
+                    err_text = error_el.inner_text(timeout=2000)
+                    if err_text and len(err_text.strip()) > 2 and 'password' in err_text.lower() or 'invalid' in err_text.lower() or 'incorrect' in err_text.lower() or 'error' in err_text.lower():
+                        print(f"[{reg_no}] Login error detected: {err_text}")
+                        out_queue.put({'success': False, 'error': f'Wrong credentials: {err_text.strip()}'})
+                        return
+                except: pass
+            
+            print(f"[{reg_no}] 4d. Post-login URL: {page.url}")
+            
+            # Handle "Terminate other session" popup
+            for _ in range(3):
+                terminate_btn = find_in_frames('button, a, input[type="button"], input[type="submit"]', filter_text='terminate')
+                if terminate_btn:
+                    print(f"[{reg_no}] Found active session warning. Clicking terminate...")
+                    terminate_btn.click(force=True)
+                    page.wait_for_timeout(4000)
+                    break
+                page.wait_for_timeout(1000)
+            
+            # Verify we are actually logged in by checking URL or page content
+            current_url = page.url
+            print(f"[{reg_no}] 4e. Final URL after login: {current_url}")
+            
+            # If still on login page, try one more time
+            if 'accounts.zoho' in current_url.lower() or 'signin' in current_url.lower():
+                print(f"[{reg_no}] WARNING: Still on login page. Login may have failed.")
+                # Check for CAPTCHA
+                captcha_el = find_in_frames('#captchadiv, .captcha, [id*="captcha"]')
+                if captcha_el:
+                    out_queue.put({'success': False, 'error': 'CAPTCHA detected. Too many login attempts. Please try again later.'})
+                    return
+                out_queue.put({'success': False, 'error': 'Login failed - still on login page. Check credentials.'})
+                return
+                
         except Exception as e:
             out_queue.put({'success': False, 'error': f'Auth Failed: {str(e)}'})
             return
