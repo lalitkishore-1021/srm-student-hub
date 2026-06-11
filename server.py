@@ -502,6 +502,24 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
                     except: pass
                 unique_links = list(set(links))
                 print(f"[{reg_no}] DIAGNOSTIC Available Pages: {unique_links}")
+                
+                # If no links, print what text is actually on the screen!
+                if not unique_links:
+                    print(f"[{reg_no}] DIAGNOSTIC: No links found! What is on the screen?")
+                    page_text = page.evaluate("document.body.innerText")
+                    # Clean up the text to make it readable in logs
+                    clean_text = ' | '.join([line.strip() for line in page_text.split('\\n') if line.strip()][:20])
+                    print(f"[{reg_no}] DIAGNOSTIC PAGE TEXT: {clean_text}")
+                    
+                    # Also check frames for text
+                    for i, f in enumerate(page.frames):
+                        try:
+                            f_text = f.evaluate("document.body.innerText")
+                            f_clean = ' | '.join([line.strip() for line in f_text.split('\\n') if line.strip()][:10])
+                            if f_clean:
+                                print(f"[{reg_no}] DIAGNOSTIC FRAME {i} TEXT: {f_clean}")
+                        except: pass
+                        
             except Exception as e:
                 print(f"[{reg_no}] DIAGNOSTIC Failed to scan links: {e}")
                 
