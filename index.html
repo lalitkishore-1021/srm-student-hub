@@ -1650,13 +1650,13 @@
         /* Fullscreen Player */
         .music-fullscreen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 3000; background: #000; display: none; flex-direction: column; padding: 30px; padding-top: max(30px, env(safe-area-inset-top)); animation: slideUp 0.3s ease forwards; overflow: hidden; justify-content: center; align-items: center; }
         .fs-bg-blur { position: absolute; top: -10%; left: -10%; width: 120%; height: 120%; object-fit: cover; filter: blur(80px) brightness(0.3); z-index: -2; transition: all 1s ease; opacity: 0.7; }
-        .fs-bg-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; background: radial-gradient(circle at 0% 0%, rgba(255, 170, 0, 0.25) 0%, transparent 40%), radial-gradient(circle at 100% 100%, rgba(138, 43, 226, 0.25) 0%, transparent 40%), radial-gradient(circle at 50% 50%, rgba(0, 255, 200, 0.15) 0%, transparent 50%); animation: pulseBg 12s infinite alternate ease-in-out; }
-        .fs-glass-panel { width: 100%; max-width: 500px; background: rgba(20, 20, 25, 0.5); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 24px; padding: 30px; box-shadow: 0 30px 60px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.1); display: flex; flex-direction: column; align-items: center; z-index: 10; margin-top: 20px; }
+        .fs-bg-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; background: radial-gradient(circle at 0% 0%, rgba(255, 170, 0, 0.25) 0%, transparent 40%), radial-gradient(circle at 100% 100%, rgba(138, 43, 226, 0.25) 0%, transparent 40%), radial-gradient(circle at 50% 50%, rgba(0, 255, 200, 0.15) 0%, transparent 50%); background-size: 200% 200%; animation: pulseBg 15s infinite alternate ease-in-out; }
+        .fs-glass-panel { width: calc(100% - 40px); box-sizing: border-box; max-width: 500px; background: rgba(20, 20, 25, 0.5); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 24px; padding: 20px; box-shadow: 0 30px 60px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.1); display: flex; flex-direction: column; align-items: center; z-index: 10; margin-top: 10px; }
 
-        .fs-header { width: 100%; max-width: 500px; display: flex; justify-content: space-between; align-items: center; color: rgba(255,255,255,0.8); font-weight: 600; font-size: 0.9rem; letter-spacing: 2px; text-transform: uppercase; z-index: 10; position: absolute; top: max(30px, env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); padding: 0 20px; }
+        .fs-header { width: 100%; box-sizing: border-box; max-width: 500px; display: flex; justify-content: space-between; align-items: center; color: rgba(255,255,255,0.8); font-weight: 600; font-size: 0.9rem; letter-spacing: 2px; text-transform: uppercase; z-index: 10; position: absolute; top: max(30px, env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); padding: 0 20px; }
         .fs-close { background: rgba(255,255,255,0.1); border: none; color: #fff; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; backdrop-filter: blur(10px); transition: background 0.2s; }
         .fs-close:hover { background: rgba(255,255,255,0.2); }
-        .fs-cover-container { width: 100%; max-width: 320px; aspect-ratio: 1/1; display: flex; align-items: center; justify-content: center; z-index: 10; position: relative; margin-top: 60px; margin-bottom: 10px; }
+        .fs-cover-container { width: 100%; max-width: 320px; aspect-ratio: 1/1; display: flex; align-items: center; justify-content: center; z-index: 10; position: relative; margin-top: 50px; margin-bottom: 5px; }
         .fs-cover { width: 100%; height: 100%; object-fit: cover; border-radius: 16px; box-shadow: 0 25px 50px rgba(0,0,0,0.6); transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease; }
         .fs-cover.swipe-left { transform: translateX(-50px) scale(0.9); opacity: 0; }
         .fs-cover.swipe-right { transform: translateX(50px) scale(0.9); opacity: 0; }
@@ -1777,7 +1777,7 @@
 
     <div class="btn-container" id="navButtons" style="display: none;">
         <button id="notifyBtn" class="icon-btn" onclick="requestNotificationPermission()"
-            title="Enable Notifications"></button>
+            title="Enable Notifications"><svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2zm-2 1H8v-6c0-2.48 1.51-4.5 4-4.5s4 2.02 4 4.5v6z"/></svg></button>
         <a href="https://www.instagram.com/lalit._.kishore" target="_blank" class="icon-btn" title="Instagram"><svg
                 viewBox="0 0 24 24">
                 <path
@@ -1793,7 +1793,7 @@
                 <path
                     d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
             </svg></a>
-        <button id="themeToggle" class="icon-btn" onclick="toggleTheme()" title="Toggle Light/Dark Mode"></button>
+        <button id="themeToggle" class="icon-btn" onclick="toggleTheme()" title="Toggle Light/Dark Mode"><svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9c0-.46-.04-.92-.1-1.36-.98 1.37-2.58 2.26-4.4 2.26-3.03 0-5.5-2.47-5.5-5.5 0-1.82.89-3.42 2.26-4.4C12.92 3.04 12.46 3 12 3zm0 16c-3.86 0-7-3.14-7-7s3.14-7 7-7c.39 0 .76.04 1.12.1-1.3 1.25-2.12 3.03-2.12 5 0 3.86 3.14 7 7 7 1.97 0 3.75-.82 5-2.12.06.36.1.73.1 1.12 0 3.86-3.14 7-7 7z"/></svg></button>
         <button id="logoutBtn" class="icon-btn" onclick="logout()" title="Logout" style="display: none; color: #ff4444; border-color: rgba(255, 68, 68, 0.4);">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
         </button>
@@ -2380,9 +2380,9 @@
         <div id="calendar-view" class="app-view">
             <div class="view-header"
                 style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <button class="icon-btn" style="position: static;" onclick="changeMonth(-1)"></button>
+                <button class="icon-btn" style="position: static;" onclick="changeMonth(-1)"><svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg></button>
                 <h2 class="gallery-title" id="calendar-month-year" style="margin: 0;">Month 2026</h2>
-                <button class="icon-btn" style="position: static;" onclick="changeMonth(1)"></button>
+                <button class="icon-btn" style="position: static;" onclick="changeMonth(1)"><svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg></button>
             </div>
 
             <!-- HOLIDAY BANNER (PLAN) -->
@@ -5371,7 +5371,7 @@
                             <p class="music-artist">${p.artist}</p>
                             ${p.uploaded_by ? `<div style="font-size:0.7rem; color: rgba(255,255,255,0.4); margin-top: 5px;">Uploaded by ${p.uploaded_by}</div>` : ''}
                         </div>
-                        ${isOwner ? `<button onclick="event.stopPropagation(); deleteMusicTrack(${p.id})" style="background: rgba(255,68,68,0.15); border: 1px solid rgba(255,68,68,0.4); color: #ff4444; padding: 5px; border-radius: 8px; cursor: pointer; margin-right: 10px;"></button>` : ''}
+                        ${isOwner ? `<button onclick="event.stopPropagation(); deleteMusicTrack(${p.id})" style="background: rgba(255,68,68,0.15); border: 1px solid rgba(255,68,68,0.4); color: #ff4444; padding: 8px; border-radius: 8px; cursor: pointer; margin-right: 10px; display: flex; align-items: center; justify-content: center;"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg></button>` : ''}
                         <button class="music-play-btn"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></button>
                     </div>`;
                 }).join('');

@@ -1231,10 +1231,10 @@ def leaderboard_attendance():
     if DATABASE_URL:
         # Use RealDictCursor style for Postgres
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-            cur.execute('SELECT name, net_id, register_no, overall_attendance FROM students ORDER BY overall_attendance DESC LIMIT 50')
+            cur.execute('SELECT name, net_id, register_no, overall_attendance FROM students ORDER BY overall_attendance DESC')
             rows = cur.fetchall()
     else:
-        rows = [dict(r) for r in conn.execute('SELECT name, net_id, register_no, overall_attendance FROM students ORDER BY overall_attendance DESC LIMIT 50').fetchall()]
+        rows = [dict(r) for r in conn.execute('SELECT name, net_id, register_no, overall_attendance FROM students ORDER BY overall_attendance DESC').fetchall()]
     conn.close()
     return jsonify(list(rows))
 
@@ -1243,10 +1243,10 @@ def leaderboard_marks():
     conn = get_db()
     if DATABASE_URL:
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-            cur.execute('SELECT name, net_id, register_no, est_cgpa FROM students ORDER BY est_cgpa DESC LIMIT 50')
+            cur.execute('SELECT name, net_id, register_no, est_cgpa FROM students ORDER BY est_cgpa DESC')
             rows = cur.fetchall()
     else:
-        rows = [dict(r) for r in conn.execute('SELECT name, net_id, register_no, est_cgpa FROM students ORDER BY est_cgpa DESC LIMIT 50').fetchall()]
+        rows = [dict(r) for r in conn.execute('SELECT name, net_id, register_no, est_cgpa FROM students ORDER BY est_cgpa DESC').fetchall()]
     conn.close()
     return jsonify(list(rows))
 
@@ -1848,7 +1848,7 @@ GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY', '')
 
 def call_gemini(prompt, file_base64=None, mime_type=None):
     if not GEMINI_API_KEY:
-        return None
+        return "System Notice: The AI Chatbot is currently unavailable because the GEMINI_API_KEY is not configured on the server."
     url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
     parts = [{"text": prompt}]
     if file_base64 and mime_type:
