@@ -1504,35 +1504,44 @@
         /* Calendar Styles */
         .cal-header {
             font-family: 'Montserrat', sans-serif;
-            font-weight: bold;
-            color: var(--text-sub);
+            font-weight: 600;
+            color: rgba(255,255,255,0.7);
             text-align: center;
             font-size: 0.8rem;
-            padding-bottom: 10px;
+            padding-bottom: 15px;
             text-transform: uppercase;
+            letter-spacing: 1px;
         }
 
         #calendar-grid {
             display: grid;
             grid-template-columns: repeat(7, 1fr);
-            gap: 8px;
+            gap: 10px;
             text-align: center;
+            position: relative;
+            z-index: 2;
         }
 
         .cal-day {
-            padding: 12px 5px;
-            background: rgba(0, 0, 0, 0.2);
-            border-radius: 8px;
-            border: 1px solid var(--glass-border);
-            font-weight: bold;
+            padding: 15px 5px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            font-weight: 600;
+            color: rgba(255,255,255,0.9);
             cursor: pointer;
-            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
 
         .cal-day:hover {
-            background: rgba(255, 170, 0, 0.1);
-            border-color: var(--primary);
-            transform: scale(1.05);
+            background: rgba(255, 170, 0, 0.15);
+            border-color: rgba(255, 170, 0, 0.4);
+            transform: translateY(-5px) scale(1.05);
+            box-shadow: 0 10px 20px rgba(255, 170, 0, 0.2);
+            color: #fff;
         }
 
         .cal-day.empty {
@@ -1541,6 +1550,7 @@
             cursor: default;
             box-shadow: none;
             pointer-events: none;
+            backdrop-filter: none;
         }
 
         .cal-day.today {
@@ -1638,27 +1648,36 @@
         .volume-slider { width: 80px; margin-right: 15px; cursor: pointer; accent-color: #1DB954; }
         
         /* Fullscreen Player */
-        .music-fullscreen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 3000; background: transparent; display: none; flex-direction: column; padding: 30px; padding-top: max(30px, env(safe-area-inset-top)); animation: slideUp 0.3s ease forwards; overflow: hidden; }
-        .fs-bg-blur { position: absolute; top: -10%; left: -10%; width: 120%; height: 120%; object-fit: cover; filter: blur(50px) brightness(0.4); z-index: -2; transition: all 0.5s ease; }
-        .fs-bg-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; background: radial-gradient(circle at 0% 0%, rgba(255, 170, 0, 0.15) 0%, transparent 50%), radial-gradient(circle at 100% 100%, rgba(138, 43, 226, 0.15) 0%, transparent 50%); animation: pulseBg 10s infinite alternate; }
-        .fs-header { display: flex; justify-content: space-between; align-items: center; color: #fff; font-weight: bold; font-size: 1rem; letter-spacing: 1px; z-index: 10; position: relative; }
-        .fs-close { background: none; border: none; color: #fff; font-size: 30px; cursor: pointer; }
-        .fs-cover-container { flex: 1; display: flex; align-items: center; justify-content: center; margin: 30px 0; min-height: 0; z-index: 10; position: relative; width: 100%; }
-        .fs-cover { width: 100%; max-width: 350px; max-height: 100%; aspect-ratio: 1/1; object-fit: cover; border-radius: 12px; box-shadow: 0 20px 40px rgba(0,0,0,0.5); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease; margin: 0 auto; display: block; }
-        .fs-cover.swipe-left { transform: translateX(-50px) scale(0.95); opacity: 0; }
-        .fs-cover.swipe-right { transform: translateX(50px) scale(0.95); opacity: 0; }
-        .fs-info { margin-bottom: 30px; text-align: left; max-width: 400px; margin-inline: auto; width: 100%; z-index: 10; position: relative; }
-        .fs-title { color: #fff; font-size: 1.8rem; font-weight: bold; margin: 0 0 5px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .fs-artist { color: #aaa; font-size: 1.1rem; margin: 0; }
-        .fs-progress-container { width: 100%; max-width: 400px; margin: 0 auto 30px auto; display: flex; flex-direction: column; gap: 8px; font-size: 0.8rem; color: #aaa; z-index: 10; position: relative; }
-        .fs-progress-bar { width: 100%; height: 6px; background: rgba(255, 255, 255, 0.2); border-radius: 5px; cursor: pointer; position: relative; }
-        .fs-progress-fill { height: 100%; background: #fff; border-radius: 5px; width: 0%; pointer-events: none; transition: width 0.1s linear; }
-        .fs-time-row { display: flex; justify-content: space-between; }
-        .fs-controls { display: flex; justify-content: space-between; align-items: center; max-width: 350px; margin: 0 auto 20px auto; width: 100%; z-index: 10; position: relative; }
-        .fs-play-btn { width: 70px; height: 70px; border-radius: 50%; background: #fff; color: #000; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: transform 0.2s; }
-        .fs-play-btn:hover { transform: scale(1.05); }
+        .music-fullscreen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 3000; background: #000; display: none; flex-direction: column; padding: 30px; padding-top: max(30px, env(safe-area-inset-top)); animation: slideUp 0.3s ease forwards; overflow: hidden; justify-content: center; align-items: center; }
+        .fs-bg-blur { position: absolute; top: -10%; left: -10%; width: 120%; height: 120%; object-fit: cover; filter: blur(80px) brightness(0.3); z-index: -2; transition: all 1s ease; opacity: 0.7; }
+        .fs-bg-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; background: radial-gradient(circle at 0% 0%, rgba(255, 170, 0, 0.25) 0%, transparent 40%), radial-gradient(circle at 100% 100%, rgba(138, 43, 226, 0.25) 0%, transparent 40%), radial-gradient(circle at 50% 50%, rgba(0, 255, 200, 0.15) 0%, transparent 50%); animation: pulseBg 12s infinite alternate ease-in-out; }
+        .fs-glass-panel { width: 100%; max-width: 500px; background: rgba(20, 20, 25, 0.5); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 24px; padding: 30px; box-shadow: 0 30px 60px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.1); display: flex; flex-direction: column; align-items: center; z-index: 10; margin-top: 20px; }
+
+        .fs-header { width: 100%; max-width: 500px; display: flex; justify-content: space-between; align-items: center; color: rgba(255,255,255,0.8); font-weight: 600; font-size: 0.9rem; letter-spacing: 2px; text-transform: uppercase; z-index: 10; position: absolute; top: max(30px, env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); padding: 0 20px; }
+        .fs-close { background: rgba(255,255,255,0.1); border: none; color: #fff; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; backdrop-filter: blur(10px); transition: background 0.2s; }
+        .fs-close:hover { background: rgba(255,255,255,0.2); }
+        .fs-cover-container { width: 100%; max-width: 320px; aspect-ratio: 1/1; display: flex; align-items: center; justify-content: center; z-index: 10; position: relative; margin-top: 60px; margin-bottom: 10px; }
+        .fs-cover { width: 100%; height: 100%; object-fit: cover; border-radius: 16px; box-shadow: 0 25px 50px rgba(0,0,0,0.6); transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease; }
+        .fs-cover.swipe-left { transform: translateX(-50px) scale(0.9); opacity: 0; }
+        .fs-cover.swipe-right { transform: translateX(50px) scale(0.9); opacity: 0; }
+        .fs-info { margin-bottom: 25px; text-align: center; width: 100%; z-index: 10; position: relative; }
+        .fs-title { color: #fff; font-size: 1.6rem; font-weight: 700; margin: 0 0 5px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-shadow: 0 2px 10px rgba(0,0,0,0.3); }
+        .fs-artist { color: rgba(255,255,255,0.7); font-size: 1.05rem; margin: 0; font-weight: 500; }
+        .fs-progress-container { width: 100%; margin: 0 auto 25px auto; display: flex; flex-direction: column; gap: 10px; font-size: 0.8rem; color: rgba(255,255,255,0.6); z-index: 10; position: relative; font-weight: 500; }
+        .fs-progress-bar { width: 100%; height: 6px; background: rgba(255, 255, 255, 0.1); border-radius: 5px; cursor: pointer; position: relative; overflow: hidden; }
+        .fs-progress-fill { height: 100%; background: #fff; border-radius: 5px; width: 0%; pointer-events: none; transition: width 0.1s linear; box-shadow: 0 0 10px rgba(255,255,255,0.5); }
+        .fs-time-row { display: flex; justify-content: space-between; padding: 0 5px; }
+        .fs-controls { display: flex; justify-content: space-between; align-items: center; width: 100%; padding: 0 10px; z-index: 10; position: relative; }
+        .fs-play-btn { width: 64px; height: 64px; border-radius: 50%; background: #fff; color: #000; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); box-shadow: 0 10px 20px rgba(0,0,0,0.2); }
+        .fs-play-btn:hover { transform: scale(1.1); }
         
-        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        @keyframes pulseBg {
+            0% { background-position: 0% 0%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 50% 100%; }
+        }
+        
+        @keyframes slideUp { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         
         @media (max-width: 768px) {
             .music-player-bar { padding: 0 10px; height: 65px; border-radius: 8px; width: calc(100% - 20px); left: 10px; bottom: -100px; background: rgba(0, 0, 0, 0.65); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.1); }
@@ -1699,7 +1718,7 @@
                 <input type="text" id="srm-reg" placeholder="NetID (e.g. ab1234@srmist.edu.in)" class="modal-input" style="width: 100%; box-sizing: border-box; margin-bottom: 15px; background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; padding: 15px; border-radius: 12px;">
                 <div class="input-group" style="position: relative; margin-bottom: 15px;">
                     <input type="password" id="srm-pwd" placeholder="Password" required class="modal-input" style="width: 100%; box-sizing: border-box; background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; padding: 15px; border-radius: 12px; padding-right: 40px;">
-                    <span id="toggle-pwd" style="position: absolute; right: 15px; top: 50%; transform: translateY(-50%); cursor: pointer; opacity: 0.7; z-index: 10;" onclick="const pwd=document.getElementById('srm-pwd'); if(pwd.type==='password'){pwd.type='text'; this.innerHTML='🙈'}else{pwd.type='password'; this.innerHTML='👁️'}">👁️</span>
+                    <span id="toggle-pwd" style="position: absolute; right: 15px; top: 50%; transform: translateY(-50%); cursor: pointer; opacity: 0.7; z-index: 10;" onclick="const pwd=document.getElementById('srm-pwd'); if(pwd.type==='password'){pwd.type='text'; this.innerHTML=''}else{pwd.type='password'; this.innerHTML=''}"></span>
                 </div>
                 
                 <div class="batch-toggle" style="margin-bottom: 25px;">
@@ -1712,11 +1731,11 @@
 
             <div id="login-loader-container" style="display: none; flex-direction: column; align-items: center; justify-content: center; margin-top: 20px;">
                 <div class="css-loader" style="margin-bottom: 20px;"></div>
-                <h3 id="sync-status" style="margin: 0 0 10px 0; font-size: 1.2rem; color: var(--primary);">🔄 Connecting... <span id="sync-timer" style="background: rgba(255,170,0,0.2); padding: 2px 8px; border-radius: 6px;">0s</span></h3>
+                <h3 id="sync-status" style="margin: 0 0 10px 0; font-size: 1.2rem; color: var(--primary);"> Connecting... <span id="sync-timer" style="background: rgba(255,170,0,0.2); padding: 2px 8px; border-radius: 6px;">0s</span></h3>
                 <div style="width: 100%; height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; overflow: hidden; margin-bottom: 20px;">
                     <div id="login-progress-bar" style="width: 0%; height: 100%; background: var(--primary); transition: width 1s linear;"></div>
                 </div>
-                <div id="login-tip" style="color: var(--text-sub); font-size: 0.9rem; font-style: italic; min-height: 40px; padding: 0 10px;">💡 Did you know? The library has a massive collection of e-books available for free.</div>
+                <div id="login-tip" style="color: var(--text-sub); font-size: 0.9rem; font-style: italic; min-height: 40px; padding: 0 10px;"> Did you know? The library has a massive collection of e-books available for free.</div>
             </div>
         </div>
     </div>
@@ -1758,7 +1777,7 @@
 
     <div class="btn-container" id="navButtons" style="display: none;">
         <button id="notifyBtn" class="icon-btn" onclick="requestNotificationPermission()"
-            title="Enable Notifications">🔔</button>
+            title="Enable Notifications"></button>
         <a href="https://www.instagram.com/lalit._.kishore" target="_blank" class="icon-btn" title="Instagram"><svg
                 viewBox="0 0 24 24">
                 <path
@@ -1774,7 +1793,7 @@
                 <path
                     d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
             </svg></a>
-        <button id="themeToggle" class="icon-btn" onclick="toggleTheme()" title="Toggle Light/Dark Mode">☀️</button>
+        <button id="themeToggle" class="icon-btn" onclick="toggleTheme()" title="Toggle Light/Dark Mode"></button>
         <button id="logoutBtn" class="icon-btn" onclick="logout()" title="Logout" style="display: none; color: #ff4444; border-color: rgba(255, 68, 68, 0.4);">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
         </button>
@@ -1884,7 +1903,7 @@
 
             <!-- HOLIDAY BANNER (HOME) -->
             <div id="home-holiday-banner" class="holiday-banner fade-in-up" style="display: none; align-items: center; justify-content: center; background: linear-gradient(135deg, rgba(255, 170, 0, 0.15), rgba(255, 85, 0, 0.1)); border: 1px solid rgba(255, 170, 0, 0.3); border-radius: 15px; padding: 15px 20px; margin: 0 auto 20px; max-width: 600px; color: var(--text-main); font-family: 'Montserrat', sans-serif; gap: 15px; box-shadow: 0 10px 30px rgba(255,170,0,0.1);">
-                <div style="font-size: 2.2rem; filter: drop-shadow(0 0 10px rgba(255,170,0,0.5));">🌴</div>
+                <div style="font-size: 2.2rem; filter: drop-shadow(0 0 10px rgba(255,170,0,0.5));"></div>
                 <div style="text-align: left;">
                     <h3 style="margin: 0 0 5px; color: var(--primary); font-size: 1.1rem; text-transform: uppercase;">It's a Holiday!</h3>
                     <p id="home-holiday-name" style="margin: 0; font-size: 0.85rem; color: var(--text-sub);">No classes today. Take a break and recharge.</p>
@@ -2059,8 +2078,8 @@
                             Faculty Advisor</h5>
                         <h3 id="fa-name" style="margin: 0 0 10px 0; font-size: 1.2rem;">--</h3>
                         <div id="fa-email" style="font-size: 0.85rem; color: var(--text-sub); margin-bottom: 5px;">@ --</div>
-                        <div id="fa-phone-display" style="font-size: 0.85rem; color: var(--text-sub); margin-bottom: 15px;">📞 --</div>
-                        <a id="fa-call-btn" href="tel:" class="btn-primary" style="background: rgba(255,255,255,0.05); color: var(--text-main); text-decoration: none; display: block; text-align: center; padding: 12px; border-radius: 12px; font-family: 'Montserrat', sans-serif; font-weight: 700; text-transform: uppercase;">📞
+                        <div id="fa-phone-display" style="font-size: 0.85rem; color: var(--text-sub); margin-bottom: 15px;"> --</div>
+                        <a id="fa-call-btn" href="tel:" class="btn-primary" style="background: rgba(255,255,255,0.05); color: var(--text-main); text-decoration: none; display: block; text-align: center; padding: 12px; border-radius: 12px; font-family: 'Montserrat', sans-serif; font-weight: 700; text-transform: uppercase;">
                             Call Advisor</a>
                     </div>
                     <!-- Academic Advisor Card -->
@@ -2070,8 +2089,8 @@
                             Academic Advisor</h5>
                         <h3 id="aa-name" style="margin: 0 0 10px 0; font-size: 1.2rem;">--</h3>
                         <div id="aa-email" style="font-size: 0.85rem; color: var(--text-sub); margin-bottom: 5px;">@ --</div>
-                        <div id="aa-phone-display" style="font-size: 0.85rem; color: var(--text-sub); margin-bottom: 15px;">📞 --</div>
-                        <a id="aa-call-btn" href="tel:" class="btn-primary" style="background: rgba(255,255,255,0.05); color: var(--text-main); text-decoration: none; display: block; text-align: center; padding: 12px; border-radius: 12px; font-family: 'Montserrat', sans-serif; font-weight: 700; text-transform: uppercase;">📞
+                        <div id="aa-phone-display" style="font-size: 0.85rem; color: var(--text-sub); margin-bottom: 15px;"> --</div>
+                        <a id="aa-call-btn" href="tel:" class="btn-primary" style="background: rgba(255,255,255,0.05); color: var(--text-main); text-decoration: none; display: block; text-align: center; padding: 12px; border-radius: 12px; font-family: 'Montserrat', sans-serif; font-weight: 700; text-transform: uppercase;">
                             Call Advisor</a>
                     </div>
                 </div>
@@ -2090,7 +2109,7 @@
         <div id="projecthub-view" class="app-view">
             <div class="view-header">
                 <button class="back-btn" onclick="switchNav('home-view', document.querySelector('.nav-item'))">&#8592; Back to Home</button>
-                <h2 class="gallery-title">Innovation Lab ✨</h2>
+                <h2 class="gallery-title">Innovation Lab </h2>
                 <p class="subtitle" style="margin-bottom: 20px;">Top Final Year Projects by SRMites</p>
             </div>
 
@@ -2102,7 +2121,7 @@
                 <div class="image-card fade-in-up" style="transform: none; text-align: left; background: rgba(255,170,0,0.05); border: 1px solid rgba(255,170,0,0.2);">
                     <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
                         <h3 style="color: var(--primary); margin: 0; font-size: 1.3rem; font-family: 'Montserrat', sans-serif;">AI-Powered Medical Diagnosis</h3>
-                        <span style="background: rgba(255,170,0,0.2); padding: 5px 10px; border-radius: 8px; font-size: 0.8rem; color: var(--primary); font-weight: bold; white-space: nowrap;">🔥 #1 TRENDING</span>
+                        <span style="background: rgba(255,170,0,0.2); padding: 5px 10px; border-radius: 8px; font-size: 0.8rem; color: var(--primary); font-weight: bold; white-space: nowrap;"> #1 TRENDING</span>
                     </div>
                     <p style="color: var(--text-sub); line-height: 1.6; font-size: 0.95rem; margin-bottom: 15px;">A full-stack diagnostic tool using quantized LLMs to predict diseases from basic patient symptomatic inputs in real-time accurately.</p>
                     <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 18px;">
@@ -2136,7 +2155,7 @@
         <div id="marketplace-view" class="app-view">
             <div class="view-header">
                 <button class="back-btn" onclick="switchNav('home-view', document.querySelector('.nav-item'))">&#8592; Back to Home</button>
-                <h2 class="gallery-title">Campus Market 🛒</h2>
+                <h2 class="gallery-title">Campus Market </h2>
                 <p class="subtitle" style="margin-bottom: 20px;">Buy, Sell, and Trade within SRM</p>
             </div>
 
@@ -2159,7 +2178,7 @@
         <div id="wall-view" class="app-view">
             <div class="view-header">
                 <button class="back-btn" onclick="switchNav('home-view', document.querySelector('.nav-item'))">&#8592; Back to Home</button>
-                <h2 class="gallery-title">Campus Wall 🧱</h2>
+                <h2 class="gallery-title">Campus Wall </h2>
                 <p class="subtitle" style="margin-bottom: 20px;">Anonymous Confessions, Questions & Thoughts</p>
             </div>
 
@@ -2175,7 +2194,7 @@
         <div id="cabs-view" class="app-view">
             <div class="view-header">
                 <button class="back-btn" onclick="switchNav('home-view', document.querySelector('.nav-item'))">&#8592; Back to Home</button>
-                <h2 class="gallery-title">Travel Pool 🚕</h2>
+                <h2 class="gallery-title">Travel Pool </h2>
                 <p class="subtitle" style="margin-bottom: 20px;">Split cab fares to the Airport, Station or Home</p>
             </div>
 
@@ -2189,7 +2208,7 @@
         <div id="lostfound-view" class="app-view">
             <div class="view-header">
                 <button class="back-btn" onclick="switchNav('home-view', document.querySelector('.nav-item'))">&#8592; Back to Home</button>
-                <h2 class="gallery-title">Lost & Found 🔍</h2>
+                <h2 class="gallery-title">Lost & Found </h2>
                 <p class="subtitle" style="margin-bottom: 20px;">Report lost items or help reunite found ones</p>
             </div>
 
@@ -2209,7 +2228,7 @@
         <div id="music-view" class="app-view">
             <div class="view-header">
                 <button class="back-btn" onclick="switchNav('home-view', document.querySelector('.nav-item'))">&#8592; Back to Home</button>
-                <h2 class="gallery-title" style="color: #1DB954;">Music Lounge 🎵</h2>
+                <h2 class="gallery-title" style="color: #1DB954;">Music Lounge </h2>
                 <p class="subtitle" style="margin-bottom: 20px;">Vibe with the campus playlist</p>
             </div>
             <div style="text-align: center; margin-bottom: 30px;">
@@ -2221,7 +2240,7 @@
         <div id="events-view" class="app-view">
             <div class="view-header">
                 <button class="back-btn" onclick="switchNav('home-view', document.querySelector('.nav-item'))">&#8592; Back to Home</button>
-                <h2 class="gallery-title">Events & Club Radar 🎟️</h2>
+                <h2 class="gallery-title">Events & Club Radar </h2>
                 <p class="subtitle" style="margin-bottom: 20px;">Discover tech events, hackathons, and cultural fests at SRM</p>
             </div>
 
@@ -2361,22 +2380,26 @@
         <div id="calendar-view" class="app-view">
             <div class="view-header"
                 style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <button class="icon-btn" style="position: static;" onclick="changeMonth(-1)">❮</button>
+                <button class="icon-btn" style="position: static;" onclick="changeMonth(-1)"></button>
                 <h2 class="gallery-title" id="calendar-month-year" style="margin: 0;">Month 2026</h2>
-                <button class="icon-btn" style="position: static;" onclick="changeMonth(1)">❯</button>
+                <button class="icon-btn" style="position: static;" onclick="changeMonth(1)"></button>
             </div>
 
             <!-- HOLIDAY BANNER (PLAN) -->
             <div id="plan-holiday-banner" class="holiday-banner fade-in-up" style="display: none; align-items: center; justify-content: center; background: linear-gradient(135deg, rgba(255, 170, 0, 0.15), rgba(255, 85, 0, 0.1)); border: 1px solid rgba(255, 170, 0, 0.3); border-radius: 15px; padding: 15px 20px; margin: 0 auto 20px; max-width: 600px; color: var(--text-main); font-family: 'Montserrat', sans-serif; gap: 15px; box-shadow: 0 10px 30px rgba(255,170,0,0.1);">
-                <div style="font-size: 2.2rem; filter: drop-shadow(0 0 10px rgba(255,170,0,0.5));">🌴</div>
+                <div style="font-size: 2.2rem; filter: drop-shadow(0 0 10px rgba(255,170,0,0.5));"></div>
                 <div style="text-align: left;">
                     <h3 style="margin: 0 0 5px; color: var(--primary); font-size: 1.1rem; text-transform: uppercase;">It's a Holiday!</h3>
                     <p style="margin: 0; font-size: 0.85rem; color: var(--text-sub);">No classes today. Take a break and recharge.</p>
                 </div>
             </div>
 
-            <div class="image-card"
-                style="padding: 15px; margin-bottom: 20px; text-align: left; cursor: default; transform: none; max-width: 600px; margin-left: auto; margin-right: auto;">
+            <div class="calendar-glass-container"
+                style="padding: 25px 20px; margin-bottom: 20px; text-align: left; cursor: default; max-width: 600px; margin-left: auto; margin-right: auto; background: rgba(30, 30, 35, 0.4); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.3); position: relative; overflow: hidden;">
+                <!-- Liquid Ambient Glow -->
+                <div style="position: absolute; top: -50px; left: -50px; width: 200px; height: 200px; background: rgba(255, 170, 0, 0.15); filter: blur(50px); border-radius: 50%; z-index: 0;"></div>
+                <div style="position: absolute; bottom: -50px; right: -50px; width: 150px; height: 150px; background: rgba(138, 43, 226, 0.15); filter: blur(40px); border-radius: 50%; z-index: 0;"></div>
+                
                 <div id="calendar-grid">
                     <div class="cal-header">Sun</div>
                     <div class="cal-header">Mon</div>
@@ -2410,7 +2433,7 @@
             
             <!-- HOLIDAY BANNER (TIMETABLE) -->
             <div id="timetable-holiday-banner" class="holiday-banner fade-in-up" style="display: none; align-items: center; justify-content: center; background: linear-gradient(135deg, rgba(255, 170, 0, 0.15), rgba(255, 85, 0, 0.1)); border: 1px solid rgba(255, 170, 0, 0.3); border-radius: 15px; padding: 12px 15px; margin: 0 15px 20px; width: calc(100% - 30px); max-width: 600px; color: var(--text-main); font-family: 'Montserrat', sans-serif; gap: 12px; box-shadow: 0 10px 30px rgba(255,170,0,0.1); box-sizing: border-box;">
-                <div style="font-size: 2rem; filter: drop-shadow(0 0 10px rgba(255,170,0,0.5)); flex-shrink: 0;">🌴</div>
+                <div style="font-size: 2rem; filter: drop-shadow(0 0 10px rgba(255,170,0,0.5)); flex-shrink: 0;"></div>
                 <div style="text-align: left; min-width: 0;">
                     <h3 style="margin: 0 0 5px; color: var(--primary); font-size: 1rem; text-transform: uppercase;">It's a Holiday!</h3>
                     <p style="margin: 0; font-size: 0.8rem; color: var(--text-sub);">No classes today. Take a break and recharge.</p>
@@ -2445,12 +2468,12 @@
 
         <div id="leaderboard-view" class="app-view">
             <div class="view-header">
-                <h2 class="gallery-title">🏆 Leaderboards</h2>
+                <h2 class="gallery-title"> Leaderboards</h2>
                 <p class="subtitle" style="margin-bottom: 20px;">All SRM Student Hub users, ranked!</p>
             </div>
             <div class="tab-container" id="lb-tabs" style="margin-bottom: 25px;">
-                <div class="tab-btn active" onclick="switchLeaderboard('attendance', this)">📊 Top Attendance</div>
-                <div class="tab-btn" onclick="switchLeaderboard('marks', this)">🎓 Top Marks (CGPA)</div>
+                <div class="tab-btn active" onclick="switchLeaderboard('attendance', this)"> Top Attendance</div>
+                <div class="tab-btn" onclick="switchLeaderboard('marks', this)"> Top Marks (CGPA)</div>
             </div>
             <div id="lb-list" style="max-width: 700px; margin: 0 auto;">
                 <div class="css-loader" style="margin: 60px auto;"></div>
@@ -2460,12 +2483,12 @@
         <!-- SPOTTED VIEW -->
         <div id="spotted-view" class="app-view">
             <div class="view-header">
-                <h2 class="gallery-title">Spotted at SRM 🕵️‍♂️</h2>
+                <h2 class="gallery-title">Spotted at SRM ‍</h2>
                 <p class="subtitle" style="margin-bottom: 20px;">Completely anonymous campus feed. Spill the tea!</p>
             </div>
             <div style="max-width: 600px; margin: 0 auto 20px; background: rgba(255,255,255,0.05); padding: 15px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(10px);">
                 <textarea id="spotted-input" placeholder="To the guy in the red shirt at Java Green..." style="width: 100%; height: 80px; background: transparent; border: none; color: #fff; font-family: 'Montserrat', sans-serif; resize: none; outline: none; margin-bottom: 10px; font-size: 1rem;"></textarea>
-                <button onclick="postSpotted()" style="width: 100%; padding: 12px; background: linear-gradient(135deg, #ff4757, #ff6b81); border: none; border-radius: 10px; color: #fff; font-weight: bold; cursor: pointer; text-transform: uppercase; letter-spacing: 1px;">Post Anonymously 🤫</button>
+                <button onclick="postSpotted()" style="width: 100%; padding: 12px; background: linear-gradient(135deg, #ff4757, #ff6b81); border: none; border-radius: 10px; color: #fff; font-weight: bold; cursor: pointer; text-transform: uppercase; letter-spacing: 1px;">Post Anonymously </button>
             </div>
             <div id="spotted-feed" style="max-width: 600px; margin: 0 auto; display: flex; flex-direction: column; gap: 15px;">
                 <div class="css-loader" style="margin: 40px auto;"></div>
@@ -2475,7 +2498,7 @@
         <!-- CHAT VIEW -->
         <div id="chat-view" class="app-view" style="flex-direction: column; height: calc(100vh - 180px);">
             <div class="view-header" style="flex-shrink: 0; margin-bottom: 10px;">
-                <h2 class="gallery-title" id="chat-title" onclick="promptUserSection()" style="cursor: pointer;" title="Click to manually set your section">Class Chat ✏️</h2>
+                <h2 class="gallery-title" id="chat-title" onclick="promptUserSection()" style="cursor: pointer;" title="Click to manually set your section">Class Chat </h2>
                 <p class="subtitle" style="margin-bottom: 10px;" id="chat-subtitle">Your Official Section Room</p>
             </div>
             <div id="class-chat-history" class="liquid-glass" style="flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding: 15px; border-radius: 20px; max-width: 600px; margin: 0 auto; width: 100%; margin-bottom: 15px; scroll-behavior: smooth;">
@@ -2484,13 +2507,13 @@
             <div class="liquid-glass" style="flex-shrink: 0; max-width: 600px; margin: 0 auto; width: 100%; display: flex; gap: 10px; align-items: center; padding: 10px; border-radius: 20px;">
                 <label for="chat-image-input" style="cursor: pointer; padding: 10px; background: rgba(255,170,0,0.1); border-radius: 50%; color: #ffaa00;"><svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg></label>
                 <input type="file" id="chat-image-input" accept="image/*" style="display: none;" onchange="handleChatImageUpload(event)">
-                <button id="chat-record-btn" onmousedown="startChatAudio(event)" onmouseup="stopChatAudio(event)" ontouchstart="startChatAudio(event)" ontouchend="stopChatAudio(event)" style="padding: 10px; background: rgba(0, 204, 102, 0.1); border: none; border-radius: 50%; color: #00cc66; cursor: pointer; display: flex; align-items: center; justify-content: center; position: relative; font-size: 1.2rem; transition: transform 0.2s; user-select: none; -webkit-user-select: none;">🎤</button>
-                <input type="text" id="class-chat-input" placeholder="Type a message or hold 🎤..." style="flex: 1; background: transparent; border: none; outline: none; color: #fff; font-family: 'Montserrat', sans-serif; font-size: 1rem; padding: 5px;" onkeypress="if(event.key==='Enter') sendClassChat()">
+                <button id="chat-record-btn" onmousedown="startChatAudio(event)" onmouseup="stopChatAudio(event)" ontouchstart="startChatAudio(event)" ontouchend="stopChatAudio(event)" style="padding: 10px; background: rgba(0, 204, 102, 0.1); border: none; border-radius: 50%; color: #00cc66; cursor: pointer; display: flex; align-items: center; justify-content: center; position: relative; font-size: 1.2rem; transition: transform 0.2s; user-select: none; -webkit-user-select: none;"></button>
+                <input type="text" id="class-chat-input" placeholder="Type a message or hold ..." style="flex: 1; background: transparent; border: none; outline: none; color: #fff; font-family: 'Montserrat', sans-serif; font-size: 1rem; padding: 5px;" onkeypress="if(event.key==='Enter') sendClassChat()">
                 <button onclick="sendClassChat()" style="background: linear-gradient(135deg, #00cc66, #00994d); color: #fff; border: none; padding: 10px 20px; border-radius: 15px; cursor: pointer; font-weight: bold; letter-spacing: 1px;"><svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg></button>
             </div>
             <div id="chat-image-preview-container" style="display:none; max-width: 600px; margin: 5px auto 0; background: rgba(0,0,0,0.5); padding: 10px; border-radius: 15px; position: relative; width: 100%;">
                 <img id="chat-image-preview" src="" style="max-height: 100px; border-radius: 10px;">
-                <button onclick="clearChatImage()" style="position: absolute; top: -5px; right: -5px; background: #ff4757; color: white; border: none; border-radius: 50%; width: 25px; height: 25px; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center;">✕</button>
+                <button onclick="clearChatImage()" style="position: absolute; top: -5px; right: -5px; background: #ff4757; color: white; border: none; border-radius: 50%; width: 25px; height: 25px; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center;"></button>
             </div>
         </div>
 
@@ -2597,8 +2620,8 @@
                 <input type="text" id="market-price" class="modal-input" placeholder="Price (e.g. ₹500 or Free)" style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; padding: 13px; border-radius: 12px;">
                 <input id="market-phone" class="modal-input" placeholder="WhatsApp Number *" style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; padding: 13px; border-radius: 12px;">
                 <label for="market-image-file" style="background: rgba(0,0,0,0.3); border: 1px dashed var(--glass-border); color: #fff; padding: 13px; border-radius: 12px; cursor: pointer; text-align: center;">
-                    <span id="market-image-text">📷 Click to select a photo from your device (Max 5MB)</span>
-                    <input type="file" id="market-image-file" accept="image/*" style="display: none;" onchange="document.getElementById('market-image-text').innerText = this.files.length ? '✅ Photo Selected: ' + this.files[0].name : '📷 Click to select a photo from your device (Max 5MB)';">
+                    <span id="market-image-text"> Click to select a photo from your device (Max 5MB)</span>
+                    <input type="file" id="market-image-file" accept="image/*" style="display: none;" onchange="document.getElementById('market-image-text').innerText = this.files.length ? ' Photo Selected: ' + this.files[0].name : ' Click to select a photo from your device (Max 5MB)';">
                 </label>
                 <button class="action-btn" onclick="submitMarketItem()" style="margin-top: 5px;">POST ITEM</button>
                 <p id="market-status" style="font-size: 0.85rem; font-weight: bold; text-align: center; min-height: 20px;"></p>
@@ -2634,8 +2657,8 @@
                 <input type="date" id="event-date" class="modal-input" style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; padding: 13px; border-radius: 12px; font-family: inherit;">
                 <input id="event-link" class="modal-input" placeholder="Registration Link (optional)" style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; padding: 13px; border-radius: 12px;">
                 <label for="event-image-file" style="background: rgba(0,0,0,0.3); border: 1px dashed #e60073; color: #fff; padding: 13px; border-radius: 12px; cursor: pointer; text-align: center;">
-                    🖼️ Click to upload Event Poster from device
-                    <input type="file" id="event-image-file" accept="image/*" style="display: none;" onchange="this.parentElement.innerHTML = '✅ Poster Selected: ' + this.files[0].name + '<input type=\\\'file\\\' id=\\\'event-image-file\\\' accept=\\\'image/*\\\' style=\\\'display: none;\\\'>'; document.getElementById('event-image-file').files = this.files;">
+                     Click to upload Event Poster from device
+                    <input type="file" id="event-image-file" accept="image/*" style="display: none;" onchange="this.parentElement.innerHTML = ' Poster Selected: ' + this.files[0].name + '<input type=\\\'file\\\' id=\\\'event-image-file\\\' accept=\\\'image/*\\\' style=\\\'display: none;\\\'>'; document.getElementById('event-image-file').files = this.files;">
                 </label>
                 <button class="action-btn" onclick="submitEvent()" style="margin-top: 5px; background: #e60073; color: white;">POST EVENT</button>
                 <p id="event-status" style="font-size: 0.85rem; font-weight: bold; text-align: center; min-height: 20px;"></p>
@@ -2658,8 +2681,8 @@
                 </select>
                 <input id="lf-location" class="modal-input" placeholder="Place / Location (e.g. TP Food Court, Library)" style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; padding: 13px; border-radius: 12px;">
                 <label for="lf-image-file" style="background: rgba(0,0,0,0.3); border: 1px dashed #e65c00; color: #fff; padding: 13px; border-radius: 12px; cursor: pointer; text-align: center;">
-                    <span id="lf-image-text">📷 Upload a photo of the item</span>
-                    <input type="file" id="lf-image-file" accept="image/*" style="display: none;" onchange="document.getElementById('lf-image-text').innerText = this.files.length ? '✅ Photo Selected: ' + this.files[0].name : '📷 Upload a photo of the item';">
+                    <span id="lf-image-text"> Upload a photo of the item</span>
+                    <input type="file" id="lf-image-file" accept="image/*" style="display: none;" onchange="document.getElementById('lf-image-text').innerText = this.files.length ? ' Photo Selected: ' + this.files[0].name : ' Upload a photo of the item';">
                 </label>
                 <button class="action-btn" onclick="submitLostFound()" style="margin-top: 5px; background: linear-gradient(135deg, #e65c00, #f59e0b); color: #fff;">REPORT ITEM</button>
                 <p id="lf-status" style="font-size: 0.85rem; font-weight: bold; text-align: center; min-height: 20px;"></p>
@@ -2677,13 +2700,13 @@
                 <input id="music-artist" class="modal-input" placeholder="Artist Name *" style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; padding: 13px; border-radius: 12px;">
                 
                 <label for="music-cover-file" style="background: rgba(0,0,0,0.3); border: 1px dashed var(--glass-border); color: #fff; padding: 13px; border-radius: 12px; cursor: pointer; text-align: center;">
-                    <span id="music-cover-text">🖼️ Upload Cover Art (Optional)</span>
-                    <input type="file" id="music-cover-file" accept="image/*" style="display: none;" onchange="document.getElementById('music-cover-text').innerText = this.files.length ? '✅ Cover Selected: ' + this.files[0].name : '🖼️ Upload Cover Art (Optional)';">
+                    <span id="music-cover-text"> Upload Cover Art (Optional)</span>
+                    <input type="file" id="music-cover-file" accept="image/*" style="display: none;" onchange="document.getElementById('music-cover-text').innerText = this.files.length ? ' Cover Selected: ' + this.files[0].name : ' Upload Cover Art (Optional)';">
                 </label>
                 
                 <label for="music-audio-file" style="background: rgba(29, 185, 84, 0.1); border: 1px dashed #1DB954; color: #fff; padding: 13px; border-radius: 12px; cursor: pointer; text-align: center;">
-                    <span id="music-audio-text">🎵 Upload MP3 File *</span>
-                    <input type="file" id="music-audio-file" accept="audio/*" style="display: none;" onchange="document.getElementById('music-audio-text').innerText = this.files.length ? '✅ Audio Selected: ' + this.files[0].name : '🎵 Upload MP3 File *';">
+                    <span id="music-audio-text"> Upload MP3 File *</span>
+                    <input type="file" id="music-audio-file" accept="audio/*" style="display: none;" onchange="document.getElementById('music-audio-text').innerText = this.files.length ? ' Audio Selected: ' + this.files[0].name : ' Upload MP3 File *';">
                 </label>
                 
                 <button class="action-btn" onclick="submitMusic()" style="margin-top: 5px; background: #1DB954; color: #fff;">UPLOAD TRACK</button>
@@ -2741,38 +2764,44 @@
         <div class="fs-cover-container">
             <img id="fs-cover" class="fs-cover" src="" alt="Cover">
         </div>
-        <div class="fs-info">
-            <h2 id="fs-title" class="fs-title">No track</h2>
-            <p id="fs-artist" class="fs-artist">-</p>
-        </div>
-        <div class="fs-progress-container">
-            <div class="fs-progress-bar" id="fs-progress-bar" onclick="seekMusicFS(event)">
-                <div class="fs-progress-fill" id="fs-progress-fill"></div>
+        <div class="fs-glass-panel">
+            <div class="fs-info">
+                <h2 id="fs-title" class="fs-title">No track</h2>
+                <p id="fs-artist" class="fs-artist">-</p>
             </div>
-            <div class="fs-time-row">
-                <span id="fs-time-current">0:00</span>
-                <span id="fs-time-total">0:00</span>
+            <div class="fs-progress-container">
+                <div class="fs-progress-bar" id="fs-progress-bar" onclick="seekMusicFS(event)">
+                    <div class="fs-progress-fill" id="fs-progress-fill"></div>
+                </div>
+                <div class="fs-time-row">
+                    <span id="fs-time-current">0:00</span>
+                    <span id="fs-time-total">0:00</span>
+                </div>
             </div>
-        </div>
-        <div class="fs-controls">
-            <button class="ctrl-btn" id="repeat-btn-fs" onclick="toggleRepeat()"><svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z"/></svg></button>
-            <button class="ctrl-btn" onclick="prevMusicTrack()"><svg viewBox="0 0 24 24" width="36" height="36" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg></button>
-            <button class="fs-play-btn" id="fs-play-btn" onclick="toggleMusicPlay()">
-                <svg viewBox="0 0 24 24" width="36" height="36" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
-            </button>
-            <button class="ctrl-btn" onclick="nextMusicTrack()"><svg viewBox="0 0 24 24" width="36" height="36" fill="currentColor"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg></button>
-            <button class="ctrl-btn" style="opacity:0; pointer-events:none;"><svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M0 0h24v24H0z" fill="none"/></svg></button>
+            <div class="fs-controls">
+                <button class="ctrl-btn" id="repeat-btn-fs" onclick="toggleRepeat()"><svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z"/></svg></button>
+                <button class="ctrl-btn" onclick="prevMusicTrack()"><svg viewBox="0 0 24 24" width="36" height="36" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg></button>
+                <button class="fs-play-btn" id="fs-play-btn" onclick="toggleMusicPlay()">
+                    <svg viewBox="0 0 24 24" width="36" height="36" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+                </button>
+                <button class="ctrl-btn" onclick="nextMusicTrack()"><svg viewBox="0 0 24 24" width="36" height="36" fill="currentColor"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg></button>
+                <button class="ctrl-btn" style="opacity:0; pointer-events:none;"><svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M0 0h24v24H0z" fill="none"/></svg></button>
+            </div>
         </div>
     </div>
 
     <div id="cgpaModal" class="lightbox" onclick="if(event.target === this) closeCGPACalculator()">
-        <div class="sync-modal-content" style="max-width: 500px; padding: 0;">
-            <div style="background: linear-gradient(135deg, #1b5e20 0%, #0d3b10 100%); padding: 30px; border-radius: 20px 20px 0 0; text-align: center; position: relative;">
-                <span class="close-btn" style="top: 10px; right: 15px; font-size: 30px; color: #fff;" onclick="closeCGPACalculator()">&times;</span>
-                <h3 style="color: rgba(255,255,255,0.8); margin: 0 0 10px 0; text-transform: uppercase; font-size: 0.9rem; letter-spacing: 2px;">Estimated CGPA</h3>
-                <h1 id="cgpa-modal-est" style="color: #fff; font-size: 4.5rem; margin: 0; font-family: 'Montserrat', sans-serif;">0.00</h1>
+        <div class="sync-modal-content" style="max-width: 500px; padding: 0; background: rgba(25, 25, 30, 0.65); backdrop-filter: blur(25px); border: 1px solid rgba(255, 255, 255, 0.1); overflow: hidden; position: relative;">
+            <!-- Liquid Background Orbs -->
+            <div style="position: absolute; top: -50px; left: -50px; width: 200px; height: 200px; background: rgba(144, 238, 144, 0.2); filter: blur(50px); border-radius: 50%;"></div>
+            <div style="position: absolute; top: -30px; right: -30px; width: 150px; height: 150px; background: rgba(0, 255, 200, 0.2); filter: blur(40px); border-radius: 50%;"></div>
+            
+            <div style="padding: 40px 30px 30px 30px; text-align: center; position: relative; z-index: 2; border-bottom: 1px solid rgba(255, 255, 255, 0.05);">
+                <span class="close-btn" style="top: 15px; right: 20px; font-size: 30px; color: rgba(255,255,255,0.7); text-shadow: none;" onclick="closeCGPACalculator()">&times;</span>
+                <h3 style="color: rgba(255,255,255,0.6); margin: 0 0 10px 0; text-transform: uppercase; font-size: 0.85rem; letter-spacing: 3px; font-weight: 500;">Estimated CGPA</h3>
+                <h1 id="cgpa-modal-est" style="color: #fff; font-size: 5rem; margin: 0; font-family: 'Montserrat', sans-serif; font-weight: 700; text-shadow: 0 0 30px rgba(144, 238, 144, 0.3);">0.00</h1>
             </div>
-            <div style="padding: 20px; max-height: 60vh; overflow-y: auto;" id="cgpa-list">
+            <div style="padding: 20px; max-height: 60vh; overflow-y: auto; position: relative; z-index: 2;" id="cgpa-list" class="cgpa-scroll-area">
                 <!-- Populated by JS -->
             </div>
         </div>
@@ -3063,7 +3092,7 @@
 
                 if (faNameEl) faNameEl.innerText = profile.fa_name || 'Faculty Advisor';
                 if (faEmailEl) faEmailEl.innerText = '@ ' + (profile.fa_email || 'N/A');
-                if (faPhoneEl) faPhoneEl.innerText = '📞 ' + (profile.fa_phone || 'N/A');
+                if (faPhoneEl) faPhoneEl.innerText = ' ' + (profile.fa_phone || 'N/A');
                 if (faCallBtn && profile.fa_phone) {
                     faCallBtn.href = 'tel:' + profile.fa_phone;
                 } else if (faCallBtn) {
@@ -3082,7 +3111,7 @@
 
                 if (aaNameEl) aaNameEl.innerText = profile.aa_name || 'Academic Advisor';
                 if (aaEmailEl) aaEmailEl.innerText = '@ ' + (profile.aa_email || 'N/A');
-                if (aaPhoneEl) aaPhoneEl.innerText = '📞 ' + (profile.aa_phone || 'N/A');
+                if (aaPhoneEl) aaPhoneEl.innerText = ' ' + (profile.aa_phone || 'N/A');
                 if (aaCallBtn && profile.aa_phone) {
                     aaCallBtn.href = 'tel:' + profile.aa_phone;
                 } else if (aaCallBtn) {
@@ -3136,7 +3165,7 @@
         function hideSyncToast(success=true) {
             let toast = document.getElementById('sync-toast');
             if (toast) {
-                toast.innerHTML = success ? `✅ Data Synced Successfully` : `❌ Background Sync Failed`;
+                toast.innerHTML = success ? ` Data Synced Successfully` : ` Background Sync Failed`;
                 setTimeout(() => toast.remove(), 3000);
             }
         }
@@ -3155,21 +3184,21 @@
             document.getElementById('login-loader-container').style.display = 'flex';
 
             let secondsPassed = 0;
-            statusText.innerHTML = `🔄 Connecting to Academia... <span style="font-family: inherit; font-size: 1.1rem; color: #fff; background: rgba(255,170,0,0.2); padding: 2px 8px; border-radius: 6px;">0s</span>`;
+            statusText.innerHTML = ` Connecting to Academia... <span style="font-family: inherit; font-size: 1.1rem; color: #fff; background: rgba(255,170,0,0.2); padding: 2px 8px; border-radius: 6px;">0s</span>`;
             statusText.style.color = "var(--primary)";
             
             const tips = [
-                "💡 Did you know? The library has a massive collection of e-books available for free.",
-                "🔥 Pro Tip: Maintaining above 8.5 CGPA makes placement drives much easier.",
-                "🎓 Fun Fact: SRM was founded in 1985 and has grown into a massive global campus.",
-                "💻 Hack: Use the Attendance Planner to exactly know how many classes you can bunk!",
-                "🥪 Fact: The Tech Park canteen serves the best sandwiches on campus."
+                " Did you know? The library has a massive collection of e-books available for free.",
+                " Pro Tip: Maintaining above 8.5 CGPA makes placement drives much easier.",
+                " Fun Fact: SRM was founded in 1985 and has grown into a massive global campus.",
+                " Hack: Use the Attendance Planner to exactly know how many classes you can bunk!",
+                " Fact: The Tech Park canteen serves the best sandwiches on campus."
             ];
             let tipIndex = 0;
 
             let timerInterval = setInterval(() => {
                 secondsPassed++;
-                statusText.innerHTML = `🔄 Syncing securely... <span style="font-family: inherit; font-size: 1.1rem; color: #fff; background: rgba(255,170,0,0.2); padding: 2px 8px; border-radius: 6px;">${secondsPassed}s</span>`;
+                statusText.innerHTML = ` Syncing securely... <span style="font-family: inherit; font-size: 1.1rem; color: #fff; background: rgba(255,170,0,0.2); padding: 2px 8px; border-radius: 6px;">${secondsPassed}s</span>`;
                 
                 let prog = Math.min((secondsPassed / 50) * 100, 95);
                 let pb = document.getElementById('login-progress-bar');
@@ -3198,7 +3227,7 @@
                 const initData = await initRes.json();
                 if (!initData.success) {
                     clearInterval(timerInterval);
-                    statusText.innerText = `❌ ${initData.error}`;
+                    statusText.innerText = ` ${initData.error}`;
                     statusText.style.color = "var(--danger)";
                     return;
                 }
@@ -3230,12 +3259,12 @@
                 clearInterval(timerInterval);
 
                 if (!result || !result.success) {
-                    statusText.innerText = `❌ ${result ? result.error : 'Unknown error'} (Failed after ${secondsPassed}s)`;
+                    statusText.innerText = ` ${result ? result.error : 'Unknown error'} (Failed after ${secondsPassed}s)`;
                     statusText.style.color = "var(--danger)";
                     return;
                 }
 
-                statusText.innerText = `✅ Success! Synced in ${secondsPassed} seconds.`;
+                statusText.innerText = ` Success! Synced in ${secondsPassed} seconds.`;
                 statusText.style.color = "var(--success)";
 
                 isLoggedIn = true;
@@ -3279,7 +3308,7 @@
                 document.getElementById('login-form-container').style.display = 'block';
                 document.getElementById('login-loader-container').style.display = 'none';
                 clearInterval(timerInterval);
-                alert("❌ Could not connect to backend server. Please try again.");
+                alert(" Could not connect to backend server. Please try again.");
             }
         }
 
@@ -3506,10 +3535,10 @@
                 if (courseEl) courseEl.innerText = attendanceData.length;
                 if (attPercBadge) {
                     const op = parseFloat(overallPerc);
-                    if (op >= 90) { attPercBadge.innerHTML = '🔥 TOP 5%'; attPercBadge.style.color = 'var(--primary)'; }
-                    else if (op >= 80) { attPercBadge.innerHTML = '⭐ TOP 15%'; attPercBadge.style.color = '#fff'; }
-                    else if (op < 75) { attPercBadge.innerHTML = '⚠️ RISK ZONE'; attPercBadge.style.color = 'var(--danger)'; }
-                    else { attPercBadge.innerHTML = '📈 AVERAGE'; attPercBadge.style.color = 'var(--text-sub)'; }
+                    if (op >= 90) { attPercBadge.innerHTML = ' TOP 5%'; attPercBadge.style.color = 'var(--primary)'; }
+                    else if (op >= 80) { attPercBadge.innerHTML = ' TOP 15%'; attPercBadge.style.color = '#fff'; }
+                    else if (op < 75) { attPercBadge.innerHTML = ' RISK ZONE'; attPercBadge.style.color = 'var(--danger)'; }
+                    else { attPercBadge.innerHTML = ' AVERAGE'; attPercBadge.style.color = 'var(--text-sub)'; }
                 }
             }
         }
@@ -3541,7 +3570,7 @@
                 
                 if (subjectMax === 0) return;
                 
-                let credits = 3; 
+                let credits = item.credits !== undefined ? parseFloat(item.credits) : 3;
                 let courseId = course.replace(/[^a-zA-Z0-9]/g, '') + index;
                 
                 cgpaState[courseId] = {
@@ -3557,7 +3586,7 @@
                     <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
                         <div style="flex:1;">
                             <h4 style="margin:0 0 5px 0; color: #fff; font-size: 0.95rem;">${course}</h4>
-                            <p style="margin:0; font-size:0.75rem; color: var(--text-sub);">Internal: ${subjectObtained.toFixed(1)} / ${subjectMax}</p>
+                            <p style="margin:0; font-size:0.75rem; color: var(--text-sub);">Internal: ${subjectObtained.toFixed(1)} / ${subjectMax} &nbsp;|&nbsp; Credits: ${credits}</p>
                         </div>
                     </div>
                     <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
@@ -3601,7 +3630,7 @@
             
             let reqDiv = document.getElementById(`cgpa-req-${courseId}`);
             if (required <= 0) {
-                reqDiv.innerHTML = `<span style="color:var(--success)">Secured! 🎉</span>`;
+                reqDiv.innerHTML = `<span style="color:var(--success)">Secured! </span>`;
                 reqDiv.style.borderLeft = "4px solid var(--success)";
             } else if (required > finalMax) {
                 reqDiv.innerHTML = `<strong style="color:var(--danger)">Mathematically Impossible</strong><br><span style="color:var(--text-sub)">Requires ${required.toFixed(1)} marks over ${finalMax} final marks. Only relative grading can save you.</span>`;
@@ -3722,8 +3751,8 @@
             else if (overallPercent >= 50) grade = "B";
 
             let percentileHTML = '';
-            if (estCGPA >= 9.5) percentileHTML = `<div style="margin-top: 15px;"><span style="background: rgba(255,170,0,0.2); color: var(--primary); padding: 5px 10px; border-radius: 8px; font-size: 0.8rem; font-weight: 900; letter-spacing: 1px; display: inline-block;">👑 TOP 2% OF BATCH</span></div>`;
-            else if (estCGPA >= 9.0) percentileHTML = `<div style="margin-top: 15px;"><span style="background: rgba(255,255,255,0.1); color: #fff; padding: 5px 10px; border-radius: 8px; font-size: 0.8rem; font-weight: 900; letter-spacing: 1px; display: inline-block;">🔥 TOP 10% OF BATCH</span></div>`;
+            if (estCGPA >= 9.5) percentileHTML = `<div style="margin-top: 15px;"><span style="background: rgba(255,170,0,0.2); color: var(--primary); padding: 5px 10px; border-radius: 8px; font-size: 0.8rem; font-weight: 900; letter-spacing: 1px; display: inline-block;"> TOP 2% OF BATCH</span></div>`;
+            else if (estCGPA >= 9.0) percentileHTML = `<div style="margin-top: 15px;"><span style="background: rgba(255,255,255,0.1); color: #fff; padding: 5px 10px; border-radius: 8px; font-size: 0.8rem; font-weight: 900; letter-spacing: 1px; display: inline-block;"> TOP 10% OF BATCH</span></div>`;
 
             list.innerHTML = `
                 <div class="dashboard-overview image-card fade-in-up" style="padding: 30px 20px; position: relative; overflow: hidden; border-radius: 24px;">
@@ -3766,13 +3795,13 @@
             let banner = document.getElementById(viewId);
             if (banner) {
                 if (isSemesterVacation(dateStr)) {
-                    banner.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg><div><strong>🌴 Semester Holidays!</strong><br><small>Enjoy your vacation!</small></div>`;
+                    banner.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg><div><strong> Semester Holidays!</strong><br><small>Enjoy your vacation!</small></div>`;
                     banner.style.display = 'flex';
                 } else if (isHoliday) {
-                    banner.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg><div><strong>🎉 Today is a Holiday!</strong><br><small>${plan.title}</small></div>`;
+                    banner.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg><div><strong> Today is a Holiday!</strong><br><small>${plan.title}</small></div>`;
                     banner.style.display = 'flex';
                 } else if (todayLocal.getDay() === 0 || todayLocal.getDay() === 6) {
-                    banner.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg><div><strong>🏖️ Weekend!</strong><br><small>No classes today.</small></div>`;
+                    banner.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg><div><strong> Weekend!</strong><br><small>No classes today.</small></div>`;
                     banner.style.display = 'flex';
                 } else {
                     banner.style.display = 'none';
@@ -3873,7 +3902,7 @@
             let isHoliday = srmPlanner[dayOrderDate] && srmPlanner[dayOrderDate].type === "Holiday";
             
             if (isSemesterVacation(dayOrderDate)) {
-                grid.innerHTML = `<div class="image-card" style="text-align:center; padding: 20px;"><h4 style="color:var(--accent); margin:0;">🌴 Semester Holidays!</h4><p style="color:var(--text-sub); font-size:0.9rem;">Enjoy your vacation!</p></div>`;
+                grid.innerHTML = `<div class="image-card" style="text-align:center; padding: 20px;"><h4 style="color:var(--accent); margin:0;"> Semester Holidays!</h4><p style="color:var(--text-sub); font-size:0.9rem;">Enjoy your vacation!</p></div>`;
             } else if (isHoliday) {
                 grid.innerHTML = `<div class="image-card" style="text-align:center; padding: 20px;"><h4 style="color:var(--accent); margin:0;">Today Holiday</h4><p style="color:var(--text-sub); font-size:0.9rem;">${srmPlanner[dayOrderDate].title}</p></div>`;
             } else if (classesForDay.length === 0) {
@@ -3983,23 +4012,23 @@
             let t = "Notification";
             let s = "";
 
-            let emojiList = ["🎉", "✨", "🔥"];
+            let emojiList = ["", "", ""];
 
             if (isSemesterVacation(curISOTime)) {
                 show = true;
-                t = "Semester Holidays! 🌴";
+                t = "Semester Holidays! ";
                 s = "Enjoy your vacation! Recharge and relax.";
-                emojiList = ["🌴", "🏖️", "☀️", "🍹", "😎", "✨"];
+                emojiList = ["", "", "", "", "", ""];
             } else if (plan && plan.title) {
                 s = plan.title;
                 if (plan.title.includes("Enrolment") || plan.title.includes("Commencement")) {
                     show = true;
-                    t = "Welcome Back! 🎉";
-                    emojiList = ["🎉", "🚀", "🎒", "✨", "🔥"];
+                    t = "Welcome Back! ";
+                    emojiList = ["", "", "", "", ""];
                 } else if (plan.title.includes("Last Working Day")) {
                     show = true;
-                    t = "Semester Complete! 🎓";
-                    emojiList = ["🎓", "🏆", "🎊", "🥂", "💯"];
+                    t = "Semester Complete! ";
+                    emojiList = ["", "", "", "", ""];
                 }
             }
             
@@ -4214,7 +4243,7 @@
 
             Object.entries(messMenuData[selectedDay]).forEach(([time, items]) => {
                 let formattedText = items.split(', ').join(' <span style="color: var(--primary); font-weight: bold; padding: 0 5px;">&bull;</span> ');
-                formattedText = formattedText.replace(/\*\*\*(.*?)\*\*\*/g, '<br><span class="special-badge">🔥 $1 🔥</span>');
+                formattedText = formattedText.replace(/\*\*\*(.*?)\*\*\*/g, '<br><span class="special-badge"> $1 </span>');
 
                 let highlightClass = (isToday && time === activeMeal) ? 'active-highlight' : '';
                 let badge = (isToday && time === activeMeal) ? '<span class="active-badge">NOW SERVING</span>' : '';
@@ -4308,7 +4337,7 @@
 
         function toggleTheme() {
             document.body.classList.toggle('light-mode');
-            document.getElementById('themeToggle').innerText = document.body.classList.contains('light-mode') ? '🌙' : '☀️';
+            document.getElementById('themeToggle').innerText = document.body.classList.contains('light-mode') ? '' : '';
         }
 
         function initApp() {
@@ -4339,7 +4368,7 @@
                     try {
                         const profile = JSON.parse(storedProfile);
                         let wn = document.getElementById('welcomeName');
-                        if (wn) wn.innerText = "Hi, " + (profile.name ? profile.name.split(' ')[0] : 'User') + " 👋";
+                        if (wn) wn.innerText = "Hi, " + (profile.name ? profile.name.split(' ')[0] : 'User') + " ";
                     } catch (e) {
                         console.error("Welcome name error:", e);
                     }
@@ -4449,15 +4478,15 @@
             let todayISOTime = (new Date(now - tzoffset)).toISOString().slice(0, 10);
             let reminders = JSON.parse(localStorage.getItem('userReminders') || '{}');
             if (reminders[todayISOTime] && !notifiedEvents.custom) {
-                triggerLocalNotification("Calendar Reminder 📅", reminders[todayISOTime]);
+                triggerLocalNotification("Calendar Reminder ", reminders[todayISOTime]);
                 notifiedEvents.custom = true;
             }
 
-            if (timeFloat >= 6.5 && timeFloat < 10 && !notifiedEvents.breakfast) { triggerLocalNotification("Good Morning! ☀️ Breakfast:", todaysMenu.Breakfast); notifiedEvents.breakfast = true; }
-            if (timeFloat >= 11 && timeFloat < 14 && !notifiedEvents.lunch) { triggerLocalNotification("Lunch Time Approaching! 🍛", todaysMenu.Lunch); notifiedEvents.lunch = true; }
-            if (timeFloat >= 15 && timeFloat < 18 && !notifiedEvents.snacks) { triggerLocalNotification("Snack Time! 🥨", todaysMenu.Snacks); notifiedEvents.snacks = true; }
-            if (timeFloat >= 18.5 && timeFloat < 21 && !notifiedEvents.dinner) { triggerLocalNotification("Dinner is served! 🍽️", todaysMenu.Dinner); notifiedEvents.dinner = true; }
-            if (timeFloat >= 22.5 && !notifiedEvents.sleep) { triggerLocalNotification("Time to Sleep! 🌙", "Put the phone away and get some rest for classes tomorrow. 💤"); notifiedEvents.sleep = true; }
+            if (timeFloat >= 6.5 && timeFloat < 10 && !notifiedEvents.breakfast) { triggerLocalNotification("Good Morning!  Breakfast:", todaysMenu.Breakfast); notifiedEvents.breakfast = true; }
+            if (timeFloat >= 11 && timeFloat < 14 && !notifiedEvents.lunch) { triggerLocalNotification("Lunch Time Approaching! ", todaysMenu.Lunch); notifiedEvents.lunch = true; }
+            if (timeFloat >= 15 && timeFloat < 18 && !notifiedEvents.snacks) { triggerLocalNotification("Snack Time! ", todaysMenu.Snacks); notifiedEvents.snacks = true; }
+            if (timeFloat >= 18.5 && timeFloat < 21 && !notifiedEvents.dinner) { triggerLocalNotification("Dinner is served! ", todaysMenu.Dinner); notifiedEvents.dinner = true; }
+            if (timeFloat >= 22.5 && !notifiedEvents.sleep) { triggerLocalNotification("Time to Sleep! ", "Put the phone away and get some rest for classes tomorrow. "); notifiedEvents.sleep = true; }
 
             localStorage.setItem('notifiedEvents', JSON.stringify(notifiedEvents));
         }
@@ -4552,7 +4581,7 @@
                     if (navigator.canShare && navigator.canShare({ files: [file] })) {
                         await navigator.share({
                             title: 'My SRM Stats',
-                            text: 'Flexing my stats! 🔥 Hosted on SRM Student Hub.',
+                            text: 'Flexing my stats!  Hosted on SRM Student Hub.',
                             files: [file]
                         });
                     } else {
@@ -4592,7 +4621,7 @@
                 const res = await fetch(`${BACKEND_URL}/api/leaderboard/${type}`);
                 const data = await res.json();
                 if (!data || data.length === 0) {
-                    list.innerHTML = '<div style="text-align:center; padding: 60px 20px; color: var(--text-sub); font-size: 1.1rem;">No data yet. Be the first to sync! 🚀</div>';
+                    list.innerHTML = '<div style="text-align:center; padding: 60px 20px; color: var(--text-sub); font-size: 1.1rem;">No data yet. Be the first to sync! </div>';
                     return;
                 }
 
@@ -4601,7 +4630,7 @@
                 const myRegRaw = profile.regNo || '';
                 const myNetId = myRegRaw.split('@')[0].toUpperCase();
 
-                const rankEmojis = ['🥇', '🥈', '🥉'];
+                const rankEmojis = ['', '', ''];
                 list.innerHTML = data.map((s, i) => {
                     const val = type === 'attendance' ? `${s.overall_attendance}%` : `CGPA ${s.est_cgpa}`;
                     const color = type === 'attendance'
@@ -4650,7 +4679,7 @@
                 <div class="image-card fade-in-up" style="transform: none; text-align: left; background: rgba(255,170,0,0.05); border: 1px solid rgba(255,170,0,0.2);">
                     <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
                         <h3 style="color: var(--primary); margin: 0; font-size: 1.3rem; font-family: 'Montserrat', sans-serif;">AI-Powered Medical Diagnosis</h3>
-                        <span style="background: rgba(255,170,0,0.2); padding: 5px 10px; border-radius: 8px; font-size: 0.8rem; color: var(--primary); font-weight: bold; white-space: nowrap;">🔥 FEATURED</span>
+                        <span style="background: rgba(255,170,0,0.2); padding: 5px 10px; border-radius: 8px; font-size: 0.8rem; color: var(--primary); font-weight: bold; white-space: nowrap;"> FEATURED</span>
                     </div>
                     <p style="color: var(--text-sub); line-height: 1.6; font-size: 0.95rem; margin-bottom: 15px;">A full-stack diagnostic tool using quantized LLMs to predict diseases from symptomatic inputs in real-time.</p>
                     <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 18px;">
@@ -4673,7 +4702,7 @@
                     ].filter(Boolean).join('<span style="color: var(--text-sub); padding: 0 10px;">|</span>');
                     return `
                     <div class="image-card fade-in-up" style="transform: none; text-align: left; position: relative;">
-                        ${isOwner ? `<button onclick="deleteProject(${p.id})" style="position: absolute; top: 15px; right: 15px; background: rgba(255,68,68,0.15); border: 1px solid rgba(255,68,68,0.4); color: #ff4444; padding: 5px 12px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.8rem;">🗑️ Delete</button>` : ''}
+                        ${isOwner ? `<button onclick="deleteProject(${p.id})" style="position: absolute; top: 15px; right: 15px; background: rgba(255,68,68,0.15); border: 1px solid rgba(255,68,68,0.4); color: #ff4444; padding: 5px 12px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.8rem;"> Delete</button>` : ''}
                         <h3 style="color: var(--text-main); margin: 0 0 8px 0; font-size: 1.15rem; font-family: 'Montserrat', sans-serif; padding-right: 80px;">${p.title}</h3>
                         ${p.submitted_by ? `<div style="font-size:0.8rem; color: var(--text-sub); margin-bottom: 10px;">By <b style="color: var(--primary);">${p.submitted_by}</b> · ${p.net_id ? p.net_id.toUpperCase() : ''}</div>` : ''}
                         <p style="color: var(--text-sub); font-size: 0.9rem; margin-bottom: 12px; line-height: 1.5;">${p.description || ''}</p>
@@ -4799,7 +4828,7 @@
                     <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--glass-border); padding-top: 15px;">
                         <span style="font-size: 1.2rem; font-weight: 900; color: #62d5ff; font-family: 'Montserrat', sans-serif;">${p.price ? p.price : 'DM for price'}</span>
                         <div style="display: flex; gap: 8px; align-items: center;">
-                            ${isOwner ? `<button onclick="deleteMarketItem(${p.id})" style="background: rgba(255,68,68,0.15); border: 1px solid rgba(255,68,68,0.4); color: #ff4444; padding: 8px 14px; border-radius: 10px; cursor: pointer; font-weight: bold; font-size: 0.85rem;">🗑️ Delete</button>` : ''}
+                            ${isOwner ? `<button onclick="deleteMarketItem(${p.id})" style="background: rgba(255,68,68,0.15); border: 1px solid rgba(255,68,68,0.4); color: #ff4444; padding: 8px 14px; border-radius: 10px; cursor: pointer; font-weight: bold; font-size: 0.85rem;"> Delete</button>` : ''}
                             ${waLink ? `<a href="${waLink}" target="_blank" style="background: #25D366; color: #fff; font-weight: bold; padding: 8px 16px; border-radius: 10px; text-decoration: none; font-size: 0.9rem; display: flex; align-items: center; gap: 8px;"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347zM12 21.826A9.826 9.826 0 1 1 21.826 12 9.837 9.837 0 0 1 12 21.826M12 2C6.477 2 2 6.477 2 12c0 1.761.458 3.425 1.282 4.881L2 22l5.253-1.252A9.974 9.974 0 0 0 12 22c5.523 0 10-4.477 10-10S17.523 2 12 2"/></svg> Contact</a>` : ''}
                         </div>
                     </div>
@@ -4846,17 +4875,17 @@
                 });
                 const result = await res.json();
                 if (result.success) {
-                    status.style.color = 'var(--success)'; status.innerText = '✅ Item Posted!';
+                    status.style.color = 'var(--success)'; status.innerText = ' Item Posted!';
                     ['market-title','market-desc','market-price','market-phone'].forEach(id => document.getElementById(id).value = '');
                     const label = document.querySelector('label[for="market-image-file"]');
-                    if(label) label.innerHTML = '📷 Click to select a photo from your device (Max 5MB) <input type="file" id="market-image-file" accept="image/*" style="display: none;">';
+                    if(label) label.innerHTML = ' Click to select a photo from your device (Max 5MB) <input type="file" id="market-image-file" accept="image/*" style="display: none;">';
                     document.getElementById('market-category').selectedIndex = 0;
                     setTimeout(() => { document.getElementById('marketSubmitModal').style.display = 'none'; loadMarketplace(); }, 1500);
                 } else {
-                    status.style.color = 'var(--danger)'; status.innerText = '❌ ' + result.error;
+                    status.style.color = 'var(--danger)'; status.innerText = ' ' + result.error;
                 }
             } catch(e) {
-                status.style.color = 'var(--danger)'; status.innerText = '❌ Could not connect to server.';
+                status.style.color = 'var(--danger)'; status.innerText = ' Could not connect to server.';
             }
         }
 
@@ -4894,7 +4923,7 @@
                     return `
                     <div class="image-card fade-in-up" id="post-${p.id}" style="transform: none; text-align: left; padding: 18px;">
                         <div style="font-size: 0.8rem; color: var(--text-sub); margin-bottom: 8px; display: flex; justify-content: space-between;">
-                            <span>Anonymous Fox 🦊</span>
+                            <span>Anonymous Fox </span>
                             <span>${formatTime}</span>
                         </div>
                         <p style="color: var(--text-main); font-size: 1.05rem; line-height: 1.5; margin: 0 0 15px 0;">${p.message}</p>
@@ -4983,7 +5012,7 @@
                             </div>
                             <div style="display: flex; flex-direction: column; gap: 8px; align-items: flex-end;">
                                 ${waLink ? `<a href="${waLink}" target="_blank" style="background: #25D366; color: #fff; text-decoration: none; padding: 10px 15px; border-radius: 12px; font-weight: bold; font-size: 0.9rem; white-space: nowrap;">Chat ↗</a>` : ''}
-                                ${isOwner ? `<button onclick="deleteCab(${p.id})" style="background: rgba(255,68,68,0.15); border: 1px solid rgba(255,68,68,0.4); color: #ff4444; padding: 6px 12px; border-radius: 10px; cursor: pointer; font-weight: bold; font-size: 0.8rem;">🗑️ Delete</button>` : ''}
+                                ${isOwner ? `<button onclick="deleteCab(${p.id})" style="background: rgba(255,68,68,0.15); border: 1px solid rgba(255,68,68,0.4); color: #ff4444; padding: 6px 12px; border-radius: 10px; cursor: pointer; font-weight: bold; font-size: 0.8rem;"> Delete</button>` : ''}
                             </div>
                         </div>
                     </div>`;
@@ -5021,11 +5050,11 @@
                 });
                 const result = await res.json();
                 if (result.success) {
-                    status.style.color = 'var(--success)'; status.innerText = '✅ Ride Request Posted!';
+                    status.style.color = 'var(--success)'; status.innerText = ' Ride Request Posted!';
                     ['cab-dest','cab-date','cab-time','cab-spots','cab-phone'].forEach(id => document.getElementById(id).value = '');
                     setTimeout(() => { document.getElementById('cabSubmitModal').style.display = 'none'; loadCabs(); }, 1500);
-                } else { status.style.color = 'var(--danger)'; status.innerText = '❌ ' + result.error; }
-            } catch(e) { status.style.color = 'var(--danger)'; status.innerText = '❌ Connection error.'; }
+                } else { status.style.color = 'var(--danger)'; status.innerText = ' ' + result.error; }
+            } catch(e) { status.style.color = 'var(--danger)'; status.innerText = ' Connection error.'; }
         }
 
         // ============ EVENTS & CLUB RADAR ============
@@ -5056,7 +5085,7 @@
                         <div style="padding: 20px;">
                             <span style="background: rgba(230,0,115,0.2); color: #ff3399; font-size: 0.75rem; font-weight: bold; padding: 4px 10px; border-radius: 12px; text-transform: uppercase;">${p.club_name}</span>
                             <h3 style="margin: 10px 0 5px 0; color: var(--text-main); font-size: 1.4rem; font-family: 'Montserrat', sans-serif;">${p.event_title}</h3>
-                            <div style="font-size: 0.95rem; color: var(--primary); margin-bottom: 15px; font-weight: bold;">🗓️ ${formattedDate}</div>
+                            <div style="font-size: 0.95rem; color: var(--primary); margin-bottom: 15px; font-weight: bold;"> ${formattedDate}</div>
                             
                             <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--glass-border); padding-top: 15px; margin-top: 10px;">
                                 <div style="font-size: 0.8rem; color: var(--text-sub);">Posted by ${p.created_by || 'Student'}</div>
@@ -5104,13 +5133,13 @@
                 });
                 const result = await res.json();
                 if (result.success) {
-                    status.style.color = 'var(--success)'; status.innerText = '✅ Event Posted!';
+                    status.style.color = 'var(--success)'; status.innerText = ' Event Posted!';
                     ['event-club','event-title','event-date','event-link'].forEach(id => document.getElementById(id).value = '');
                     const label = document.querySelector('label[for="event-image-file"]');
-                    if(label) label.innerHTML = '🖼️ Click to upload Event Poster from device <input type="file" id="event-image-file" accept="image/*" style="display: none;">';
+                    if(label) label.innerHTML = ' Click to upload Event Poster from device <input type="file" id="event-image-file" accept="image/*" style="display: none;">';
                     setTimeout(() => { document.getElementById('eventSubmitModal').style.display = 'none'; loadEvents(); }, 1500);
-                } else { status.style.color = 'var(--danger)'; status.innerText = '❌ ' + result.error; }
-            } catch(e) { status.style.color = 'var(--danger)'; status.innerText = '❌ Connection error.'; }
+                } else { status.style.color = 'var(--danger)'; status.innerText = ' ' + result.error; }
+            } catch(e) { status.style.color = 'var(--danger)'; status.innerText = ' Connection error.'; }
         }
 
         async function submitProject() {
@@ -5138,14 +5167,14 @@
                 });
                 const result = await res.json();
                 if (result.success) {
-                    status.style.color = 'var(--success)'; status.innerText = '✅ Project submitted!';
+                    status.style.color = 'var(--success)'; status.innerText = ' Project submitted!';
                     ['ph-title','ph-desc','ph-tech','ph-github','ph-demo'].forEach(id => document.getElementById(id).value = '');
                     setTimeout(() => { document.getElementById('projectSubmitModal').style.display = 'none'; loadProjects(); }, 1500);
                 } else {
-                    status.style.color = 'var(--danger)'; status.innerText = '❌ ' + result.error;
+                    status.style.color = 'var(--danger)'; status.innerText = ' ' + result.error;
                 }
             } catch(e) {
-                status.style.color = 'var(--danger)'; status.innerText = '❌ Could not connect to server.';
+                status.style.color = 'var(--danger)'; status.innerText = ' Could not connect to server.';
             }
         }
 
@@ -5208,13 +5237,13 @@
                 const formatTime = p.created_at ? new Date(p.created_at).toLocaleDateString() : '';
                 const isOwner = myNetId && p.net_id && myNetId === (p.net_id || '').toLowerCase();
                 const catColor = p.category === 'Lost' ? '#ff4444' : '#00cc66';
-                const catIcon = p.category === 'Lost' ? '❓' : '✅';
+                const catIcon = p.category === 'Lost' ? '' : '';
 
                 return `
                 <div class="image-card fade-in-up" style="transform: none; text-align: left; position: relative; padding: 20px; border-left: 4px solid ${catColor};">
                     <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
                         <span style="background: ${catColor}22; color: ${catColor}; padding: 4px 12px; border-radius: 8px; font-size: 0.8rem; font-weight: bold; text-transform: uppercase;">${catIcon} ${p.category || 'Item'}</span>
-                        ${isOwner ? `<button onclick="deleteLostFound(${p.id})" style="background: rgba(255,68,68,0.15); border: 1px solid rgba(255,68,68,0.4); color: #ff4444; padding: 5px 12px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.8rem;">🗑️ Delete</button>` : ''}
+                        ${isOwner ? `<button onclick="deleteLostFound(${p.id})" style="background: rgba(255,68,68,0.15); border: 1px solid rgba(255,68,68,0.4); color: #ff4444; padding: 5px 12px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.8rem;"> Delete</button>` : ''}
                     </div>
                     
                     <h3 style="color: var(--text-main); margin: 0 0 5px 0; font-size: 1.2rem; font-family: 'Montserrat', sans-serif;">${p.title}</h3>
@@ -5266,15 +5295,15 @@
                 });
                 const result = await res.json();
                 if (result.success) {
-                    status.style.color = 'var(--success)'; status.innerText = '✅ Item Reported!';
+                    status.style.color = 'var(--success)'; status.innerText = ' Item Reported!';
                     ['lf-title','lf-desc','lf-location'].forEach(id => document.getElementById(id).value = '');
                     catEl.selectedIndex = 0;
                     setTimeout(() => { document.getElementById('lfSubmitModal').style.display = 'none'; loadLostFound(); }, 1500);
                 } else {
-                    status.style.color = 'var(--danger)'; status.innerText = '❌ ' + result.error;
+                    status.style.color = 'var(--danger)'; status.innerText = ' ' + result.error;
                 }
             } catch(e) {
-                status.style.color = 'var(--danger)'; status.innerText = '❌ Connection error.';
+                status.style.color = 'var(--danger)'; status.innerText = ' Connection error.';
             }
         }
 
@@ -5299,7 +5328,7 @@
                 if ('Notification' in window && Notification.permission === 'default') {
                     Notification.requestPermission().then(permission => {
                         if (permission === 'granted') {
-                            new Notification('SRM Student Hub 🎓', {
+                            new Notification('SRM Student Hub ', {
                                 body: 'Notifications enabled! You will get updates on exams and deadlines.',
                                 icon: '/icon-192.png'
                             });
@@ -5342,7 +5371,7 @@
                             <p class="music-artist">${p.artist}</p>
                             ${p.uploaded_by ? `<div style="font-size:0.7rem; color: rgba(255,255,255,0.4); margin-top: 5px;">Uploaded by ${p.uploaded_by}</div>` : ''}
                         </div>
-                        ${isOwner ? `<button onclick="event.stopPropagation(); deleteMusicTrack(${p.id})" style="background: rgba(255,68,68,0.15); border: 1px solid rgba(255,68,68,0.4); color: #ff4444; padding: 5px; border-radius: 8px; cursor: pointer; margin-right: 10px;">🗑️</button>` : ''}
+                        ${isOwner ? `<button onclick="event.stopPropagation(); deleteMusicTrack(${p.id})" style="background: rgba(255,68,68,0.15); border: 1px solid rgba(255,68,68,0.4); color: #ff4444; padding: 5px; border-radius: 8px; cursor: pointer; margin-right: 10px;"></button>` : ''}
                         <button class="music-play-btn"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></button>
                     </div>`;
                 }).join('');
@@ -5781,10 +5810,10 @@
     <div id="crushModal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 10000; flex-direction: column; justify-content: center; align-items: center; background: rgba(0,0,0,0.8); backdrop-filter: blur(10px);">
         <div class="image-card" style="max-width: 400px; width: 90%; padding: 30px; text-align: center; background: rgba(20,20,20,0.9); border: 1px solid rgba(255, 71, 87, 0.3); position: relative; overflow: hidden;" id="crush-modal-inner">
             <button onclick="document.getElementById('crushModal').style.display='none'" style="position: absolute; top: 15px; right: 15px; background: none; border: none; color: #fff; font-size: 1.5rem; cursor: pointer; z-index: 10;">&times;</button>
-            <h2 style="color: #ff4757; margin-bottom: 10px; font-family: 'Montserrat', sans-serif; position: relative; z-index: 10;">Secret Crush Matcher ❤️</h2>
+            <h2 style="color: #ff4757; margin-bottom: 10px; font-family: 'Montserrat', sans-serif; position: relative; z-index: 10;">Secret Crush Matcher </h2>
             <p style="color: var(--text-sub); font-size: 0.9rem; margin-bottom: 20px; position: relative; z-index: 10;">Enter the exact Registration Number (RA...) of your crush. If they also enter yours, it's a match! 100% anonymous.</p>
             <input type="text" id="crush-ra" placeholder="RA22110030..." style="width: 100%; padding: 12px; margin-bottom: 15px; border-radius: 8px; border: 1px solid var(--glass-border); background: rgba(255,255,255,0.1); color: #fff; text-transform: uppercase; position: relative; z-index: 10;">
-            <button onclick="submitCrush()" class="action-btn" style="background: #ff4757; color: #fff; width: 100%; margin: 0; border-radius: 8px; font-weight: bold; position: relative; z-index: 10;">Shoot Your Shot 💘</button>
+            <button onclick="submitCrush()" class="action-btn" style="background: #ff4757; color: #fff; width: 100%; margin: 0; border-radius: 8px; font-weight: bold; position: relative; z-index: 10;">Shoot Your Shot </button>
             <p id="crush-status" style="margin-top: 15px; font-weight: bold; position: relative; z-index: 10;"></p>
         </div>
     </div>
@@ -5793,12 +5822,12 @@
     <div id="predictModal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 10000; flex-direction: column; justify-content: center; align-items: center; background: rgba(0,0,0,0.8); backdrop-filter: blur(10px);">
         <div class="image-card" style="max-width: 450px; width: 90%; padding: 30px; text-align: center; background: rgba(20,20,20,0.9); border: 1px solid rgba(0, 206, 201, 0.3); max-height: 90vh; overflow-y: auto; position: relative;">
             <button onclick="document.getElementById('predictModal').style.display='none'" style="position: absolute; top: 15px; right: 15px; background: none; border: none; color: #fff; font-size: 1.5rem; cursor: pointer;">&times;</button>
-            <h2 style="color: #00cec9; margin-bottom: 10px; font-family: 'Montserrat', sans-serif;">AI Placement Predictor 🚀</h2>
+            <h2 style="color: #00cec9; margin-bottom: 10px; font-family: 'Montserrat', sans-serif;">AI Placement Predictor </h2>
             <p style="color: var(--text-sub); font-size: 0.9rem; margin-bottom: 20px;">Enter your details and our AI will predict your target companies and generate a 6-month roadmap!</p>
             <input type="text" id="ai-cgpa" placeholder="Current CGPA (e.g. 8.5)" style="width: 100%; padding: 12px; margin-bottom: 10px; border-radius: 8px; border: 1px solid var(--glass-border); background: rgba(255,255,255,0.1); color: #fff;">
             <input type="text" id="ai-skills" placeholder="Skills (e.g. React, Python, C++)" style="width: 100%; padding: 12px; margin-bottom: 10px; border-radius: 8px; border: 1px solid var(--glass-border); background: rgba(255,255,255,0.1); color: #fff;">
             <textarea id="ai-projects" placeholder="Describe your top 2 projects briefly..." rows="2" style="width: 100%; padding: 12px; margin-bottom: 15px; border-radius: 8px; border: 1px solid var(--glass-border); background: rgba(255,255,255,0.1); color: #fff; font-family: inherit; resize: none;"></textarea>
-            <button onclick="submitPredict()" class="action-btn" style="background: #00cec9; color: #fff; width: 100%; margin: 0; border-radius: 8px; font-weight: bold;">Predict My Future ✨</button>
+            <button onclick="submitPredict()" class="action-btn" style="background: #00cec9; color: #fff; width: 100%; margin: 0; border-radius: 8px; font-weight: bold;">Predict My Future </button>
             <div id="predict-result" style="margin-top: 15px; text-align: left; font-size: 0.9rem; color: #fff; white-space: pre-wrap; background: rgba(0,0,0,0.5); padding: 15px; border-radius: 8px; display: none; line-height: 1.6;"></div>
             <p id="predict-status" style="margin-top: 10px; font-weight: bold; color: var(--primary);"></p>
         </div>
@@ -5808,9 +5837,9 @@
     <div id="chatModal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 10000; flex-direction: column; justify-content: center; align-items: center; background: rgba(0,0,0,0.8); backdrop-filter: blur(10px);">
         <div class="image-card" style="max-width: 500px; width: 95%; height: 80vh; padding: 20px; display: flex; flex-direction: column; background: rgba(20,20,20,0.95); border: 1px solid rgba(138,43,226, 0.3); position: relative;">
             <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--glass-border); padding-bottom: 10px; margin-bottom: 10px;">
-                <h2 style="color: #ffaa00; margin: 0; font-family: 'Montserrat', sans-serif;">Hub AI Assistant 🧠</h2>
+                <h2 style="color: #ffaa00; margin: 0; font-family: 'Montserrat', sans-serif;">Hub AI Assistant </h2>
                 <div style="display: flex; gap: 15px; align-items: center;">
-                    <button onclick="startLiveAI()" style="background: linear-gradient(135deg, #ff4757, #ffaa00); border: none; color: #fff; border-radius: 20px; padding: 5px 15px; cursor: pointer; font-size: 0.8rem; font-weight: bold; box-shadow: 0 4px 15px rgba(255, 71, 87, 0.4); animation: pulseBg 2s infinite;">Live Mode 🎙️</button>
+                    <button onclick="startLiveAI()" style="background: linear-gradient(135deg, #ff4757, #ffaa00); border: none; color: #fff; border-radius: 20px; padding: 5px 15px; cursor: pointer; font-size: 0.8rem; font-weight: bold; box-shadow: 0 4px 15px rgba(255, 71, 87, 0.4); animation: pulseBg 2s infinite;">Live Mode </button>
                     <button onclick="downloadChatPDF()" style="background: rgba(255,170,0,0.2); border: 1px solid #ffaa00; color: #ffaa00; border-radius: 8px; padding: 5px 10px; cursor: pointer; font-size: 0.8rem; font-weight: bold;">Export PDF</button>
                     <button onclick="document.getElementById('chatModal').style.display='none'" style="background: none; border: none; color: #fff; font-size: 1.5rem; cursor: pointer; padding: 0;">&times;</button>
                 </div>
@@ -5820,7 +5849,7 @@
             </div>
             <div id="ai-file-preview-container" style="display:none; margin-top:10px; background: rgba(0,0,0,0.5); padding: 10px; border-radius: 10px; position: relative;">
                 <span id="ai-file-preview-text" style="color: #fff; font-size: 0.8rem; word-break: break-all;"></span>
-                <button onclick="clearAIFile()" style="position: absolute; top: 5px; right: 5px; background: #ff4757; color: white; border: none; border-radius: 50%; width: 20px; height: 20px; cursor: pointer; font-size: 0.7rem; font-weight: bold; display: flex; align-items: center; justify-content: center;">✕</button>
+                <button onclick="clearAIFile()" style="position: absolute; top: 5px; right: 5px; background: #ff4757; color: white; border: none; border-radius: 50%; width: 20px; height: 20px; cursor: pointer; font-size: 0.7rem; font-weight: bold; display: flex; align-items: center; justify-content: center;"></button>
             </div>
             <div style="display: flex; gap: 10px; margin-top: 10px; align-items: center;">
                 <button id="ai-voice-btn" onclick="toggleVoiceAI()" style="background: rgba(255,170,0,0.2); color: #ffaa00; border: 1px solid #ffaa00; border-radius: 50%; width: 45px; height: 45px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.3s;">
@@ -5905,9 +5934,9 @@
                 const data = await res.json();
                 if (data.success) {
                     if (data.match) {
-                        status.style.color = '#ff4757'; status.innerText = 'IT\'S A MATCH! ❤️ They like you back!';
+                        status.style.color = '#ff4757'; status.innerText = 'IT\'S A MATCH!  They like you back!';
                         const modalInner = document.getElementById('crush-modal-inner');
-                        const emojis = ['❤️', '💘', '😍', '✨', '🔥'];
+                        const emojis = ['', '', '', '', ''];
                         for (let i = 0; i < 30; i++) {
                             let el = document.createElement('div');
                             el.innerText = emojis[Math.floor(Math.random() * emojis.length)];
@@ -5922,7 +5951,7 @@
                             modalInner.appendChild(el);
                         }
                     } else {
-                        status.style.color = '#00cc66'; status.innerText = 'Crush secretly logged! 🤫 We will notify you if they also log you.';
+                        status.style.color = '#00cc66'; status.innerText = 'Crush secretly logged!  We will notify you if they also log you.';
                     }
                 } else {
                     status.style.color = '#ff4757'; status.innerText = data.error || 'Failed to submit.';
@@ -5997,7 +6026,7 @@
             const userBubble = document.createElement('div');
             userBubble.style.cssText = 'background: rgba(255,170,0,0.8); padding: 10px 15px; border-radius: 15px; border-bottom-right-radius: 0; align-self: flex-end; max-width: 80%; color: #fff;';
             let userContent = msg;
-            if (aiFileName) userContent += `<br><small style="color: rgba(255,255,255,0.7)">📎 ${aiFileName}</small>`;
+            if (aiFileName) userContent += `<br><small style="color: rgba(255,255,255,0.7)"> ${aiFileName}</small>`;
             userBubble.innerHTML = userContent;
             history.appendChild(userBubble);
             
@@ -6364,7 +6393,7 @@
                     if (startMins - nowMins === 10) {
                         const notifiedKey = `notified_${now.toDateString()}_${c.courseCode}`;
                         if (!localStorage.getItem(notifiedKey)) {
-                            new Notification("Class in 10 mins! 🏃", {
+                            new Notification("Class in 10 mins! ", {
                                 body: `${c.subject} - ${c.roomNo}`,
                                 icon: "/images/app-icon.svg"
                             });
@@ -6398,7 +6427,7 @@
                             <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 10px; margin-top: 5px;">
                                 <div style="font-size: 0.8rem; color: var(--text-sub);">${timeStr}</div>
                                 <button onclick="likeSpotted(${p.id}, this)" style="background: transparent; border: none; cursor: pointer; color: #ff4757; font-size: 1.1rem; display: flex; align-items: center; gap: 5px;">
-                                    ❤️ <span>${p.likes}</span>
+                                     <span>${p.likes}</span>
                                 </button>
                             </div>
                         </div>
@@ -6463,7 +6492,7 @@
             
             if (currentCustomAudio && currentCustomAudio.src === url && !currentCustomAudio.paused) {
                 currentCustomAudio.pause();
-                btn.innerText = '▶';
+                btn.innerText = '';
                 clearInterval(currentAudioWaveInterval);
                 waves.forEach(w => w.style.height = (Math.random()*15+5)+'px');
                 return;
@@ -6471,7 +6500,7 @@
             if (currentCustomAudio) {
                 currentCustomAudio.pause();
                 clearInterval(currentAudioWaveInterval);
-                document.querySelectorAll('.custom-audio-player button').forEach(b => b.innerText = '▶');
+                document.querySelectorAll('.custom-audio-player button').forEach(b => b.innerText = '');
             }
             
             currentCustomAudio = new Audio(url);
@@ -6483,7 +6512,7 @@
             }, 100);
             
             currentCustomAudio.onended = () => {
-                btn.innerText = '▶';
+                btn.innerText = '';
                 clearInterval(currentAudioWaveInterval);
                 waves.forEach(w => w.style.height = (Math.random()*15+5)+'px');
             };
@@ -6568,7 +6597,7 @@
 
                 if (!msgs || msgs.length === 0) {
                     if (history.children.length === 0) {
-                        history.innerHTML = '<div style="text-align:center; color:var(--text-sub); margin-top: auto; margin-bottom: auto;" id="no-msg-txt">No messages yet. Say hi! 👋</div>';
+                        history.innerHTML = '<div style="text-align:center; color:var(--text-sub); margin-top: auto; margin-bottom: auto;" id="no-msg-txt">No messages yet. Say hi! </div>';
                     }
                     return;
                 }
@@ -6614,7 +6643,7 @@
                         let html = '';
                         html += `<div style="font-size: 0.75rem; font-weight: bold; color: ${isMe ? 'rgba(255,255,255,0.9)' : '#ffaa00'}; margin-bottom: 4px; display:flex; justify-content:space-between; align-items:center;">
                             <span>${isMe ? 'You' : m.sender_name}</span>
-                            <span class="chat-menu-btn" style="cursor:pointer; opacity:0.6; padding:0 5px;">▼</span>
+                            <span class="chat-menu-btn" style="cursor:pointer; opacity:0.6; padding:0 5px;"></span>
                         </div>`;
 
                         const safeMsg = m.message ? m.message.replace(/'/g, "\\'").replace(/"/g, '&quot;') : '';
@@ -6629,7 +6658,7 @@
                         if (m.audio_url) {
                             html += `
                             <div class="custom-audio-player" style="display:flex; align-items:center; gap:10px; background:rgba(0,0,0,0.2); padding:8px 12px; border-radius:30px; margin-bottom:5px;">
-                                <button onclick="toggleCustomAudio(this, '${m.audio_url}')" style="background:#fff; color:#000; border:none; border-radius:50%; width:35px; height:35px; display:flex; align-items:center; justify-content:center; cursor:pointer; flex-shrink:0;">▶</button>
+                                <button onclick="toggleCustomAudio(this, '${m.audio_url}')" style="background:#fff; color:#000; border:none; border-radius:50%; width:35px; height:35px; display:flex; align-items:center; justify-content:center; cursor:pointer; flex-shrink:0;"></button>
                                 <div class="audio-waves" style="flex:1; display:flex; gap:3px; align-items:center; height:20px;">
                                     ${Array(15).fill(0).map(()=>`<div class="wave-bar" style="width:4px; height:${Math.random()*15+5}px; background:rgba(255,255,255,0.5); border-radius:2px; transition:height 0.2s;"></div>`).join('')}
                                 </div>

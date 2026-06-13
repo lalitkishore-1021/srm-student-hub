@@ -693,8 +693,16 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
                     idx_cond = get_col_index(headers, "conducted")
                     idx_abs = get_col_index(headers, "absent")
                     
+                    # Extract Credits
+                    idx_credit = get_col_index(headers, "max credit", "credit")
+                    
                     if idx_code != -1 and idx_title != -1:
                         for row in table[h_idx+1:]:
+                            credit_val = 3.0
+                            if idx_credit != -1 and len(row) > idx_credit:
+                                try: credit_val = float(row[idx_credit])
+                                except: pass
+                                
                             if idx_attn_perc != -1 and len(row) > idx_attn_perc:
                                 # New Map: Just Attn %
                                 perc_str = str(row[idx_attn_perc]).replace('%', '').strip()
@@ -703,7 +711,8 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
                                     parsed_att.append({
                                         "courseTitle": f"{row[idx_code]} - {row[idx_title][:20]}",
                                         "attended": perc,
-                                        "total": 100
+                                        "total": 100,
+                                        "credits": credit_val
                                     })
                                 except: pass
                             elif idx_cond != -1 and idx_abs != -1 and len(row) > max(idx_cond, idx_abs):
@@ -714,7 +723,8 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
                                     parsed_att.append({
                                         "courseTitle": f"{row[idx_code]} - {row[idx_title][:20]}",
                                         "attended": max(0, cond - absent),
-                                        "total": cond
+                                        "total": cond,
+                                        "credits": credit_val
                                     })
                                 except: pass
                 except Exception as e:
@@ -730,6 +740,8 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
                     
                     idx_max = get_col_index(headers, "max")
                     idx_obt = get_col_index(headers, "obtained")
+                    
+                    idx_credit = get_col_index(headers, "max credit", "credit")
                     
                     if idx_code == -1 or idx_perf == -1: continue
                     
@@ -747,6 +759,11 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
                             current_title = title_val if title_val else code_val
                         
                         if not current_code: continue
+                        
+                        credit_val = 3.0
+                        if idx_credit != -1 and len(row) > idx_credit:
+                            try: credit_val = float(row[idx_credit])
+                            except: pass
                         
                         if idx_max != -1 and idx_obt != -1 and len(row) > max(idx_perf, idx_obt, idx_max):
                             # New Format (Separate Max and Obtained columns)
@@ -769,7 +786,8 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
                                 parsed_marks.append({
                                     "courseTitle": current_title,
                                     "courseCode": current_code,
-                                    "Test Performance": formatted_perf
+                                    "Test Performance": formatted_perf,
+                                    "credits": credit_val
                                 })
                         elif len(row) > idx_perf:
                             # Old Format Fallback
@@ -784,7 +802,8 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
                                 parsed_marks.append({
                                     "courseTitle": current_title,
                                     "courseCode": current_code,
-                                    "Test Performance": perf_str
+                                    "Test Performance": perf_str,
+                                    "credits": credit_val
                                 })
                 except Exception as e:
                     print("Parsing error (Marks):", str(e))
@@ -1959,9 +1978,9 @@ def delete_chat(msg_id):
             if sender != net_id:
                 return jsonify({'success': False, 'error': 'Cannot delete others message for everyone'})
             if DATABASE_URL:
-                cur.execute("UPDATE class_chats SET deleted_for_all = 1, message = '🚫 This message was deleted', image_url = '' WHERE id = %s", (msg_id,))
+                cur.execute("UPDATE class_chats SET deleted_for_all = 1, message = ' This message was deleted', image_url = '' WHERE id = %s", (msg_id,))
             else:
-                cur.execute("UPDATE class_chats SET deleted_for_all = 1, message = '🚫 This message was deleted', image_url = '' WHERE id = ?", (msg_id,))
+                cur.execute("UPDATE class_chats SET deleted_for_all = 1, message = ' This message was deleted', image_url = '' WHERE id = ?", (msg_id,))
         else:
             new_deleted = deleted_by_list + f",{net_id}" if deleted_by_list else net_id
             if DATABASE_URL:
