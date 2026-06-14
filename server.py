@@ -343,13 +343,12 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
                 
                 if 'sessions-reminder' in current_url.lower() or 'terminate' in content_lower or 'session' in content_lower:
                     print(f"[{reg_no}] Zoho popup warning detected. URL: {current_url}")
-                    # Look for terminate button
                     terminate_btn = find_in_frames('button, a, div, span, input', filter_text='terminate')
                     if terminate_btn:
                         try:
                             print(f"[{reg_no}] Clicking terminate button...")
-                            terminate_btn.click(force=True, timeout=5000)
-                            page.wait_for_timeout(4000)
+                            terminate_btn.click(force=True, timeout=2000)
+                            page.wait_for_timeout(1000)
                             return True
                         except Exception as e:
                             print(f"[{reg_no}] Failed to click terminate: {e}")
@@ -359,8 +358,8 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
                     if skip_btn:
                         try:
                             print(f"[{reg_no}] Clicking skip button...")
-                            skip_btn.click(force=True, timeout=5000)
-                            page.wait_for_timeout(4000)
+                            skip_btn.click(force=True, timeout=2000)
+                            page.wait_for_timeout(1000)
                             return True
                         except Exception as e:
                             print(f"[{reg_no}] Failed to click skip: {e}")
@@ -374,7 +373,7 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
             for login_attempt in range(1, 4):
                 print(f"[{reg_no}] Login Attempt {login_attempt} of 3...")
                 # Wait for login page to fully render (Zoho redirect may take time)
-                page.wait_for_timeout(3000)
+                page.wait_for_timeout(1000)
                 
                 # Check if we are already logged in (meaning not on accounts.zoho or signin pages)
                 current_url = page.url
@@ -386,7 +385,7 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
                     if 'sessions-reminder' in current_url.lower() or 'terminate' in content_lower:
                         print(f"[{reg_no}] Warn page visible at start of attempt {login_attempt}. Handling popups...")
                         check_and_handle_zoho_popups()
-                        page.wait_for_timeout(4000)
+                        page.wait_for_timeout(1000)
                         current_url = page.url
                         
                     # Verify we are actually on the dashboard before assuming we're authenticated
@@ -404,7 +403,7 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
                 else:
                     # Look for email input field
                     email_input = None
-                    for attempt in range(15):
+                    for attempt in range(8):
                         if find_in_frames('#Welcome, .profile-header, #ul-main-menu, .user-name, #zohoviewer, .tab-title, [class*="profile"]'):
                             print(f"[{reg_no}] Dashboard loaded belatedly during email check (attempt {attempt+1}). Authenticated!")
                             login_success = True
@@ -452,16 +451,16 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
                             next_btn = find_in_frames('button, input[type="submit"]', filter_text="next|continue")
                         if next_btn:
                             print(f"[{reg_no}] 3b. Clicking Next button...")
-                            next_btn.click(force=True, timeout=10000)
+                            next_btn.click(force=True, timeout=2000)
                         else:
                             print(f"[{reg_no}] 3b. No Next button found, pressing Enter...")
                             page.keyboard.press("Enter")
                         
-                        page.wait_for_timeout(3000)
+                        page.wait_for_timeout(1000)
 
                 # Wait for password input field
                 pwd_input = None
-                for attempt in range(20):
+                for attempt in range(10):
                     if find_in_frames('#Welcome, .profile-header, #ul-main-menu, .user-name, #zohoviewer, .tab-title, [class*="profile"]'):
                         print(f"[{reg_no}] Dashboard loaded belatedly during pwd check (attempt {attempt+1}). Authenticated!")
                         login_success = True
@@ -507,13 +506,13 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
                     submit_btn = find_in_frames('button, input[type="submit"]', fill_text=None, filter_text="sign.?in|login|submit|verify|next")
                 if submit_btn:
                     print(f"[{reg_no}] 4b. Clicking Sign In button...")
-                    submit_btn.click(force=True, timeout=10000)
+                    submit_btn.click(force=True, timeout=3000)
                 else:
                     print(f"[{reg_no}] 4b. No Sign In button found, pressing Enter...")
                     page.keyboard.press("Enter")
 
                 print(f"[{reg_no}] 4c. Waiting for login to process...")
-                page.wait_for_timeout(3000)
+                page.wait_for_timeout(1000)
 
                 # Check for explicit errors immediately to avoid long timeouts
                 error_el = find_in_frames('.error, .alert-danger, #errormsg, .zloginerror, .login-error', filter_text=None)
@@ -535,12 +534,12 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
                 page.wait_for_timeout(3000)
 
                 # Check for warnings/popups
-                for _ in range(8):
+                for _ in range(4):
                     if check_and_handle_zoho_popups():
                         print(f"[{reg_no}] Handled popup on login attempt {login_attempt}.")
-                        page.wait_for_timeout(3000)
+                        page.wait_for_timeout(1000)
                         break
-                    page.wait_for_timeout(1000)
+                    page.wait_for_timeout(500)
 
                 current_url = page.url
                 print(f"[{reg_no}] Post-login URL: {current_url}")
@@ -571,9 +570,10 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
                 return
 
             # DIAGNOSTIC: Print all available sidebar links
+            unique_links = []
             try:
                 print(f"[{reg_no}] DIAGNOSTIC: Scanning for available menu pages...")
-                page.wait_for_timeout(3000)
+                page.wait_for_timeout(500)
                 links = page.evaluate("""() => {
                     return Array.from(document.querySelectorAll('a')).map(a => a.href).filter(h => h.includes('#Page:'));
                 }""")
@@ -640,7 +640,7 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
             while time.time() - start < timeout / 1000.0:
                 if check_and_handle_zoho_popups():
                     print(f"[{reg_no}] Handled popup warning during wait. Waiting for redirect...")
-                    page.wait_for_timeout(2000)
+                    page.wait_for_timeout(1000)
                 tables = get_all_tables()
                 if tables:
                     for t in tables:
@@ -668,17 +668,23 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
         print(f"[{reg_no}] 5. Scoping Attendance...")
         
         # Try multiple attendance page URLs
-        att_urls = [
+        att_urls_pool = [
             "https://academia.srmist.edu.in/#Page:My_Attendance",
             "https://academia.srmist.edu.in/#Page:My_Attendance_2024_25",
-            "https://academia.srmist.edu.in/#Page:My_Attendance_2025_26"
+            "https://academia.srmist.edu.in/#Page:My_Attendance_2025_26",
+            "https://academia.srmist.edu.in/#Page:My_Attendance_2023_24"
         ]
         
+        # Only check URLs that are actually in the student's menu
+        att_urls = [u for u in att_urls_pool if any(u.split('#Page:')[1] in link for link in unique_links)]
+        if not att_urls:
+            att_urls = att_urls_pool
+            
         raw_tables = []
         for att_url in att_urls:
             print(f"[{reg_no}] Trying attendance URL: {att_url}")
             page.goto(att_url)
-            raw_tables = wait_for_data_tables(["attn", "attendance", "conducted", "absent", "hour", "code"], timeout=12000)
+            raw_tables = wait_for_data_tables(["attn", "attendance", "conducted", "absent", "hour", "code"], timeout=5000)
             if raw_tables and len(raw_tables) > 0:
                 # Check if any table actually has attendance-like data
                 has_att_data = False
@@ -697,8 +703,8 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
         if not raw_tables or not any(k in str(c).lower() for k in ["attn", "attendance", "conducted", "absent"] for t in raw_tables for row in t for c in row):
             print(f"[{reg_no}] Attendance data not found on any URL. Trying reload...")
             page.goto(att_urls[0])
-            page.reload(wait_until="networkidle")
-            raw_tables = wait_for_data_tables(["attn", "attendance", "conducted", "absent", "code"], timeout=15000)
+            page.reload(wait_until="domcontentloaded")
+            raw_tables = wait_for_data_tables(["attn", "attendance", "conducted", "absent", "code"], timeout=5000)
         
         # Log what we found
         if raw_tables:
@@ -725,6 +731,7 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
 
         parsed_att = []
         parsed_marks = []
+        print(f"[{reg_no}] Found {len(parsed_att)} attendance records. Now loading timetable...")
 
         def get_table_headers(tbl):
             if not tbl: return [], "", -1
@@ -892,27 +899,29 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
         # --- TIMETABLE STEP 1 (STUDENT SLOTS) ---
         print(f"[{reg_no}] 6. Scoping Registered Slots...")
         student_slots = {}
-        # Reverted 2024_25 back to 2023_24 based on Academia's weird hardcoded URL hash
-        timetable_urls = [
+        timetable_urls_pool = [
             "https://academia.srmist.edu.in/#Page:My_Time_Table_2023_24",
             "https://academia.srmist.edu.in/#Page:My_Time_Table_2024_25",
             "https://academia.srmist.edu.in/#Page:My_Time_Table_2025_26",
             "https://academia.srmist.edu.in/#Page:My_Time_Table"
         ]
+        timetable_urls = [u for u in timetable_urls_pool if any(u.split('#Page:')[1] in link for link in unique_links)]
+        if not timetable_urls:
+            timetable_urls = timetable_urls_pool
         
         slot_tables = []
         for url in timetable_urls:
             print(f"[{reg_no}] Trying timetable URL: {url}")
             page.goto(url)
-            slot_tables = wait_for_data_tables(["slot", "course", "code"], timeout=8000)
+            slot_tables = wait_for_data_tables(["slot", "course", "code"], timeout=5000)
             if any(k in str(c).lower() for k in ["slot", "course", "code"] for t in slot_tables for row in t for c in row):
                 print(f"[{reg_no}] Successfully loaded timetable from {url}")
                 break
         else:
             print(f"[{reg_no}] Warning: No slot tables found with primary URLs. Attempting page reload on primary...")
             page.goto(timetable_urls[0])
-            page.reload(wait_until="networkidle")
-            slot_tables = wait_for_data_tables(["slot", "course", "code"], timeout=15000)
+            page.reload(wait_until="domcontentloaded")
+            slot_tables = wait_for_data_tables(["slot", "course", "code"], timeout=8000)
             if not slot_tables:
                 try:
                     print(f"[{reg_no}] DIAGNOSTIC: Timetable page has NO tables. URL: {page.url}")
@@ -1064,9 +1073,13 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
         timetable_years = [joining_year, str(current_year), str(current_year - 1), str(current_year - 2)]
         timetable_years = list(dict.fromkeys(timetable_years))  # Remove duplicates
         
+        master_urls_pool = [f"https://academia.srmist.edu.in/#Page:Unified_Time_Table_{y}_Batch_{batch}" for y in timetable_years]
+        valid_master_urls = [u for u in master_urls_pool if any(u.split('#Page:')[1] in link for link in unique_links)]
+        if not valid_master_urls:
+            valid_master_urls = master_urls_pool
+        
         master_tables = []
-        for y in timetable_years:
-            url = f"https://academia.srmist.edu.in/#Page:Unified_Time_Table_{y}_Batch_{batch}"
+        for url in valid_master_urls:
             print(f"[{reg_no}] Trying unified timetable URL: {url}")
             page.goto(url)
             master_tables = wait_for_data_tables(["day 1", "day order", "timings", "time"], timeout=8000)
