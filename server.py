@@ -334,6 +334,40 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
                 except: continue
             return None
             
+        def check_and_handle_zoho_popups():
+            try:
+                current_url = page.url
+                content_lower = ""
+                try: content_lower = page.content().lower()
+                except: pass
+                
+                if 'sessions-reminder' in current_url.lower() or 'terminate' in content_lower or 'session' in content_lower:
+                    print(f"[{reg_no}] Zoho popup warning detected. URL: {current_url}")
+                    # Look for terminate button
+                    terminate_btn = find_in_frames('button, a, div, span, input', filter_text='terminate')
+                    if terminate_btn:
+                        try:
+                            print(f"[{reg_no}] Clicking terminate button...")
+                            terminate_btn.click(force=True, timeout=5000)
+                            page.wait_for_timeout(4000)
+                            return True
+                        except Exception as e:
+                            print(f"[{reg_no}] Failed to click terminate: {e}")
+                            
+                    # If terminate fails or isn't there, try "Skip for now"
+                    skip_btn = find_in_frames('button, a, div, span', filter_text='skip')
+                    if skip_btn:
+                        try:
+                            print(f"[{reg_no}] Clicking skip button...")
+                            skip_btn.click(force=True, timeout=5000)
+                            page.wait_for_timeout(4000)
+                            return True
+                        except Exception as e:
+                            print(f"[{reg_no}] Failed to click skip: {e}")
+            except Exception as e:
+                print(f"[{reg_no}] Error checking Zoho popups: {e}")
+            return False
+            
         # ============ LOGIN LOGIC (Zoho-aware) ============
         try:
             # Wait for login page to fully render (Zoho redirect may take time)
@@ -464,27 +498,8 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
             # Handle "Terminate other session" popup
             # Zoho uses /announcement/sessions-reminder
             for _ in range(8):  # Try for 8 seconds
-                current_url = page.url
-                if 'sessions-reminder' in current_url.lower() or 'terminate' in page.content().lower():
-                    print(f"[{reg_no}] Found active session warning. Looking for terminate button...")
-                    terminate_btn = find_in_frames('button, a, div, span, input', filter_text='terminate')
-                    if terminate_btn:
-                        try:
-                            print(f"[{reg_no}] Clicking terminate button...")
-                            terminate_btn.click(force=True, timeout=5000)
-                            page.wait_for_timeout(4000)
-                        except Exception as e:
-                            print(f"[{reg_no}] Failed to click terminate: {e}")
-                            
-                        # If terminate fails or isn't there, try "Skip for now"
-                        skip_btn = find_in_frames('button, a, div, span', filter_text='skip')
-                        if skip_btn:
-                            try:
-                                print(f"[{reg_no}] Clicking skip button...")
-                                skip_btn.click(force=True, timeout=5000)
-                                page.wait_for_timeout(4000)
-                            except: pass
-                        break
+                if check_and_handle_zoho_popups():
+                    break
                 page.wait_for_timeout(1000)
             
             # Verify we are actually logged in by checking URL or page content
@@ -575,6 +590,9 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
             start = time.time()
             tables_seen_start = None
             while time.time() - start < timeout / 1000.0:
+                if check_and_handle_zoho_popups():
+                    print(f"[{reg_no}] Handled popup warning during wait. Waiting for redirect...")
+                    page.wait_for_timeout(2000)
                 tables = get_all_tables()
                 if tables:
                     for t in tables:
@@ -642,6 +660,20 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
                     print(f"[{reg_no}]   Table {idx}: {len(t)} rows, headers: {t[0][:5] if t[0] else '?'}")
         else:
             print(f"[{reg_no}] WARNING: No tables found on attendance page at all. Semester holidays?")
+            try:
+                print(f"[{reg_no}] DIAGNOSTIC: Attendance page has NO tables. URL: {page.url}")
+                page_text = page.evaluate("document.body.innerText")
+                clean_text = ' | '.join([line.strip() for line in page_text.split('\n') if line.strip()][:25])
+                print(f"[{reg_no}] DIAGNOSTIC ATTENDANCE PAGE TEXT: {clean_text}")
+                for i, f in enumerate(page.frames):
+                    try:
+                        f_text = f.evaluate("document.body.innerText")
+                        f_clean = ' | '.join([line.strip() for line in f_text.split('\n') if line.strip()][:10])
+                        if f_clean:
+                            print(f"[{reg_no}] DIAGNOSTIC ATTENDANCE FRAME {i} TEXT: {f_clean}")
+                    except: pass
+            except Exception as e:
+                print(f"[{reg_no}] Failed to log attendance diagnostics: {e}")
 
         parsed_att = []
         parsed_marks = []
@@ -833,6 +865,21 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
             page.goto(timetable_urls[0])
             page.reload(wait_until="networkidle")
             slot_tables = wait_for_data_tables(["slot", "course", "code"], timeout=15000)
+            if not slot_tables:
+                try:
+                    print(f"[{reg_no}] DIAGNOSTIC: Timetable page has NO tables. URL: {page.url}")
+                    page_text = page.evaluate("document.body.innerText")
+                    clean_text = ' | '.join([line.strip() for line in page_text.split('\n') if line.strip()][:25])
+                    print(f"[{reg_no}] DIAGNOSTIC TIMETABLE PAGE TEXT: {clean_text}")
+                    for i, f in enumerate(page.frames):
+                        try:
+                            f_text = f.evaluate("document.body.innerText")
+                            f_clean = ' | '.join([line.strip() for line in f_text.split('\n') if line.strip()][:10])
+                            if f_clean:
+                                print(f"[{reg_no}] DIAGNOSTIC TIMETABLE FRAME {i} TEXT: {f_clean}")
+                        except: pass
+                except Exception as e:
+                    print(f"[{reg_no}] Failed to log timetable diagnostics: {e}")
         
         # --- EXTRACT RICH PROFILE DATA FROM TIMETABLE PAGE ---
         for table in slot_tables:
@@ -1097,8 +1144,19 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
                 with open("debug_tables.txt", "w", encoding="utf-8") as f:
                     f.write("RAW TABLES:\n" + str(raw_tables) + "\n\nSLOT TABLES:\n" + str(slot_tables) + "\n\nMASTER TABLES:\n" + str(master_tables))
                 print(f"[{reg_no}] Empty arrays detected. Saved to debug_tables.txt")
+                print(f"[{reg_no}] DIAGNOSTIC: Current URL: {page.url} | Title: {page.title()}")
+                page_text = page.evaluate("document.body.innerText")
+                clean_text = ' | '.join([line.strip() for line in page_text.split('\n') if line.strip()][:30])
+                print(f"[{reg_no}] DIAGNOSTIC PAGE TEXT: {clean_text}")
+                for i, f in enumerate(page.frames):
+                    try:
+                        f_text = f.evaluate("document.body.innerText")
+                        f_clean = ' | '.join([line.strip() for line in f_text.split('\n') if line.strip()][:15])
+                        if f_clean:
+                            print(f"[{reg_no}] DIAGNOSTIC FRAME {i} TEXT: {f_clean}")
+                    except: pass
             except Exception as e:
-                print(f"Failed to write debug file: {str(e)}")
+                print(f"Failed to write debug file or logs: {str(e)}")
 
         # --- POST-PROCESS TITLES ---
         # Collect the absolute best title for each course code across all three data sources
