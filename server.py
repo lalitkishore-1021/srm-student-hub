@@ -457,6 +457,18 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
                     if pwd_input:
                         print(f"[{reg_no}] Found password field (attempt {attempt+1})")
                         break
+                    
+                    # Check for explicit errors on the email screen (e.g. invalid email)
+                    error_el = find_in_frames('.error, .alert-danger, #errormsg, .zloginerror, .login-error', filter_text=None)
+                    if error_el:
+                        try:
+                            err_text = error_el.inner_text(timeout=500)
+                            if err_text and len(err_text.strip()) > 3:
+                                if "incorrect" in err_text.lower() or "invalid" in err_text.lower() or "error" in err_text.lower() or "exist" in err_text.lower():
+                                    out_queue.put({'success': False, 'error': f'Auth Error: {err_text.strip()}'})
+                                    return
+                        except: pass
+                    
                     page.wait_for_timeout(1000)
 
                 if not pwd_input:
@@ -482,7 +494,26 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
                     page.keyboard.press("Enter")
 
                 print(f"[{reg_no}] 4c. Waiting for login to process...")
-                page.wait_for_timeout(6000)
+                page.wait_for_timeout(3000)
+
+                # Check for explicit errors immediately to avoid long timeouts
+                error_el = find_in_frames('.error, .alert-danger, #errormsg, .zloginerror, .login-error', filter_text=None)
+                err_text = ""
+                if error_el:
+                    try: err_text = error_el.inner_text(timeout=1000)
+                    except: pass
+                
+                captcha_el = find_in_frames('#captchadiv, .captcha, [id*="captcha"]')
+                if captcha_el:
+                    out_queue.put({'success': False, 'error': 'CAPTCHA detected. Please try again later.'})
+                    return
+                elif err_text and len(err_text.strip()) > 3:
+                    if "incorrect" in err_text.lower() or "invalid" in err_text.lower() or "error" in err_text.lower() or "try again" in err_text.lower():
+                        out_queue.put({'success': False, 'error': f'Auth Error: {err_text.strip()}'})
+                        return
+
+                # Wait the remaining time
+                page.wait_for_timeout(3000)
 
                 # Check for warnings/popups
                 for _ in range(8):
