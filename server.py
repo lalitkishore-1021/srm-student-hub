@@ -405,6 +405,11 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
                     # Look for email input field
                     email_input = None
                     for attempt in range(15):
+                        if find_in_frames('#Welcome, .profile-header, #ul-main-menu, .user-name, #zohoviewer, .tab-title, [class*="profile"]'):
+                            print(f"[{reg_no}] Dashboard loaded belatedly during email check (attempt {attempt+1}). Authenticated!")
+                            login_success = True
+                            break
+                            
                         email_input = find_in_frames('input[name="LOGIN_ID"]')
                         if not email_input:
                             email_input = find_in_frames('input[type="email"]')
@@ -423,6 +428,9 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
                             print(f"[{reg_no}] Found email input field (attempt {attempt+1})")
                             break
                         page.wait_for_timeout(1000)
+
+                    if login_success:
+                        break
 
                     if not email_input:
                         # Fallback: maybe password input is visible
@@ -454,6 +462,11 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
                 # Wait for password input field
                 pwd_input = None
                 for attempt in range(20):
+                    if find_in_frames('#Welcome, .profile-header, #ul-main-menu, .user-name, #zohoviewer, .tab-title, [class*="profile"]'):
+                        print(f"[{reg_no}] Dashboard loaded belatedly during pwd check (attempt {attempt+1}). Authenticated!")
+                        login_success = True
+                        break
+                        
                     pwd_input = find_in_frames('input[type="password"]')
                     if not pwd_input:
                         pwd_input = find_in_frames('input[name="PASSWORD"]')
@@ -473,6 +486,9 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
                         except: pass
                     
                     page.wait_for_timeout(1000)
+                
+                if login_success:
+                    break
 
                 if not pwd_input:
                     print(f"[{reg_no}] WARNING: Password box not found on attempt {login_attempt}. Retrying...")
@@ -1939,23 +1955,32 @@ GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY', '')
 def call_gemini(prompt, file_base64=None, mime_type=None):
     if not GEMINI_API_KEY:
         return "System Notice: The AI Chatbot is currently unavailable because the GEMINI_API_KEY is not configured on the server."
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key={GEMINI_API_KEY}"
     parts = [{"text": prompt}]
     if file_base64 and mime_type:
         b64_data = file_base64.split(',')[1] if ',' in file_base64 else file_base64
         parts.append({"inlineData": {"mimeType": mime_type, "data": b64_data}})
         
     payload = {"contents": [{"parts": parts}]}
-    try:
-        response = requests.post(url, json=payload, headers={'Content-Type': 'application/json'})
-        data = response.json()
-        if 'error' in data:
-            return "API Error: " + data['error'].get('message', str(data['error']))
-        if 'candidates' in data and data['candidates']:
-            return data['candidates'][0]['content']['parts'][0]['text']
-        return "Sorry, I could not generate a response."
-    except Exception as e:
-        return f"Error connecting to AI service: {e}"
+    
+    models_to_try = ["gemini-1.5-flash", "gemini-1.5-pro", "gemini-1.5-flash-latest", "gemini-pro"]
+    last_error = ""
+    for model in models_to_try:
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={GEMINI_API_KEY}"
+        try:
+            response = requests.post(url, json=payload, headers={'Content-Type': 'application/json'})
+            data = response.json()
+            if 'error' in data:
+                err_msg = data['error'].get('message', str(data['error']))
+                last_error = err_msg
+                if 'not found' in err_msg.lower() or 'not supported' in err_msg.lower():
+                    continue # try next model
+                return "API Error: " + err_msg
+            if 'candidates' in data and data['candidates']:
+                return data['candidates'][0]['content']['parts'][0]['text']
+        except Exception as e:
+            last_error = str(e)
+            
+    return f"Error: All Gemini models failed. Last error: {last_error}"
 
 @app.route('/api/music/lyrics', methods=['GET'])
 def get_lyrics():
@@ -1965,7 +1990,10 @@ def get_lyrics():
         return jsonify({'success': False, 'error': 'Missing parameters'})
     try:
         clean_title = re.sub(r'\(.*?\)', '', title).strip()
-        query = f"{clean_title} {artist}"
+        # Extract primary artist only to improve search hit rate for collaborations
+        clean_artist = artist.lower().split(' x ')[0].split(',')[0].split('&')[0].split(' feat.')[0].split(' ft.')[0].strip()
+        
+        query = f"{clean_title} {clean_artist}"
         url = f"https://lrclib.net/api/search?q={urllib.parse.quote(query)}"
         resp = requests.get(url, timeout=5)
         if resp.status_code == 200:
