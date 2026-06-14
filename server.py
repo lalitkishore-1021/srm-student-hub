@@ -389,12 +389,10 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
                         page.wait_for_timeout(4000)
                         current_url = page.url
                         
-                    # Verify we don't actually have login fields on screen before assuming we're authenticated
-                    has_login_fields = False
-                    if find_in_frames('input[type="password"]') or find_in_frames('input[name="LOGIN_ID"]') or find_in_frames('input[type="email"]'):
-                        has_login_fields = True
-                        
-                    if not has_login_fields and 'accounts.zoho' not in current_url.lower() and 'signin' not in current_url.lower() and 'sessions-reminder' not in current_url.lower():
+                    # Verify we are actually on the dashboard before assuming we're authenticated
+                    dashboard_els = find_in_frames('#Welcome, .profile-header, #ul-main-menu, .user-name, #zohoviewer, .tab-title, [class*="profile"]')
+                    
+                    if dashboard_els and 'accounts.zoho' not in current_url.lower() and 'signin' not in current_url.lower() and 'sessions-reminder' not in current_url.lower():
                         print(f"[{reg_no}] Already authenticated (Attempt {login_attempt})! URL: {current_url}")
                         login_success = True
                         break
