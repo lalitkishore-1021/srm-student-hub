@@ -335,34 +335,58 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
             return None
             
         def check_and_handle_zoho_popups():
+            """Fast popup handler - uses URL check only (no slow page.content())."""
             try:
-                current_url = page.url
-                content_lower = ""
-                try: content_lower = page.content().lower()
-                except: pass
-                
-                if 'sessions-reminder' in current_url.lower() or 'terminate' in content_lower or 'session' in content_lower:
-                    print(f"[{reg_no}] Zoho popup warning detected. URL: {current_url}")
+                current_url = page.url.lower()
+                if 'block-sessions' in current_url or 'sessions-reminder' in current_url or 'preannouncement' in current_url:
+                    print(f"[{reg_no}] Zoho session warning page detected. URL: {page.url}")
+                    # Try JS click first (fastest) - click any element with "Terminate" text
+                    try:
+                        clicked = page.evaluate("""() => {
+                            let btns = document.querySelectorAll('button, a, input[type="submit"]');
+                            for (let b of btns) {
+                                if (b.innerText && b.innerText.toLowerCase().includes('terminate')) {
+                                    b.click(); return true;
+                                }
+                            }
+                            // Also check iframes
+                            let frames = document.querySelectorAll('iframe');
+                            for (let f of frames) {
+                                try {
+                                    let fbtns = f.contentDocument.querySelectorAll('button, a, input[type="submit"]');
+                                    for (let b of fbtns) {
+                                        if (b.innerText && b.innerText.toLowerCase().includes('terminate')) {
+                                            b.click(); return true;
+                                        }
+                                    }
+                                } catch(e) {}
+                            }
+                            return false;
+                        }""")
+                        if clicked:
+                            print(f"[{reg_no}] Clicked Terminate via JS!")
+                            # Wait for redirect back to academia
+                            try:
+                                page.wait_for_url("**/academia.srmist.edu.in/**", timeout=10000)
+                            except:
+                                page.wait_for_timeout(2000)
+                            return True
+                    except Exception as e:
+                        print(f"[{reg_no}] JS terminate click failed: {e}")
+                    
+                    # Fallback: use find_in_frames
                     terminate_btn = find_in_frames('button, a, input', filter_text='terminate')
                     if terminate_btn:
                         try:
-                            print(f"[{reg_no}] Clicking terminate button...")
-                            terminate_btn.click(force=True, timeout=2000)
-                            page.wait_for_timeout(1000)
+                            terminate_btn.click(force=True, timeout=3000)
+                            try:
+                                page.wait_for_url("**/academia.srmist.edu.in/**", timeout=10000)
+                            except:
+                                page.wait_for_timeout(2000)
                             return True
                         except Exception as e:
                             print(f"[{reg_no}] Failed to click terminate: {e}")
-                            
-                    # If terminate fails or isn't there, try "Skip for now"
-                    skip_btn = find_in_frames('button, a, input', filter_text='skip')
-                    if skip_btn:
-                        try:
-                            print(f"[{reg_no}] Clicking skip button...")
-                            skip_btn.click(force=True, timeout=2000)
-                            page.wait_for_timeout(1000)
-                            return True
-                        except Exception as e:
-                            print(f"[{reg_no}] Failed to click skip: {e}")
+                    return True  # Still return True so caller knows we were on popup page
             except Exception as e:
                 print(f"[{reg_no}] Error checking Zoho popups: {e}")
             return False
@@ -375,24 +399,19 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
                 # Wait for login page to fully render (Zoho redirect may take time)
                 page.wait_for_timeout(1000)
                 
-                # Check if we are already logged in (meaning not on accounts.zoho or signin pages)
-                current_url = page.url
-                if 'accounts.zoho' not in current_url.lower() and 'signin' not in current_url.lower():
-                    # Check if we have concurrent session warning page active
-                    content_lower = ""
-                    try: content_lower = page.content().lower()
-                    except: pass
-                    if 'sessions-reminder' in current_url.lower() or 'terminate' in content_lower:
-                        print(f"[{reg_no}] Warn page visible at start of attempt {login_attempt}. Handling popups...")
-                        check_and_handle_zoho_popups()
-                        page.wait_for_timeout(1000)
-                        current_url = page.url
-                        
-                    # Verify we are actually on the dashboard before assuming we're authenticated
-                    dashboard_els = find_in_frames('#Welcome, .profile-header, #ul-main-menu, .user-name, #zohoviewer, .tab-title, [class*="profile"]')
-                    
-                    if dashboard_els and 'accounts.zoho' not in current_url.lower() and 'signin' not in current_url.lower() and 'sessions-reminder' not in current_url.lower():
-                        print(f"[{reg_no}] Already authenticated (Attempt {login_attempt})! URL: {current_url}")
+                # Check if we are already logged in
+                current_url = page.url.lower()
+                
+                # Handle popup pages first
+                if 'block-sessions' in current_url or 'preannouncement' in current_url or 'sessions-reminder' in current_url:
+                    print(f"[{reg_no}] Popup page at start of attempt {login_attempt}. Handling...")
+                    check_and_handle_zoho_popups()
+                    current_url = page.url.lower()
+                
+                if 'accounts.zoho' not in current_url and 'signin' not in current_url and 'block-sessions' not in current_url and 'preannouncement' not in current_url:
+                    dashboard_els = find_in_frames('#Welcome, .profile-header, #ul-main-menu, .user-name, #zohoviewer, .tab-title')
+                    if dashboard_els:
+                        print(f"[{reg_no}] Already authenticated (Attempt {login_attempt})!")
                         login_success = True
                         break
 
@@ -403,7 +422,7 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
                 else:
                     # Look for email input field
                     email_input = None
-                    for attempt in range(8):
+                    for attempt in range(5):
                         if find_in_frames('#Welcome, .profile-header, #ul-main-menu, .user-name, #zohoviewer, .tab-title, [class*="profile"]'):
                             print(f"[{reg_no}] Dashboard loaded belatedly during email check (attempt {attempt+1}). Authenticated!")
                             login_success = True
@@ -460,7 +479,7 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
 
                 # Wait for password input field
                 pwd_input = None
-                for attempt in range(10):
+                for attempt in range(6):
                     if find_in_frames('#Welcome, .profile-header, #ul-main-menu, .user-name, #zohoviewer, .tab-title, [class*="profile"]'):
                         print(f"[{reg_no}] Dashboard loaded belatedly during pwd check (attempt {attempt+1}). Authenticated!")
                         login_success = True
@@ -495,10 +514,10 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
 
                 # Type password
                 pwd_input.click(force=True)
-                page.wait_for_timeout(300)
-                pwd_input.type(pwd, delay=50)
+                page.wait_for_timeout(200)
+                pwd_input.type(pwd, delay=20)
                 print(f"[{reg_no}] 4a. Password typed")
-                page.wait_for_timeout(500)
+                page.wait_for_timeout(300)
 
                 # Click Sign In button
                 submit_btn = find_in_frames('button#nextbtn', filter_text=None)
@@ -530,70 +549,57 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
                         out_queue.put({'success': False, 'error': f'Auth Error: {err_text.strip()}'})
                         return
 
-                # Wait the remaining time
-                page.wait_for_timeout(3000)
-
-                # Check for warnings/popups
-                for _ in range(4):
-                    if check_and_handle_zoho_popups():
-                        print(f"[{reg_no}] Handled popup on login attempt {login_attempt}.")
-                        page.wait_for_timeout(1000)
-                        break
-                    page.wait_for_timeout(500)
-
-                current_url = page.url
-                print(f"[{reg_no}] Post-login URL: {current_url}")
-
-                if 'accounts.zoho' not in current_url.lower() and 'signin' not in current_url.lower() and 'sessions-reminder' not in current_url.lower() and 'block-sessions' not in current_url.lower():
-                    # URL check passed, but we need to verify the dashboard actually loaded
-                    # Wait up to 15s for the SPA dashboard to render inside the page/frames
-                    dashboard_confirmed = False
-                    for dash_wait in range(15):
-                        # Check all frames for dashboard indicators
+                # Fast post-login: handle popups + verify dashboard in one tight loop
+                login_confirmed = False
+                for post_wait in range(16):  # 8 seconds max (16 * 500ms)
+                    current_url = page.url.lower()
+                    
+                    # Handle block-sessions/terminate popups
+                    if 'block-sessions' in current_url or 'preannouncement' in current_url or 'sessions-reminder' in current_url:
+                        check_and_handle_zoho_popups()
+                        continue  # Re-check URL after handling
+                    
+                    # Still on Zoho login? Keep waiting
+                    if 'accounts.zoho' in current_url or 'signin' in current_url:
+                        page.wait_for_timeout(500)
+                        continue
+                    
+                    # URL looks like academia - check for dashboard content
+                    if 'academia.srmist.edu.in' in current_url:
+                        # Fast check: look for dashboard DOM elements
+                        dashboard_els = find_in_frames('#Welcome, #ul-main-menu, .tab-title, .user-name')
+                        if dashboard_els:
+                            print(f"[{reg_no}] Dashboard confirmed! (wait {post_wait*500}ms)")
+                            login_confirmed = True
+                            break
+                        # Check frame text for dashboard indicators
                         for frame in page.frames:
                             try:
-                                frame_text = frame.evaluate("document.body ? document.body.innerText : ''")
-                                frame_lower = frame_text.lower()
-                                # Look for dashboard indicators - menu items, welcome text, profile elements
-                                if any(indicator in frame_lower for indicator in ['my time table', 'my attendance', 'welcome', 'day order', 'home page', 'course registered']):
-                                    dashboard_confirmed = True
-                                    print(f"[{reg_no}] Dashboard content confirmed in frame (wait {dash_wait}s)!")
+                                ft = frame.evaluate("document.body ? document.body.innerText.substring(0, 500) : ''").lower()
+                                if any(k in ft for k in ['my time table', 'my attendance', 'welcome', 'day order', 'home page']):
+                                    login_confirmed = True
+                                    print(f"[{reg_no}] Dashboard content found in frame (wait {post_wait*500}ms)!")
                                     break
                             except: pass
-                        if dashboard_confirmed:
+                        if login_confirmed:
                             break
-                        # Also check for dashboard DOM elements
-                        dashboard_els = find_in_frames('#Welcome, #ul-main-menu, .tab-title, [class*="profile"], .user-name')
-                        if dashboard_els:
-                            dashboard_confirmed = True
-                            print(f"[{reg_no}] Dashboard element confirmed (wait {dash_wait}s)!")
-                            break
-                        page.wait_for_timeout(1000)
                     
-                    if dashboard_confirmed:
-                        print(f"[{reg_no}] Login succeeded on attempt {login_attempt}!")
+                    page.wait_for_timeout(500)
+                
+                if login_confirmed:
+                    print(f"[{reg_no}] Login succeeded on attempt {login_attempt}!")
+                    login_success = True
+                    break
+                else:
+                    # If we got here and URL still looks like academia, proceed anyway
+                    current_url = page.url.lower()
+                    if 'academia.srmist.edu.in' in current_url and 'accounts.zoho' not in current_url and 'block-sessions' not in current_url:
+                        print(f"[{reg_no}] Login likely succeeded (on academia domain). Proceeding.")
                         login_success = True
                         break
                     else:
-                        # Check if we're actually still on login page
-                        still_login = False
-                        for frame in page.frames:
-                            try:
-                                ft = frame.evaluate("document.body ? document.body.innerText : ''")
-                                if 'sign in' in ft.lower() and 'next' in ft.lower():
-                                    still_login = True
-                                    break
-                            except: pass
-                        if still_login:
-                            print(f"[{reg_no}] WARNING: URL looks OK but still on login page! Retrying...")
-                            # Re-navigate to academia to try again
-                            page.goto("https://academia.srmist.edu.in/", wait_until="domcontentloaded", timeout=30000)
-                            page.wait_for_timeout(2000)
-                            continue
-                        else:
-                            print(f"[{reg_no}] Login likely succeeded (no login page detected). Proceeding cautiously.")
-                            login_success = True
-                            break
+                        print(f"[{reg_no}] Login attempt {login_attempt} failed. URL: {page.url}")
+                        continue
 
             if not login_success:
                 current_url = page.url
@@ -615,17 +621,13 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
                     out_queue.put({'success': False, 'error': 'Login failed - still on login page. Check credentials.'})
                 return
 
-            # Wait for the SPA to fully render before scanning links
-            # The dashboard needs time to load all menu items in the sidebar
-            print(f"[{reg_no}] Waiting for SPA dashboard to fully render...")
-            page.wait_for_timeout(3000)
+            # Quick scan for available menu links (used to filter URLs)
+            print(f"[{reg_no}] Scanning menu links...")
+            page.wait_for_timeout(1000)
             
-            # DIAGNOSTIC: Print all available sidebar links
             unique_links = []
             try:
-                print(f"[{reg_no}] DIAGNOSTIC: Scanning for available menu pages...")
-                # Try multiple times to find links (SPA may still be loading)
-                for scan_attempt in range(5):
+                for scan_attempt in range(3):
                     links = []
                     try:
                         links = page.evaluate("""() => {
@@ -641,10 +643,9 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
                         except: pass
                     unique_links = list(set(links))
                     if unique_links:
-                        print(f"[{reg_no}] Found {len(unique_links)} page links on scan attempt {scan_attempt+1}")
+                        print(f"[{reg_no}] Found {len(unique_links)} page links")
                         break
-                    print(f"[{reg_no}] Scan attempt {scan_attempt+1}: no links yet, waiting...")
-                    page.wait_for_timeout(2000)
+                    page.wait_for_timeout(1000)
                 
                 print(f"[{reg_no}] DIAGNOSTIC Available Pages: {unique_links}")
                 
@@ -712,7 +713,7 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
                                     return tables
                     if tables_seen_start is None:
                         tables_seen_start = time.time()
-                    elif time.time() - tables_seen_start > 5.0:
+                    elif time.time() - tables_seen_start > 2.0:
                         print(f"[{reg_no}] Tables found but keywords {keywords} not matched. Returning tables anyway.")
                         return tables
                 page.wait_for_timeout(500)
@@ -726,50 +727,38 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
             return -1
 
         def navigate_hash(hash_url):
-            """Navigate to a hash URL (#Page:...) using JavaScript to preserve the session.
-            page.goto() causes a full page reload which destroys the Zoho auth session.
-            This function uses location.hash to navigate within the SPA."""
+            """Navigate to a hash URL (#Page:...) using JavaScript to preserve the session."""
             hash_part = hash_url.split('#', 1)[1] if '#' in hash_url else hash_url
-            print(f"[{reg_no}] Navigating to #{hash_part} via JS hash change...")
             try:
-                # Use JavaScript to change the hash - this triggers the SPA router
-                # without reloading the page or losing the session
                 page.evaluate(f"window.location.hash = '#{hash_part}'")
-                page.wait_for_timeout(2000)  # Give the SPA time to react and load content
+                page.wait_for_timeout(1000)
                 
-                # Verify we're still authenticated (session not lost)
-                for frame in page.frames:
-                    try:
-                        ft = frame.evaluate("document.body ? document.body.innerText : ''")
-                        if 'sign in' in ft.lower() and 'forgot password' in ft.lower():
-                            print(f"[{reg_no}] WARNING: Session lost after hash nav! Attempting recovery...")
-                            # Try clicking the menu link directly instead
-                            link = find_in_frames(f'a[href*="{hash_part}"]')
-                            if link:
-                                link.click(force=True, timeout=3000)
-                                page.wait_for_timeout(2000)
-                            return False
-                    except: pass
+                # Check if we got redirected to a popup page
+                if check_and_handle_zoho_popups():
+                    # After handling popup, try the hash nav again
+                    page.evaluate(f"window.location.hash = '#{hash_part}'")
+                    page.wait_for_timeout(1000)
+                
                 return True
             except Exception as e:
                 print(f"[{reg_no}] Hash navigation error: {e}")
-                # Fallback: try clicking the menu link
                 try:
                     link = find_in_frames(f'a[href*="{hash_part}"]')
                     if link:
                         link.click(force=True, timeout=3000)
-                        page.wait_for_timeout(2000)
+                        page.wait_for_timeout(1000)
                         return True
                 except: pass
                 return False
 
         def navigate_to_page(full_url):
-            """Navigate to a page using hash navigation first, falling back to link click."""
-            current_url = page.url
-            if 'accounts.zoho' in current_url.lower() or 'block-sessions' in current_url.lower() or 'signin' in current_url.lower():
-                print(f"[{reg_no}] Currently on a redirect/warning page. Using goto instead of hash...")
-                page.goto(full_url, wait_until="domcontentloaded", timeout=15000)
-                return True
+            """Navigate to a page. Handles block-sessions popup first if stuck on it."""
+            # If we're stuck on a popup page, handle it first
+            current_url = page.url.lower()
+            if 'block-sessions' in current_url or 'preannouncement' in current_url or 'sessions-reminder' in current_url:
+                print(f"[{reg_no}] On popup page, handling before navigation...")
+                check_and_handle_zoho_popups()
+                page.wait_for_timeout(1000)
                 
             hash_part = full_url.split('#', 1)[1] if '#' in full_url else ''
             if hash_part:
