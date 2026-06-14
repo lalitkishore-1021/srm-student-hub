@@ -1650,18 +1650,18 @@
         /* Fullscreen Player */
         .music-fullscreen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 3000; background: #08080c; display: none; flex-direction: column; padding: 25px; padding-top: max(25px, env(safe-area-inset-top)); animation: slideUp 0.3s ease forwards; overflow: hidden; justify-content: center; align-items: center; }
         .fs-bg-orbs-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: -2; overflow: hidden; pointer-events: none; }
-        .fs-orb { position: absolute; border-radius: 50%; filter: blur(90px); opacity: 0.45; transition: background 1.5s ease-in-out; }
-        .fs-orb-1 { width: 320px; height: 320px; background: var(--fs-accent-1, rgba(255, 170, 0, 0.3)); top: -40px; left: -40px; animation: drift1 25s infinite alternate ease-in-out; }
-        .fs-orb-2 { width: 370px; height: 370px; background: var(--fs-accent-2, rgba(138, 43, 226, 0.3)); bottom: -40px; right: -40px; animation: drift2 30s infinite alternate ease-in-out; }
-        .fs-orb-3 { width: 280px; height: 280px; background: var(--fs-accent-3, rgba(0, 255, 200, 0.2)); top: 38%; left: 25%; animation: drift3 22s infinite alternate ease-in-out; }
+        .fs-orb { position: absolute; border-radius: 50%; filter: blur(70px); opacity: 0.85; transition: background 1.5s ease-in-out; }
+        .fs-orb-1 { width: 320px; height: 320px; background: var(--fs-accent-1, rgba(255, 170, 0, 0.75)); top: -40px; left: -40px; animation: drift1 15s infinite alternate ease-in-out; }
+        .fs-orb-2 { width: 370px; height: 370px; background: var(--fs-accent-2, rgba(138, 43, 226, 0.65)); bottom: -40px; right: -40px; animation: drift2 18s infinite alternate ease-in-out; }
+        .fs-orb-3 { width: 280px; height: 280px; background: var(--fs-accent-3, rgba(0, 255, 200, 0.55)); top: 38%; left: 25%; animation: drift3 12s infinite alternate ease-in-out; }
         .fs-bg-blur { position: absolute; top: -10%; left: -10%; width: 120%; height: 120%; object-fit: cover; filter: blur(90px) brightness(0.22); z-index: -3; transition: all 1s ease; opacity: 0.6; }
         .fs-bg-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; background: linear-gradient(180deg, rgba(10, 10, 15, 0.2) 0%, rgba(10, 10, 15, 0.7) 100%); }
-        .fs-glass-panel { width: calc(100% - 10px); box-sizing: border-box; max-width: 500px; background: rgba(22, 22, 28, 0.45); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 30px; padding: 25px 20px 20px 20px; box-shadow: 0 30px 60px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.06); display: flex; flex-direction: column; align-items: center; z-index: 10; margin-top: 5px; margin-bottom: 15px; }
+        .fs-glass-panel { width: calc(100% - 10px); box-sizing: border-box; max-width: 500px; background: rgba(22, 22, 28, 0.45); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 30px; padding: 25px 20px 20px 20px; box-shadow: 0 30px 60px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.06); display: flex; flex-direction: column; align-items: center; z-index: 10; margin-top: auto; margin-bottom: max(15px, env(safe-area-inset-bottom)); }
 
         .fs-header { width: 100%; box-sizing: border-box; max-width: 500px; display: flex; justify-content: space-between; align-items: center; color: rgba(255,255,255,0.85); font-weight: 600; font-size: 0.85rem; letter-spacing: 2px; text-transform: uppercase; z-index: 10; position: absolute; top: max(32px, env(safe-area-inset-top) + 12px); left: 50%; transform: translateX(-50%); padding: 0 24px; }
         .fs-close { background: rgba(255,255,255,0.1); border: none; color: #fff; width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; backdrop-filter: blur(10px); transition: background 0.2s, transform 0.2s; }
         .fs-close:hover { background: rgba(255,255,255,0.2); transform: scale(1.05); }
-        .fs-cover-container { width: 78vw; max-width: 330px; aspect-ratio: 1/1; display: flex; align-items: center; justify-content: center; z-index: 10; position: relative; margin-top: clamp(65px, 8vh, 90px); margin-bottom: clamp(15px, 3vh, 30px); }
+        .fs-cover-container { width: 78vw; max-width: 330px; aspect-ratio: 1/1; display: flex; align-items: center; justify-content: center; z-index: 10; position: relative; margin-top: auto; margin-bottom: auto; }
         .fs-cover { width: 100%; height: 100%; object-fit: cover; border-radius: 20px; box-shadow: 0 20px 45px rgba(0,0,0,0.55); transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease; }
         .fs-cover.swipe-left { transform: translateX(-50px) scale(0.9); opacity: 0; }
         .fs-cover.swipe-right { transform: translateX(50px) scale(0.9); opacity: 0; }
@@ -1682,19 +1682,19 @@
         .fs-util-btn:hover { color: #fff; transform: scale(1.1); }
         
         @keyframes drift1 {
-            0% { transform: translate(0, 0) scale(1); }
-            50% { transform: translate(110px, 70px) scale(1.15); }
-            100% { transform: translate(30px, 140px) scale(0.95); }
+            0% { transform: translate3d(0, 0, 0) scale(1); }
+            50% { transform: translate3d(110px, 70px, 0) scale(1.15); }
+            100% { transform: translate3d(30px, 140px, 0) scale(0.95); }
         }
         @keyframes drift2 {
-            0% { transform: translate(0, 0) scale(1.1); }
-            50% { transform: translate(-90px, -110px) scale(0.9); }
-            100% { transform: translate(-20px, 30px) scale(1.1); }
+            0% { transform: translate3d(0, 0, 0) scale(1.1); }
+            50% { transform: translate3d(-90px, -110px, 0) scale(0.9); }
+            100% { transform: translate3d(-20px, 30px, 0) scale(1.1); }
         }
         @keyframes drift3 {
-            0% { transform: translate(0, 0) scale(0.95); }
-            50% { transform: translate(-50px, 90px) scale(1.08); }
-            100% { transform: translate(70px, -30px) scale(1.0); }
+            0% { transform: translate3d(0, 0, 0) scale(0.95); }
+            50% { transform: translate3d(-50px, 90px, 0) scale(1.08); }
+            100% { transform: translate3d(70px, -30px, 0) scale(1.0); }
         }
         
         @keyframes fadeInOut {
@@ -5677,9 +5677,9 @@
                 const r2 = imgData[50], g2 = imgData[51], b2 = imgData[52];
                 const r3 = imgData[96], g3 = imgData[97], b3 = imgData[98];
                 
-                const color1 = `rgba(${r1}, ${g1}, ${b1}, 0.35)`;
-                const color2 = `rgba(${r2}, ${g2}, ${b2}, 0.35)`;
-                const color3 = `rgba(${r3}, ${g3}, ${b3}, 0.25)`;
+                const color1 = `rgba(${r1}, ${g1}, ${b1}, 0.75)`;
+                const color2 = `rgba(${r2}, ${g2}, ${b2}, 0.65)`;
+                const color3 = `rgba(${r3}, ${g3}, ${b3}, 0.55)`;
                 
                 const fsEl = document.getElementById('music-fullscreen');
                 if (fsEl) {
@@ -5691,9 +5691,9 @@
                 // Fallback for CORS
                 const fsEl = document.getElementById('music-fullscreen');
                 if (fsEl) {
-                    fsEl.style.setProperty('--fs-accent-1', 'rgba(255, 170, 0, 0.3)');
-                    fsEl.style.setProperty('--fs-accent-2', 'rgba(138, 43, 226, 0.3)');
-                    fsEl.style.setProperty('--fs-accent-3', 'rgba(0, 255, 200, 0.2)');
+                    fsEl.style.setProperty('--fs-accent-1', 'rgba(255, 170, 0, 0.75)');
+                    fsEl.style.setProperty('--fs-accent-2', 'rgba(138, 43, 226, 0.65)');
+                    fsEl.style.setProperty('--fs-accent-3', 'rgba(0, 255, 200, 0.55)');
                 }
             }
         }
