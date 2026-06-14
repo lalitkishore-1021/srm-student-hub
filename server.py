@@ -343,7 +343,7 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
                 
                 if 'sessions-reminder' in current_url.lower() or 'terminate' in content_lower or 'session' in content_lower:
                     print(f"[{reg_no}] Zoho popup warning detected. URL: {current_url}")
-                    terminate_btn = find_in_frames('button, a, div, span, input', filter_text='terminate')
+                    terminate_btn = find_in_frames('button, a, input', filter_text='terminate')
                     if terminate_btn:
                         try:
                             print(f"[{reg_no}] Clicking terminate button...")
@@ -354,7 +354,7 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
                             print(f"[{reg_no}] Failed to click terminate: {e}")
                             
                     # If terminate fails or isn't there, try "Skip for now"
-                    skip_btn = find_in_frames('button, a, div, span', filter_text='skip')
+                    skip_btn = find_in_frames('button, a, input', filter_text='skip')
                     if skip_btn:
                         try:
                             print(f"[{reg_no}] Clicking skip button...")
@@ -544,7 +544,7 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
                 current_url = page.url
                 print(f"[{reg_no}] Post-login URL: {current_url}")
 
-                if 'accounts.zoho' not in current_url.lower() and 'signin' not in current_url.lower() and 'sessions-reminder' not in current_url.lower():
+                if 'accounts.zoho' not in current_url.lower() and 'signin' not in current_url.lower() and 'sessions-reminder' not in current_url.lower() and 'block-sessions' not in current_url.lower():
                     # URL check passed, but we need to verify the dashboard actually loaded
                     # Wait up to 15s for the SPA dashboard to render inside the page/frames
                     dashboard_confirmed = False
