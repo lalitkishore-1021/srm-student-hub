@@ -774,6 +774,10 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
                     idx_code = get_col_index(headers, "code")
                     idx_title = get_col_index(headers, "title", "name", "description", "desc", "subject")
                     
+                    idx_faculty = get_col_index(headers, "faculty")
+                    idx_slot = get_col_index(headers, "slot")
+                    idx_room = get_col_index(headers, "room")
+                    
                     # New UI has "attn %" or similar
                     idx_attn_perc = get_col_index(headers, "attn %", "attn", "attendance")
                     # Fallback for old UI
@@ -799,7 +803,10 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
                                         "courseTitle": f"{row[idx_code]} - {row[idx_title][:20]}",
                                         "attended": perc,
                                         "total": 100,
-                                        "credits": credit_val
+                                        "credits": credit_val,
+                                        "facultyName": row[idx_faculty].strip() if idx_faculty != -1 and len(row) > idx_faculty else "N/A",
+                                        "slot": row[idx_slot].strip() if idx_slot != -1 and len(row) > idx_slot else "N/A",
+                                        "roomNo": row[idx_room].strip() if idx_room != -1 and len(row) > idx_room else "N/A"
                                     })
                                 except: pass
                             elif idx_cond != -1 and idx_abs != -1 and len(row) > max(idx_cond, idx_abs):
@@ -811,7 +818,10 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
                                         "courseTitle": f"{row[idx_code]} - {row[idx_title][:20]}",
                                         "attended": max(0, cond - absent),
                                         "total": cond,
-                                        "credits": credit_val
+                                        "credits": credit_val,
+                                        "facultyName": row[idx_faculty].strip() if idx_faculty != -1 and len(row) > idx_faculty else "N/A",
+                                        "slot": row[idx_slot].strip() if idx_slot != -1 and len(row) > idx_slot else "N/A",
+                                        "roomNo": row[idx_room].strip() if idx_room != -1 and len(row) > idx_room else "N/A"
                                     })
                                 except: pass
                 except Exception as e:
