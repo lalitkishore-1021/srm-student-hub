@@ -45,7 +45,7 @@
 
     <!-- PWA Settings -->
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#ffaa00">
+    <meta name="theme-color" content="#08080c">
     <link rel="apple-touch-icon" href="images/app-icon.svg">
 
     <link
@@ -1648,28 +1648,61 @@
         .volume-slider { width: 80px; margin-right: 15px; cursor: pointer; accent-color: #1DB954; }
         
         /* Fullscreen Player */
-        .music-fullscreen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 3000; background: #000; display: none; flex-direction: column; padding: 30px; padding-top: max(30px, env(safe-area-inset-top)); animation: slideUp 0.3s ease forwards; overflow: hidden; justify-content: center; align-items: center; }
-        .fs-bg-blur { position: absolute; top: -10%; left: -10%; width: 120%; height: 120%; object-fit: cover; filter: blur(80px) brightness(0.3); z-index: -2; transition: all 1s ease; opacity: 0.7; }
-        .fs-bg-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; background: radial-gradient(circle at 0% 0%, rgba(255, 170, 0, 0.25) 0%, transparent 40%), radial-gradient(circle at 100% 100%, rgba(138, 43, 226, 0.25) 0%, transparent 40%), radial-gradient(circle at 50% 50%, rgba(0, 255, 200, 0.15) 0%, transparent 50%); background-size: 200% 200%; animation: pulseBg 15s infinite alternate ease-in-out; }
-        .fs-glass-panel { width: calc(100% - 40px); box-sizing: border-box; max-width: 500px; background: rgba(20, 20, 25, 0.5); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 24px; padding: 20px; box-shadow: 0 30px 60px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.1); display: flex; flex-direction: column; align-items: center; z-index: 10; margin-top: 10px; }
+        .music-fullscreen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 3000; background: #08080c; display: none; flex-direction: column; padding: 25px; padding-top: max(25px, env(safe-area-inset-top)); animation: slideUp 0.3s ease forwards; overflow: hidden; justify-content: center; align-items: center; }
+        .fs-bg-orbs-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: -2; overflow: hidden; pointer-events: none; }
+        .fs-orb { position: absolute; border-radius: 50%; filter: blur(90px); opacity: 0.45; transition: background 1.5s ease-in-out; }
+        .fs-orb-1 { width: 320px; height: 320px; background: var(--fs-accent-1, rgba(255, 170, 0, 0.3)); top: -40px; left: -40px; animation: drift1 25s infinite alternate ease-in-out; }
+        .fs-orb-2 { width: 370px; height: 370px; background: var(--fs-accent-2, rgba(138, 43, 226, 0.3)); bottom: -40px; right: -40px; animation: drift2 30s infinite alternate ease-in-out; }
+        .fs-orb-3 { width: 280px; height: 280px; background: var(--fs-accent-3, rgba(0, 255, 200, 0.2)); top: 38%; left: 25%; animation: drift3 22s infinite alternate ease-in-out; }
+        .fs-bg-blur { position: absolute; top: -10%; left: -10%; width: 120%; height: 120%; object-fit: cover; filter: blur(90px) brightness(0.22); z-index: -3; transition: all 1s ease; opacity: 0.6; }
+        .fs-bg-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; background: linear-gradient(180deg, rgba(10, 10, 15, 0.2) 0%, rgba(10, 10, 15, 0.7) 100%); }
+        .fs-glass-panel { width: calc(100% - 10px); box-sizing: border-box; max-width: 500px; background: rgba(22, 22, 28, 0.45); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 30px; padding: 25px 20px 20px 20px; box-shadow: 0 30px 60px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.06); display: flex; flex-direction: column; align-items: center; z-index: 10; margin-top: 5px; margin-bottom: 15px; }
 
-        .fs-header { width: 100%; box-sizing: border-box; max-width: 500px; display: flex; justify-content: space-between; align-items: center; color: rgba(255,255,255,0.8); font-weight: 600; font-size: 0.9rem; letter-spacing: 2px; text-transform: uppercase; z-index: 10; position: absolute; top: max(30px, env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); padding: 0 20px; }
-        .fs-close { background: rgba(255,255,255,0.1); border: none; color: #fff; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; backdrop-filter: blur(10px); transition: background 0.2s; }
-        .fs-close:hover { background: rgba(255,255,255,0.2); }
-        .fs-cover-container { width: 100%; max-width: 320px; aspect-ratio: 1/1; display: flex; align-items: center; justify-content: center; z-index: 10; position: relative; margin-top: 50px; margin-bottom: 5px; }
-        .fs-cover { width: 100%; height: 100%; object-fit: cover; border-radius: 16px; box-shadow: 0 25px 50px rgba(0,0,0,0.6); transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease; }
+        .fs-header { width: 100%; box-sizing: border-box; max-width: 500px; display: flex; justify-content: space-between; align-items: center; color: rgba(255,255,255,0.85); font-weight: 600; font-size: 0.85rem; letter-spacing: 2px; text-transform: uppercase; z-index: 10; position: absolute; top: max(32px, env(safe-area-inset-top) + 12px); left: 50%; transform: translateX(-50%); padding: 0 24px; }
+        .fs-close { background: rgba(255,255,255,0.1); border: none; color: #fff; width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; backdrop-filter: blur(10px); transition: background 0.2s, transform 0.2s; }
+        .fs-close:hover { background: rgba(255,255,255,0.2); transform: scale(1.05); }
+        .fs-cover-container { width: 78vw; max-width: 330px; aspect-ratio: 1/1; display: flex; align-items: center; justify-content: center; z-index: 10; position: relative; margin-top: clamp(65px, 8vh, 90px); margin-bottom: clamp(15px, 3vh, 30px); }
+        .fs-cover { width: 100%; height: 100%; object-fit: cover; border-radius: 20px; box-shadow: 0 20px 45px rgba(0,0,0,0.55); transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease; }
         .fs-cover.swipe-left { transform: translateX(-50px) scale(0.9); opacity: 0; }
         .fs-cover.swipe-right { transform: translateX(50px) scale(0.9); opacity: 0; }
-        .fs-info { margin-bottom: 25px; text-align: center; width: 100%; z-index: 10; position: relative; }
+        .fs-info { margin-bottom: 20px; text-align: left; width: 100%; z-index: 10; position: relative; padding: 0 10px; }
         .fs-title { color: #fff; font-size: 1.6rem; font-weight: 700; margin: 0 0 5px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-shadow: 0 2px 10px rgba(0,0,0,0.3); }
-        .fs-artist { color: rgba(255,255,255,0.7); font-size: 1.05rem; margin: 0; font-weight: 500; }
-        .fs-progress-container { width: 100%; margin: 0 auto 25px auto; display: flex; flex-direction: column; gap: 10px; font-size: 0.8rem; color: rgba(255,255,255,0.6); z-index: 10; position: relative; font-weight: 500; }
-        .fs-progress-bar { width: 100%; height: 6px; background: rgba(255, 255, 255, 0.1); border-radius: 5px; cursor: pointer; position: relative; overflow: hidden; }
-        .fs-progress-fill { height: 100%; background: #fff; border-radius: 5px; width: 0%; pointer-events: none; transition: width 0.1s linear; box-shadow: 0 0 10px rgba(255,255,255,0.5); }
-        .fs-time-row { display: flex; justify-content: space-between; padding: 0 5px; }
-        .fs-controls { display: flex; justify-content: space-between; align-items: center; width: 100%; padding: 0 10px; z-index: 10; position: relative; }
-        .fs-play-btn { width: 64px; height: 64px; border-radius: 50%; background: #fff; color: #000; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); box-shadow: 0 10px 20px rgba(0,0,0,0.2); }
-        .fs-play-btn:hover { transform: scale(1.1); }
+        .fs-artist { color: rgba(255,255,255,0.65); font-size: 1.05rem; margin: 0; font-weight: 500; }
+        .fs-progress-container { width: 100%; margin: 0 auto 20px auto; display: flex; flex-direction: column; gap: 8px; font-size: 0.8rem; color: rgba(255,255,255,0.6); z-index: 10; position: relative; font-weight: 500; padding: 0 5px; }
+        .fs-progress-bar { width: 100%; height: 6px; background: rgba(255, 255, 255, 0.15); border-radius: 5px; cursor: pointer; position: relative; }
+        .fs-progress-fill { height: 100%; background: #fff; border-radius: 5px; width: 0%; pointer-events: none; position: relative; box-shadow: 0 0 10px rgba(255,255,255,0.5); }
+        .fs-progress-fill::after { content: ''; position: absolute; right: -6px; top: 50%; transform: translateY(-50%); width: 12px; height: 12px; background: #fff; border-radius: 50%; box-shadow: 0 2px 6px rgba(0,0,0,0.5); pointer-events: none; }
+        .fs-time-row { display: flex; justify-content: space-between; padding: 0 2px; margin-top: 4px; }
+        .fs-controls { display: flex; justify-content: space-between; align-items: center; width: 100%; padding: 0 5px; z-index: 10; position: relative; }
+        .fs-play-btn { width: 68px; height: 68px; border-radius: 50%; background: #fff; color: #000; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
+        .fs-play-btn:hover { transform: scale(1.08); }
+        
+        .fs-utility-row { display: flex; justify-content: space-between; align-items: center; width: 100%; max-width: 420px; margin-top: 25px; padding: 0 10px; z-index: 10; position: relative; }
+        .fs-util-btn { background: none; border: none; color: rgba(255,255,255,0.55); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: color 0.2s, transform 0.2s; padding: 8px; }
+        .fs-util-btn:hover { color: #fff; transform: scale(1.1); }
+        
+        @keyframes drift1 {
+            0% { transform: translate(0, 0) scale(1); }
+            50% { transform: translate(110px, 70px) scale(1.15); }
+            100% { transform: translate(30px, 140px) scale(0.95); }
+        }
+        @keyframes drift2 {
+            0% { transform: translate(0, 0) scale(1.1); }
+            50% { transform: translate(-90px, -110px) scale(0.9); }
+            100% { transform: translate(-20px, 30px) scale(1.1); }
+        }
+        @keyframes drift3 {
+            0% { transform: translate(0, 0) scale(0.95); }
+            50% { transform: translate(-50px, 90px) scale(1.08); }
+            100% { transform: translate(70px, -30px) scale(1.0); }
+        }
+        
+        @keyframes fadeInOut {
+            0% { opacity: 0; transform: translate(-50%, 15px); }
+            10% { opacity: 1; transform: translate(-50%, 0); }
+            90% { opacity: 1; transform: translate(-50%, 0); }
+            100% { opacity: 0; transform: translate(-50%, -15px); }
+        }
         
         @keyframes pulseBg {
             0% { background-position: 0% 0%; }
@@ -2754,6 +2787,11 @@
 
     <!-- FULLSCREEN MUSIC PLAYER -->
     <div id="music-fullscreen" class="music-fullscreen">
+        <div class="fs-bg-orbs-container">
+            <div class="fs-orb fs-orb-1"></div>
+            <div class="fs-orb fs-orb-2"></div>
+            <div class="fs-orb fs-orb-3"></div>
+        </div>
         <img id="fs-bg-blur" class="fs-bg-blur" src="">
         <div class="fs-bg-overlay"></div>
         <div class="fs-header">
@@ -2779,13 +2817,20 @@
                 </div>
             </div>
             <div class="fs-controls">
-                <button class="ctrl-btn" id="repeat-btn-fs" onclick="toggleRepeat()"><svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z"/></svg></button>
+                <button class="ctrl-btn" id="shuffle-btn-fs" onclick="toggleShuffle()"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M10.59 9.17L5.41 4 4 5.41l5.17 5.17 1.42-1.41zM14.5 4l2.04 2.04L4 18.59 5.41 20 17.96 7.46 20 9.5V4h-5.5zm.33 9.41l-1.41 1.41 3.13 3.13L14.5 20H20v-5.5l-2.04 2.04-3.13-3.13z"/></svg></button>
                 <button class="ctrl-btn" onclick="prevMusicTrack()"><svg viewBox="0 0 24 24" width="36" height="36" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg></button>
                 <button class="fs-play-btn" id="fs-play-btn" onclick="toggleMusicPlay()">
                     <svg viewBox="0 0 24 24" width="36" height="36" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
                 </button>
                 <button class="ctrl-btn" onclick="nextMusicTrack()"><svg viewBox="0 0 24 24" width="36" height="36" fill="currentColor"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg></button>
-                <button class="ctrl-btn" style="opacity:0; pointer-events:none;"><svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M0 0h24v24H0z" fill="none"/></svg></button>
+                <button class="ctrl-btn" id="repeat-btn-fs" onclick="toggleRepeat()"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z"/></svg></button>
+            </div>
+            <!-- Bottom utility buttons -->
+            <div class="fs-utility-row">
+                <button class="fs-util-btn" onclick="shareCurrentTrack()" title="Share"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z"/></svg></button>
+                <button class="fs-util-btn" onclick="togglePlaylistQueue()" title="Queue"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M4 6h16v2H4zm0 5h16v2H4zm0 5h10v2H4zm14.5-2.5v-3H17v3h-3v1.5h3v3h1.5v-3h3v-1.5z"/></svg></button>
+                <button class="fs-util-btn" onclick="showDevices()" title="Connect to device"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M4 6h16v10H4zm16 12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2H0v2h24v-2h-4z"/></svg></button>
+                <button class="fs-util-btn" onclick="toggleLyrics()" title="Lyrics"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M21.99 4c0-1.1-.89-2-1.99-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h14l4 4-.01-18zM18 14H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/></svg></button>
             </div>
         </div>
     </div>
@@ -5420,7 +5465,17 @@
         }
         
         let isRepeat = false;
+        let isShuffle = false;
         let nextTrackCache = { index: -1, audio_data: null };
+
+        document.addEventListener("DOMContentLoaded", () => {
+            const fsCover = document.getElementById('fs-cover');
+            if (fsCover) {
+                fsCover.addEventListener('load', function() {
+                    extractAlbumColors(this);
+                });
+            }
+        });
 
         async function preloadNextMusicTrack(index) {
             if (index < 0 || index >= currentPlaylist.length) return;
@@ -5552,21 +5607,51 @@
         }
         
         function nextMusicTrack() {
-            if (currentTrackIndex < currentPlaylist.length - 1) {
-                playMusicTrack(currentTrackIndex + 1);
-            } else if (currentPlaylist.length > 0) {
-                playMusicTrack(0);
+            if (isShuffle && currentPlaylist.length > 1) {
+                let randomIndex = currentTrackIndex;
+                while (randomIndex === currentTrackIndex) {
+                    randomIndex = Math.floor(Math.random() * currentPlaylist.length);
+                }
+                playMusicTrack(randomIndex);
+            } else {
+                if (currentTrackIndex < currentPlaylist.length - 1) {
+                    playMusicTrack(currentTrackIndex + 1);
+                } else if (currentPlaylist.length > 0) {
+                    playMusicTrack(0);
+                }
             }
         }
         
         function prevMusicTrack() {
-            if (currentTrackIndex > 0) { playMusicTrack(currentTrackIndex - 1); }
+            if (isShuffle && currentPlaylist.length > 1) {
+                let randomIndex = currentTrackIndex;
+                while (randomIndex === currentTrackIndex) {
+                    randomIndex = Math.floor(Math.random() * currentPlaylist.length);
+                }
+                playMusicTrack(randomIndex);
+            } else {
+                if (currentTrackIndex > 0) {
+                    playMusicTrack(currentTrackIndex - 1);
+                } else if (currentPlaylist.length > 0) {
+                    playMusicTrack(currentPlaylist.length - 1);
+                }
+            }
         }
         
         function toggleRepeat() {
             isRepeat = !isRepeat;
             document.getElementById('repeat-btn-desktop').style.color = isRepeat ? '#1DB954' : '#fff';
-            document.getElementById('repeat-btn-fs').style.color = isRepeat ? '#1DB954' : '#fff';
+            if (document.getElementById('repeat-btn-fs')) {
+                document.getElementById('repeat-btn-fs').style.color = isRepeat ? '#1DB954' : '#fff';
+            }
+        }
+
+        function toggleShuffle() {
+            isShuffle = !isShuffle;
+            const shuffleBtn = document.getElementById('shuffle-btn-fs');
+            if (shuffleBtn) {
+                shuffleBtn.style.color = isShuffle ? '#1DB954' : '#fff';
+            }
         }
         
         function handleMusicEnded() {
@@ -5577,6 +5662,81 @@
             } else {
                 nextMusicTrack();
             }
+        }
+
+        function extractAlbumColors(imgEl) {
+            try {
+                const canvas = document.createElement('canvas');
+                canvas.width = 5;
+                canvas.height = 5;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(imgEl, 0, 0, 5, 5);
+                const imgData = ctx.getImageData(0, 0, 5, 5).data;
+                
+                const r1 = imgData[0], g1 = imgData[1], b1 = imgData[2];
+                const r2 = imgData[50], g2 = imgData[51], b2 = imgData[52];
+                const r3 = imgData[96], g3 = imgData[97], b3 = imgData[98];
+                
+                const color1 = `rgba(${r1}, ${g1}, ${b1}, 0.35)`;
+                const color2 = `rgba(${r2}, ${g2}, ${b2}, 0.35)`;
+                const color3 = `rgba(${r3}, ${g3}, ${b3}, 0.25)`;
+                
+                const fsEl = document.getElementById('music-fullscreen');
+                if (fsEl) {
+                    fsEl.style.setProperty('--fs-accent-1', color1);
+                    fsEl.style.setProperty('--fs-accent-2', color2);
+                    fsEl.style.setProperty('--fs-accent-3', color3);
+                }
+            } catch (e) {
+                // Fallback for CORS
+                const fsEl = document.getElementById('music-fullscreen');
+                if (fsEl) {
+                    fsEl.style.setProperty('--fs-accent-1', 'rgba(255, 170, 0, 0.3)');
+                    fsEl.style.setProperty('--fs-accent-2', 'rgba(138, 43, 226, 0.3)');
+                    fsEl.style.setProperty('--fs-accent-3', 'rgba(0, 255, 200, 0.2)');
+                }
+            }
+        }
+
+        function shareCurrentTrack() {
+            const track = currentPlaylist[currentTrackIndex];
+            if (!track) return;
+            const text = `Listening to "${track.title}" by ${track.artist} on SRM Student Hub!`;
+            if (navigator.share) {
+                navigator.share({
+                    title: 'SRM Student Hub - Music',
+                    text: text,
+                    url: window.location.href
+                }).catch(() => {});
+            } else {
+                navigator.clipboard.writeText(text);
+                showNotification("Link copied to clipboard!");
+            }
+        }
+
+        function togglePlaylistQueue() {
+            closeFullscreenPlayer();
+            const musicSection = document.getElementById('music-section') || document.querySelector('.music-lounge-container');
+            if (musicSection) {
+                musicSection.scrollIntoView({ behavior: 'smooth' });
+                showNotification("Viewing Music Playlist");
+            }
+        }
+
+        function showDevices() {
+            showNotification("Playback Device: System Audio Output");
+        }
+
+        function toggleLyrics() {
+            showNotification("Lyrics feature coming soon!");
+        }
+
+        function showNotification(msg) {
+            let toast = document.createElement('div');
+            toast.innerText = msg;
+            toast.style.cssText = `position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.85); color: #fff; padding: 12px 24px; border-radius: 30px; font-size: 0.9rem; z-index: 9999; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); font-family: sans-serif; box-shadow: 0 10px 30px rgba(0,0,0,0.3); pointer-events: none; animation: fadeInOut 3s forwards;`;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
         }
         
         function formatTime(seconds) {
@@ -5625,7 +5785,24 @@
             const track = currentPlaylist[currentTrackIndex];
             document.getElementById('fs-title').innerText = track.title;
             document.getElementById('fs-artist').innerText = track.artist;
-            document.getElementById('fs-cover').src = track.cover_data || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMzMzIi8+PC9zdmc+';
+            
+            const coverSrc = track.cover_data || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMzMzIi8+PC9zdmc+';
+            const fsCover = document.getElementById('fs-cover');
+            fsCover.src = coverSrc;
+            
+            // Sync repeat and shuffle buttons style
+            if (document.getElementById('repeat-btn-fs')) {
+                document.getElementById('repeat-btn-fs').style.color = isRepeat ? '#1DB954' : '#fff';
+            }
+            const shuffleBtn = document.getElementById('shuffle-btn-fs');
+            if (shuffleBtn) {
+                shuffleBtn.style.color = isShuffle ? '#1DB954' : '#fff';
+            }
+            
+            // Force extraction immediately if already loaded
+            if (fsCover.complete) {
+                extractAlbumColors(fsCover);
+            }
             
             document.getElementById('music-fullscreen').style.display = 'flex';
         }
