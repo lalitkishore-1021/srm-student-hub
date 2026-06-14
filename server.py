@@ -1943,7 +1943,7 @@ def call_gemini(prompt, file_base64=None, mime_type=None):
     parts = [{"text": prompt}]
     if file_base64 and mime_type:
         b64_data = file_base64.split(',')[1] if ',' in file_base64 else file_base64
-        parts.append({"inline_data": {"mime_type": mime_type, "data": b64_data}})
+        parts.append({"inlineData": {"mimeType": mime_type, "data": b64_data}})
         
     payload = {"contents": [{"parts": parts}]}
     try:
@@ -1956,6 +1956,23 @@ def call_gemini(prompt, file_base64=None, mime_type=None):
         return "Sorry, I could not generate a response."
     except Exception as e:
         return f"Error connecting to AI service: {e}"
+
+@app.route('/api/music/lyrics', methods=['GET'])
+def get_lyrics():
+    artist = request.args.get('artist')
+    title = request.args.get('title')
+    if not artist or not title:
+        return jsonify({'success': False, 'error': 'Missing parameters'})
+    try:
+        clean_title = re.sub(r'\(.*?\)', '', title).strip()
+        url = f"https://api.lyrics.ovh/v1/{urllib.parse.quote(artist)}/{urllib.parse.quote(clean_title)}"
+        resp = requests.get(url, timeout=5)
+        if resp.status_code == 200:
+            data = resp.json()
+            if 'lyrics' in data:
+                return jsonify({'success': True, 'lyrics': data['lyrics']})
+    except: pass
+    return jsonify({'success': False, 'error': 'Lyrics not found.'})
 
 @app.route('/api/ai/chat', methods=['POST'])
 def ai_chat():
