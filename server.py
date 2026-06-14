@@ -545,9 +545,55 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
                 print(f"[{reg_no}] Post-login URL: {current_url}")
 
                 if 'accounts.zoho' not in current_url.lower() and 'signin' not in current_url.lower() and 'sessions-reminder' not in current_url.lower():
-                    print(f"[{reg_no}] Login succeeded on attempt {login_attempt}!")
-                    login_success = True
-                    break
+                    # URL check passed, but we need to verify the dashboard actually loaded
+                    # Wait up to 15s for the SPA dashboard to render inside the page/frames
+                    dashboard_confirmed = False
+                    for dash_wait in range(15):
+                        # Check all frames for dashboard indicators
+                        for frame in page.frames:
+                            try:
+                                frame_text = frame.evaluate("document.body ? document.body.innerText : ''")
+                                frame_lower = frame_text.lower()
+                                # Look for dashboard indicators - menu items, welcome text, profile elements
+                                if any(indicator in frame_lower for indicator in ['my time table', 'my attendance', 'welcome', 'day order', 'home page', 'course registered']):
+                                    dashboard_confirmed = True
+                                    print(f"[{reg_no}] Dashboard content confirmed in frame (wait {dash_wait}s)!")
+                                    break
+                            except: pass
+                        if dashboard_confirmed:
+                            break
+                        # Also check for dashboard DOM elements
+                        dashboard_els = find_in_frames('#Welcome, #ul-main-menu, .tab-title, [class*="profile"], .user-name')
+                        if dashboard_els:
+                            dashboard_confirmed = True
+                            print(f"[{reg_no}] Dashboard element confirmed (wait {dash_wait}s)!")
+                            break
+                        page.wait_for_timeout(1000)
+                    
+                    if dashboard_confirmed:
+                        print(f"[{reg_no}] Login succeeded on attempt {login_attempt}!")
+                        login_success = True
+                        break
+                    else:
+                        # Check if we're actually still on login page
+                        still_login = False
+                        for frame in page.frames:
+                            try:
+                                ft = frame.evaluate("document.body ? document.body.innerText : ''")
+                                if 'sign in' in ft.lower() and 'next' in ft.lower():
+                                    still_login = True
+                                    break
+                            except: pass
+                        if still_login:
+                            print(f"[{reg_no}] WARNING: URL looks OK but still on login page! Retrying...")
+                            # Re-navigate to academia to try again
+                            page.goto("https://academia.srmist.edu.in/", wait_until="domcontentloaded", timeout=30000)
+                            page.wait_for_timeout(2000)
+                            continue
+                        else:
+                            print(f"[{reg_no}] Login likely succeeded (no login page detected). Proceeding cautiously.")
+                            login_success = True
+                            break
 
             if not login_success:
                 current_url = page.url
@@ -569,22 +615,37 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
                     out_queue.put({'success': False, 'error': 'Login failed - still on login page. Check credentials.'})
                 return
 
+            # Wait for the SPA to fully render before scanning links
+            # The dashboard needs time to load all menu items in the sidebar
+            print(f"[{reg_no}] Waiting for SPA dashboard to fully render...")
+            page.wait_for_timeout(3000)
+            
             # DIAGNOSTIC: Print all available sidebar links
             unique_links = []
             try:
                 print(f"[{reg_no}] DIAGNOSTIC: Scanning for available menu pages...")
-                page.wait_for_timeout(500)
-                links = page.evaluate("""() => {
-                    return Array.from(document.querySelectorAll('a')).map(a => a.href).filter(h => h.includes('#Page:'));
-                }""")
-                for f in page.frames:
+                # Try multiple times to find links (SPA may still be loading)
+                for scan_attempt in range(5):
+                    links = []
                     try:
-                        frame_links = f.evaluate("""() => {
+                        links = page.evaluate("""() => {
                             return Array.from(document.querySelectorAll('a')).map(a => a.href).filter(h => h.includes('#Page:'));
                         }""")
-                        if frame_links: links.extend(frame_links)
                     except: pass
-                unique_links = list(set(links))
+                    for f in page.frames:
+                        try:
+                            frame_links = f.evaluate("""() => {
+                                return Array.from(document.querySelectorAll('a')).map(a => a.href).filter(h => h.includes('#Page:'));
+                            }""")
+                            if frame_links: links.extend(frame_links)
+                        except: pass
+                    unique_links = list(set(links))
+                    if unique_links:
+                        print(f"[{reg_no}] Found {len(unique_links)} page links on scan attempt {scan_attempt+1}")
+                        break
+                    print(f"[{reg_no}] Scan attempt {scan_attempt+1}: no links yet, waiting...")
+                    page.wait_for_timeout(2000)
+                
                 print(f"[{reg_no}] DIAGNOSTIC Available Pages: {unique_links}")
                 
                 if not unique_links:
@@ -664,6 +725,53 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
                     return i
             return -1
 
+        def navigate_hash(hash_url):
+            """Navigate to a hash URL (#Page:...) using JavaScript to preserve the session.
+            page.goto() causes a full page reload which destroys the Zoho auth session.
+            This function uses location.hash to navigate within the SPA."""
+            hash_part = hash_url.split('#', 1)[1] if '#' in hash_url else hash_url
+            print(f"[{reg_no}] Navigating to #{hash_part} via JS hash change...")
+            try:
+                # Use JavaScript to change the hash - this triggers the SPA router
+                # without reloading the page or losing the session
+                page.evaluate(f"window.location.hash = '#{hash_part}'")
+                page.wait_for_timeout(2000)  # Give the SPA time to react and load content
+                
+                # Verify we're still authenticated (session not lost)
+                for frame in page.frames:
+                    try:
+                        ft = frame.evaluate("document.body ? document.body.innerText : ''")
+                        if 'sign in' in ft.lower() and 'forgot password' in ft.lower():
+                            print(f"[{reg_no}] WARNING: Session lost after hash nav! Attempting recovery...")
+                            # Try clicking the menu link directly instead
+                            link = find_in_frames(f'a[href*="{hash_part}"]')
+                            if link:
+                                link.click(force=True, timeout=3000)
+                                page.wait_for_timeout(2000)
+                            return False
+                    except: pass
+                return True
+            except Exception as e:
+                print(f"[{reg_no}] Hash navigation error: {e}")
+                # Fallback: try clicking the menu link
+                try:
+                    link = find_in_frames(f'a[href*="{hash_part}"]')
+                    if link:
+                        link.click(force=True, timeout=3000)
+                        page.wait_for_timeout(2000)
+                        return True
+                except: pass
+                return False
+
+        def navigate_to_page(full_url):
+            """Navigate to a page using hash navigation first, falling back to link click."""
+            hash_part = full_url.split('#', 1)[1] if '#' in full_url else ''
+            if hash_part:
+                return navigate_hash(full_url)
+            else:
+                page.goto(full_url, wait_until="domcontentloaded", timeout=15000)
+                return True
+
         # --- ATTENDANCE & MARKS ---
         print(f"[{reg_no}] 5. Scoping Attendance...")
         
@@ -683,7 +791,7 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
         raw_tables = []
         for att_url in att_urls:
             print(f"[{reg_no}] Trying attendance URL: {att_url}")
-            page.goto(att_url)
+            navigate_to_page(att_url)
             raw_tables = wait_for_data_tables(["attn", "attendance", "conducted", "absent", "hour", "code"], timeout=5000)
             if raw_tables and len(raw_tables) > 0:
                 # Check if any table actually has attendance-like data
@@ -702,8 +810,8 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
         # If still no data, try a reload on the primary URL
         if not raw_tables or not any(k in str(c).lower() for k in ["attn", "attendance", "conducted", "absent"] for t in raw_tables for row in t for c in row):
             print(f"[{reg_no}] Attendance data not found on any URL. Trying reload...")
-            page.goto(att_urls[0])
-            page.reload(wait_until="domcontentloaded")
+            navigate_to_page(att_urls[0])
+            page.wait_for_timeout(2000)
             raw_tables = wait_for_data_tables(["attn", "attendance", "conducted", "absent", "code"], timeout=5000)
         
         # Log what we found
@@ -922,15 +1030,15 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
         slot_tables = []
         for url in timetable_urls:
             print(f"[{reg_no}] Trying timetable URL: {url}")
-            page.goto(url)
+            navigate_to_page(url)
             slot_tables = wait_for_data_tables(["slot", "course", "code"], timeout=5000)
             if any(k in str(c).lower() for k in ["slot", "course", "code"] for t in slot_tables for row in t for c in row):
                 print(f"[{reg_no}] Successfully loaded timetable from {url}")
                 break
         else:
             print(f"[{reg_no}] Warning: No slot tables found with primary URLs. Attempting page reload on primary...")
-            page.goto(timetable_urls[0])
-            page.reload(wait_until="domcontentloaded")
+            navigate_to_page(timetable_urls[0])
+            page.wait_for_timeout(2000)
             slot_tables = wait_for_data_tables(["slot", "course", "code"], timeout=8000)
             if not slot_tables:
                 try:
@@ -1091,7 +1199,7 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
         master_tables = []
         for url in valid_master_urls:
             print(f"[{reg_no}] Trying unified timetable URL: {url}")
-            page.goto(url)
+            navigate_to_page(url)
             master_tables = wait_for_data_tables(["day 1", "day order", "timings", "time"], timeout=8000)
             if any("day 1" in str(c).lower() for t in master_tables for row in t for c in row):
                 print(f"[{reg_no}] Successfully loaded unified timetable from {url}")
@@ -1099,8 +1207,8 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
         else:
             print(f"[{reg_no}] Warning: No unified timetable tables found. Reloading primary...")
             url = f"https://academia.srmist.edu.in/#Page:Unified_Time_Table_{joining_year}_Batch_{batch}"
-            page.goto(url)
-            page.reload(wait_until="networkidle")
+            navigate_to_page(url)
+            page.wait_for_timeout(3000)
             master_tables = wait_for_data_tables(["day 1", "day order", "timings", "time"], timeout=15000)
         
         print(f"[{reg_no}] Found {len(master_tables)} master tables")
