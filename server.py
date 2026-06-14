@@ -1939,7 +1939,7 @@ GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY', '')
 def call_gemini(prompt, file_base64=None, mime_type=None):
     if not GEMINI_API_KEY:
         return "System Notice: The AI Chatbot is currently unavailable because the GEMINI_API_KEY is not configured on the server."
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key={GEMINI_API_KEY}"
     parts = [{"text": prompt}]
     if file_base64 and mime_type:
         b64_data = file_base64.split(',')[1] if ',' in file_base64 else file_base64
@@ -1965,12 +1965,15 @@ def get_lyrics():
         return jsonify({'success': False, 'error': 'Missing parameters'})
     try:
         clean_title = re.sub(r'\(.*?\)', '', title).strip()
-        url = f"https://api.lyrics.ovh/v1/{urllib.parse.quote(artist)}/{urllib.parse.quote(clean_title)}"
+        query = f"{clean_title} {artist}"
+        url = f"https://lrclib.net/api/search?q={urllib.parse.quote(query)}"
         resp = requests.get(url, timeout=5)
         if resp.status_code == 200:
             data = resp.json()
-            if 'lyrics' in data:
-                return jsonify({'success': True, 'lyrics': data['lyrics']})
+            if isinstance(data, list) and len(data) > 0:
+                lyrics = data[0].get('plainLyrics') or data[0].get('syncedLyrics')
+                if lyrics:
+                    return jsonify({'success': True, 'lyrics': lyrics})
     except: pass
     return jsonify({'success': False, 'error': 'Lyrics not found.'})
 
