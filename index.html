@@ -3017,14 +3017,7 @@
         }
 
         function isSemesterVacation(dateStr) {
-            let d = new Date(dateStr);
-            let summerVacationStart = new Date("2026-05-07");
-            let summerVacationEnd = new Date("2026-07-19");
-            let winterVacationStart = new Date("2026-12-05");
-            let winterVacationEnd = new Date("2027-01-10");
-            
-            return (d >= summerVacationStart && d <= summerVacationEnd) || 
-                   (d >= winterVacationStart && d <= winterVacationEnd);
+            return false;
         }
 
         // ================= INITIALIZATION =================
@@ -3543,65 +3536,20 @@
                     marginLabel = 'Need';
                 }
 
-                let faculty = sub.facultyName ? `<p style="margin: 5px 0 0 0; font-size: 0.8rem; color: rgba(255,255,255,0.7);">👨‍🏫 ${sub.facultyName}</p>` : '';
-                let slot = sub.slot && sub.slot !== "N/A" ? `<span style="background: rgba(255,170,0,0.15); color: var(--primary); padding: 3px 8px; border-radius: 6px; font-size: 0.75rem; margin-right: 8px; font-weight: 600;">📍 Slot ${sub.slot}</span>` : '';
-                let room = sub.roomNo && sub.roomNo !== "N/A" ? `<span style="background: rgba(0,204,102,0.15); color: var(--success); padding: 3px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 600;">🚪 Room ${sub.roomNo}</span>` : '';
-                let tags = (slot || room) ? `<div style="margin-top: 8px; margin-bottom: 5px;">${slot}${room}</div>` : '';
-
-                let marksHtml = '';
-                try {
-                    const marksData = JSON.parse(localStorage.getItem('squadMarks') || '[]');
-                    const match = marksData.find(m => {
-                        let c1 = m.courseCode || '';
-                        let c2 = sub.courseCode || (name.includes('-') ? name.split('-')[0].trim() : name);
-                        return c1 && c2 && (c1.includes(c2) || c2.includes(c1));
-                    });
-                    
-                    if (match) {
-                        let perfString = match['Test Performance'] || match.performance || match.marks || "";
-                        if (!perfString && typeof match === 'object') {
-                            perfString = Object.values(match).filter(v => typeof v === 'string').join(' | ');
-                        }
-                        const regex = /([A-Za-z0-9-]+)\/([0-9.]+)\s*\|\s*([0-9.]+)/g;
-                        let testMatch;
-                        let tests = [];
-                        while ((testMatch = regex.exec(perfString)) !== null) {
-                            tests.push(`<span style="background: rgba(255,255,255,0.1); padding: 3px 8px; border-radius: 6px; font-size: 0.75rem; color: #ddd; margin-right: 5px; display: inline-block; margin-bottom: 5px;"><strong>${testMatch[1]}</strong>: ${testMatch[3]}/${testMatch[2]}</span>`);
-                        }
-                        if (tests.length > 0) {
-                            marksHtml = `<div style="margin-top: 10px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px;">
-                                <div style="font-size: 0.75rem; color: rgba(255,255,255,0.5); text-transform: uppercase; margin-bottom: 5px; letter-spacing: 1px;">Internal Marks Detail</div>
-                                ${tests.join('')}
-                            </div>`;
-                        }
-                    }
-                } catch(e) {}
-
                 list.innerHTML += `
-                    <div class="image-card fade-in-up" style="display: flex; flex-direction: column; padding: 20px; margin-bottom: 15px; transition: all 0.3s; ${cardStyleModifier}">
-                        <div style="display: flex; align-items: flex-start; justify-content: space-between;">
-                            <div style="flex: 1; padding-right: 15px;">
-                                <h3 style="margin: 0; color: #fff; font-family: 'Montserrat', sans-serif; font-size: 1.05rem; line-height: 1.3;">${name}</h3>
-                                ${faculty}
-                                ${tags}
-                                <div class="stat-text" style="color: #fff; font-weight: bold; margin-top: 10px;">${attended} / ${total} Attended</div>
-                                <div class="simulator-controls" style="margin-top: 15px; display: flex; gap: 8px;">
-                                    <button class="action-btn" onclick="simulateAttendance('${safeId}', 'attend')" style="padding: 6px 12px; font-size: 0.8rem; background: rgba(0, 204, 102, 0.1); color: var(--success); border: 1px solid rgba(0, 204, 102, 0.2);">Attend</button>
-                                    <button class="action-btn" onclick="simulateAttendance('${safeId}', 'bunk')" style="padding: 6px 12px; font-size: 0.8rem; background: rgba(255, 68, 68, 0.1); color: var(--danger); border: 1px solid rgba(255, 68, 68, 0.2);">Bunk</button>
-                                    ${sim.attended > 0 || sim.bunked > 0 ? `<button class="action-btn" onclick="simulateAttendance('${safeId}', 'reset')" style="padding: 6px 12px; font-size: 0.8rem; background: rgba(255, 255, 255, 0.1); color: var(--text-sub);">Reset</button>` : ''}
-                                </div>
-                            </div>
-                            <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 80px;">
-                                <div class="circular-progress" style="background: conic-gradient(${barColor} ${percentage}%, rgba(255,255,255,0.1) 0); width: 65px; height: 65px; border-radius: 50%; display: flex; align-items: center; justify-content: center; position: relative;">
-                                    <div style="position: absolute; width: 55px; height: 55px; background: var(--bg-card); border-radius: 50%;"></div>
-                                    <span style="position: relative; font-weight: bold; font-size: 0.95rem; color: #fff;">${percentage}%</span>
-                                </div>
-                                <div style="margin-top: 10px; font-size: 0.8rem; color: var(--text-sub); text-align: center;">
-                                    ${marginLabel}: <strong style="color: ${isGood ? 'var(--success)' : 'var(--danger)'};">${marginValue}</strong>
-                                </div>
+                    <div class="image-card fade-in-up" style="display: flex; align-items: center; justify-content: space-between; padding: 20px; margin-bottom: 15px; transition: all 0.3s; ${cardStyleModifier}">
+                        <div style="flex: 1; padding-right: 15px;">
+                            <h3 style="margin: 0 0 10px 0; color: #fff; font-family: 'Montserrat', sans-serif; font-size: 1rem; line-height: 1.3;">${name}</h3>
+                            <div class="stat-text" style="color: #fff; font-weight: bold; margin-top: 10px;">${attended} / ${total} Attended</div>
+                            <div style="width: 100%; height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; overflow: hidden; margin-top: 10px;">
+                                <div style="width: ${percentage}%; height: 100%; background: ${barColor}; border-radius: 3px;"></div>
                             </div>
                         </div>
-                        ${marksHtml}
+                        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(0,0,0,0.3); border-radius: 12px; padding: 15px; border: 1px solid ${isGood ? 'rgba(0,204,102,0.3)' : 'rgba(255,68,68,0.3)'}; min-width: 80px; text-align: center;">
+                            <div style="font-size: 2rem; font-weight: 900; color: ${barColor}; line-height: 1;">${marginValue}</div>
+                            <div style="font-size: 0.75rem; color: ${barColor}; font-weight: 600; text-transform: uppercase; margin-top: 4px; margin-bottom: 10px; letter-spacing: 1px;">${marginLabel}</div>
+                            <div style="font-size: 1.3rem; font-family: 'Montserrat', sans-serif; font-weight: 900; color: ${barColor};">${percentage}%</div>
+                        </div>
                     </div>
                 `;
             });

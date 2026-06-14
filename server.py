@@ -765,6 +765,12 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
 
         def navigate_to_page(full_url):
             """Navigate to a page using hash navigation first, falling back to link click."""
+            current_url = page.url
+            if 'accounts.zoho' in current_url.lower() or 'block-sessions' in current_url.lower() or 'signin' in current_url.lower():
+                print(f"[{reg_no}] Currently on a redirect/warning page. Using goto instead of hash...")
+                page.goto(full_url, wait_until="domcontentloaded", timeout=15000)
+                return True
+                
             hash_part = full_url.split('#', 1)[1] if '#' in full_url else ''
             if hash_part:
                 return navigate_hash(full_url)
