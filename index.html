@@ -2794,7 +2794,7 @@
             </button>
             <button class="ctrl-btn" onclick="nextMusicTrack(); event.stopPropagation();" style="display: flex;"><svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg></button>
         </div>
-        <audio id="music-audio-element" style="display: none;" ontimeupdate="updateMusicProgress()" onended="handleMusicEnded()" onerror="handleMusicError()"></audio>
+        <audio id="music-audio-element" style="display: none;" ontimeupdate="updateMusicProgress()" onended="handleMusicEnded()"></audio>
     </div>
 
     <!-- FULLSCREEN MUSIC PLAYER -->
@@ -5505,9 +5505,9 @@
                         <div style="color:#fff; font-weight:600; font-size:0.95rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${t.title}</div>
                         <div style="color:var(--text-sub); font-size:0.8rem;">${t.artist}</div>
                     </div>
-                    <span style="color:var(--success); font-size:0.7rem; background:rgba(0,204,102,0.15); padding:3px 8px; border-radius:6px;">Offline</span>
-                    <button onclick="event.stopPropagation(); removeOfflineTrack('${t.id}')" style="background:none; border:none; color:rgba(255,68,68,0.7); cursor:pointer; font-size:1.1rem; padding:5px; display:flex; align-items:center; justify-content:center;" title="Remove download">
-                        <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                    <span style="color:var(--success); font-size:0.7rem; background:rgba(0,204,102,0.15); padding:3px 8px; border-radius:6px; margin-right:10px;">Offline</span>
+                    <button class="music-play-btn" style="background:linear-gradient(135deg, #1DB954, #12823b); color:#fff; border:none; border-radius:50%; width:35px; height:35px; display:flex; align-items:center; justify-content:center; cursor:pointer; flex-shrink:0;">
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
                     </button>
                 </div>`;
             });
@@ -5590,7 +5590,7 @@
                             <p class="music-artist">${p.artist}</p>
                             ${p.uploaded_by ? `<div style="font-size:0.7rem; color: rgba(255,255,255,0.4); margin-top: 5px;">Uploaded by ${p.uploaded_by}</div>` : ''}
                         </div>
-                        ${isOwner ? `<button onclick="event.stopPropagation(); deleteMusicTrack(${p.id})" style="background: rgba(255,68,68,0.15); border: 1px solid rgba(255,68,68,0.4); color: #ff4444; padding: 8px; border-radius: 8px; cursor: pointer; margin-right: 10px; display: flex; align-items: center; justify-content: center;"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg></button>` : ''}
+
                         <button class="music-play-btn"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></button>
                     </div>`;
                 }).join('');
@@ -5749,7 +5749,7 @@
 
             // Otherwise, fetch it (this might fail in background if user gesture expires)
             audioEl.pause();
-            audioEl.src = '';
+            audioEl.removeAttribute('src');
             isPlaying = false;
             document.getElementById('player-play-btn').innerHTML = '<div class="css-loader" style="width:15px;height:15px;border-width:2px;border-top-color:#000;"></div>';
             if(document.getElementById('mobile-play-btn')) document.getElementById('mobile-play-btn').innerHTML = '<div class="css-loader" style="width:15px;height:15px;border-width:2px;border-top-color:#fff;"></div>';
