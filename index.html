@@ -5477,13 +5477,13 @@
         async function updateDownloadBtnState(trackId) {
             const btn = document.getElementById('fs-download-btn');
             if (!btn) return;
-            const downloaded = await isTrackDownloaded(trackId);
+            const downloaded = await isTrackDownloaded(Number(trackId));
             if (downloaded) {
-                btn.innerHTML = '✅';
-                btn.title = 'Already Downloaded';
+                btn.innerHTML = '<svg viewBox="0 0 24 24" width="24" height="24" fill="#1DB954"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>';
+                btn.title = 'Saved to App';
             } else {
-                btn.innerHTML = '⬇️';
-                btn.title = 'Download';
+                btn.innerHTML = '<svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>';
+                btn.title = 'Save Offline';
             }
         }
         
@@ -5515,6 +5515,7 @@
         }
         
         async function playOfflineTrack(trackId) {
+            trackId = Number(trackId);
             const track = await getOfflineTrack(trackId);
             if (!track || !track.audio_data) return alert('Track data not found offline.');
             
@@ -5704,20 +5705,6 @@
                 }
             }
 
-            // Set MediaSession metadata EARLY so lock screen controls work immediately
-            if ('mediaSession' in navigator) {
-                navigator.mediaSession.metadata = new MediaMetadata({
-                    title: track.title,
-                    artist: track.artist,
-                    album: 'SRM Student Hub',
-                    artwork: [ { src: track.cover_data || 'https://via.placeholder.com/512', sizes: '512x512', type: 'image/png' } ]
-                });
-                navigator.mediaSession.setActionHandler('play', toggleMusicPlay);
-                navigator.mediaSession.setActionHandler('pause', toggleMusicPlay);
-                navigator.mediaSession.setActionHandler('previoustrack', prevMusicTrack);
-                navigator.mediaSession.setActionHandler('nexttrack', nextMusicTrack);
-            }
-
             const playAudioData = async (audioData) => {
                 // Stop current audio before loading new source
                 audioEl.pause();
@@ -5727,6 +5714,21 @@
                     await audioEl.play();
                     isPlaying = true;
                     updatePlayPauseBtn();
+                    
+                    // Set MediaSession metadata AFTER playback starts to ensure OS registers the active audio session
+                    if ('mediaSession' in navigator) {
+                        navigator.mediaSession.metadata = new MediaMetadata({
+                            title: track.title,
+                            artist: track.artist,
+                            album: 'SRM Student Hub',
+                            artwork: [ { src: track.cover_data || 'https://via.placeholder.com/512', sizes: '512x512', type: 'image/png' } ]
+                        });
+                        navigator.mediaSession.setActionHandler('play', toggleMusicPlay);
+                        navigator.mediaSession.setActionHandler('pause', toggleMusicPlay);
+                        navigator.mediaSession.setActionHandler('previoustrack', prevMusicTrack);
+                        navigator.mediaSession.setActionHandler('nexttrack', nextMusicTrack);
+                    }
+
                 } catch(e) {
                     console.error("Playback prevented:", e);
                     // Auto-skip to next track on playback failure
@@ -6162,9 +6164,11 @@
         async function downloadCurrentTrack() {
             if (currentTrackIndex < 0) return;
             const track = currentPlaylist[currentTrackIndex];
+            const btn = document.getElementById('fs-download-btn');
+            if (btn) btn.innerHTML = '<div class="css-loader" style="width:20px;height:20px;border-width:2px;border-top-color:#1DB954;"></div>';
             try {
                 // Check if already downloaded
-                const existing = await getOfflineTrack(track.id);
+                const existing = await getOfflineTrack(Number(track.id));
                 let audioData;
                 if (existing && existing.audio_data) {
                     audioData = existing.audio_data;
@@ -6178,14 +6182,6 @@
                     // Save to IndexedDB for offline playback
                     await saveTrackOffline(track, audioData);
                     
-                    // Also trigger browser download
-                    const a = document.createElement('a');
-                    a.href = audioData;
-                    a.download = `${track.title} - ${track.artist}.mp3`;
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                    
                     // Update download button to show checkmark
                     updateDownloadBtnState(track.id);
                     
@@ -6194,6 +6190,7 @@
                 }
             } catch (e) {
                 alert("Could not download track.");
+                updateDownloadBtnState(track.id);
             }
         }
         
