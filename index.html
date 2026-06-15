@@ -1617,6 +1617,161 @@
             opacity: 0.4;
             background: rgba(255,170,0,0.1);
         }
+
+        /* ====== ONBOARDING WALKTHROUGH ====== */
+        .onboarding-overlay {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            z-index: 99999;
+            background: linear-gradient(135deg, #0a0a12 0%, #12121f 40%, #0d0d1a 100%);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            opacity: 1; transition: opacity 0.6s ease, transform 0.6s ease;
+            overflow: hidden;
+        }
+        .onboarding-overlay.closing {
+            opacity: 0; transform: scale(1.05);
+            pointer-events: none;
+        }
+        .onboarding-orb {
+            position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.3;
+            animation: orbFloat 8s ease-in-out infinite alternate;
+        }
+        .onboarding-orb-1 { width: 300px; height: 300px; background: #ffaa00; top: -80px; left: -100px; }
+        .onboarding-orb-2 { width: 250px; height: 250px; background: #8a2be2; bottom: -60px; right: -80px; animation-delay: 3s; }
+        .onboarding-orb-3 { width: 200px; height: 200px; background: #1DB954; top: 40%; left: 60%; animation-delay: 5s; }
+        @keyframes orbFloat {
+            0% { transform: translate(0,0) scale(1); }
+            100% { transform: translate(30px, -20px) scale(1.15); }
+        }
+
+        .onboarding-slides {
+            position: relative; width: 100%; max-width: 400px; height: 480px;
+            overflow: hidden; touch-action: pan-y;
+        }
+        .onboarding-slide {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            padding: 30px; box-sizing: border-box; text-align: center;
+            opacity: 0; transform: translateX(100%);
+            transition: opacity 0.5s ease, transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .onboarding-slide.active {
+            opacity: 1; transform: translateX(0);
+        }
+        .onboarding-slide.exiting-left {
+            opacity: 0; transform: translateX(-100%);
+        }
+        .onboarding-slide.entering-right {
+            opacity: 0; transform: translateX(100%);
+        }
+
+        .onboarding-icon-container {
+            width: 130px; height: 130px; border-radius: 30px;
+            display: flex; align-items: center; justify-content: center;
+            margin-bottom: 30px; position: relative;
+            animation: iconPulse 3s ease-in-out infinite;
+        }
+        @keyframes iconPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        .onboarding-icon-container svg {
+            width: 64px; height: 64px; filter: drop-shadow(0 4px 12px rgba(0,0,0,0.3));
+        }
+
+        .onboarding-slide h2 {
+            font-family: 'Montserrat', sans-serif; font-size: 1.6rem;
+            font-weight: 800; margin: 0 0 12px 0; color: #fff;
+            letter-spacing: -0.5px;
+        }
+        .onboarding-slide p {
+            color: rgba(255,255,255,0.6); font-size: 0.95rem;
+            line-height: 1.6; margin: 0; max-width: 320px;
+        }
+
+        .onboarding-dots {
+            display: flex; gap: 10px; margin-top: 30px; position: relative; z-index: 2;
+        }
+        .onboarding-dot {
+            width: 10px; height: 10px; border-radius: 50%;
+            background: rgba(255,255,255,0.2);
+            transition: all 0.4s ease; cursor: pointer;
+        }
+        .onboarding-dot.active {
+            background: #ffaa00; width: 28px; border-radius: 5px;
+            box-shadow: 0 0 12px rgba(255,170,0,0.5);
+        }
+
+        .onboarding-nav {
+            display: flex; gap: 14px; margin-top: 30px; position: relative; z-index: 2;
+        }
+        .onboarding-btn {
+            padding: 14px 36px; border-radius: 14px; border: none;
+            font-weight: 700; font-size: 0.95rem; cursor: pointer;
+            transition: all 0.3s ease; font-family: 'Inter', sans-serif;
+        }
+        .onboarding-btn.skip {
+            background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.5);
+            border: 1px solid rgba(255,255,255,0.08);
+        }
+        .onboarding-btn.skip:hover { background: rgba(255,255,255,0.12); color: #fff; }
+        .onboarding-btn.next {
+            background: linear-gradient(135deg, #ffaa00, #ff8800);
+            color: #000; box-shadow: 0 4px 20px rgba(255,170,0,0.3);
+        }
+        .onboarding-btn.next:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(255,170,0,0.4); }
+
+        /* ====== SKELETON LOADING ====== */
+        .skeleton {
+            background: linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.04) 75%);
+            background-size: 200% 100%;
+            animation: skeletonShimmer 1.5s ease-in-out infinite;
+            border-radius: 10px;
+        }
+        @keyframes skeletonShimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+        .skeleton-card {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 16px; padding: 20px; margin-bottom: 12px;
+        }
+        .skeleton-line {
+            height: 14px; border-radius: 7px; margin-bottom: 10px;
+        }
+        .skeleton-line.short { width: 40%; }
+        .skeleton-line.medium { width: 65%; }
+        .skeleton-line.long { width: 90%; }
+        .skeleton-line.full { width: 100%; }
+        .skeleton-circle {
+            width: 50px; height: 50px; border-radius: 50%;
+        }
+        .skeleton-row {
+            display: flex; align-items: center; gap: 14px;
+        }
+        .skeleton-block {
+            height: 100px; border-radius: 14px; width: 100%;
+        }
+
+        /* ====== PULL-TO-REFRESH ====== */
+        .ptr-indicator {
+            position: fixed; top: -50px; left: 50%; transform: translateX(-50%);
+            width: 44px; height: 44px; border-radius: 50%;
+            background: rgba(255,170,0,0.15); border: 2px solid rgba(255,170,0,0.3);
+            display: flex; align-items: center; justify-content: center;
+            transition: top 0.3s ease, opacity 0.3s ease, transform 0.3s ease;
+            z-index: 9998; opacity: 0;
+            backdrop-filter: blur(10px);
+        }
+        .ptr-indicator.visible {
+            opacity: 1;
+        }
+        .ptr-indicator.refreshing {
+            top: 20px; opacity: 1;
+        }
+        .ptr-indicator.refreshing svg {
+            animation: spin 0.8s linear infinite;
+        }
     </style>
     <style>
         /* Music Lounge Styles */
@@ -1732,6 +1887,121 @@
 </head>
 
 <body>
+
+    <!-- ONBOARDING WALKTHROUGH -->
+    <div id="onboarding-overlay" class="onboarding-overlay" style="display:none;">
+        <div class="onboarding-orb onboarding-orb-1"></div>
+        <div class="onboarding-orb onboarding-orb-2"></div>
+        <div class="onboarding-orb onboarding-orb-3"></div>
+
+        <div class="onboarding-slides" id="onboarding-slides">
+            <!-- Slide 0: Welcome -->
+            <div class="onboarding-slide active" data-slide="0">
+                <div class="onboarding-icon-container" style="background: linear-gradient(135deg, rgba(255,170,0,0.2), rgba(138,43,226,0.2)); border: 1px solid rgba(255,170,0,0.3);">
+                    <svg viewBox="0 0 100 100" fill="none" stroke="url(#onb-grad1)" stroke-width="6" stroke-linecap="round" stroke-linejoin="round">
+                        <defs><linearGradient id="onb-grad1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#ffaa00"/><stop offset="100%" stop-color="#8a2be2"/></linearGradient></defs>
+                        <path d="M 30 20 L 10 50 L 30 80 M 70 20 L 90 50 L 70 80 M 35 65 L 45 65 L 45 50 L 55 50 L 55 35 L 65 35"/>
+                    </svg>
+                </div>
+                <h2>Welcome to SRM Student Hub</h2>
+                <p>Your all-in-one campus companion. Track attendance, check marks, view timetables, and vibe with music.</p>
+            </div>
+
+            <!-- Slide 1: Attendance -->
+            <div class="onboarding-slide" data-slide="1">
+                <div class="onboarding-icon-container" style="background: linear-gradient(135deg, rgba(0,204,102,0.2), rgba(0,150,80,0.2)); border: 1px solid rgba(0,204,102,0.3);">
+                    <svg viewBox="0 0 64 64" fill="none" stroke="#00cc66" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="8" y="4" width="48" height="56" rx="6"/>
+                        <path d="M20 28l8 8 16-16"/>
+                        <line x1="8" y1="16" x2="56" y2="16"/>
+                    </svg>
+                </div>
+                <h2>Live Attendance Tracking</h2>
+                <p>See your real-time attendance percentage for every subject. Know exactly how many classes you can skip.</p>
+            </div>
+
+            <!-- Slide 2: Marks & CGPA -->
+            <div class="onboarding-slide" data-slide="2">
+                <div class="onboarding-icon-container" style="background: linear-gradient(135deg, rgba(255,100,100,0.2), rgba(200,50,50,0.2)); border: 1px solid rgba(255,100,100,0.3);">
+                    <svg viewBox="0 0 64 64" fill="none" stroke="#ff6464" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M8 52 L20 30 L32 40 L44 18 L56 26"/>
+                        <circle cx="20" cy="30" r="3" fill="#ff6464"/>
+                        <circle cx="32" cy="40" r="3" fill="#ff6464"/>
+                        <circle cx="44" cy="18" r="3" fill="#ff6464"/>
+                        <circle cx="56" cy="26" r="3" fill="#ff6464"/>
+                        <path d="M6 58h52"/>
+                    </svg>
+                </div>
+                <h2>Marks & CGPA Calculator</h2>
+                <p>All your internal marks synced instantly. Calculate your CGPA with real credits from your timetable.</p>
+            </div>
+
+            <!-- Slide 3: Timetable -->
+            <div class="onboarding-slide" data-slide="3">
+                <div class="onboarding-icon-container" style="background: linear-gradient(135deg, rgba(100,149,237,0.2), rgba(60,100,200,0.2)); border: 1px solid rgba(100,149,237,0.3);">
+                    <svg viewBox="0 0 64 64" fill="none" stroke="#6495ED" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="6" y="10" width="52" height="46" rx="6"/>
+                        <line x1="6" y1="22" x2="58" y2="22"/>
+                        <line x1="6" y1="34" x2="58" y2="34"/>
+                        <line x1="6" y1="46" x2="58" y2="46"/>
+                        <line x1="24" y1="22" x2="24" y2="56"/>
+                        <line x1="42" y1="22" x2="42" y2="56"/>
+                        <circle cx="32" cy="6" r="3" fill="#6495ED"/>
+                    </svg>
+                </div>
+                <h2>Smart Timetable</h2>
+                <p>Auto-mapped class schedule with slots, rooms, and faculty. Highlights your current and next class.</p>
+            </div>
+
+            <!-- Slide 4: Music Lounge -->
+            <div class="onboarding-slide" data-slide="4">
+                <div class="onboarding-icon-container" style="background: linear-gradient(135deg, rgba(29,185,84,0.2), rgba(20,130,60,0.2)); border: 1px solid rgba(29,185,84,0.3);">
+                    <svg viewBox="0 0 64 64" fill="none" stroke="#1DB954" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="20" cy="48" r="8"/>
+                        <circle cx="48" cy="42" r="8"/>
+                        <line x1="28" y1="48" x2="28" y2="14"/>
+                        <line x1="56" y1="42" x2="56" y2="8"/>
+                        <path d="M28 14 L56 8"/>
+                        <path d="M28 22 L56 16"/>
+                    </svg>
+                </div>
+                <h2>Campus Music Lounge</h2>
+                <p>Stream and share music with your campus community. Save songs offline and enjoy with lock screen controls.</p>
+            </div>
+
+            <!-- Slide 5: Get Started -->
+            <div class="onboarding-slide" data-slide="5">
+                <div class="onboarding-icon-container" style="background: linear-gradient(135deg, rgba(255,170,0,0.2), rgba(255,136,0,0.2)); border: 1px solid rgba(255,170,0,0.3);">
+                    <svg viewBox="0 0 64 64" fill="none" stroke="#ffaa00" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M32 8 L38 24 L56 24 L42 34 L46 52 L32 42 L18 52 L22 34 L8 24 L26 24 Z"/>
+                    </svg>
+                </div>
+                <h2>Connect in 10 Seconds</h2>
+                <p>Just enter your Academia credentials. We sync everything securely and instantly. Your data stays on your device.</p>
+            </div>
+        </div>
+
+        <div class="onboarding-dots" id="onboarding-dots">
+            <div class="onboarding-dot active" onclick="goToOnboardingSlide(0)"></div>
+            <div class="onboarding-dot" onclick="goToOnboardingSlide(1)"></div>
+            <div class="onboarding-dot" onclick="goToOnboardingSlide(2)"></div>
+            <div class="onboarding-dot" onclick="goToOnboardingSlide(3)"></div>
+            <div class="onboarding-dot" onclick="goToOnboardingSlide(4)"></div>
+            <div class="onboarding-dot" onclick="goToOnboardingSlide(5)"></div>
+        </div>
+
+        <div class="onboarding-nav">
+            <button class="onboarding-btn skip" id="onboarding-skip-btn" onclick="finishOnboarding()">Skip</button>
+            <button class="onboarding-btn next" id="onboarding-next-btn" onclick="nextOnboardingSlide()">Next</button>
+        </div>
+    </div>
+
+    <!-- PULL-TO-REFRESH INDICATOR -->
+    <div id="ptr-indicator" class="ptr-indicator">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#ffaa00" stroke-width="2.5" stroke-linecap="round">
+            <path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+        </svg>
+    </div>
 
     <div id="login-view" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 10000; flex-direction: column; justify-content: center; align-items: center; background: transparent; backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);">
         <div class="image-card" style="max-width: 450px; width: 90%; padding: 40px; text-align: center; animation: fadeInUp 0.8s ease forwards;">
@@ -4320,56 +4590,50 @@
         }
 
         // ================= UTILITIES & HELPERS =================
-        // ================= PULL TO REFRESH =================
-        let pStart = { y: 0 };
-        let pCurrent = { y: 0 };
-        let ptrEl = null;
+        // ================= PULL TO REFRESH (PREMIUM) =================
+        let ptrStartY = 0;
+        let ptrActive = false;
 
         window.addEventListener('load', () => {
-            ptrEl = document.createElement('div');
-            ptrEl.className = 'ptr-container';
-            ptrEl.innerHTML = '<div class="ptr-spinner">↓</div>';
-            document.body.appendChild(ptrEl);
+            const ptrIndicator = document.getElementById('ptr-indicator');
+            if (!ptrIndicator) return;
 
-            document.addEventListener('touchstart', e => { 
-                if(window.scrollY === 0) pStart.y = e.touches[0].clientY; 
+            document.addEventListener('touchstart', e => {
+                if (window.scrollY === 0 && isLoggedIn) {
+                    ptrStartY = e.touches[0].clientY;
+                    ptrActive = true;
+                }
             }, {passive: true});
 
             document.addEventListener('touchmove', e => {
-                if(window.scrollY === 0 && pStart.y > 0) {
-                    pCurrent.y = e.touches[0].clientY;
-                    let diff = pCurrent.y - pStart.y;
-                    
-                    if (diff > 50 && diff < 150) {
-                        ptrEl.style.transform = `translateY(${diff * 0.5}px)`;
-                        ptrEl.querySelector('.ptr-spinner').innerHTML = '↓';
-                        ptrEl.querySelector('.ptr-spinner').style.transform = `rotate(${diff}deg)`;
-                    } else if (diff >= 150) {
-                        ptrEl.style.transform = `translateY(75px)`;
-                        ptrEl.querySelector('.ptr-spinner').innerHTML = '↻';
-                    }
+                if (!ptrActive || window.scrollY > 0) return;
+                const diff = e.touches[0].clientY - ptrStartY;
+                if (diff > 20 && diff < 120) {
+                    ptrIndicator.classList.add('visible');
+                    ptrIndicator.style.top = (diff * 0.6 - 20) + 'px';
+                    const rotation = Math.min(diff * 3, 360);
+                    ptrIndicator.querySelector('svg').style.transform = `rotate(${rotation}deg)`;
                 }
             }, {passive: true});
 
-            document.addEventListener('touchend', e => {
-                let diff = pCurrent.y - pStart.y;
-                if (window.scrollY === 0 && diff >= 150 && pStart.y > 0) {
-                    ptrEl.classList.add('active');
-                    ptrEl.querySelector('.ptr-spinner').classList.add('spinning');
-                    ptrEl.querySelector('.ptr-spinner').innerHTML = '↻';
-                    
-                    // Trigger sync modal
-                    openSyncModal();
-                    
+            document.addEventListener('touchend', () => {
+                if (!ptrActive) return;
+                const ptrTop = parseFloat(ptrIndicator.style.top) || 0;
+                if (ptrTop > 40) {
+                    ptrIndicator.classList.add('refreshing');
+                    ptrIndicator.style.top = '20px';
+                    // Trigger sync
+                    if (typeof backgroundSync === 'function') backgroundSync();
                     setTimeout(() => {
-                        ptrEl.style.transform = 'translateY(0)';
-                        ptrEl.classList.remove('active');
-                        ptrEl.querySelector('.ptr-spinner').classList.remove('spinning');
-                    }, 1000);
-                } else if (ptrEl && !ptrEl.classList.contains('active')) {
-                    ptrEl.style.transform = 'translateY(0)';
+                        ptrIndicator.classList.remove('visible', 'refreshing');
+                        ptrIndicator.style.top = '-50px';
+                    }, 2000);
+                } else {
+                    ptrIndicator.classList.remove('visible');
+                    ptrIndicator.style.top = '-50px';
                 }
-                pCurrent.y = 0; pStart.y = 0;
+                ptrActive = false;
+                ptrStartY = 0;
             });
         });
 
@@ -4678,7 +4942,7 @@
             currentLeaderboardType = type;
             const list = document.getElementById('lb-list');
             if (!list) return;
-            list.innerHTML = '<div class="css-loader" style="margin: 60px auto;"></div>';
+            list.innerHTML = generateSkeletonCards(5);
             try {
                 const res = await fetch(`${BACKEND_URL}/api/leaderboard/${type}`);
                 const data = await res.json();
@@ -4733,7 +4997,7 @@
         async function loadProjects() {
             const list = document.getElementById('ph-list');
             if (!list) return;
-            list.innerHTML = '<div class="css-loader" style="margin: 40px auto;"></div>';
+            list.innerHTML = generateSkeletonCards(3);
             try {
                 const res = await fetch(`${BACKEND_URL}/api/projects`);
                 const projects = await res.json();
@@ -4844,7 +5108,7 @@
         async function loadMarketplace() {
             const list = document.getElementById('market-list');
             if (!list) return;
-            list.innerHTML = '<div class="css-loader" style="margin: 40px auto;"></div>';
+            list.innerHTML = generateSkeletonCards(3);
             try {
                 const res = await fetch(`${BACKEND_URL}/api/marketplace`);
                 allMarketItems = await res.json();
@@ -4970,7 +5234,7 @@
         async function loadWall() {
             const list = document.getElementById('wall-list');
             if (!list) return;
-            list.innerHTML = '<div class="css-loader" style="margin: 40px auto;"></div>';
+            list.innerHTML = generateSkeletonCards(3);
             try {
                 const res = await fetch(`${BACKEND_URL}/api/wall`);
                 const posts = await res.json();
@@ -5042,7 +5306,7 @@
         async function loadCabs() {
             const list = document.getElementById('cabs-list');
             if (!list) return;
-            list.innerHTML = '<div class="css-loader" style="margin: 40px auto;"></div>';
+            list.innerHTML = generateSkeletonCards(3);
             try {
                 const res = await fetch(`${BACKEND_URL}/api/cabs`);
                 const cabs = await res.json();
@@ -5123,7 +5387,7 @@
         async function loadEvents() {
             const list = document.getElementById('events-list');
             if (!list) return;
-            list.innerHTML = '<div class="css-loader" style="margin: 40px auto;"></div>';
+            list.innerHTML = generateSkeletonCards(3);
             try {
                 const res = await fetch(`${BACKEND_URL}/api/events`);
                 const events = await res.json();
@@ -5269,7 +5533,7 @@
         async function loadLostFound() {
             const list = document.getElementById('lf-list');
             if (!list) return;
-            list.innerHTML = '<div class="css-loader" style="margin: 40px auto;"></div>';
+            list.innerHTML = generateSkeletonCards(3);
             try {
                 const res = await fetch(`${BACKEND_URL}/api/lostfound`);
                 allLFItems = await res.json();
@@ -5568,7 +5832,7 @@
         async function loadMusicList() {
             const list = document.getElementById('music-list');
             if(!list) return;
-            list.innerHTML = '<div class="css-loader" style="margin: 40px auto;"></div>';
+            list.innerHTML = generateSkeletonCards(3);
             try {
                 const res = await fetch(`${BACKEND_URL}/api/music`);
                 currentPlaylist = await res.json();
@@ -5639,6 +5903,144 @@
             }
         }
         
+        // ====== ONBOARDING WALKTHROUGH JS ======
+        let onboardingCurrentSlide = 0;
+        const onboardingTotalSlides = 6;
+
+        function showOnboardingIfNeeded() {
+            const hasSeenOnboarding = localStorage.getItem('srmOnboardingSeen');
+            const hasProfile = localStorage.getItem('squadProfile');
+            if (!hasSeenOnboarding && !hasProfile) {
+                const overlay = document.getElementById('onboarding-overlay');
+                if (overlay) overlay.style.display = 'flex';
+            }
+        }
+
+        function goToOnboardingSlide(idx) {
+            if (idx < 0 || idx >= onboardingTotalSlides || idx === onboardingCurrentSlide) return;
+            const slides = document.querySelectorAll('.onboarding-slide');
+            const dots = document.querySelectorAll('.onboarding-dot');
+
+            // Exit current slide
+            slides[onboardingCurrentSlide].classList.remove('active');
+            slides[onboardingCurrentSlide].classList.add(idx > onboardingCurrentSlide ? 'exiting-left' : 'entering-right');
+
+            // Enter new slide
+            slides[idx].classList.remove('exiting-left', 'entering-right');
+            // Force reflow for proper animation
+            void slides[idx].offsetWidth;
+            slides[idx].classList.add('active');
+
+            // Clean up old slide after transition
+            const oldSlide = onboardingCurrentSlide;
+            setTimeout(() => {
+                slides[oldSlide].classList.remove('exiting-left', 'entering-right');
+            }, 500);
+
+            // Update dots
+            dots.forEach((d, i) => {
+                d.classList.toggle('active', i === idx);
+            });
+
+            onboardingCurrentSlide = idx;
+
+            // Update button text
+            const nextBtn = document.getElementById('onboarding-next-btn');
+            if (idx === onboardingTotalSlides - 1) {
+                nextBtn.innerText = 'Get Started';
+            } else {
+                nextBtn.innerText = 'Next';
+            }
+        }
+
+        function nextOnboardingSlide() {
+            if (onboardingCurrentSlide >= onboardingTotalSlides - 1) {
+                finishOnboarding();
+            } else {
+                goToOnboardingSlide(onboardingCurrentSlide + 1);
+            }
+        }
+
+        function finishOnboarding() {
+            localStorage.setItem('srmOnboardingSeen', 'true');
+            const overlay = document.getElementById('onboarding-overlay');
+            if (overlay) {
+                overlay.classList.add('closing');
+                setTimeout(() => {
+                    overlay.style.display = 'none';
+                    overlay.classList.remove('closing');
+                }, 600);
+            }
+        }
+
+        // Swipe support for onboarding
+        (function() {
+            let touchStartX = 0;
+            let touchEndX = 0;
+            document.addEventListener('DOMContentLoaded', () => {
+                const slidesContainer = document.getElementById('onboarding-slides');
+                if (!slidesContainer) return;
+
+                slidesContainer.addEventListener('touchstart', e => {
+                    touchStartX = e.changedTouches[0].screenX;
+                }, {passive: true});
+
+                slidesContainer.addEventListener('touchend', e => {
+                    touchEndX = e.changedTouches[0].screenX;
+                    const diff = touchStartX - touchEndX;
+                    if (Math.abs(diff) > 50) {
+                        if (diff > 0) {
+                            // Swiped left = next
+                            if (onboardingCurrentSlide < onboardingTotalSlides - 1) {
+                                goToOnboardingSlide(onboardingCurrentSlide + 1);
+                            }
+                        } else {
+                            // Swiped right = previous
+                            if (onboardingCurrentSlide > 0) {
+                                goToOnboardingSlide(onboardingCurrentSlide - 1);
+                            }
+                        }
+                    }
+                }, {passive: true});
+
+                // Show onboarding
+                showOnboardingIfNeeded();
+            });
+        })();
+
+        // ====== SKELETON LOADING HELPERS ======
+        function generateSkeletonCards(count) {
+            let html = '';
+            for (let i = 0; i < count; i++) {
+                html += `
+                <div class="skeleton-card" style="animation-delay: ${i * 0.1}s;">
+                    <div class="skeleton-row" style="margin-bottom: 14px;">
+                        <div class="skeleton skeleton-circle"></div>
+                        <div style="flex:1;">
+                            <div class="skeleton skeleton-line medium"></div>
+                            <div class="skeleton skeleton-line short"></div>
+                        </div>
+                    </div>
+                    <div class="skeleton skeleton-line long"></div>
+                    <div class="skeleton skeleton-line full" style="height: 8px; margin-bottom: 0;"></div>
+                </div>`;
+            }
+            return html;
+        }
+
+        function generateSkeletonTable() {
+            let html = '<div class="skeleton-card" style="padding: 16px;">';
+            for (let r = 0; r < 5; r++) {
+                html += `<div class="skeleton-row" style="margin-bottom:12px; gap:10px;">`;
+                for (let c = 0; c < 4; c++) {
+                    html += `<div class="skeleton skeleton-line" style="flex:1; height:16px; margin:0;"></div>`;
+                }
+                html += `</div>`;
+            }
+            html += '</div>';
+            return html;
+        }
+
         let isRepeat = false;
         let isShuffle = false;
         let nextTrackCache = { index: -1, audio_data: null };
@@ -6846,7 +7248,7 @@
         // ================= SPOTTED AT SRM =================
         async function loadSpottedFeed() {
             const feed = document.getElementById('spotted-feed');
-            feed.innerHTML = '<div class="css-loader" style="margin: 40px auto;"></div>';
+            feed.innerHTML = generateSkeletonCards(3);
             try {
                 const res = await fetch(`${BACKEND_URL}/api/spotted`);
                 const posts = await res.json();
