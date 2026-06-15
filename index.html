@@ -6097,10 +6097,9 @@
         function loadCampusMap() {
             if (mapboxInstance) return; 
             
-            // Public standard Mapbox GL demo token (No credit card needed)
-            const tokenPart1 = 'pk.eyJ1IjoibWFwYm94IiwiYSI6';
-            const tokenPart2 = 'ImNpejY4M29iazA2Z2gycXA4N2pmbDZmangifQ.-g_vE53SD2WrJ6tFX7QHmA';
-            mapboxgl.accessToken = tokenPart1 + tokenPart2;
+            // Public standard Mapbox GL token for basic 3D maps
+            // Replace 'YOUR_MAPBOX_TOKEN_HERE' with your actual free token from mapbox.com
+            mapboxgl.accessToken = 'YOUR_MAPBOX_TOKEN_HERE'; 
             
             mapboxInstance = new mapboxgl.Map({
                 container: 'mapbox-container',
