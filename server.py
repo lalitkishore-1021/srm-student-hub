@@ -7,6 +7,7 @@ import sqlite3
 import json
 import requests
 import uuid
+import urllib.parse
 from datetime import datetime
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
@@ -2140,19 +2141,40 @@ def get_lyrics():
         return jsonify({'success': False, 'error': 'Missing parameters'})
     try:
         clean_title = re.sub(r'\(.*?\)', '', title).strip()
-        # Extract primary artist only to improve search hit rate for collaborations
         clean_artist = artist.lower().split(' x ')[0].split(',')[0].split('&')[0].split(' feat.')[0].split(' ft.')[0].strip()
         
+        # Try 1: Search API
         query = f"{clean_title} {clean_artist}"
         url = f"https://lrclib.net/api/search?q={urllib.parse.quote(query)}"
-        resp = requests.get(url, timeout=5)
+        resp = requests.get(url, timeout=8, headers={'User-Agent': 'SRM Student Hub/1.0'})
         if resp.status_code == 200:
             data = resp.json()
             if isinstance(data, list) and len(data) > 0:
                 lyrics = data[0].get('plainLyrics') or data[0].get('syncedLyrics')
                 if lyrics:
                     return jsonify({'success': True, 'lyrics': lyrics})
-    except: pass
+        
+        # Try 2: Direct get API (exact match)
+        url2 = f"https://lrclib.net/api/get?artist_name={urllib.parse.quote(clean_artist)}&track_name={urllib.parse.quote(clean_title)}"
+        resp2 = requests.get(url2, timeout=8, headers={'User-Agent': 'SRM Student Hub/1.0'})
+        if resp2.status_code == 200:
+            data2 = resp2.json()
+            lyrics = data2.get('plainLyrics') or data2.get('syncedLyrics')
+            if lyrics:
+                return jsonify({'success': True, 'lyrics': lyrics})
+        
+        # Try 3: Search with just the title (sometimes artist name variation causes no match)
+        url3 = f"https://lrclib.net/api/search?q={urllib.parse.quote(clean_title)}"
+        resp3 = requests.get(url3, timeout=8, headers={'User-Agent': 'SRM Student Hub/1.0'})
+        if resp3.status_code == 200:
+            data3 = resp3.json()
+            if isinstance(data3, list) and len(data3) > 0:
+                lyrics = data3[0].get('plainLyrics') or data3[0].get('syncedLyrics')
+                if lyrics:
+                    return jsonify({'success': True, 'lyrics': lyrics})
+                    
+    except Exception as e:
+        print(f"Lyrics fetch error: {e}")
     return jsonify({'success': False, 'error': 'Lyrics not found.'})
 
 @app.route('/api/ai/chat', methods=['POST'])
