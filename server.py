@@ -1112,6 +1112,7 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
         print(f"[{reg_no}] Profile extracted: regNo={profile_data.get('regNo','?')}, dept={profile_data.get('department','?')}, FA={profile_data.get('fa_name','?')}, AA={profile_data.get('aa_name','?')}")
         
         # --- PARSE STUDENT SLOTS ---
+        slot_credits = {}  # Map course_code -> credit value from timetable
         for table in slot_tables:
             if not table: continue
             headers, header_str, h_idx = get_table_headers(table)
@@ -1122,11 +1123,21 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
                     idx_title = get_col_index(headers, "title", "name", "description", "desc", "subject")
                     idx_slot = get_col_index(headers, "slot")
                     idx_room = get_col_index(headers, "room")
+                    idx_credit_tt = get_col_index(headers, "credit", "max credit", "credits")
                     
                     if -1 in (idx_code, idx_title, idx_slot, idx_room): continue
                     
                     for row in table[h_idx+1:]:
                         if len(row) > idx_room:
+                            # Extract credits from timetable if available
+                            if idx_credit_tt != -1 and len(row) > idx_credit_tt:
+                                try:
+                                    cr = float(row[idx_credit_tt])
+                                    code = row[idx_code].strip()
+                                    if code and cr > 0:
+                                        slot_credits[code] = cr
+                                except: pass
+                            
                             # Refined Regex matching (matches A, P49, PT2, etc)
                             slots_found = re.findall(r'\b[A-Z]{1,2}\d*\b', row[idx_slot])
                             for s in slots_found:
@@ -1140,6 +1151,19 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
                 except Exception as e:
                     print("Parsing error (Slots):", str(e))
                     continue
+        
+        # Cross-reference credits from timetable to marks and attendance
+        if slot_credits:
+            print(f"[{reg_no}] Found credits from timetable: {slot_credits}")
+            for item in parsed_marks:
+                code = item.get("courseCode", "")
+                if code in slot_credits and (item.get("credits", 3.0) == 3.0):
+                    item["credits"] = slot_credits[code]
+            for item in parsed_att:
+                title = item.get("courseTitle", "")
+                att_code = title.split(" - ")[0].strip() if " - " in title else ""
+                if att_code in slot_credits and (item.get("credits", 3.0) == 3.0):
+                    item["credits"] = slot_credits[att_code]
 
         # --- TIMETABLE STEP 2 (MASTER TIMINGS) ---
         print(f"[{reg_no}] 7. Mapping to Master (Batch {batch})...")

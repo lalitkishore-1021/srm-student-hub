@@ -2264,10 +2264,22 @@
                 <h2 class="gallery-title" style="color: #1DB954;">Music Lounge </h2>
                 <p class="subtitle" style="margin-bottom: 20px;">Vibe with the campus playlist</p>
             </div>
-            <div style="text-align: center; margin-bottom: 30px;">
-                <button class="action-btn" onclick="document.getElementById('musicSubmitModal').style.display='flex'; document.getElementById('music-status').innerText='';" style="background: linear-gradient(135deg, #1DB954, #12823b); color: #fff; font-weight: 900; font-size: 1rem; padding: 14px 30px; border-radius: 30px; box-shadow: 0 10px 20px rgba(29,185,84,0.4); text-transform: uppercase; max-width: 300px; margin: 0 auto;">+ Upload Track</button>
+            <!-- Tab Switcher -->
+            <div style="display:flex; gap:0; max-width:400px; margin:0 auto 25px auto; background:rgba(255,255,255,0.06); border-radius:14px; padding:4px; border:1px solid rgba(255,255,255,0.08);">
+                <button id="music-tab-all" onclick="switchMusicTab('all')" style="flex:1; padding:10px 0; border:none; border-radius:11px; font-weight:700; font-size:0.9rem; cursor:pointer; transition:all 0.3s; background:linear-gradient(135deg,#1DB954,#12823b); color:#fff;">🎵 All Music</button>
+                <button id="music-tab-downloads" onclick="switchMusicTab('downloads')" style="flex:1; padding:10px 0; border:none; border-radius:11px; font-weight:700; font-size:0.9rem; cursor:pointer; transition:all 0.3s; background:transparent; color:var(--text-sub);">⬇️ Downloads</button>
             </div>
-            <div id="music-list" style="max-width: 800px; margin: 0 auto 100px auto; display: flex; flex-direction: column; padding: 0 15px;"></div>
+            <!-- All Music Section -->
+            <div id="music-all-section">
+                <div style="text-align: center; margin-bottom: 30px;">
+                    <button class="action-btn" onclick="document.getElementById('musicSubmitModal').style.display='flex'; document.getElementById('music-status').innerText='';" style="background: linear-gradient(135deg, #1DB954, #12823b); color: #fff; font-weight: 900; font-size: 1rem; padding: 14px 30px; border-radius: 30px; box-shadow: 0 10px 20px rgba(29,185,84,0.4); text-transform: uppercase; max-width: 300px; margin: 0 auto;">+ Upload Track</button>
+                </div>
+                <div id="music-list" style="max-width: 800px; margin: 0 auto 100px auto; display: flex; flex-direction: column; padding: 0 15px;"></div>
+            </div>
+            <!-- Downloads Section -->
+            <div id="music-downloads-section" style="display:none;">
+                <div id="downloads-list" style="max-width: 800px; margin: 0 auto 100px auto; padding: 0 15px;"></div>
+            </div>
         </div>
 
         <div id="events-view" class="app-view">
@@ -2782,7 +2794,7 @@
             </button>
             <button class="ctrl-btn" onclick="nextMusicTrack(); event.stopPropagation();" style="display: flex;"><svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg></button>
         </div>
-        <audio id="music-audio-element" style="display: none;" ontimeupdate="updateMusicProgress()" onended="handleMusicEnded()"></audio>
+        <audio id="music-audio-element" style="display: none;" ontimeupdate="updateMusicProgress()" onended="handleMusicEnded()" onerror="handleMusicError()"></audio>
     </div>
 
     <!-- FULLSCREEN MUSIC PLAYER -->
@@ -2797,7 +2809,7 @@
         <div class="fs-header">
             <button class="fs-close" onclick="closeFullscreenPlayer()"><svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg></button>
             <span>Now Playing</span>
-            <button class="fs-close" onclick="downloadCurrentTrack()" style="font-size:24px;" title="Download Offline"><svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg></button>
+            <button class="fs-close" id="fs-download-btn" onclick="downloadCurrentTrack()" style="font-size:24px;" title="Download Offline"><svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg></button>
         </div>
         <div class="fs-cover-container">
             <img id="fs-cover" class="fs-cover" src="" alt="Cover">
@@ -3571,6 +3583,7 @@
                 const attEl = document.getElementById('home-att-val');
                 const courseEl = document.getElementById('home-course-val');
                 const attPercBadge = document.getElementById('att-perc-badge');
+                const creditEl = document.getElementById('home-credit-val');
                 
                 if (attEl) attEl.innerText = overallPerc + "%";
                 if (courseEl) courseEl.innerText = attendanceData.length;
@@ -3580,6 +3593,14 @@
                     else if (op >= 80) { attPercBadge.innerHTML = ' TOP 15%'; attPercBadge.style.color = '#fff'; }
                     else if (op < 75) { attPercBadge.innerHTML = ' RISK ZONE'; attPercBadge.style.color = 'var(--danger)'; }
                     else { attPercBadge.innerHTML = ' AVERAGE'; attPercBadge.style.color = 'var(--text-sub)'; }
+                }
+                // Calculate total credits from attendance data
+                if (creditEl) {
+                    let totalCredits = 0;
+                    attendanceData.forEach(sub => {
+                        totalCredits += parseFloat(sub.credits || 0);
+                    });
+                    if (totalCredits > 0) creditEl.innerText = totalCredits;
                 }
             }
         }
@@ -5381,6 +5402,161 @@
 
 
         // ============ MUSIC LOUNGE ============
+        
+        // --- IndexedDB for offline music ---
+        function openMusicDB() {
+            return new Promise((resolve, reject) => {
+                const req = indexedDB.open('srmMusicDB', 1);
+                req.onupgradeneeded = (e) => {
+                    const db = e.target.result;
+                    if (!db.objectStoreNames.contains('downloads')) {
+                        db.createObjectStore('downloads', { keyPath: 'id' });
+                    }
+                };
+                req.onsuccess = () => resolve(req.result);
+                req.onerror = () => reject(req.error);
+            });
+        }
+        
+        async function saveTrackOffline(track, audioData) {
+            const db = await openMusicDB();
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction('downloads', 'readwrite');
+                tx.objectStore('downloads').put({
+                    id: track.id,
+                    title: track.title,
+                    artist: track.artist,
+                    cover_data: track.cover_data || '',
+                    audio_data: audioData,
+                    downloaded_at: Date.now()
+                });
+                tx.oncomplete = () => resolve();
+                tx.onerror = () => reject(tx.error);
+            });
+        }
+        
+        async function getOfflineTrack(trackId) {
+            try {
+                const db = await openMusicDB();
+                return new Promise((resolve, reject) => {
+                    const tx = db.transaction('downloads', 'readonly');
+                    const req = tx.objectStore('downloads').get(trackId);
+                    req.onsuccess = () => resolve(req.result || null);
+                    req.onerror = () => resolve(null);
+                });
+            } catch(e) { return null; }
+        }
+        
+        async function getAllOfflineTracks() {
+            try {
+                const db = await openMusicDB();
+                return new Promise((resolve, reject) => {
+                    const tx = db.transaction('downloads', 'readonly');
+                    const req = tx.objectStore('downloads').getAll();
+                    req.onsuccess = () => resolve(req.result || []);
+                    req.onerror = () => resolve([]);
+                });
+            } catch(e) { return []; }
+        }
+        
+        async function deleteOfflineTrack(trackId) {
+            const db = await openMusicDB();
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction('downloads', 'readwrite');
+                tx.objectStore('downloads').delete(trackId);
+                tx.oncomplete = () => resolve();
+                tx.onerror = () => reject(tx.error);
+            });
+        }
+        
+        async function isTrackDownloaded(trackId) {
+            const track = await getOfflineTrack(trackId);
+            return !!track;
+        }
+        
+        async function updateDownloadBtnState(trackId) {
+            const btn = document.getElementById('fs-download-btn');
+            if (!btn) return;
+            const downloaded = await isTrackDownloaded(trackId);
+            if (downloaded) {
+                btn.innerHTML = '✅';
+                btn.title = 'Already Downloaded';
+            } else {
+                btn.innerHTML = '⬇️';
+                btn.title = 'Download';
+            }
+        }
+        
+        async function loadDownloadsList() {
+            const container = document.getElementById('downloads-list');
+            if (!container) return;
+            const tracks = await getAllOfflineTracks();
+            if (tracks.length === 0) {
+                container.innerHTML = '<div style="text-align:center; color:var(--text-sub); padding:40px;">No downloaded songs yet.<br>Download songs from the player to listen offline.</div>';
+                return;
+            }
+            let html = '';
+            tracks.sort((a, b) => (b.downloaded_at || 0) - (a.downloaded_at || 0));
+            tracks.forEach((t, i) => {
+                html += `
+                <div class="music-track-card fade-in-up" style="display:flex; align-items:center; gap:14px; padding:14px 18px; background:rgba(255,255,255,0.05); border-radius:14px; margin-bottom:10px; cursor:pointer; border:1px solid rgba(255,255,255,0.06); transition:all 0.2s;" onclick="playOfflineTrack('${t.id}')" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='rgba(255,255,255,0.05)'">
+                    <img src="${t.cover_data || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMzMzIi8+PC9zdmc+'}" style="width:50px; height:50px; border-radius:10px; object-fit:cover; flex-shrink:0;">
+                    <div style="flex:1; min-width:0;">
+                        <div style="color:#fff; font-weight:600; font-size:0.95rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${t.title}</div>
+                        <div style="color:var(--text-sub); font-size:0.8rem;">${t.artist}</div>
+                    </div>
+                    <span style="color:var(--success); font-size:0.7rem; background:rgba(0,204,102,0.15); padding:3px 8px; border-radius:6px;">Offline</span>
+                    <button onclick="event.stopPropagation(); removeOfflineTrack('${t.id}')" style="background:none; border:none; color:rgba(255,68,68,0.7); cursor:pointer; font-size:1.1rem; padding:5px;" title="Remove download">🗑️</button>
+                </div>`;
+            });
+            container.innerHTML = html;
+        }
+        
+        async function playOfflineTrack(trackId) {
+            const track = await getOfflineTrack(trackId);
+            if (!track || !track.audio_data) return alert('Track data not found offline.');
+            
+            // Check if track is in current playlist
+            let idx = currentPlaylist.findIndex(t => t.id === trackId);
+            if (idx === -1) {
+                // Add to playlist temporarily
+                currentPlaylist.push({ id: track.id, title: track.title, artist: track.artist, cover_data: track.cover_data });
+                idx = currentPlaylist.length - 1;
+            }
+            
+            // Play using cached data
+            nextTrackCache = { index: idx, audio_data: track.audio_data };
+            playMusicTrack(idx);
+        }
+        
+        async function removeOfflineTrack(trackId) {
+            await deleteOfflineTrack(trackId);
+            loadDownloadsList();
+        }
+        
+        function switchMusicTab(tab) {
+            const allSection = document.getElementById('music-all-section');
+            const dlSection = document.getElementById('music-downloads-section');
+            const tabAll = document.getElementById('music-tab-all');
+            const tabDl = document.getElementById('music-tab-downloads');
+            if (tab === 'downloads') {
+                allSection.style.display = 'none';
+                dlSection.style.display = 'block';
+                tabAll.style.background = 'transparent';
+                tabAll.style.color = 'var(--text-sub)';
+                tabDl.style.background = 'linear-gradient(135deg,#1DB954,#12823b)';
+                tabDl.style.color = '#fff';
+                loadDownloadsList();
+            } else {
+                allSection.style.display = 'block';
+                dlSection.style.display = 'none';
+                tabDl.style.background = 'transparent';
+                tabDl.style.color = 'var(--text-sub)';
+                tabAll.style.background = 'linear-gradient(135deg,#1DB954,#12823b)';
+                tabAll.style.color = '#fff';
+            }
+        }
+
         let currentPlaylist = [];
         let currentTrackIndex = -1;
         let isPlaying = false;
@@ -5526,30 +5702,38 @@
                 }
             }
 
+            // Set MediaSession metadata EARLY so lock screen controls work immediately
+            if ('mediaSession' in navigator) {
+                navigator.mediaSession.metadata = new MediaMetadata({
+                    title: track.title,
+                    artist: track.artist,
+                    album: 'SRM Student Hub',
+                    artwork: [ { src: track.cover_data || 'https://via.placeholder.com/512', sizes: '512x512', type: 'image/png' } ]
+                });
+                navigator.mediaSession.setActionHandler('play', toggleMusicPlay);
+                navigator.mediaSession.setActionHandler('pause', toggleMusicPlay);
+                navigator.mediaSession.setActionHandler('previoustrack', prevMusicTrack);
+                navigator.mediaSession.setActionHandler('nexttrack', nextMusicTrack);
+            }
+
             const playAudioData = async (audioData) => {
+                // Properly reset audio element before loading new source
                 audioEl.pause();
+                audioEl.removeAttribute('src');
+                audioEl.load();
+                
                 audioEl.src = audioData;
-                const playPromise = audioEl.play();
-                if (playPromise !== undefined) {
-                    playPromise.then(_ => {
-                        isPlaying = true;
-                        updatePlayPauseBtn();
-                    }).catch(e => console.error("Playback prevented:", e));
+                try {
+                    await audioEl.play();
+                    isPlaying = true;
+                    updatePlayPauseBtn();
+                } catch(e) {
+                    console.error("Playback prevented:", e);
+                    // Auto-skip to next track on playback failure
+                    setTimeout(() => { nextMusicTrack(); }, 500);
+                    return;
                 }
                 localStorage.setItem('lastPlayedTrackId', track.id);
-                
-                if ('mediaSession' in navigator) {
-                    navigator.mediaSession.metadata = new MediaMetadata({
-                        title: track.title,
-                        artist: track.artist,
-                        album: 'SRM Student Hub',
-                        artwork: [ { src: track.cover_data || 'https://via.placeholder.com/512', sizes: '512x512', type: 'image/png' } ]
-                    });
-                    navigator.mediaSession.setActionHandler('play', toggleMusicPlay);
-                    navigator.mediaSession.setActionHandler('pause', toggleMusicPlay);
-                    navigator.mediaSession.setActionHandler('previoustrack', prevMusicTrack);
-                    navigator.mediaSession.setActionHandler('nexttrack', nextMusicTrack);
-                }
                 
                 // Preload the next track so it can play synchronously in the background later
                 let nextIdx = index + 1;
@@ -5572,20 +5756,33 @@
             document.getElementById('fs-play-btn').innerHTML = '<div class="css-loader" style="width:20px;height:20px;border-width:2px;border-top-color:#000;"></div>';
             
             try {
-                const res = await fetch(`${BACKEND_URL}/api/music/audio/${track.id}`);
-                const data = await res.json();
+                // Try offline/IndexedDB first
+                let audioData = null;
+                try {
+                    const offlineTrack = await getOfflineTrack(track.id);
+                    if (offlineTrack && offlineTrack.audio_data) {
+                        audioData = offlineTrack.audio_data;
+                    }
+                } catch(e) {}
                 
-                if (currentReqId !== playRequestId) return;
+                if (!audioData) {
+                    const res = await fetch(`${BACKEND_URL}/api/music/audio/${track.id}`);
+                    const data = await res.json();
+                    if (currentReqId !== playRequestId) return;
+                    audioData = data.audio_data;
+                }
                 
-                if (data.audio_data) {
-                    playAudioData(data.audio_data);
+                if (audioData) {
+                    playAudioData(audioData);
                 } else {
-                    alert("Audio not found.");
+                    console.warn("Audio not found, skipping to next...");
                     updatePlayPauseBtn();
+                    setTimeout(() => { nextMusicTrack(); }, 500);
                 }
             } catch(e) {
-                alert("Error loading audio.");
+                console.warn("Error loading audio, skipping to next...", e);
                 updatePlayPauseBtn();
+                setTimeout(() => { nextMusicTrack(); }, 500);
             }
         }
         
@@ -5671,10 +5868,17 @@
             if (isRepeat) {
                 const audioEl = document.getElementById('music-audio-element');
                 audioEl.currentTime = 0;
-                audioEl.play();
+                audioEl.play().catch(e => { console.error('Repeat play failed:', e); nextMusicTrack(); });
             } else {
                 nextMusicTrack();
             }
+        }
+
+        function handleMusicError() {
+            console.warn('Audio element error, auto-skipping to next track...');
+            isPlaying = false;
+            updatePlayPauseBtn();
+            setTimeout(() => { nextMusicTrack(); }, 500);
         }
 
         function extractAlbumColors(imgEl) {
@@ -5959,15 +6163,34 @@
             if (currentTrackIndex < 0) return;
             const track = currentPlaylist[currentTrackIndex];
             try {
-                const res = await fetch(`${BACKEND_URL}/api/music/audio/${track.id}`);
-                const data = await res.json();
-                if (data.audio_data) {
+                // Check if already downloaded
+                const existing = await getOfflineTrack(track.id);
+                let audioData;
+                if (existing && existing.audio_data) {
+                    audioData = existing.audio_data;
+                } else {
+                    const res = await fetch(`${BACKEND_URL}/api/music/audio/${track.id}`);
+                    const data = await res.json();
+                    audioData = data.audio_data;
+                }
+                
+                if (audioData) {
+                    // Save to IndexedDB for offline playback
+                    await saveTrackOffline(track, audioData);
+                    
+                    // Also trigger browser download
                     const a = document.createElement('a');
-                    a.href = data.audio_data;
+                    a.href = audioData;
                     a.download = `${track.title} - ${track.artist}.mp3`;
                     document.body.appendChild(a);
                     a.click();
                     document.body.removeChild(a);
+                    
+                    // Update download button to show checkmark
+                    updateDownloadBtnState(track.id);
+                    
+                    // Refresh downloads section if visible
+                    if (document.getElementById('downloads-list')) loadDownloadsList();
                 }
             } catch (e) {
                 alert("Could not download track.");
