@@ -5908,11 +5908,23 @@
         const onboardingTotalSlides = 6;
 
         function showOnboardingIfNeeded() {
-            const hasSeenOnboarding = localStorage.getItem('srmOnboardingSeen');
             const hasProfile = localStorage.getItem('squadProfile');
-            if (!hasSeenOnboarding && !hasProfile) {
+            if (!hasProfile) {
                 const overlay = document.getElementById('onboarding-overlay');
-                if (overlay) overlay.style.display = 'flex';
+                if (overlay) {
+                    overlay.style.display = 'flex';
+                    // Reset to first slide
+                    onboardingCurrentSlide = 0;
+                    document.querySelectorAll('.onboarding-slide').forEach((s, i) => {
+                        s.classList.remove('active', 'exiting-left', 'entering-right');
+                        if (i === 0) s.classList.add('active');
+                    });
+                    document.querySelectorAll('.onboarding-dot').forEach((d, i) => {
+                        d.classList.toggle('active', i === 0);
+                    });
+                    const nextBtn = document.getElementById('onboarding-next-btn');
+                    if (nextBtn) nextBtn.innerText = 'Next';
+                }
             }
         }
 
@@ -5962,7 +5974,7 @@
         }
 
         function finishOnboarding() {
-            localStorage.setItem('srmOnboardingSeen', 'true');
+
             const overlay = document.getElementById('onboarding-overlay');
             if (overlay) {
                 overlay.classList.add('closing');
