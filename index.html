@@ -1884,8 +1884,6 @@
             .player-right .ctrl-btn { display: none; }
         }
     </style>
-    <script src='https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.js'></script>
-    <link href='https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.css' rel='stylesheet' />
 </head>
 
 <body>
@@ -2226,17 +2224,6 @@
                     <div>
                         <h4 class="action-title">Step Class</h4>
                         <p class="action-sub">View OOPs banners & projects</p>
-                    </div>
-                </div>
-                <div class="action-card" onclick="switchView('map-view'); loadCampusMap();">
-                    <div class="action-icon" style="color: #4285F4;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"></polygon>
-                        <line x1="9" y1="3" x2="9" y2="21"></line>
-                        <line x1="15" y1="3" x2="15" y2="21"></line>
-                    </svg></div>
-                    <div>
-                        <h4 class="action-title">Campus Map 3D</h4>
-                        <p class="action-sub">Explore SRM in 3D</p>
                     </div>
                 </div>
                 <div class="action-card" onclick="switchView('music-view'); loadMusicList();">
@@ -2634,28 +2621,6 @@
                     <a href="https://thehelpers.vercel.app/semesters" target="_blank" style="color: var(--text-main); font-size: 0.8rem; text-decoration: none; border: 1px solid var(--glass-border); padding: 6px 12px; border-radius: 8px; background: rgba(0,0,0,0.3); font-weight: bold; transition: all 0.3s;" onmouseover="this.style.background='var(--primary)'; this.style.color='#000';" onmouseout="this.style.background='rgba(0,0,0,0.3)'; this.style.color='var(--text-main)';">Open Link ↗</a>
                 </div>
                 <iframe src="https://thehelpers.vercel.app/semesters" style="width: 100%; height: 72vh; border: none; background: #000;" sandbox="allow-scripts allow-same-origin allow-popups"></iframe>
-            </div>
-        </div>
-
-        <div id="map-view" class="app-view">
-            <div class="view-header">
-                <button class="back-btn" onclick="switchNav('home-view', document.querySelector('.nav-item'))">&#8592; Back</button>
-                <h2 class="gallery-title">Campus Map 3D</h2>
-            </div>
-            
-            <div style="position: relative; width: 100%; height: 65vh; border-radius: 15px; overflow: hidden; border: 1px solid var(--glass-border); box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
-                <div id="mapbox-container" style="width: 100%; height: 100%;"></div>
-                
-                <div style="position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.6); backdrop-filter: blur(10px); padding: 10px 20px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); color: #fff; font-size: 0.85rem; font-family: 'Montserrat', sans-serif; text-transform: uppercase; letter-spacing: 1px; pointer-events: none;">
-                    Two fingers to tilt & rotate
-                </div>
-            </div>
-            
-            <div class="map-locations" style="margin-top: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                <button class="action-btn" onclick="flyToLocation(80.0436, 12.8236, 17.5, 60)" style="background: rgba(255,255,255,0.05); color: #fff; border: 1px solid var(--glass-border);">Tech Park</button>
-                <button class="action-btn" onclick="flyToLocation(80.0450, 12.8230, 17.5, 60)" style="background: rgba(255,255,255,0.05); color: #fff; border: 1px solid var(--glass-border);">University Building</button>
-                <button class="action-btn" onclick="flyToLocation(80.0465, 12.8245, 17.5, 60)" style="background: rgba(255,255,255,0.05); color: #fff; border: 1px solid var(--glass-border);">Main Building</button>
-                <button class="action-btn" onclick="flyToLocation(80.0415, 12.8220, 17.5, 60)" style="background: rgba(255,255,255,0.05); color: #fff; border: 1px solid var(--glass-border);">Hostels</button>
             </div>
         </div>
 
@@ -6091,96 +6056,6 @@
         let isRepeat = false;
         let isShuffle = false;
         let nextTrackCache = { index: -1, audio_data: null };
-
-        // ====== MAPBOX 3D CAMPUS MAP ======
-        let mapboxInstance = null;
-        function loadCampusMap() {
-            if (mapboxInstance) return; 
-            
-            // Public standard Mapbox GL token for basic 3D maps
-            // Replace 'YOUR_MAPBOX_TOKEN_HERE' with your actual free token from mapbox.com
-            mapboxgl.accessToken = 'YOUR_MAPBOX_TOKEN_HERE'; 
-            
-            mapboxInstance = new mapboxgl.Map({
-                container: 'mapbox-container',
-                style: 'mapbox://styles/mapbox/dark-v11',
-                center: [80.0436, 12.8236], // SRM KTR
-                zoom: 16.5,
-                pitch: 60, 
-                bearing: -20, 
-                antialias: true
-            });
-
-            // Add navigation controls
-            mapboxInstance.addControl(new mapboxgl.NavigationControl(), 'top-right');
-
-            mapboxInstance.on('style.load', () => {
-                // Insert the layer beneath any symbol layer.
-                const layers = mapboxInstance.getStyle().layers;
-                let labelLayerId;
-                for (let i = 0; i < layers.length; i++) {
-                    if (layers[i].type === 'symbol' && layers[i].layout['text-field']) {
-                        labelLayerId = layers[i].id;
-                        break;
-                    }
-                }
-
-                mapboxInstance.addLayer(
-                    {
-                        'id': '3d-buildings',
-                        'source': 'composite',
-                        'source-layer': 'building',
-                        'filter': ['==', 'extrude', 'true'],
-                        'type': 'fill-extrusion',
-                        'minzoom': 15,
-                        'paint': {
-                            'fill-extrusion-color': '#1f1f2e',
-                            'fill-extrusion-height': ['get', 'height'],
-                            'fill-extrusion-base': ['get', 'min_height'],
-                            'fill-extrusion-opacity': 0.8
-                        }
-                    },
-                    labelLayerId
-                );
-                
-                // Tech Park Marker
-                new mapboxgl.Marker({ color: '#ffaa00' })
-                    .setLngLat([80.0436, 12.8236])
-                    .setPopup(new mapboxgl.Popup({offset: 25}).setHTML('<div style="color:#000;"><h3 style="margin:0;color:#ffaa00;">Tech Park</h3><p style="margin:5px 0 0 0;font-size:12px;">CSE Labs, Canteen</p></div>'))
-                    .addTo(mapboxInstance);
-                    
-                // University Building Marker
-                new mapboxgl.Marker({ color: '#1DB954' })
-                    .setLngLat([80.0450, 12.8230])
-                    .setPopup(new mapboxgl.Popup({offset: 25}).setHTML('<div style="color:#000;"><h3 style="margin:0;color:#1DB954;">University Building</h3><p style="margin:5px 0 0 0;font-size:12px;">ECE, EEE, Mech</p></div>'))
-                    .addTo(mapboxInstance);
-
-                // Main Building Marker
-                new mapboxgl.Marker({ color: '#ff4757' })
-                    .setLngLat([80.0465, 12.8245])
-                    .setPopup(new mapboxgl.Popup({offset: 25}).setHTML('<div style="color:#000;"><h3 style="margin:0;color:#ff4757;">Main Building</h3><p style="margin:5px 0 0 0;font-size:12px;">Admin, Exam Cell</p></div>'))
-                    .addTo(mapboxInstance);
-
-                // Hostels Marker
-                new mapboxgl.Marker({ color: '#00cec9' })
-                    .setLngLat([80.0415, 12.8220])
-                    .setPopup(new mapboxgl.Popup({offset: 25}).setHTML('<div style="color:#000;"><h3 style="margin:0;color:#00cec9;">Hostel Zone</h3><p style="margin:5px 0 0 0;font-size:12px;">Nelson, Einstein, etc</p></div>'))
-                    .addTo(mapboxInstance);
-            });
-        }
-        
-        function flyToLocation(lng, lat, zoom, pitch) {
-            if(mapboxInstance) {
-                mapboxInstance.flyTo({
-                    center: [lng, lat],
-                    zoom: zoom,
-                    pitch: pitch,
-                    bearing: (Math.random() - 0.5) * 60, // slight random rotation
-                    essential: true,
-                    duration: 2000
-                });
-            }
-        }
 
         document.addEventListener("DOMContentLoaded", () => {
             const fsCover = document.getElementById('fs-cover');
