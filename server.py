@@ -1135,7 +1135,7 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
                                 try:
                                     cr = float(row[idx_credit_tt])
                                     code = row[idx_code].strip()
-                                    if code and cr > 0:
+                                    if code and cr >= 0:
                                         slot_credits[code] = cr
                                 except: pass
                             
