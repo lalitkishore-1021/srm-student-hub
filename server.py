@@ -2113,7 +2113,7 @@ def call_gemini(prompt, file_base64=None, mime_type=None):
         
     payload = {"contents": [{"parts": parts}]}
     
-    models_to_try = ["gemini-1.5-flash", "gemini-1.5-pro", "gemini-1.5-flash-latest", "gemini-pro"]
+    models_to_try = ["gemini-2.0-flash", "gemini-2.5-flash-preview-05-20", "gemini-2.0-flash-lite", "gemini-1.5-flash"]
     last_error = ""
     for model in models_to_try:
         url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={GEMINI_API_KEY}"
