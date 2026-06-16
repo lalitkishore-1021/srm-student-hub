@@ -1892,16 +1892,16 @@
             font-size: 1.6rem;
             font-weight: 800;
             color: rgba(255, 255, 255, 0.4);
-            transition: color 0.3s ease, transform 0.3s ease;
+            transition: color 0.3s ease, transform 0.3s ease, text-shadow 0.3s ease;
             margin-bottom: 15px;
             cursor: pointer;
             letter-spacing: -0.5px;
             text-align: left;
         }
         .apple-lyric-line:hover {
-            color: #ffffff;
+            color: #ffffff !important;
             transform: scale(1.02) translateX(10px);
-            text-shadow: 0 0 20px rgba(255,255,255,0.4);
+            text-shadow: 0 0 15px rgba(255, 255, 255, 0.9), 0 0 25px rgba(255, 255, 255, 0.7) !important;
         }
         #fs-lyrics-container {
             padding: 40px 20px !important;
@@ -6232,23 +6232,11 @@
                 audioEl.pause();
                 
                 audioEl.src = audioData;
-                audioEl.crossfading = false;
-                const targetVol = 1.0;
-                audioEl.volume = 0;
                 
                 try {
                     await audioEl.play();
                     isPlaying = true;
                     updatePlayPauseBtn();
-                    
-                    const fadeIn = setInterval(() => {
-                        if (audioEl.volume < targetVol - 0.1) {
-                            audioEl.volume += 0.1;
-                        } else {
-                            audioEl.volume = targetVol;
-                            clearInterval(fadeIn);
-                        }
-                    }, 100);
                     
                     // Set MediaSession metadata AFTER playback starts to ensure OS registers the active audio session
                     if ('mediaSession' in navigator) {
@@ -6575,22 +6563,6 @@
             const fillFs = document.getElementById('fs-progress-fill');
             const fillMobile = document.getElementById('mobile-progress-fill');
             if (audioEl.duration) {
-                // Crossfade Logic
-                if (!audioEl.crossfading && (audioEl.duration - audioEl.currentTime <= 2.0)) {
-                    audioEl.crossfading = true;
-                    let vol = audioEl.volume;
-                    const fadeOut = setInterval(() => {
-                        if (vol > 0.1) {
-                            vol -= 0.1;
-                            audioEl.volume = vol;
-                        } else {
-                            clearInterval(fadeOut);
-                            audioEl.crossfading = false;
-                            nextMusicTrack();
-                        }
-                    }, 200);
-                }
-
                 const perc = `${(audioEl.currentTime / audioEl.duration) * 100}%`;
                 if(fill) fill.style.width = perc;
                 if(fillFs) fillFs.style.width = perc;
