@@ -86,6 +86,10 @@
             --nav-bg: rgba(255, 255, 255, 0.9);
         }
 
+        html, body {
+            overscroll-behavior-y: none;
+        }
+
         body {
             font-family: 'Open Sans', sans-serif;
             background-color: #000000;
@@ -2115,6 +2119,12 @@
 
     <div id="main-content">
         <!-- Main Application Content -->
+        
+        <div id="sync-reminder-banner" style="display: none; background: rgba(255, 170, 0, 0.15); border: 1px solid rgba(255, 170, 0, 0.3); color: #ffaa00; padding: 10px 15px; margin: 15px; border-radius: 12px; font-size: 0.85rem; text-align: center;">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" style="vertical-align: middle; margin-right: 5px;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+            Data out of date? <b>Pull down</b> on this screen to sync.
+            <button onclick="this.parentElement.style.display='none'" style="background:transparent; border:none; color:inherit; float:right; cursor:pointer; font-size:1.1rem; line-height:1; margin-top:-2px;">&times;</button>
+        </div>
 
         <div id="share-template">
             <div class="st-watermark">
@@ -3685,6 +3695,10 @@
                 }
 
                 if (result && result.success) {
+                    localStorage.setItem('lastSyncSuccessTime', Date.now().toString());
+                    const banner = document.getElementById('sync-reminder-banner');
+                    if (banner) banner.style.display = 'none';
+                    
                     const attList = Array.isArray(result.data) ? result.data : [];
                     const marksList = Array.isArray(result.marks) ? result.marks : [];
                     const ttDict = result.timetable || {};
@@ -4669,6 +4683,25 @@
                 const messBtns = document.querySelectorAll('#mess-tabs .tab-btn');
                 messBtns.forEach(btn => { if (btn.classList.contains('active')) renderMessMenu(btn.innerText); });
             }
+
+            if (isLoggedIn) {
+                const now = new Date();
+                const currentHour = now.getHours();
+                let lastMilestone = new Date(now);
+                if (currentHour >= 8) {
+                    lastMilestone.setHours(8, 0, 0, 0);
+                } else {
+                    lastMilestone.setHours(0, 0, 0, 0);
+                }
+                
+                const lastAuto = localStorage.getItem('lastAutoSyncTime');
+                if (!lastAuto || new Date(parseInt(lastAuto)) < lastMilestone) {
+                    if (typeof backgroundSync === 'function') {
+                        backgroundSync();
+                        localStorage.setItem('lastAutoSyncTime', now.getTime().toString());
+                    }
+                }
+            }
         }
         setInterval(updateLiveHighlighting, 60000);
 
@@ -4758,6 +4791,12 @@
                     showTab('dashboard');
                     
                     backgroundSync();
+                    
+                    const lastSuccess = localStorage.getItem('lastSyncSuccessTime');
+                    if (!lastSuccess || (Date.now() - parseInt(lastSuccess) > 12 * 60 * 60 * 1000)) {
+                        const banner = document.getElementById('sync-reminder-banner');
+                        if (banner) banner.style.display = 'block';
+                    }
                 } else {
                     isLoggedIn = false;
                     // Hide everything and show login view
