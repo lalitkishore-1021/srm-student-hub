@@ -1903,6 +1903,11 @@
             transform: scale(1.02) translateX(10px);
             text-shadow: 0 0 15px rgba(255, 255, 255, 0.9), 0 0 25px rgba(255, 255, 255, 0.7) !important;
         }
+        .active-lyric {
+            color: #ffffff !important;
+            transform: scale(1.05) translateX(15px);
+            text-shadow: 0 0 15px rgba(255, 255, 255, 0.9), 0 0 25px rgba(255, 255, 255, 0.7) !important;
+        }
         #fs-lyrics-container {
             padding: 40px 20px !important;
             text-align: left !important;
@@ -6212,13 +6217,7 @@
                     const res = await fetch(`${BACKEND_URL}/api/music/lyrics?artist=${encodeURIComponent(track.artist)}&title=${encodeURIComponent(track.title)}`);
                     const data = await res.json();
                     if (data.success && data.lyrics) {
-                        const lines = data.lyrics.split('\n');
-                        let html = '';
-                        for (const line of lines) {
-                            if (line.trim() === '') html += '<br>';
-                            else html += `<div class="apple-lyric-line">${line}</div>`;
-                        }
-                        lyricsContainer.innerHTML = html;
+                        renderLyrics(data, lyricsContainer);
                     } else {
                         lyricsContainer.innerText = "Lyrics not found for this track.\n(Instrumental or unreleased?)";
                     }
@@ -6487,6 +6486,44 @@
             showNotification("Playback Device: System Audio Output");
         }
 
+        window.syncedLyricsData = [];
+        window.currentLyricIndex = -1;
+        
+        function renderLyrics(data, container) {
+            window.syncedLyricsData = [];
+            window.currentLyricIndex = -1;
+            const lines = data.lyrics.split('\n');
+            let html = '';
+            
+            if (data.isSynced) {
+                const timeRegex = /\[(\d{2}):(\d{2})\.(\d{2,3})\]/;
+                for (const line of lines) {
+                    const match = timeRegex.exec(line);
+                    if (match) {
+                        const mins = parseInt(match[1]);
+                        const secs = parseInt(match[2]);
+                        const ms = parseInt(match[3]);
+                        const totalSeconds = (mins * 60) + secs + (ms / (match[3].length === 3 ? 1000 : 100));
+                        
+                        const text = line.replace(timeRegex, '').trim();
+                        if (text) {
+                            window.syncedLyricsData.push({ time: totalSeconds, text: text });
+                            const idx = window.syncedLyricsData.length - 1;
+                            html += `<div class="apple-lyric-line synced-line" id="lyric-line-${idx}">${text}</div>`;
+                        }
+                    } else if (line.trim() !== '') {
+                         html += `<div class="apple-lyric-line">${line.trim()}</div>`;
+                    }
+                }
+            } else {
+                for (const line of lines) {
+                    if (line.trim() === '') html += '<br>';
+                    else html += `<div class="apple-lyric-line">${line}</div>`;
+                }
+            }
+            container.innerHTML = html;
+        }
+
         async function toggleLyrics() {
             const lyricsContainer = document.getElementById('fs-lyrics-container');
             if (!lyricsContainer) return;
@@ -6509,13 +6546,7 @@
                 const res = await fetch(`${BACKEND_URL}/api/music/lyrics?artist=${encodeURIComponent(track.artist)}&title=${encodeURIComponent(track.title)}`);
                 const data = await res.json();
                 if (data.success && data.lyrics) {
-                    const lines = data.lyrics.split('\n');
-                    let html = '';
-                    for (const line of lines) {
-                        if (line.trim() === '') html += '<br>';
-                        else html += `<div class="apple-lyric-line">${line}</div>`;
-                    }
-                    lyricsContainer.innerHTML = html;
+                    renderLyrics(data, lyricsContainer);
                 } else {
                     lyricsContainer.innerText = "Lyrics not found for this track.\n(Instrumental or unreleased?)";
                 }
@@ -6567,6 +6598,34 @@
                 if(fill) fill.style.width = perc;
                 if(fillFs) fillFs.style.width = perc;
                 if(fillMobile) fillMobile.style.width = perc;
+                
+                if (window.syncedLyricsData && window.syncedLyricsData.length > 0) {
+                    const ct = audioEl.currentTime;
+                    let activeIndex = -1;
+                    
+                    for (let i = 0; i < window.syncedLyricsData.length; i++) {
+                        if (ct >= window.syncedLyricsData[i].time) {
+                            activeIndex = i;
+                        } else {
+                            break;
+                        }
+                    }
+                    
+                    if (activeIndex !== -1 && activeIndex !== window.currentLyricIndex) {
+                        const prev = document.getElementById(`lyric-line-${window.currentLyricIndex}`);
+                        if (prev) prev.classList.remove('active-lyric');
+                        
+                        const current = document.getElementById(`lyric-line-${activeIndex}`);
+                        if (current) {
+                            current.classList.add('active-lyric');
+                            const container = document.getElementById('fs-lyrics-container');
+                            if (container && container.style.display === 'block') {
+                                current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            }
+                        }
+                        window.currentLyricIndex = activeIndex;
+                    }
+                }
                 
                 document.getElementById('player-time-current').innerText = formatTime(audioEl.currentTime);
                 document.getElementById('player-time-total').innerText = formatTime(audioEl.duration);

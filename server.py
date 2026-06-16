@@ -2150,18 +2150,20 @@ def get_lyrics():
         if resp.status_code == 200:
             data = resp.json()
             if isinstance(data, list) and len(data) > 0:
-                lyrics = data[0].get('plainLyrics') or data[0].get('syncedLyrics')
+                is_synced = bool(data[0].get('syncedLyrics'))
+                lyrics = data[0].get('syncedLyrics') or data[0].get('plainLyrics')
                 if lyrics:
-                    return jsonify({'success': True, 'lyrics': lyrics})
+                    return jsonify({'success': True, 'lyrics': lyrics, 'isSynced': is_synced})
         
         # Try 2: Direct get API (exact match)
         url2 = f"https://lrclib.net/api/get?artist_name={urllib.parse.quote(clean_artist)}&track_name={urllib.parse.quote(clean_title)}"
         resp2 = requests.get(url2, timeout=8, headers={'User-Agent': 'SRM Student Hub/1.0'})
         if resp2.status_code == 200:
             data2 = resp2.json()
-            lyrics = data2.get('plainLyrics') or data2.get('syncedLyrics')
+            is_synced = bool(data2.get('syncedLyrics'))
+            lyrics = data2.get('syncedLyrics') or data2.get('plainLyrics')
             if lyrics:
-                return jsonify({'success': True, 'lyrics': lyrics})
+                return jsonify({'success': True, 'lyrics': lyrics, 'isSynced': is_synced})
         
         # Try 3: Search with just the title (sometimes artist name variation causes no match)
         url3 = f"https://lrclib.net/api/search?q={urllib.parse.quote(clean_title)}"
@@ -2169,9 +2171,10 @@ def get_lyrics():
         if resp3.status_code == 200:
             data3 = resp3.json()
             if isinstance(data3, list) and len(data3) > 0:
-                lyrics = data3[0].get('plainLyrics') or data3[0].get('syncedLyrics')
+                is_synced = bool(data3[0].get('syncedLyrics'))
+                lyrics = data3[0].get('syncedLyrics') or data3[0].get('plainLyrics')
                 if lyrics:
-                    return jsonify({'success': True, 'lyrics': lyrics})
+                    return jsonify({'success': True, 'lyrics': lyrics, 'isSynced': is_synced})
                     
     except Exception as e:
         print(f"Lyrics fetch error: {e}")
