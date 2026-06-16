@@ -1806,9 +1806,9 @@
         .music-fullscreen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 3000; background: #08080c; display: none; flex-direction: column; padding: 25px; padding-top: max(25px, env(safe-area-inset-top)); animation: slideUp 0.3s ease forwards; overflow: hidden; justify-content: center; align-items: center; }
         .fs-bg-orbs-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: -2; overflow: hidden; pointer-events: none; }
         .fs-orb { position: absolute; border-radius: 50%; filter: blur(70px); opacity: 0.85; transition: background 1.5s ease-in-out; }
-        .fs-orb-1 { width: 320px; height: 320px; background: var(--fs-accent-1, rgba(255, 170, 0, 0.75)); top: -40px; left: -40px; animation: drift1 15s infinite alternate ease-in-out; }
-        .fs-orb-2 { width: 370px; height: 370px; background: var(--fs-accent-2, rgba(138, 43, 226, 0.65)); bottom: -40px; right: -40px; animation: drift2 18s infinite alternate ease-in-out; }
-        .fs-orb-3 { width: 280px; height: 280px; background: var(--fs-accent-3, rgba(0, 255, 200, 0.55)); top: 38%; left: 25%; animation: drift3 12s infinite alternate ease-in-out; }
+        .fs-orb-1 { width: 320px; height: 320px; background: var(--fs-accent-1, rgba(255, 170, 0, 0.75)); top: -40px; left: -40px; animation: drift1 8s infinite alternate ease-in-out; }
+        .fs-orb-2 { width: 370px; height: 370px; background: var(--fs-accent-2, rgba(138, 43, 226, 0.65)); bottom: -40px; right: -40px; animation: drift2 9s infinite alternate ease-in-out; }
+        .fs-orb-3 { width: 280px; height: 280px; background: var(--fs-accent-3, rgba(0, 255, 200, 0.55)); top: 38%; left: 25%; animation: drift3 6s infinite alternate ease-in-out; }
         .fs-bg-blur { position: absolute; top: -10%; left: -10%; width: 120%; height: 120%; object-fit: cover; filter: blur(90px) brightness(0.22); z-index: -3; transition: all 1s ease; opacity: 0.6; }
         .fs-bg-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; background: linear-gradient(180deg, rgba(10, 10, 15, 0.2) 0%, rgba(10, 10, 15, 0.7) 100%); }
         .fs-glass-panel { width: calc(100% - 10px); box-sizing: border-box; max-width: 500px; background: rgba(22, 22, 28, 0.45); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 30px; padding: 25px 20px 20px 20px; box-shadow: 0 30px 60px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.06); display: flex; flex-direction: column; align-items: center; z-index: 10; margin-top: auto; margin-bottom: max(15px, env(safe-area-inset-bottom)); }
@@ -5763,7 +5763,8 @@
             tracks.sort((a, b) => (b.downloaded_at || 0) - (a.downloaded_at || 0));
             tracks.forEach((t, i) => {
                 html += `
-                <div class="music-track-card fade-in-up" style="display:flex; align-items:center; gap:14px; padding:14px 18px; background:rgba(255,255,255,0.05); border-radius:14px; margin-bottom:10px; cursor:pointer; border:1px solid rgba(255,255,255,0.06); transition:all 0.2s;" onclick="playOfflineTrack('${t.id}')" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='rgba(255,255,255,0.05)'">
+                <div class="music-track-card fade-in-up" data-id="${t.id}" style="display:flex; align-items:center; gap:14px; padding:14px 18px; background:rgba(255,255,255,0.05); border-radius:14px; margin-bottom:10px; cursor:grab; border:1px solid rgba(255,255,255,0.06); transition:all 0.2s;" onclick="playOfflineTrack('${t.id}')" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='rgba(255,255,255,0.05)'">
+                    <div style="color: rgba(255,255,255,0.2); margin-right: 5px; font-size: 1.2rem;">⋮⋮</div>
                     <img src="${t.cover_data || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMzMzIi8+PC9zdmc+'}" style="width:50px; height:50px; border-radius:10px; object-fit:cover; flex-shrink:0;">
                     <div style="flex:1; min-width:0;">
                         <div style="color:#fff; font-weight:600; font-size:0.95rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${t.title}</div>
@@ -5776,22 +5777,31 @@
                 </div>`;
             });
             container.innerHTML = html;
+            
+            if (window.dlSortable) { window.dlSortable.destroy(); }
+            window.dlSortable = Sortable.create(container, {
+                animation: 250, delay: 200, delayOnTouchOnly: true, ghostClass: 'sortable-ghost',
+                onEnd: function(evt) {
+                    if (currentPlaylist.length > 0 && currentPlaylist[0].downloaded_at) {
+                        const item = currentPlaylist.splice(evt.oldIndex, 1)[0];
+                        currentPlaylist.splice(evt.newIndex, 0, item);
+                        if (currentTrackIndex === evt.oldIndex) currentTrackIndex = evt.newIndex;
+                        else if (currentTrackIndex > evt.oldIndex && currentTrackIndex <= evt.newIndex) currentTrackIndex--;
+                        else if (currentTrackIndex < evt.oldIndex && currentTrackIndex >= evt.newIndex) currentTrackIndex++;
+                    }
+                }
+            });
         }
         
         async function playOfflineTrack(trackId) {
             trackId = Number(trackId);
-            const track = await getOfflineTrack(trackId);
+            const tracks = await getAllOfflineTracks();
+            const track = tracks.find(t => t.id === trackId);
             if (!track || !track.audio_data) return alert('Track data not found offline.');
             
-            // Check if track is in current playlist
-            let idx = currentPlaylist.findIndex(t => t.id === trackId);
-            if (idx === -1) {
-                // Add to playlist temporarily
-                currentPlaylist.push({ id: track.id, title: track.title, artist: track.artist, cover_data: track.cover_data });
-                idx = currentPlaylist.length - 1;
-            }
+            currentPlaylist = tracks.sort((a, b) => (b.downloaded_at || 0) - (a.downloaded_at || 0));
+            const idx = currentPlaylist.findIndex(t => t.id === trackId);
             
-            // Play using cached data
             nextTrackCache = { index: idx, audio_data: track.audio_data };
             playMusicTrack(idx);
         }
@@ -6310,9 +6320,9 @@
                 const r2 = imgData[50], g2 = imgData[51], b2 = imgData[52];
                 const r3 = imgData[96], g3 = imgData[97], b3 = imgData[98];
                 
-                const color1 = `rgba(${r1}, ${g1}, ${b1}, 0.75)`;
-                const color2 = `rgba(${r2}, ${g2}, ${b2}, 0.65)`;
-                const color3 = `rgba(${r3}, ${g3}, ${b3}, 0.55)`;
+                const color1 = `rgba(${r1}, ${g1}, ${b1}, 0.95)`;
+                const color2 = `rgba(${r2}, ${g2}, ${b2}, 0.85)`;
+                const color3 = `rgba(${r3}, ${g3}, ${b3}, 0.75)`;
                 
                 const fsEl = document.getElementById('music-fullscreen');
                 if (fsEl) {
@@ -6331,15 +6341,33 @@
             }
         }
 
-        function shareCurrentTrack() {
+        async function shareCurrentTrack() {
             const track = currentPlaylist[currentTrackIndex];
             if (!track) return;
             const text = `Listening to "${track.title}" by ${track.artist} on SRM Student Hub!`;
+            
+            let filesArray = [];
+            if (track.cover_data && track.cover_data.startsWith('data:image')) {
+                try {
+                    const arr = track.cover_data.split(',');
+                    const mime = arr[0].match(/:(.*?);/)[1];
+                    const bstr = atob(arr[1]);
+                    let n = bstr.length;
+                    const u8arr = new Uint8Array(n);
+                    while(n--){ u8arr[n] = bstr.charCodeAt(n); }
+                    const file = new File([u8arr], "cover.jpg", {type: mime});
+                    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                        filesArray = [file];
+                    }
+                } catch(e){}
+            }
+
             if (navigator.share) {
                 navigator.share({
                     title: 'SRM Student Hub - Music',
                     text: text,
-                    url: window.location.href
+                    url: window.location.href,
+                    ...(filesArray.length > 0 ? { files: filesArray } : {})
                 }).catch(() => {});
             } else {
                 navigator.clipboard.writeText(text);
