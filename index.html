@@ -1908,9 +1908,38 @@
             transform: scale(1.05) translateX(15px);
             text-shadow: 0 0 15px rgba(255, 255, 255, 0.9), 0 0 25px rgba(255, 255, 255, 0.7) !important;
         }
-        #fs-lyrics-container {
-            padding: 40px 20px !important;
-            text-align: left !important;
+        .fs-lyrics-bottom-sheet {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 75%;
+            background: var(--fs-accent-2, rgba(0,0,0,0.85));
+            border-radius: 30px 30px 0 0;
+            padding: 20px;
+            overflow-y: auto;
+            color: #fff;
+            font-size: 1.1rem;
+            line-height: 1.8;
+            text-align: left;
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            z-index: 20;
+            box-sizing: border-box;
+            transform: translateY(100%);
+            transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), background 0.5s ease;
+            box-shadow: 0 -10px 40px rgba(0,0,0,0.3);
+        }
+        .fs-lyrics-bottom-sheet.active {
+            transform: translateY(0);
+        }
+        .fs-lyrics-handle {
+            width: 40px;
+            height: 5px;
+            background: rgba(255,255,255,0.3);
+            border-radius: 5px;
+            margin: 0 auto 20px auto;
+            cursor: pointer;
         }
 
         /* View Transition Theme Toggle */
@@ -3141,9 +3170,6 @@
         </div>
         <div class="fs-cover-container">
             <img id="fs-cover" class="fs-cover" src="" alt="Cover">
-            <div id="fs-lyrics-container" style="display:none; position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.65); border-radius:20px; padding:20px; overflow-y:auto; color:#fff; font-size:1.1rem; line-height:1.8; text-align:center; backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); z-index:15; white-space: pre-wrap; transition: opacity 0.3s; box-sizing: border-box;">
-                Loading lyrics...
-            </div>
         </div>
         <div class="fs-glass-panel">
             <div class="fs-info">
@@ -3182,6 +3208,14 @@
                 </div>
                 <button class="fs-util-btn" onclick="showDevices()" title="Connect to device"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M4 6h16v10H4zm16 12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2H0v2h24v-2h-4z"/></svg></button>
                 <button class="fs-util-btn" onclick="toggleLyrics()" title="Lyrics"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M21.99 4c0-1.1-.89-2-1.99-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h14l4 4-.01-18zM18 14H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/></svg></button>
+            </div>
+        </div>
+        
+        <!-- Spotify-style bottom sheet lyrics -->
+        <div id="fs-lyrics-container" class="fs-lyrics-bottom-sheet">
+            <div class="fs-lyrics-handle" onclick="toggleLyrics()"></div>
+            <div id="fs-lyrics-content" style="padding-bottom: 50px;">
+                Loading lyrics...
             </div>
         </div>
     </div>
@@ -6210,19 +6244,20 @@
             }
             
             // Auto refresh lyrics if open
-            const lyricsContainer = document.getElementById('fs-lyrics-container');
-            if (lyricsContainer && lyricsContainer.style.display === 'block') {
-                lyricsContainer.innerText = "Loading lyrics...";
+            const sheet = document.getElementById('fs-lyrics-container');
+            const content = document.getElementById('fs-lyrics-content');
+            if (sheet && sheet.classList.contains('active')) {
+                content.innerText = "Loading lyrics...";
                 try {
                     const res = await fetch(`${BACKEND_URL}/api/music/lyrics?artist=${encodeURIComponent(track.artist)}&title=${encodeURIComponent(track.title)}`);
                     const data = await res.json();
                     if (data.success && data.lyrics) {
-                        renderLyrics(data, lyricsContainer);
+                        renderLyrics(data, content);
                     } else {
-                        lyricsContainer.innerText = "Lyrics not found for this track.\n(Instrumental or unreleased?)";
+                        content.innerText = "Lyrics not found for this track.\n(Instrumental or unreleased?)";
                     }
                 } catch (e) {
-                    lyricsContainer.innerText = "Failed to load lyrics.";
+                    content.innerText = "Failed to load lyrics.";
                 }
             }
 
@@ -6525,20 +6560,21 @@
         }
 
         async function toggleLyrics() {
-            const lyricsContainer = document.getElementById('fs-lyrics-container');
-            if (!lyricsContainer) return;
+            const sheet = document.getElementById('fs-lyrics-container');
+            const content = document.getElementById('fs-lyrics-content');
+            if (!sheet || !content) return;
             
-            if (lyricsContainer.style.display === 'block') {
-                lyricsContainer.style.display = 'none';
+            if (sheet.classList.contains('active')) {
+                sheet.classList.remove('active');
                 return;
             }
             
-            lyricsContainer.style.display = 'block';
-            lyricsContainer.innerText = "Loading lyrics...";
+            sheet.classList.add('active');
+            content.innerText = "Loading lyrics...";
             
             const track = currentPlaylist[currentTrackIndex];
             if (!track) {
-                lyricsContainer.innerText = "No track playing.";
+                content.innerText = "No track playing.";
                 return;
             }
             
@@ -6546,12 +6582,12 @@
                 const res = await fetch(`${BACKEND_URL}/api/music/lyrics?artist=${encodeURIComponent(track.artist)}&title=${encodeURIComponent(track.title)}`);
                 const data = await res.json();
                 if (data.success && data.lyrics) {
-                    renderLyrics(data, lyricsContainer);
+                    renderLyrics(data, content);
                 } else {
-                    lyricsContainer.innerText = "Lyrics not found for this track.\n(Instrumental or unreleased?)";
+                    content.innerText = "Lyrics not found for this track.\n(Instrumental or unreleased?)";
                 }
             } catch (e) {
-                lyricsContainer.innerText = "Failed to load lyrics.";
+                content.innerText = "Failed to load lyrics.";
             }
         }
 
@@ -6619,7 +6655,7 @@
                         if (current) {
                             current.classList.add('active-lyric');
                             const container = document.getElementById('fs-lyrics-container');
-                            if (container && container.style.display === 'block') {
+                            if (container && container.classList.contains('active')) {
                                 current.scrollIntoView({ behavior: 'smooth', block: 'center' });
                             }
                         }
