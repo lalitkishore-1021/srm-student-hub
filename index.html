@@ -5142,8 +5142,8 @@
                     
                     backgroundSync();
                     
-                    const lastSuccess = localStorage.getItem('lastSyncSuccessTime');
-                    if (!lastSuccess || (Date.now() - parseInt(lastSuccess) > 12 * 60 * 60 * 1000)) {
+                    const lastSuccessSync = localStorage.getItem('lastSyncSuccessTime');
+                    if (!lastSuccessSync || (Date.now() - parseInt(lastSuccessSync) > 12 * 60 * 60 * 1000)) {
                         const banner = document.getElementById('sync-reminder-banner');
                         if (banner) banner.style.display = 'block';
                     }
