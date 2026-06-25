@@ -2218,6 +2218,15 @@
         </div>
     </div>
 
+    <!-- WhatsApp Style Delete Modal -->
+    <div id="wa-delete-modal" class="depth-blur-overlay" onclick="if(event.target===this){this.classList.remove('active');this.style.display='none'}">
+        <div class="sync-confirm-card" style="width: 300px; padding: 20px;">
+            <div id="wa-delete-options" style="display: flex; flex-direction: column; gap: 10px;">
+                <!-- Options injected via JS -->
+            </div>
+        </div>
+    </div>
+
     <div id="login-view" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 10000; flex-direction: column; justify-content: center; align-items: center; background: transparent; backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);">
         <div class="image-card" style="max-width: 450px; width: 90%; padding: 40px; text-align: center; animation: fadeInUp 0.8s ease forwards;">
             <svg viewBox="0 0 100 100" width="80" height="80" style="margin-bottom: 20px;">
@@ -3049,7 +3058,9 @@
             <div class="liquid-glass" style="flex-shrink: 0; max-width: 600px; margin: 0 auto; width: 100%; display: flex; gap: 10px; align-items: center; padding: 10px; border-radius: 20px;">
                 <label for="chat-image-input" style="cursor: pointer; padding: 10px; background: rgba(255,170,0,0.1); border-radius: 50%; color: #ffaa00;"><svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg></label>
                 <input type="file" id="chat-image-input" accept="image/*" style="display: none;" onchange="handleChatImageUpload(event)">
-                <button id="chat-record-btn" onmousedown="startChatAudio(event)" onmouseup="stopChatAudio(event)" ontouchstart="startChatAudio(event)" ontouchend="stopChatAudio(event)" style="padding: 10px; background: rgba(0, 204, 102, 0.1); border: none; border-radius: 50%; color: #00cc66; cursor: pointer; display: flex; align-items: center; justify-content: center; position: relative; font-size: 1.2rem; transition: transform 0.2s; user-select: none; -webkit-user-select: none;"></button>
+                <button id="chat-record-btn" onmousedown="startChatAudio(event)" onmouseup="stopChatAudio(event)" ontouchstart="startChatAudio(event)" ontouchend="stopChatAudio(event)" style="padding: 10px; background: rgba(0, 204, 102, 0.1); border: none; border-radius: 50%; color: #00cc66; cursor: pointer; display: flex; align-items: center; justify-content: center; position: relative; transition: transform 0.2s; user-select: none; -webkit-user-select: none;">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>
+                </button>
                 <input type="text" id="class-chat-input" placeholder="Type a message or hold ..." style="flex: 1; background: transparent; border: none; outline: none; color: #fff; font-family: 'Montserrat', sans-serif; font-size: 1rem; padding: 5px;" onkeypress="if(event.key==='Enter') sendClassChat()">
                 <button onclick="sendClassChat()" style="background: linear-gradient(135deg, #00cc66, #00994d); color: #fff; border: none; padding: 10px 20px; border-radius: 15px; cursor: pointer; font-weight: bold; letter-spacing: 1px;"><svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg></button>
             </div>
@@ -7781,6 +7792,20 @@
             }
         }
 
+        /* ================= HOLOGRAM MODE ================= */
+        .offline-hologram {
+            filter: grayscale(80%) sepia(50%) hue-rotate(160deg) saturate(1.5) contrast(1.1) brightness(0.9);
+            position: relative;
+        }
+        .offline-hologram::before {
+            content: "";
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0, 255, 255, 0.05) 3px, transparent 4px);
+            pointer-events: none;
+            z-index: 10000;
+        }
+
         // ================= TIMETABLE PUSH NOTIFICATIONS =================
         let notificationInterval = null;
         function setupTimetableNotifications() {
@@ -7885,17 +7910,32 @@
         function copyClassChat(msg) {
             navigator.clipboard.writeText(msg).then(() => alert('Message copied!'));
         }
-        function deleteClassChat(id, isMe) {
-            let action = 'me';
+        function openDeleteModal(id, isMe) {
+            const modal = document.getElementById('wa-delete-modal');
+            const opts = document.getElementById('wa-delete-options');
+            let html = '';
+            
             if (isMe) {
-                if (confirm("Delete this message for EVERYONE?")) action = 'everyone';
-                else return;
-            } else {
-                if (!confirm("Delete this message for yourself?")) return;
+                html += `<button onclick="deleteClassChat('${id}', 'everyone')" style="width: 100%; padding: 15px; background: rgba(255, 71, 87, 0.1); border: 1px solid rgba(255, 71, 87, 0.3); border-radius: 12px; color: #ff4757; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg> Delete for everyone
+                </button>`;
             }
+            html += `<button onclick="deleteClassChat('${id}', 'me')" style="width: 100%; padding: 15px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; color: #fff; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg> Delete for me
+            </button>`;
+            html += `<button onclick="document.getElementById('wa-delete-modal').classList.remove('active');document.getElementById('wa-delete-modal').style.display='none'" style="width: 100%; padding: 15px; background: transparent; border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 12px; color: #ccc; cursor: pointer;">Cancel</button>`;
+            
+            opts.innerHTML = html;
+            modal.style.display = 'flex';
+            setTimeout(() => modal.classList.add('active'), 10);
+        }
+
+        function deleteClassChat(id, mode) {
+            document.getElementById('wa-delete-modal').classList.remove('active');
+            document.getElementById('wa-delete-modal').style.display = 'none';
             fetch(`${BACKEND_URL}/api/chat/delete/${id}`, {
                 method: 'POST', headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ net_id: getCurrentNetId(), mode: action })
+                body: JSON.stringify({ net_id: getCurrentNetId(), mode: mode })
             }).then(() => loadClassChat());
         }
         
@@ -7907,7 +7947,7 @@
             
             if (currentCustomAudio && currentCustomAudio.src === url && !currentCustomAudio.paused) {
                 currentCustomAudio.pause();
-                btn.innerText = '';
+                btn.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>';
                 clearInterval(currentAudioWaveInterval);
                 waves.forEach(w => w.style.height = (Math.random()*15+5)+'px');
                 return;
@@ -7915,19 +7955,19 @@
             if (currentCustomAudio) {
                 currentCustomAudio.pause();
                 clearInterval(currentAudioWaveInterval);
-                document.querySelectorAll('.custom-audio-player button').forEach(b => b.innerText = '');
+                document.querySelectorAll('.custom-audio-player button').forEach(b => b.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>');
             }
             
             currentCustomAudio = new Audio(url);
             currentCustomAudio.play();
-            btn.innerText = '⏸';
+            btn.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>';
             
             currentAudioWaveInterval = setInterval(() => {
                 waves.forEach(w => w.style.height = (Math.random()*20+5)+'px');
             }, 100);
             
             currentCustomAudio.onended = () => {
-                btn.innerText = '';
+                btn.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>';
                 clearInterval(currentAudioWaveInterval);
                 waves.forEach(w => w.style.height = (Math.random()*15+5)+'px');
             };
@@ -8058,13 +8098,13 @@
                         let html = '';
                         html += `<div style="font-size: 0.75rem; font-weight: bold; color: ${isMe ? 'rgba(255,255,255,0.9)' : '#ffaa00'}; margin-bottom: 4px; display:flex; justify-content:space-between; align-items:center;">
                             <span>${isMe ? 'You' : m.sender_name}</span>
-                            <span class="chat-menu-btn" style="cursor:pointer; opacity:0.6; padding:0 5px;"></span>
+                            <span class="chat-menu-btn" style="cursor:pointer; opacity:0.6; padding:0 5px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg></span>
                         </div>`;
 
                         const safeMsg = m.message ? m.message.replace(/'/g, "\\'").replace(/"/g, '&quot;') : '';
                         const menuHtml = `<div class="chat-ctx-menu" style="display:none; position:absolute; top:25px; right:10px; background:rgba(20,20,20,0.95); border:1px solid rgba(255,255,255,0.1); border-radius:10px; padding:5px 0; z-index:100; box-shadow:0 10px 25px rgba(0,0,0,0.5); backdrop-filter:blur(15px); flex-direction:column; min-width:120px;">
                             <div class="ctx-item" onclick="copyClassChat('${safeMsg}')" style="padding:10px 15px; cursor:pointer; font-size:0.9rem; transition:background 0.2s;">Copy</div>
-                            <div class="ctx-item" onclick="deleteClassChat('${m.id}', ${isMe})" style="padding:10px 15px; cursor:pointer; font-size:0.9rem; color:#ff4757; transition:background 0.2s;">Delete</div>
+                            <div class="ctx-item" onclick="openDeleteModal('${m.id}', ${isMe})" style="padding:10px 15px; cursor:pointer; font-size:0.9rem; color:#ff4757; transition:background 0.2s;">Delete</div>
                         </div>`;
                         html += menuHtml;
 
@@ -8073,7 +8113,7 @@
                         if (m.audio_url) {
                             html += `
                             <div class="custom-audio-player" style="display:flex; align-items:center; gap:10px; background:rgba(0,0,0,0.2); padding:8px 12px; border-radius:30px; margin-bottom:5px;">
-                                <button onclick="toggleCustomAudio(this, '${m.audio_url}')" style="background:#fff; color:#000; border:none; border-radius:50%; width:35px; height:35px; display:flex; align-items:center; justify-content:center; cursor:pointer; flex-shrink:0;"></button>
+                                <button onclick="toggleCustomAudio(this, '${m.audio_url}')" style="background:#fff; color:#000; border:none; border-radius:50%; width:35px; height:35px; display:flex; align-items:center; justify-content:center; cursor:pointer; flex-shrink:0;"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></button>
                                 <div class="audio-waves" style="flex:1; display:flex; gap:3px; align-items:center; height:20px;">
                                     ${Array(15).fill(0).map(()=>`<div class="wave-bar" style="width:4px; height:${Math.random()*15+5}px; background:rgba(255,255,255,0.5); border-radius:2px; transition:height 0.2s;"></div>`).join('')}
                                 </div>
@@ -8121,18 +8161,36 @@
             if (profile.name) name = profile.name;
             else if (document.getElementById('name') && document.getElementById('name').value) name = document.getElementById('name').value.trim();
             
+            // Optimistic UI Append
+            const history = document.getElementById('class-chat-history');
+            const tempId = 'temp-' + Date.now();
+            const timeStr = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            const noMsg = document.getElementById('no-msg-txt');
+            if (noMsg) noMsg.remove();
+            
+            let tempHtml = `<div id="${tempId}" class="chat-bubble-anim fade-in-up" style="max-width: 85%; padding: 12px 16px; border-radius: 18px; display: flex; flex-direction: column; gap: 5px; position: relative; box-shadow: 0 4px 15px rgba(0,0,0,0.2); backdrop-filter: blur(10px); background: linear-gradient(135deg, rgba(0, 204, 102, 0.5), rgba(0, 153, 77, 0.6)); color: white; align-self: flex-end; border-bottom-right-radius: 4px; border: 1px solid rgba(0,255,100,0.3); opacity: 0.8;">
+                <div style="font-size: 0.75rem; font-weight: bold; color: rgba(255,255,255,0.9); margin-bottom: 4px;">You (Sending...)</div>`;
+            
+            if (img) tempHtml += `<img src="${img}" style="max-width: 100%; border-radius: 12px; margin-bottom: 5px; opacity: 0.7;">`;
+            if (audio) tempHtml += `<div class="custom-audio-player" style="display:flex; align-items:center; gap:10px; background:rgba(0,0,0,0.2); padding:8px 12px; border-radius:30px; margin-bottom:5px;"><button style="background:#fff; color:#000; border:none; border-radius:50%; width:35px; height:35px; display:flex; align-items:center; justify-content:center; flex-shrink:0;"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></button><div style="flex:1;font-size:0.8rem;">Audio (Uploading)</div></div>`;
+            if (msg) tempHtml += `<div style="word-wrap: break-word; line-height: 1.5; font-size: 0.95rem;">${msg}</div>`;
+            tempHtml += `<div style="font-size: 0.65rem; color: rgba(255,255,255,0.7); align-self: flex-end; margin-top: 4px;">${timeStr}</div></div>`;
+            
+            history.insertAdjacentHTML('beforeend', tempHtml);
+            history.scrollTop = history.scrollHeight;
+            chatAudioBase64 = null;
+            
             try {
                 await fetch(`${BACKEND_URL}/api/chat/${section}`, {
                     method: 'POST', headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({ sender_name: name, sender_net_id: netId, message: msg, image_url: img, audio_url: audio })
                 });
-                chatAudioBase64 = null;
                 loadClassChat();
-                setTimeout(() => {
-                    const history = document.getElementById('class-chat-history');
-                    history.scrollTop = history.scrollHeight;
-                }, 100);
-            } catch(e) { alert('Failed to send message'); }
+            } catch(e) { 
+                alert('Failed to send message'); 
+                const el = document.getElementById(tempId);
+                if(el) el.remove();
+            }
         }
 
         function handleChatImageUpload(e) {
