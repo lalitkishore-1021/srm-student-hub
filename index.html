@@ -2227,6 +2227,40 @@
         </div>
     </div>
 
+    <!-- Cinematic Day Recap Modal (Story Mode) -->
+    <div id="story-modal" class="depth-blur-overlay" style="display:none; flex-direction:column; background: #000; z-index: 20000; padding-top: env(safe-area-inset-top, 20px);">
+        <div style="display: flex; gap: 5px; padding: 15px; width: 100%; max-width: 500px; margin: 0 auto; z-index: 10;">
+            <div class="story-progress-bar"><div id="story-prog-1" class="story-progress-fill"></div></div>
+            <div class="story-progress-bar"><div id="story-prog-2" class="story-progress-fill"></div></div>
+            <div class="story-progress-bar"><div id="story-prog-3" class="story-progress-fill"></div></div>
+        </div>
+        <div style="position: absolute; top: 15px; right: 15px; z-index: 20;">
+            <button onclick="closeStoryMode()" style="background: rgba(255,255,255,0.2); border: none; border-radius: 50%; width: 35px; height: 35px; color: #fff; cursor: pointer; display:flex; align-items:center; justify-content:center; backdrop-filter: blur(10px);">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
+        </div>
+        <div id="story-content-container" style="flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 30px; position: relative;" onclick="advanceStory()">
+            <!-- Slide 1 -->
+            <div id="story-slide-1" class="story-slide fade-in-up" style="display:flex; flex-direction:column; align-items:center;">
+                <div class="glow-icon" style="font-size: 5rem; margin-bottom: 20px;">🎓</div>
+                <h2 id="story-greeting" style="font-size: 2rem; margin-bottom: 15px; color: #fff;"></h2>
+                <p id="story-stat-1" style="font-size: 1.2rem; color: rgba(255,255,255,0.8); line-height: 1.5;"></p>
+            </div>
+            <!-- Slide 2 -->
+            <div id="story-slide-2" class="story-slide fade-in-up" style="display:none; flex-direction:column; align-items:center;">
+                <div class="glow-icon" style="font-size: 5rem; margin-bottom: 20px;">⚠️</div>
+                <h2 style="font-size: 2rem; margin-bottom: 15px; color: #fff;">Danger Zone</h2>
+                <p id="story-stat-2" style="font-size: 1.2rem; color: rgba(255,255,255,0.8); line-height: 1.5;"></p>
+            </div>
+            <!-- Slide 3 -->
+            <div id="story-slide-3" class="story-slide fade-in-up" style="display:none; flex-direction:column; align-items:center;">
+                <div class="glow-icon" style="font-size: 5rem; margin-bottom: 20px;">✨</div>
+                <h2 style="font-size: 2rem; margin-bottom: 15px; color: #fff;">Academic Health</h2>
+                <p id="story-stat-3" style="font-size: 1.2rem; color: rgba(255,255,255,0.8); line-height: 1.5;"></p>
+            </div>
+        </div>
+    </div>
+
     <div id="login-view" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 10000; flex-direction: column; justify-content: center; align-items: center; background: transparent; backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);">
         <div class="image-card" style="max-width: 450px; width: 90%; padding: 40px; text-align: center; animation: fadeInUp 0.8s ease forwards;">
             <svg viewBox="0 0 100 100" width="80" height="80" style="margin-bottom: 20px;">
@@ -2393,9 +2427,9 @@
                 <div id="auth-dashboard" style="display: none;">
                     <div class="id-card" data-tilt data-tilt-glare="true" data-tilt-max-glare="0.5" data-tilt-scale="1.05" data-tilt-speed="400">
                         <div class="id-card-top">
-                            <div class="id-avatar">
-                                <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                    stroke-width="2">
+                            <div class="id-avatar story-ring" onclick="openStoryMode()">
+                                <img id="id-avatar-img" src="" style="width: 100%; height: 100%; object-fit: cover; display: none; border-radius: 50%;">
+                                <svg id="id-avatar-fallback" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
                                     <circle cx="12" cy="7" r="4" />
                                 </svg>
@@ -3694,6 +3728,16 @@
             if (courseSpan) courseSpan.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/></svg> ${deg}`;
             if (deptSpan) deptSpan.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg> ${deptStr}`;
             if (semSpan) semSpan.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg> Semester ${profile.semester || 'N/A'}`;
+
+            // Inject 3D Avatar
+            const avatarImg = document.getElementById('id-avatar-img');
+            const fallback = document.getElementById('id-avatar-fallback');
+            if (avatarImg && profile.regNo) {
+                // Use DiceBear Micah API. Seed = regNo to ensure consistency per user.
+                avatarImg.src = `https://api.dicebear.com/7.x/micah/svg?seed=${profile.regNo}&backgroundColor=transparent`;
+                avatarImg.style.display = 'block';
+                if(fallback) fallback.style.display = 'none';
+            }
 
             // Also render advisors
             renderAdvisors(profile);
@@ -7806,6 +7850,59 @@
             z-index: 10000;
         }
 
+        /* ================= DYNAMIC ATMOSPHERES & STORY ================= */
+        .theme-sunset {
+            background: linear-gradient(135deg, #2c0b2e 0%, #170824 50%, #000000 100%) !important;
+        }
+        .theme-sunset::before {
+            content: ""; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle at 80% 20%, rgba(255,100,50,0.15) 0%, transparent 60%);
+            z-index: -1;
+        }
+        .theme-night {
+            background: #050505 !important;
+        }
+        .theme-night::before {
+            content: ""; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-image: 
+                radial-gradient(1px 1px at 20px 30px, #fff, rgba(0,0,0,0)),
+                radial-gradient(1px 1px at 40px 70px, #fff, rgba(0,0,0,0)),
+                radial-gradient(1px 1px at 50px 160px, #fff, rgba(0,0,0,0)),
+                radial-gradient(1.5px 1.5px at 90px 40px, #fff, rgba(0,0,0,0)),
+                radial-gradient(2px 2px at 130px 80px, #fff, rgba(0,0,0,0));
+            background-repeat: repeat;
+            background-size: 200px 200px;
+            animation: twinkle 5s infinite linear;
+            opacity: 0.3;
+            z-index: -1;
+        }
+        .theme-rain::after {
+            content: ""; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: linear-gradient(to bottom, rgba(255,255,255,0) 0%, rgba(255,255,255,0.05) 100%);
+            z-index: 9999; pointer-events: none;
+            animation: rainDrop 0.2s linear infinite;
+        }
+        @keyframes twinkle { 0% { opacity: 0.2; } 50% { opacity: 0.5; } 100% { opacity: 0.2; } }
+        @keyframes rainDrop { 0% { background-position: 0 0; } 100% { background-position: 10px 100vh; } }
+
+        .story-ring {
+            border: 3px solid transparent;
+            background: linear-gradient(#1e1e1e, #1e1e1e) padding-box, linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888) border-box;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .story-ring:active { transform: scale(0.95); }
+        .story-progress-bar {
+            flex: 1; height: 3px; background: rgba(255,255,255,0.3); border-radius: 2px; overflow: hidden;
+        }
+        .story-progress-fill {
+            height: 100%; width: 0%; background: #fff;
+        }
+        .story-slide {
+            width: 100%; text-align: center;
+        }
+
+        /* ================= PREMIUM ANIMATIONS ================= */
         // ================= TIMETABLE PUSH NOTIFICATIONS =================
         let notificationInterval = null;
         function setupTimetableNotifications() {
@@ -8259,6 +8356,114 @@
             const btn = document.getElementById('chat-record-btn');
             btn.style.background = 'rgba(0, 204, 102, 0.1)';
             btn.style.transform = 'scale(1)';
+        }
+
+        // ================= DYNAMIC ATMOSPHERES =================
+        function applyDynamicAtmospheres() {
+            const hour = new Date().getHours();
+            document.body.classList.remove('theme-sunset', 'theme-night', 'theme-rain');
+            if (hour >= 17 && hour < 19) document.body.classList.add('theme-sunset');
+            else if (hour >= 19 || hour < 5) document.body.classList.add('theme-night');
+
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(async (pos) => {
+                    try {
+                        const lat = pos.coords.latitude;
+                        const lon = pos.coords.longitude;
+                        const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=precipitation`);
+                        const data = await res.json();
+                        if (data && data.current && data.current.precipitation > 0) {
+                            document.body.classList.add('theme-rain');
+                        }
+                    } catch(e) {}
+                });
+            }
+        }
+        setTimeout(applyDynamicAtmospheres, 2000);
+
+        // ================= CINEMATIC DAY RECAP (STORY MODE) =================
+        let currentStorySlide = 1;
+        let storyTimer = null;
+        let storyInterval = null;
+
+        function openStoryMode() {
+            const profile = JSON.parse(localStorage.getItem('squadProfile') || '{}');
+            const summary = JSON.parse(localStorage.getItem('squadSummary') || '{}');
+            
+            let totalClasses = 0, totalAttended = 0;
+            if(summary.totalConducted) totalClasses = parseInt(summary.totalConducted);
+            if(summary.totalAttended) totalAttended = parseInt(summary.totalAttended);
+            const totalBunked = Math.max(0, totalClasses - totalAttended);
+            
+            let lowestMargin = 999;
+            let lowestSub = 'None';
+            const attData = JSON.parse(localStorage.getItem('squadAttendance') || '[]');
+            attData.forEach(s => {
+                if(s.margin < lowestMargin) { lowestMargin = s.margin; lowestSub = s.title; }
+            });
+
+            document.getElementById('story-greeting').innerText = `Hey, ${profile.name ? profile.name.split(' ')[0] : 'Student'}!`;
+            document.getElementById('story-stat-1').innerHTML = `You've survived <strong>${totalClasses}</strong> classes so far.<br>You've successfully bunked <strong>${totalBunked}</strong> of them.`;
+            
+            if (lowestSub !== 'None') {
+                document.getElementById('story-stat-2').innerHTML = `Your most dangerous subject is <strong>${lowestSub}</strong>.<br>You have a margin of exactly <strong>${lowestMargin}</strong> bunks left.`;
+            } else {
+                document.getElementById('story-stat-2').innerHTML = `Your attendance looks fully clean!<br>Keep up the great work.`;
+            }
+            
+            const cgpa = summary.cgpa || 'N/A';
+            document.getElementById('story-stat-3').innerHTML = `Your current CGPA stands at <strong>${cgpa}</strong>.<br>Keep pushing forward, you're doing great!`;
+
+            document.getElementById('story-modal').style.display = 'flex';
+            setTimeout(() => document.getElementById('story-modal').classList.add('active'), 10);
+            
+            currentStorySlide = 1;
+            showStorySlide(currentStorySlide);
+        }
+
+        function closeStoryMode() {
+            document.getElementById('story-modal').classList.remove('active');
+            setTimeout(() => document.getElementById('story-modal').style.display = 'none', 300);
+            clearTimeout(storyTimer);
+            clearInterval(storyInterval);
+        }
+
+        function showStorySlide(index) {
+            clearTimeout(storyTimer);
+            clearInterval(storyInterval);
+            
+            [1,2,3].forEach(i => {
+                const slide = document.getElementById(`story-slide-${i}`);
+                if(slide) slide.style.display = (i === index) ? 'flex' : 'none';
+                const fill = document.getElementById(`story-prog-${i}`);
+                if(fill) {
+                    if (i < index) fill.style.width = '100%';
+                    else if (i > index) fill.style.width = '0%';
+                    else fill.style.width = '0%';
+                }
+            });
+            
+            let prog = 0;
+            const currentFill = document.getElementById(`story-prog-${index}`);
+            if(currentFill) {
+                storyInterval = setInterval(() => {
+                    prog += 2;
+                    if(prog <= 100) currentFill.style.width = `${prog}%`;
+                }, 100);
+            }
+
+            storyTimer = setTimeout(() => {
+                advanceStory();
+            }, 5000);
+        }
+
+        function advanceStory() {
+            if (currentStorySlide < 3) {
+                currentStorySlide++;
+                showStorySlide(currentStorySlide);
+            } else {
+                closeStoryMode();
+            }
         }
     </script>
 </body>
