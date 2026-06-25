@@ -47,6 +47,7 @@
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#08080c">
     <link rel="apple-touch-icon" href="images/app-icon.svg">
+    <link rel="icon" id="dynamic-favicon" type="image/svg+xml" href="images/app-icon.svg">
 
     <link
         href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;700;900&family=Open+Sans:wght@400;600&display=swap"
@@ -87,7 +88,7 @@
         }
 
         html, body {
-            overscroll-behavior-y: none;
+            overscroll-behavior-y: auto;
         }
 
         body {
@@ -238,6 +239,18 @@
             padding-bottom: 0;
             box-shadow: 0 10px 30px var(--shadow), inset 0 0 15px rgba(255, 170, 0, 0.05);
             box-sizing: border-box;
+            overflow: hidden;
+        }
+        .nav-indicator {
+            position: absolute;
+            bottom: 8px;
+            height: 4px;
+            border-radius: 4px;
+            background: var(--primary);
+            box-shadow: 0 0 12px var(--primary-glow), 0 0 24px var(--primary-glow);
+            transition: left 0.35s cubic-bezier(0.4, 0, 0.2, 1), width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            pointer-events: none;
+            z-index: 2;
         }
 
         .nav-item {
@@ -1757,6 +1770,131 @@
             height: 100px; border-radius: 14px; width: 100%;
         }
 
+        /* ====== MICRO PREMIUM: Skeleton Morph ====== */
+        .skeleton-morph {
+            animation: skeletonShimmer 1.5s ease-in-out infinite, skeletonReveal 0.6s ease forwards;
+        }
+        @keyframes skeletonReveal {
+            0% { opacity: 0.6; filter: blur(4px); }
+            100% { opacity: 1; filter: blur(0px); background: transparent; }
+        }
+        .morph-card {
+            animation: morphCardIn 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+            opacity: 0;
+        }
+        @keyframes morphCardIn {
+            0% { opacity: 0; transform: translateY(15px) scale(0.97); filter: blur(6px); }
+            100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+        }
+
+        /* ====== MICRO PREMIUM: Progressive Depth Blur ====== */
+        .depth-blur-overlay {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            z-index: 10001; display: none; flex-direction: column;
+            justify-content: center; align-items: center;
+            background: rgba(0,0,0,0.2);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            animation: depthBlurIn 0.35s ease forwards;
+        }
+        .depth-blur-overlay.active { display: flex; }
+        @keyframes depthBlurIn {
+            0% { backdrop-filter: blur(0px); background: rgba(0,0,0,0); }
+            100% { backdrop-filter: blur(20px) saturate(180%); background: rgba(0,0,0,0.35); }
+        }
+        .sync-confirm-card {
+            background: var(--card-bg);
+            border: 1px solid var(--glass-border);
+            width: 300px; border-radius: 20px;
+            text-align: center;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.6);
+            overflow: hidden;
+            animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+        }
+        .sync-confirm-card::before {
+            content: ''; position: absolute; top: -40px; right: -40px;
+            width: 120px; height: 120px;
+            background: radial-gradient(circle, var(--primary-glow), transparent);
+            border-radius: 50%; pointer-events: none;
+        }
+        .sync-confirm-card h3 {
+            margin: 0 0 8px 0; font-family: 'Montserrat', sans-serif;
+            font-size: 1.15rem; font-weight: 700; color: var(--text-main);
+        }
+        .sync-confirm-card p {
+            margin: 0; font-size: 0.85rem; color: var(--text-sub); line-height: 1.4;
+        }
+        .sync-confirm-actions {
+            display: flex; border-top: 1px solid var(--glass-border);
+        }
+        .sync-confirm-actions button {
+            flex: 1; padding: 14px; background: transparent;
+            border: none; color: var(--primary);
+            font-size: 1rem; cursor: pointer; transition: background 0.2s;
+        }
+        .sync-confirm-actions button:first-child {
+            border-right: 1px solid var(--glass-border); font-weight: 400; opacity: 0.7;
+        }
+        .sync-confirm-actions button:last-child { font-weight: 700; }
+        .sync-confirm-actions button:hover { background: rgba(255,170,0,0.08); }
+
+        /* ====== MICRO PREMIUM: Breathing Sync Ring ====== */
+        .breathing-ring {
+            position: absolute;
+            top: -4px; left: -4px; right: -4px; bottom: -4px;
+            border-radius: 50%;
+            border: 2.5px solid var(--success);
+            animation: breatheRing 2.5s ease-in-out infinite;
+            pointer-events: none;
+        }
+        .breathing-ring.stale { border-color: #ffaa00; }
+        .breathing-ring.offline { border-color: var(--danger); }
+        @keyframes breatheRing {
+            0%, 100% { transform: scale(1); opacity: 0.6; }
+            50% { transform: scale(1.15); opacity: 1; }
+        }
+
+        /* ====== MICRO PREMIUM: Context Menu ====== */
+        .context-menu-overlay {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            z-index: 9999; background: rgba(0,0,0,0.3);
+            backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+            animation: fadeInCtx 0.2s ease;
+        }
+        @keyframes fadeInCtx { 0% { opacity: 0; } 100% { opacity: 1; } }
+        .context-menu {
+            position: fixed; z-index: 10000;
+            background: var(--card-bg);
+            backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px; overflow: hidden;
+            min-width: 180px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            animation: ctxMenuIn 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+        @keyframes ctxMenuIn {
+            0% { opacity: 0; transform: scale(0.85); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+        .context-menu-item {
+            display: flex; align-items: center; gap: 12px;
+            padding: 14px 18px; color: var(--text-main);
+            font-size: 0.9rem; cursor: pointer; border: none;
+            background: none; width: 100%; text-align: left;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            transition: background 0.15s;
+        }
+        .context-menu-item:last-child { border-bottom: none; }
+        .context-menu-item:hover { background: rgba(255,170,0,0.08); }
+        .context-menu-item svg { width: 18px; height: 18px; fill: var(--primary); flex-shrink: 0; }
+
+        /* ====== MICRO PREMIUM: Confetti Canvas ====== */
+        #confetti-canvas {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            pointer-events: none; z-index: 99999;
+        }
+
         /* ====== PULL-TO-REFRESH ====== */
         .ptr-indicator {
             position: fixed; top: -50px; left: 50%; transform: translateX(-50%);
@@ -2066,15 +2204,16 @@
     </div>
 
     <!-- iOS Style Sync Confirmation Modal -->
-    <div id="ios-sync-confirm" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 10001; flex-direction: column; justify-content: center; align-items: center; background: rgba(0,0,0,0.5); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);">
-        <div style="background: rgba(30,30,30,0.85); width: 280px; border-radius: 14px; text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1); overflow: hidden; animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);">
-            <div style="padding: 20px;">
-                <h3 style="margin: 0 0 8px 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 1.1rem; font-weight: 600; color: #fff;">Sync Data?</h3>
-                <p style="margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 0.85rem; color: #ccc; line-height: 1.3;">This will securely fetch your latest attendance and timetable.</p>
+    <div id="ios-sync-confirm" class="depth-blur-overlay" onclick="if(event.target===this){this.classList.remove('active');this.style.display='none'}">
+        <div class="sync-confirm-card">
+            <div style="padding: 24px 20px;">
+                <svg viewBox="0 0 24 24" width="36" height="36" fill="var(--primary)" style="margin-bottom:12px;"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
+                <h3>Sync Data?</h3>
+                <p>This will securely fetch your latest attendance, marks, and timetable from SRM Academia.</p>
             </div>
-            <div style="display: flex; border-top: 1px solid rgba(255,255,255,0.1);">
-                <button onclick="document.getElementById('ios-sync-confirm').style.display='none'" style="flex: 1; padding: 12px; background: transparent; border: none; border-right: 1px solid rgba(255,255,255,0.1); color: #0a84ff; font-size: 1rem; font-weight: 400; cursor: pointer;">No</button>
-                <button onclick="document.getElementById('ios-sync-confirm').style.display='none'; if (typeof backgroundSync === 'function') backgroundSync();" style="flex: 1; padding: 12px; background: transparent; border: none; color: #0a84ff; font-size: 1rem; font-weight: 600; cursor: pointer;">Yes</button>
+            <div class="sync-confirm-actions">
+                <button onclick="document.getElementById('ios-sync-confirm').classList.remove('active');document.getElementById('ios-sync-confirm').style.display='none'">Cancel</button>
+                <button onclick="document.getElementById('ios-sync-confirm').classList.remove('active');document.getElementById('ios-sync-confirm').style.display='none'; if (typeof backgroundSync === 'function') backgroundSync();">Sync Now</button>
             </div>
         </div>
     </div>
@@ -2155,7 +2294,8 @@
     </div>
 
     <div class="btn-container" id="navButtons" style="display: none;">
-        <button id="manualSyncBtn" class="icon-btn" onclick="showSyncConfirmation()" title="Sync Data">
+        <button id="manualSyncBtn" class="icon-btn" onclick="showSyncConfirmation()" title="Sync Data" style="position: relative;">
+            <span id="sync-breathing-ring" class="breathing-ring"></span>
             <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
                 <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
             </svg>
@@ -2929,6 +3069,7 @@
         </footer>
     </div>
     <nav class="app-nav">
+        <div class="nav-indicator" id="nav-indicator"></div>
         <a class="nav-item active" onclick="switchNav('home-view', this)">
             <svg viewBox="0 0 24 24">
                 <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
@@ -3325,10 +3466,38 @@
 
         const logoTrigger = document.getElementById('logoInstallTrigger');
         if (logoTrigger) {
+            let logoTaps = 0;
+            let logoTapTimer = null;
             logoTrigger.addEventListener('click', () => {
-                if (deferredPrompt) openInstallModal();
-                else alert("App is already installed or browser doesn't support installation.");
+                logoTaps++;
+                clearTimeout(logoTapTimer);
+                if (logoTaps >= 3) {
+                    logoTaps = 0;
+                    triggerConfetti();
+                    showNotification("🎉 You found the secret! Built with love by Lalit Kishore.");
+                } else {
+                    logoTapTimer = setTimeout(() => { logoTaps = 0; }, 2000);
+                    if (logoTaps === 1 && deferredPrompt) openInstallModal();
+                }
             });
+        }
+        
+        function triggerConfetti() {
+            let canvas = document.getElementById('confetti-canvas');
+            if (!canvas) {
+                canvas = document.createElement('canvas');
+                canvas.id = 'confetti-canvas';
+                document.body.appendChild(canvas);
+            }
+            if (!window.confetti) {
+                const script = document.createElement('script');
+                script.src = 'https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js';
+                script.onload = () => confetti({ particleCount: 150, spread: 100, origin: { y: 0.6 } });
+                document.body.appendChild(script);
+            } else {
+                confetti({ particleCount: 150, spread: 100, origin: { y: 0.6 } });
+            }
+            setTimeout(() => { if(canvas) canvas.remove(); }, 5000);
         }
 
         function openInstallModal() { document.getElementById('installModal').style.display = 'flex'; }
@@ -3425,8 +3594,26 @@
         function switchNav(viewId, element) {
             document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
             element.classList.add('active');
+            
+            // Liquid indicator animation
+            const indicator = document.getElementById('nav-indicator');
+            if (indicator && element) {
+                const navRect = document.querySelector('.app-nav').getBoundingClientRect();
+                const elRect = element.getBoundingClientRect();
+                const relativeLeft = elRect.left - navRect.left;
+                indicator.style.left = `${relativeLeft + (elRect.width * 0.25)}px`;
+                indicator.style.width = `${elRect.width * 0.5}px`;
+            }
+            
             switchView(viewId);
         }
+
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                const activeNav = document.querySelector('.nav-item.active');
+                if (activeNav) switchNav('home-view', activeNav);
+            }, 100);
+        });
 
         window.addEventListener('popstate', (e) => {
             if (e.state && e.state.viewId) switchView(e.state.viewId, false);
@@ -3887,7 +4074,7 @@
             const list = document.getElementById('attendance-list');
             if (!list) return;
 
-            list.innerHTML = '';
+            let html = '';
             let totalAtt = 0;
             let totalClasses = 0;
             attendanceData = attData || [];
@@ -3922,13 +4109,13 @@
                     marginLabel = 'Need';
                 }
 
-                list.innerHTML += `
-                    <div class="image-card fade-in-up" style="display: flex; align-items: center; justify-content: space-between; padding: 20px; margin-bottom: 15px; transition: all 0.3s; ${cardStyleModifier}">
+                html += `
+                    <div class="image-card morph-card" oncontextmenu="handleLongPress(event, '${name}', 'attendance')" onmousedown="startLongPress(event, '${name}', 'attendance')" onmouseup="cancelLongPress()" onmouseleave="cancelLongPress()" ontouchstart="startLongPress(event, '${name}', 'attendance')" ontouchend="cancelLongPress()" ontouchcancel="cancelLongPress()" style="display: flex; align-items: center; justify-content: space-between; padding: 20px; margin-bottom: 15px; transition: all 0.3s; ${cardStyleModifier}">
                         <div style="flex: 1; padding-right: 15px;">
                             <h3 style="margin: 0 0 10px 0; color: #fff; font-family: 'Montserrat', sans-serif; font-size: 1rem; line-height: 1.3;">${name}</h3>
                             <div class="stat-text" style="color: #fff; font-weight: bold; margin-top: 10px;">${attended} / ${total} Attended</div>
                             <div style="width: 100%; height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; overflow: hidden; margin-top: 10px;">
-                                <div style="width: ${percentage}%; height: 100%; background: ${barColor}; border-radius: 3px;"></div>
+                                <div style="width: ${percentage}%; height: 100%; background: ${barColor}; border-radius: 3px; transition: width 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);"></div>
                             </div>
                         </div>
                         <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(0,0,0,0.3); border-radius: 12px; padding: 15px; border: 1px solid ${isGood ? 'rgba(0,204,102,0.3)' : 'rgba(255,68,68,0.3)'}; min-width: 80px; text-align: center;">
@@ -3939,6 +4126,17 @@
                     </div>
                 `;
             });
+            
+            // Skeleton Morph transition
+            const skeletons = list.querySelectorAll('.skeleton-card');
+            if (skeletons.length > 0) {
+                skeletons.forEach(s => s.classList.add('skeleton-morph'));
+                setTimeout(() => {
+                    list.innerHTML = html;
+                }, 400); // Wait for fade out
+            } else {
+                list.innerHTML = html;
+            }
 
             const overallPerc = totalClasses > 0 ? ((totalAtt / totalClasses) * 100).toFixed(1) : "0.0";
             const overallEl = document.getElementById('overall-attendance');
@@ -4698,8 +4896,97 @@
         let ptrStartY = 0;
         let ptrActive = false;
 
+        // ================= LONG PRESS CONTEXT MENU =================
+        let longPressTimer;
+        
+        function startLongPress(e, title, type) {
+            longPressTimer = setTimeout(() => {
+                handleLongPress(e, title, type);
+            }, 500);
+        }
+        
+        function cancelLongPress() {
+            clearTimeout(longPressTimer);
+        }
+        
+        function handleLongPress(e, title, type) {
+            e.preventDefault();
+            cancelLongPress();
+            
+            let clientX = e.clientX || (e.touches && e.touches[0].clientX);
+            let clientY = e.clientY || (e.touches && e.touches[0].clientY);
+            
+            const overlay = document.createElement('div');
+            overlay.className = 'context-menu-overlay';
+            overlay.onclick = () => overlay.remove();
+            
+            const menu = document.createElement('div');
+            menu.className = 'context-menu';
+            menu.style.left = Math.min(clientX, window.innerWidth - 190) + 'px';
+            menu.style.top = Math.min(clientY, window.innerHeight - 150) + 'px';
+            
+            let menuHtml = '';
+            if (type === 'attendance') {
+                menuHtml = `
+                    <button class="context-menu-item" onclick="simulateAttendance('${title.replace(/[^a-zA-Z0-9]/g, '')}', 'attend')">
+                        <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg> Simulate Attend
+                    </button>
+                    <button class="context-menu-item" onclick="simulateAttendance('${title.replace(/[^a-zA-Z0-9]/g, '')}', 'bunk')">
+                        <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm5 11H7v-2h10v2z"/></svg> Simulate Bunk
+                    </button>
+                    <button class="context-menu-item" onclick="simulateAttendance('${title.replace(/[^a-zA-Z0-9]/g, '')}', 'reset')">
+                        <svg viewBox="0 0 24 24"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg> Reset Sim
+                    </button>
+                `;
+            } else if (type === 'song') {
+                menuHtml = `
+                    <button class="context-menu-item" onclick="likeSpotted('${title}', this)">
+                        <svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg> Add to Favorites
+                    </button>
+                    <button class="context-menu-item" onclick="downloadShareImage('${title}', '', '', this)">
+                        <svg viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z"/></svg> Share Snippet
+                    </button>
+                `;
+            }
+            
+            menu.innerHTML = menuHtml;
+            overlay.appendChild(menu);
+            document.body.appendChild(overlay);
+        }
+
+        // ================= DYNAMIC FAVICON =================
+        let faviconCanvas = document.createElement('canvas');
+        faviconCanvas.width = 32; faviconCanvas.height = 32;
+        let faviconCtx = faviconCanvas.getContext('2d');
+        let faviconBars = [5, 15, 25, 10];
+        let faviconLastUpdate = 0;
+        
+        function updateFavicon(isPlaying) {
+            const favicon = document.getElementById('dynamic-favicon');
+            if (!favicon) return;
+            
+            if (!isPlaying) {
+                favicon.href = 'images/app-icon.svg';
+                return;
+            }
+            
+            const now = Date.now();
+            if (now - faviconLastUpdate < 150) return; // limit framerate
+            faviconLastUpdate = now;
+            
+            faviconCtx.clearRect(0, 0, 32, 32);
+            faviconCtx.fillStyle = '#ffaa00';
+            for (let i = 0; i < 4; i++) {
+                let h = Math.random() * 20 + 5;
+                faviconCtx.fillRect(4 + i*7, 32 - h, 5, h);
+            }
+            favicon.href = faviconCanvas.toDataURL('image/png');
+        }
+
         function showSyncConfirmation() {
-            document.getElementById('ios-sync-confirm').style.display = 'flex';
+            const modal = document.getElementById('ios-sync-confirm');
+            modal.style.display = 'flex';
+            setTimeout(() => modal.classList.add('active'), 10);
         }
 
         function updateLiveHighlighting() {
@@ -4819,9 +5106,32 @@
                     try {
                         const profile = JSON.parse(storedProfile);
                         let wn = document.getElementById('welcomeName');
-                        if (wn) wn.innerText = "Hi, " + (profile.name ? profile.name.split(' ')[0] : 'User') + " ";
+                        if (wn) {
+                            const firstName = profile.name ? profile.name.split(' ')[0] : 'User';
+                            const hour = new Date().getHours();
+                            const day = new Date().getDay();
+                            let greeting = "Hi, " + firstName;
+                            if (day === 0) greeting = "It's Sunday. No classes. Enjoy your day off, " + firstName + "!";
+                            else if (hour >= 5 && hour < 12) greeting = "Good morning, " + firstName + ".";
+                            else if (hour >= 12 && hour < 17) greeting = "Good afternoon, " + firstName + ".";
+                            else if (hour >= 17 && hour < 21) greeting = "Good evening, " + firstName + ". Time to review?";
+                            else greeting = "Late night grind, " + firstName + "?";
+                            wn.innerText = greeting;
+                        }
                     } catch (e) {
                         console.error("Welcome name error:", e);
+                    }
+                    
+                    // Update Breathing Sync Dot
+                    const lastSuccess = localStorage.getItem('lastSyncSuccessTime');
+                    const syncDot = document.getElementById('sync-breathing-ring');
+                    if (syncDot) {
+                        syncDot.className = 'breathing-ring';
+                        if (!lastSuccess || (Date.now() - parseInt(lastSuccess) > 24 * 60 * 60 * 1000)) {
+                            syncDot.classList.add('stale');
+                        } else if (!navigator.onLine) {
+                            syncDot.classList.add('offline');
+                        }
                     }
                     
                     const logoutBtn = document.getElementById('logoutBtn');
@@ -6629,6 +6939,14 @@
             const fill = document.getElementById('player-progress-fill');
             const fillFs = document.getElementById('fs-progress-fill');
             const fillMobile = document.getElementById('mobile-progress-fill');
+            
+            // Dynamic Favicon logic
+            const favicon = document.getElementById('dynamic-favicon');
+            if (favicon && !audioEl.paused) {
+                updateFavicon(true);
+            } else if (favicon && audioEl.paused) {
+                updateFavicon(false);
+            }
             if (audioEl.duration) {
                 const perc = `${(audioEl.currentTime / audioEl.duration) * 100}%`;
                 if(fill) fill.style.width = perc;
