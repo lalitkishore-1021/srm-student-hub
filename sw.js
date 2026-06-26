@@ -1,5 +1,5 @@
 // Change this version number every time you want to force phones to update!
-const CACHE_NAME = 'srm-hub-v17-speed-sync'; 
+const CACHE_NAME = 'srm-hub-v18-speed-sync'; 
 
 const ASSETS_TO_CACHE = [
     '/',
@@ -38,7 +38,7 @@ self.addEventListener('activate', (event) => {
     self.clients.claim(); 
 });
 
-// 3. FETCH EVENT: Stale-While-Revalidate (Instant Load, Background Update)
+// 3. FETCH EVENT: Network First (Ensures you always get the latest code)
 self.addEventListener('fetch', (event) => {
     const url = new URL(event.request.url);
 
@@ -48,21 +48,17 @@ self.addEventListener('fetch', (event) => {
     }
 
     event.respondWith(
-        caches.match(event.request).then((cachedResponse) => {
-            const fetchPromise = fetch(event.request).then((networkResponse) => {
-                if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
-                    const responseToCache = networkResponse.clone();
-                    caches.open(CACHE_NAME).then((cache) => {
-                        cache.put(event.request, responseToCache);
-                    });
-                }
-                return networkResponse;
-            }).catch(() => {
-                // Network failed, do nothing, the cached response is already returned.
-            });
-
-            // Return cached response immediately if available, otherwise wait for network
-            return cachedResponse || fetchPromise;
+        fetch(event.request).then((networkResponse) => {
+            if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
+                const responseToCache = networkResponse.clone();
+                caches.open(CACHE_NAME).then((cache) => {
+                    cache.put(event.request, responseToCache);
+                });
+            }
+            return networkResponse;
+        }).catch(() => {
+            // Network failed, fallback to cache
+            return caches.match(event.request);
         })
     );
 });

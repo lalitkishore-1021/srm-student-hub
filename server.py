@@ -1,3 +1,5 @@
+import srm_scraper_async
+import asyncio
 import time
 import threading
 import queue
@@ -15,6 +17,16 @@ from playwright.sync_api import sync_playwright
 
 app = Flask(__name__, static_folder='.')
 CORS(app)
+
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+
+limiter = Limiter(
+    get_remote_address,
+    app=app,
+    default_limits=["200 per day", "50 per hour"],
+    storage_uri="memory://"
+)
 
 import os
 
@@ -768,70 +780,14 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
                 page.goto(full_url, wait_until="domcontentloaded", timeout=15000)
                 return True
 
-        # --- ATTENDANCE & MARKS ---
-        print(f"[{reg_no}] 5. Scoping Attendance...")
+        # --- ASYNC PARALLEL FETCH ---
+        print(f"[{reg_no}] 5. Switching to Async Playwright for Parallel Fetch...")
+        cookies = context.cookies()
+        browser.close()
+        p.stop()
         
-        # Try multiple attendance page URLs
-        att_urls_pool = [
-            "https://academia.srmist.edu.in/#Page:My_Attendance",
-            "https://academia.srmist.edu.in/#Page:My_Attendance_2024_25",
-            "https://academia.srmist.edu.in/#Page:My_Attendance_2025_26",
-            "https://academia.srmist.edu.in/#Page:My_Attendance_2023_24"
-        ]
+        raw_tables, slot_tables = asyncio.run(srm_scraper_async.fetch_and_parse_concurrently(reg_no, cookies, unique_links))
         
-        # Only check URLs that are actually in the student's menu
-        att_urls = [u for u in att_urls_pool if any(u.split('#Page:')[1] in link for link in unique_links)]
-        if not att_urls:
-            att_urls = att_urls_pool
-            
-        raw_tables = []
-        for att_url in att_urls:
-            print(f"[{reg_no}] Trying attendance URL: {att_url}")
-            navigate_to_page(att_url)
-            raw_tables = wait_for_data_tables(["attn", "attendance", "conducted", "absent", "hour", "code"], timeout=5000)
-            if raw_tables and len(raw_tables) > 0:
-                # Check if any table actually has attendance-like data
-                has_att_data = False
-                for t in raw_tables:
-                    for row in t:
-                        row_str = ' '.join(str(c).lower() for c in row)
-                        if any(k in row_str for k in ["attn", "attendance", "conducted", "absent", "hour"]):
-                            has_att_data = True
-                            break
-                    if has_att_data: break
-                if has_att_data:
-                    print(f"[{reg_no}] Found attendance data from {att_url}")
-                    break
-        
-        # If still no data, try a reload on the primary URL
-        if not raw_tables or not any(k in str(c).lower() for k in ["attn", "attendance", "conducted", "absent"] for t in raw_tables for row in t for c in row):
-            print(f"[{reg_no}] Attendance data not found on any URL. Trying reload...")
-            navigate_to_page(att_urls[0])
-            page.wait_for_timeout(2000)
-            raw_tables = wait_for_data_tables(["attn", "attendance", "conducted", "absent", "code"], timeout=5000)
-        
-        # Log what we found
-        if raw_tables:
-            print(f"[{reg_no}] Found {len(raw_tables)} tables on attendance page")
-            for idx, t in enumerate(raw_tables):
-                if t and len(t) > 0:
-                    print(f"[{reg_no}]   Table {idx}: {len(t)} rows, headers: {t[0][:5] if t[0] else '?'}")
-        else:
-            print(f"[{reg_no}] WARNING: No tables found on attendance page at all. Semester holidays?")
-            try:
-                print(f"[{reg_no}] DIAGNOSTIC: Attendance page has NO tables. URL: {page.url}")
-                page_text = page.evaluate("document.body.innerText")
-                clean_text = ' | '.join([line.strip() for line in page_text.split('\n') if line.strip()][:25])
-                print(f"[{reg_no}] DIAGNOSTIC ATTENDANCE PAGE TEXT: {clean_text}")
-                for i, f in enumerate(page.frames):
-                    try:
-                        f_text = f.evaluate("document.body.innerText")
-                        f_clean = ' | '.join([line.strip() for line in f_text.split('\n') if line.strip()][:10])
-                        if f_clean:
-                            print(f"[{reg_no}] DIAGNOSTIC ATTENDANCE FRAME {i} TEXT: {f_clean}")
-                    except: pass
-            except Exception as e:
-                print(f"[{reg_no}] Failed to log attendance diagnostics: {e}")
 
         parsed_att = []
         parsed_marks = []
@@ -1013,44 +969,7 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
         # --- TIMETABLE STEP 1 (STUDENT SLOTS) ---
         print(f"[{reg_no}] 6. Scoping Registered Slots...")
         student_slots = {}
-        timetable_urls_pool = [
-            "https://academia.srmist.edu.in/#Page:My_Time_Table_2023_24",
-            "https://academia.srmist.edu.in/#Page:My_Time_Table_2024_25",
-            "https://academia.srmist.edu.in/#Page:My_Time_Table_2025_26",
-            "https://academia.srmist.edu.in/#Page:My_Time_Table"
-        ]
-        timetable_urls = [u for u in timetable_urls_pool if any(u.split('#Page:')[1] in link for link in unique_links)]
-        if not timetable_urls:
-            timetable_urls = timetable_urls_pool
-        
-        slot_tables = []
-        for url in timetable_urls:
-            print(f"[{reg_no}] Trying timetable URL: {url}")
-            navigate_to_page(url)
-            slot_tables = wait_for_data_tables(["slot", "course", "code"], timeout=5000)
-            if any(k in str(c).lower() for k in ["slot", "course", "code"] for t in slot_tables for row in t for c in row):
-                print(f"[{reg_no}] Successfully loaded timetable from {url}")
-                break
-        else:
-            print(f"[{reg_no}] Warning: No slot tables found with primary URLs. Attempting page reload on primary...")
-            navigate_to_page(timetable_urls[0])
-            page.wait_for_timeout(2000)
-            slot_tables = wait_for_data_tables(["slot", "course", "code"], timeout=8000)
-            if not slot_tables:
-                try:
-                    print(f"[{reg_no}] DIAGNOSTIC: Timetable page has NO tables. URL: {page.url}")
-                    page_text = page.evaluate("document.body.innerText")
-                    clean_text = ' | '.join([line.strip() for line in page_text.split('\n') if line.strip()][:25])
-                    print(f"[{reg_no}] DIAGNOSTIC TIMETABLE PAGE TEXT: {clean_text}")
-                    for i, f in enumerate(page.frames):
-                        try:
-                            f_text = f.evaluate("document.body.innerText")
-                            f_clean = ' | '.join([line.strip() for line in f_text.split('\n') if line.strip()][:10])
-                            if f_clean:
-                                print(f"[{reg_no}] DIAGNOSTIC TIMETABLE FRAME {i} TEXT: {f_clean}")
-                        except: pass
-                except Exception as e:
-                    print(f"[{reg_no}] Failed to log timetable diagnostics: {e}")
+        # Timetable tables are already fetched concurrently by async scraper!
         
         # --- EXTRACT RICH PROFILE DATA FROM TIMETABLE PAGE ---
         for table in slot_tables:
@@ -1405,6 +1324,7 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
 sync_jobs = {}
 
 @app.route('/api/start_session', methods=['POST'])
+@limiter.limit("2 per minute")
 def start_session():
     data = request.json
     sync_id = str(uuid.uuid4())
@@ -1730,6 +1650,7 @@ def submit_wall():
     return jsonify({'success': True})
 
 @app.route('/api/wall/like/<int:post_id>', methods=['POST'])
+@limiter.limit("30 per minute")
 def like_wall(post_id):
     conn = get_db()
     cur = conn.cursor()
@@ -2116,9 +2037,9 @@ def call_gemini(prompt, file_base64=None, mime_type=None):
     models_to_try = ["gemini-2.0-flash", "gemini-2.5-flash-preview-05-20", "gemini-2.0-flash-lite", "gemini-1.5-flash"]
     last_error = ""
     for model in models_to_try:
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={GEMINI_API_KEY}"
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
         try:
-            response = requests.post(url, json=payload, headers={'Content-Type': 'application/json'})
+            response = requests.post(url, json=payload, headers={'Content-Type': 'application/json', 'x-goog-api-key': GEMINI_API_KEY})
             data = response.json()
             if 'error' in data:
                 err_msg = data['error'].get('message', str(data['error']))
@@ -2181,6 +2102,7 @@ def get_lyrics():
     return jsonify({'success': False, 'error': 'Lyrics not found.'})
 
 @app.route('/api/ai/chat', methods=['POST'])
+@limiter.limit("10 per minute")
 def ai_chat():
     data = request.json
     user_msg = data.get('prompt', '')

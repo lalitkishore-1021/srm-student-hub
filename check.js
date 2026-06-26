@@ -1,0 +1,1 @@
+const fs=require('fs');const html=fs.readFileSync('index.html','utf8');let js='';const regex=/<script(?!\s+type)[^>]*>([\s\S]*?)<\/script>/gi;let match;while((match=regex.exec(html))!==null){js+=match[1]+'\n'}fs.writeFileSync('temp.js',js);

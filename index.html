@@ -1909,17 +1909,22 @@
         }
         .theme-night {
             background-color: #050505 !important;
-            background-image: 
-                radial-gradient(1px 1px at 20px 30px, #fff, rgba(0,0,0,0)),
-                radial-gradient(1px 1px at 40px 70px, #fff, rgba(0,0,0,0)),
-                radial-gradient(1px 1px at 50px 160px, #fff, rgba(0,0,0,0)),
-                radial-gradient(1.5px 1.5px at 90px 40px, #fff, rgba(0,0,0,0)),
-                radial-gradient(2px 2px at 130px 80px, #fff, rgba(0,0,0,0)) !important;
-            background-repeat: repeat !important;
-            background-size: 200px 200px !important;
-            animation: twinkleBg 5s infinite linear;
         }
-        @keyframes twinkleBg { 0% { opacity: 0.8; } 50% { opacity: 1; } 100% { opacity: 0.8; } }
+        .theme-night::before {
+            content: ""; position: fixed; top: 0; left: 0; width: 2px; height: 2px;
+            background: transparent;
+            box-shadow: 
+                10vw 20vh #fff, 20vw 80vh #fff, 30vw 10vh #fff, 40vw 50vh #fff, 50vw 90vh #fff, 
+                60vw 30vh #fff, 70vw 70vh #fff, 80vw 20vh #fff, 90vw 60vh #fff, 95vw 85vh #fff,
+                15vw 40vh #fff, 25vw 60vh #fff, 35vw 90vh #fff, 45vw 20vh #fff, 55vw 70vh #fff, 
+                65vw 10vh #fff, 75vw 50vh #fff, 85vw 95vh #fff, 5vw 15vh #fff, 10vw 55vh #fff,
+                50vw 40vh #fff, 80vw 80vh #fff, 20vw 15vh #fff, 60vw 90vh #fff;
+            border-radius: 50%;
+            animation: twinkleBg 4s infinite alternate;
+            z-index: -2;
+            pointer-events: none;
+        }
+        @keyframes twinkleBg { 0% { opacity: 0.3; transform: scale(0.8); } 100% { opacity: 0.9; transform: scale(1.1); } }
         .theme-rain::after {
             content: ""; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
             background: linear-gradient(to bottom, rgba(255,255,255,0) 0%, rgba(255,255,255,0.05) 100%);
@@ -2205,8 +2210,8 @@
                         <path d="M6 58h52"/>
                     </svg>
                 </div>
-                <h2>Marks & CGPA Calculator</h2>
-                <p>All your internal marks synced instantly. Calculate your CGPA with real credits from your timetable.</p>
+                <h2>Marks & Internal Score Index</h2>
+                <p>All your internal marks synced instantly. Calculate your Internal Score Index with real credits from your timetable.</p>
             </div>
 
             <!-- Slide 3: Timetable -->
@@ -2473,7 +2478,7 @@
                     stroke-linecap="round" stroke-linejoin="round" />
             </svg>
             <h1>SRM Student Hub</h1>
-            <p class="subtitle">Your all-in-one portal for Step Class, CGPA, and more.</p>
+            <p class="subtitle">Your all-in-one portal for Step Class, Marks, and more.</p>
             <h2 id="welcomeName" style="color: var(--primary); font-size: 1.2rem; margin-top: 5px; font-weight: bold;"></h2>
 
         </header>
@@ -2661,7 +2666,7 @@
                             <line x1="8" y1="14" x2="8" y2="14.01" />
                         </svg></div>
                     <div>
-                        <h4 class="action-title">CGPA Calculator</h4>
+                        <h4 class="action-title">Internal Score Calculator</h4>
                         <p class="action-sub">Estimate your grades</p>
                     </div>
                 </div>
@@ -2906,7 +2911,7 @@
             <div class="view-header">
                 <button class="back-btn" onclick="switchNav('home-view', document.querySelector('.nav-item'))">&#8592;
                     Back to Home</button>
-                <h2 class="gallery-title">CGPA Calculator</h2>
+                <h2 class="gallery-title">Internal Score Calculator</h2>
             </div>
             <div class="image-card" style="max-width: 800px; margin: 0 auto; cursor: default; transform: none;">
                 <div id="cgpa-rows">
@@ -2928,7 +2933,7 @@
                 <div style="display: flex; gap: 15px; margin-top: 20px;">
                     <button class="action-btn" style="background: var(--glass); color: var(--primary);"
                         onclick="addCgpaRow()">+ Add Subject</button>
-                    <button class="action-btn" onclick="calculateCGPA()">Calculate CGPA</button>
+                    <button class="action-btn" onclick="calculateCGPA()">Calculate Score</button>
                 </div>
                 <div id="cgpa-result" class="result-box" style="display: none;"></div>
             </div>
@@ -3124,7 +3129,7 @@
             </div>
             <div class="tab-container" id="lb-tabs" style="margin-bottom: 25px;">
                 <div class="tab-btn active" onclick="switchLeaderboard('attendance', this)"> Top Attendance</div>
-                <div class="tab-btn" onclick="switchLeaderboard('marks', this)"> Top Marks (CGPA)</div>
+                <div class="tab-btn" onclick="switchLeaderboard('marks', this)"> Top Marks (Score Index)</div>
             </div>
             <div id="lb-list" style="max-width: 700px; margin: 0 auto;">
                 <div class="css-loader" style="margin: 60px auto;"></div>
@@ -3480,7 +3485,7 @@
             
             <div style="padding: 40px 30px 30px 30px; text-align: center; position: relative; z-index: 2; border-bottom: 1px solid rgba(255, 255, 255, 0.05);">
                 <span class="close-btn" style="top: 15px; right: 20px; font-size: 30px; color: rgba(255,255,255,0.7); text-shadow: none;" onclick="closeCGPACalculator()">&times;</span>
-                <h3 style="color: rgba(255,255,255,0.6); margin: 0 0 10px 0; text-transform: uppercase; font-size: 0.85rem; letter-spacing: 3px; font-weight: 500;">Estimated CGPA</h3>
+                <h3 style="color: rgba(255,255,255,0.6); margin: 0 0 10px 0; text-transform: uppercase; font-size: 0.85rem; letter-spacing: 3px; font-weight: 500;">Internal Score Index</h3>
                 <h1 id="cgpa-modal-est" style="color: #fff; font-size: 5rem; margin: 0; font-family: 'Montserrat', sans-serif; font-weight: 700; text-shadow: 0 0 30px rgba(144, 238, 144, 0.3);">0.00</h1>
             </div>
             <div style="padding: 20px; max-height: 60vh; overflow-y: auto; position: relative; z-index: 2;" id="cgpa-list" class="cgpa-scroll-area">
@@ -5523,7 +5528,7 @@
 
                 const rankEmojis = ['', '', ''];
                 list.innerHTML = data.map((s, i) => {
-                    const val = type === 'attendance' ? `${s.overall_attendance}%` : `CGPA ${s.est_cgpa}`;
+                    const val = type === 'attendance' ? `${s.overall_attendance}%` : `Score ${s.est_cgpa}`;
                     const color = type === 'attendance'
                         ? (s.overall_attendance >= 75 ? 'var(--success)' : 'var(--danger)')
                         : (s.est_cgpa >= 9 ? 'var(--primary)' : 'var(--text-main)');
