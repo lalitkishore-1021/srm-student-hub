@@ -4,11 +4,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SRM Student Hub | Attendance, CGPA & Timetable</title>
+    <title>SRM Academia Student Hub | Attendance, CGPA & Timetable</title>
     
     <!-- SEO Meta Tags -->
-    <meta name="description" content="The ultimate student dashboard for SRM Institute of Science and Technology. Track attendance, predict CGPA, check your timetable, and view the mess menu instantly.">
-    <meta name="keywords" content="SRM Student Hub, SRM Attendance, SRM CGPA Predictor, SRM Timetable, SRM Mess Menu, Academia Sync, SRMIST Portal, Student Dashboard">
+    <meta name="description" content="The ultimate student dashboard for SRM Institute of Science and Technology. Track SRM Academia attendance, predict CGPA, check your timetable, and view the mess menu instantly.">
+    <meta name="keywords" content="SRM Student Hub, SRM Academia, SRM Attendance, SRM CGPA Predictor, SRM Timetable, SRM Mess Menu, Academia Sync, SRMIST Portal, Student Dashboard">
     <meta name="author" content="SRM Student Hub">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://srm-student-hub.onrender.com/"> <!-- Update with actual domain later -->
@@ -1934,8 +1934,20 @@
             background-size: 200px 200px;
             animation: twinkle 5s infinite linear;
             opacity: 0.3;
-            z-index: -1;
+            z-index: -2;
         }
+        .theme-night::after {
+            content: "";
+            position: fixed;
+            top: 40px; right: 40px; width: 60px; height: 60px;
+            border-radius: 50%;
+            box-shadow: 15px 15px 0 0 #f6f1d5;
+            z-index: -1;
+            opacity: 0.8;
+            filter: drop-shadow(0 0 10px rgba(246, 241, 213, 0.5));
+            animation: moonFloat 10s ease-in-out infinite;
+        }
+        @keyframes moonFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
         .theme-rain::after {
             content: ""; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
             background: linear-gradient(to bottom, rgba(255,255,255,0) 0%, rgba(255,255,255,0.05) 100%);
@@ -1961,6 +1973,21 @@
         .story-slide {
             width: 100%; text-align: center;
         }
+
+        /* ====== CHAT SKELETON MORPH ====== */
+        .chat-skeleton-container {
+            display: flex; flex-direction: column; gap: 15px; padding: 20px;
+        }
+        .chat-skeleton {
+            height: 50px;
+            border-radius: 12px;
+            background: linear-gradient(90deg, rgba(255,255,255,0.05) 25%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0.05) 75%);
+            background-size: 200% 100%;
+            animation: skeletonLoad 1.5s infinite;
+        }
+        .chat-skeleton-left { width: 60%; align-self: flex-start; border-bottom-left-radius: 4px; }
+        .chat-skeleton-right { width: 60%; align-self: flex-end; border-bottom-right-radius: 4px; background: linear-gradient(90deg, rgba(37,211,102,0.1) 25%, rgba(37,211,102,0.2) 50%, rgba(37,211,102,0.1) 75%); background-size: 200% 100%; }
+        @keyframes skeletonLoad { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
 
         /* ====== PULL-TO-REFRESH ====== */
         .ptr-indicator {
@@ -3732,6 +3759,13 @@
             else switchView('home-view', false);
         });
 
+        // Secret toggle for Hologram Mode testing
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'h' && e.ctrlKey) {
+                document.body.classList.toggle('offline-hologram');
+            }
+        });
+
         // ================= UI STATE MANAGEMENT =================
         function getCurrentNetId() {
             const profile = JSON.parse(localStorage.getItem('squadProfile') || '{}');
@@ -3749,6 +3783,7 @@
                 document.getElementById('auth-dashboard').style.display = 'none';
                 document.getElementById('advisors-section').style.display = 'none';
             }
+            
             // Show holiday banner on home page
             checkAndShowHolidayBanner('home-holiday-banner');
             // Update holiday name if available
@@ -3800,8 +3835,8 @@
             const avatarImg = document.getElementById('id-avatar-img');
             const fallback = document.getElementById('id-avatar-fallback');
             if (avatarImg && profile.regNo) {
-                // Use DiceBear Notionists API for a cleaner, aesthetic 2D character
-                avatarImg.src = `https://api.dicebear.com/7.x/notionists/svg?seed=${profile.regNo}&backgroundColor=transparent`;
+                // Use DiceBear Micah API (3D style like Snapchat) with a custom aesthetic background
+                avatarImg.src = `https://api.dicebear.com/7.x/micah/svg?seed=${profile.regNo}&backgroundColor=b6e3f4`;
                 avatarImg.style.display = 'block';
                 if(fallback) fallback.style.display = 'none';
             }
@@ -7257,6 +7292,18 @@
                     ctx.fillRect(x, canvas.height - barHeight, barWidth, barHeight);
                     x += barWidth + 2;
                 }
+                
+                // Audio visualizer for Fullscreen Orbs (Bass frequency)
+                let bassSum = 0;
+                for(let i = 0; i < 15; i++) bassSum += dataArray[i];
+                const bassAvg = bassSum / 15;
+                const scale = 1 + (bassAvg / 255) * 1.5; // Pulses between 1x and 2.5x
+                
+                const orbs = document.querySelectorAll('.fs-orb');
+                orbs.forEach(orb => {
+                    orb.style.transform = `scale(${scale})`;
+                    orb.style.background = 'var(--music-orb-color, rgba(29, 185, 84, 0.6))';
+                });
             }
             draw();
         }
@@ -8126,6 +8173,19 @@
             const section = getUserSection();
             document.getElementById('chat-title').innerText = `Class Chat - ${section}`;
             switchView('chat-view');
+            
+            const history = document.getElementById('class-chat-history');
+            if (history.children.length === 0) {
+                history.innerHTML = `
+                    <div class="chat-skeleton-container" id="chat-loading-skeleton">
+                        <div class="chat-skeleton chat-skeleton-left"></div>
+                        <div class="chat-skeleton chat-skeleton-right"></div>
+                        <div class="chat-skeleton chat-skeleton-left" style="width:40%;"></div>
+                        <div class="chat-skeleton chat-skeleton-right" style="width:70%;"></div>
+                    </div>
+                `;
+            }
+
             loadClassChat();
             if(chatInterval) clearInterval(chatInterval);
             chatInterval = setInterval(loadClassChat, 3000);
@@ -8228,12 +8288,30 @@
                         setTimeout(() => {
                             const menuBtn = bubble.querySelector('.chat-menu-btn');
                             const menu = bubble.querySelector('.chat-ctx-menu');
-                            if (menuBtn && menu) {
-                                menuBtn.onclick = (e) => {
-                                    e.stopPropagation();
-                                    document.querySelectorAll('.chat-ctx-menu').forEach(mx => { if(mx !== menu) mx.style.display='none'; });
-                                    menu.style.display = menu.style.display === 'none' ? 'flex' : 'none';
-                                };
+                            if (menu) {
+                                if (menuBtn) {
+                                    menuBtn.onclick = (e) => {
+                                        e.stopPropagation();
+                                        document.querySelectorAll('.chat-ctx-menu').forEach(mx => { if(mx !== menu) mx.style.display='none'; });
+                                        menu.style.display = menu.style.display === 'none' ? 'flex' : 'none';
+                                    };
+                                }
+                                // Long Press & Right Click Logic
+                                let touchTimer = null;
+                                bubble.addEventListener('contextmenu', (e) => {
+                                    e.preventDefault();
+                                    document.querySelectorAll('.chat-ctx-menu').forEach(mx => mx.style.display='none');
+                                    menu.style.display = 'flex';
+                                });
+                                bubble.addEventListener('touchstart', () => {
+                                    touchTimer = setTimeout(() => {
+                                        document.querySelectorAll('.chat-ctx-menu').forEach(mx => mx.style.display='none');
+                                        menu.style.display = 'flex';
+                                        if (navigator.vibrate) navigator.vibrate(50);
+                                    }, 500);
+                                }, {passive: true});
+                                bubble.addEventListener('touchend', () => clearTimeout(touchTimer));
+                                bubble.addEventListener('touchmove', () => clearTimeout(touchTimer));
                             }
                         }, 0);
                     }
