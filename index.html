@@ -2210,8 +2210,8 @@
                         <path d="M6 58h52"/>
                     </svg>
                 </div>
-                <h2>Marks & Internal Score Index</h2>
-                <p>All your internal marks synced instantly. Calculate your Internal Score Index with real credits from your timetable.</p>
+                <h2>Marks & CGPA Calculator</h2>
+                <p>All your internal marks synced instantly. Calculate your CGPA with real credits from your timetable.</p>
             </div>
 
             <!-- Slide 3: Timetable -->
@@ -2478,7 +2478,7 @@
                     stroke-linecap="round" stroke-linejoin="round" />
             </svg>
             <h1>SRM Student Hub</h1>
-            <p class="subtitle">Your all-in-one portal for Step Class, Marks, and more.</p>
+            <p class="subtitle">Your all-in-one portal for Step Class, CGPA, and more.</p>
             <h2 id="welcomeName" style="color: var(--primary); font-size: 1.2rem; margin-top: 5px; font-weight: bold;"></h2>
 
         </header>
@@ -2666,7 +2666,7 @@
                             <line x1="8" y1="14" x2="8" y2="14.01" />
                         </svg></div>
                     <div>
-                        <h4 class="action-title">Internal Score Calculator</h4>
+                        <h4 class="action-title">CGPA Calculator</h4>
                         <p class="action-sub">Estimate your grades</p>
                     </div>
                 </div>
@@ -2911,7 +2911,7 @@
             <div class="view-header">
                 <button class="back-btn" onclick="switchNav('home-view', document.querySelector('.nav-item'))">&#8592;
                     Back to Home</button>
-                <h2 class="gallery-title">Internal Score Calculator</h2>
+                <h2 class="gallery-title">CGPA Calculator</h2>
             </div>
             <div class="image-card" style="max-width: 800px; margin: 0 auto; cursor: default; transform: none;">
                 <div id="cgpa-rows">
@@ -2933,7 +2933,7 @@
                 <div style="display: flex; gap: 15px; margin-top: 20px;">
                     <button class="action-btn" style="background: var(--glass); color: var(--primary);"
                         onclick="addCgpaRow()">+ Add Subject</button>
-                    <button class="action-btn" onclick="calculateCGPA()">Calculate Score</button>
+                    <button class="action-btn" onclick="calculateCGPA()">Calculate CGPA</button>
                 </div>
                 <div id="cgpa-result" class="result-box" style="display: none;"></div>
             </div>
@@ -3485,7 +3485,7 @@
             
             <div style="padding: 40px 30px 30px 30px; text-align: center; position: relative; z-index: 2; border-bottom: 1px solid rgba(255, 255, 255, 0.05);">
                 <span class="close-btn" style="top: 15px; right: 20px; font-size: 30px; color: rgba(255,255,255,0.7); text-shadow: none;" onclick="closeCGPACalculator()">&times;</span>
-                <h3 style="color: rgba(255,255,255,0.6); margin: 0 0 10px 0; text-transform: uppercase; font-size: 0.85rem; letter-spacing: 3px; font-weight: 500;">Internal Score Index</h3>
+                <h3 style="color: rgba(255,255,255,0.6); margin: 0 0 10px 0; text-transform: uppercase; font-size: 0.85rem; letter-spacing: 3px; font-weight: 500;">Estimated CGPA</h3>
                 <h1 id="cgpa-modal-est" style="color: #fff; font-size: 5rem; margin: 0; font-family: 'Montserrat', sans-serif; font-weight: 700; text-shadow: 0 0 30px rgba(144, 238, 144, 0.3);">0.00</h1>
             </div>
             <div style="padding: 20px; max-height: 60vh; overflow-y: auto; position: relative; z-index: 2;" id="cgpa-list" class="cgpa-scroll-area">
