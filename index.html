@@ -1896,19 +1896,7 @@
             pointer-events: none; z-index: 99999;
         }
 
-        /* ================= HOLOGRAM MODE ================= */
-        .offline-hologram {
-            filter: grayscale(80%) sepia(50%) hue-rotate(160deg) saturate(1.5) contrast(1.1) brightness(0.9);
-            position: relative;
-        }
-        .offline-hologram::before {
-            content: "";
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0, 255, 255, 0.05) 3px, transparent 4px);
-            pointer-events: none;
-            z-index: 10000;
-        }
+        /* Removed Hologram CSS */
 
         /* ================= DYNAMIC ATMOSPHERES & STORY ================= */
         .theme-sunset {
@@ -1920,34 +1908,18 @@
             z-index: -1;
         }
         .theme-night {
-            background: #050505 !important;
-        }
-        .theme-night::before {
-            content: ""; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: #050505 !important;
             background-image: 
                 radial-gradient(1px 1px at 20px 30px, #fff, rgba(0,0,0,0)),
                 radial-gradient(1px 1px at 40px 70px, #fff, rgba(0,0,0,0)),
                 radial-gradient(1px 1px at 50px 160px, #fff, rgba(0,0,0,0)),
                 radial-gradient(1.5px 1.5px at 90px 40px, #fff, rgba(0,0,0,0)),
-                radial-gradient(2px 2px at 130px 80px, #fff, rgba(0,0,0,0));
-            background-repeat: repeat;
-            background-size: 200px 200px;
-            animation: twinkle 5s infinite linear;
-            opacity: 0.3;
-            z-index: -2;
+                radial-gradient(2px 2px at 130px 80px, #fff, rgba(0,0,0,0)) !important;
+            background-repeat: repeat !important;
+            background-size: 200px 200px !important;
+            animation: twinkleBg 5s infinite linear;
         }
-        .theme-night::after {
-            content: "";
-            position: fixed;
-            top: 40px; right: 40px; width: 60px; height: 60px;
-            border-radius: 50%;
-            box-shadow: 15px 15px 0 0 #f6f1d5;
-            z-index: -1;
-            opacity: 0.8;
-            filter: drop-shadow(0 0 10px rgba(246, 241, 213, 0.5));
-            animation: moonFloat 10s ease-in-out infinite;
-        }
-        @keyframes moonFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+        @keyframes twinkleBg { 0% { opacity: 0.8; } 50% { opacity: 1; } 100% { opacity: 0.8; } }
         .theme-rain::after {
             content: ""; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
             background: linear-gradient(to bottom, rgba(255,255,255,0) 0%, rgba(255,255,255,0.05) 100%);
@@ -3759,12 +3731,7 @@
             else switchView('home-view', false);
         });
 
-        // Secret toggle for Hologram Mode testing
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'h' && e.ctrlKey) {
-                document.body.classList.toggle('offline-hologram');
-            }
-        });
+        // Removed Hologram Toggle
 
         // ================= UI STATE MANAGEMENT =================
         function getCurrentNetId() {
@@ -3835,8 +3802,8 @@
             const avatarImg = document.getElementById('id-avatar-img');
             const fallback = document.getElementById('id-avatar-fallback');
             if (avatarImg && profile.regNo) {
-                // Use DiceBear Micah API (3D style like Snapchat) with a custom aesthetic background
-                avatarImg.src = `https://api.dicebear.com/7.x/micah/svg?seed=${profile.regNo}&backgroundColor=b6e3f4`;
+                // Use DiceBear avataaars (Bitmoji style) with light blue bg
+                avatarImg.src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${profile.regNo}&backgroundColor=b6e3f4`;
                 avatarImg.style.display = 'block';
                 if(fallback) fallback.style.display = 'none';
             }
