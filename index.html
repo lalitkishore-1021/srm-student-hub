@@ -6735,37 +6735,67 @@
                 
                 audioEl.src = audioData;
                 
-                try {
-                    await audioEl.play();
-                    isPlaying = true;
-                    updatePlayPauseBtn();
-                    
-                    // Set MediaSession metadata AFTER playback starts to ensure OS registers the active audio session
-                    if ('mediaSession' in navigator) {
-                        navigator.mediaSession.metadata = new MediaMetadata({
-                            title: track.title,
-                            artist: track.artist,
-                            album: 'SRM Student Hub',
-                            artwork: [ { src: track.cover_data || 'https://via.placeholder.com/512', sizes: '512x512', type: 'image/png' } ]
-                        });
-                        navigator.mediaSession.setActionHandler('play', toggleMusicPlay);
-                        navigator.mediaSession.setActionHandler('pause', toggleMusicPlay);
-                        navigator.mediaSession.setActionHandler('previoustrack', prevMusicTrack);
-                        navigator.mediaSession.setActionHandler('nexttrack', nextMusicTrack);
-                    }
-
-                } catch(e) {
-                    console.error("Playback prevented:", e);
-                    // Auto-skip to next track on playback failure
-                    setTimeout(() => { nextMusicTrack(); }, 500);
-                    return;
-                }
-                localStorage.setItem('lastPlayedTrackId', track.id);
+                // If source is a URL (not a data: URI), we must wait for the browser to buffer before playing
+                const isStreamUrl = !audioData.startsWith('data:');
                 
-                // Preload the next track so it can play synchronously in the background later
-                let nextIdx = index + 1;
-                if (nextIdx >= currentPlaylist.length && currentPlaylist.length > 0) nextIdx = 0;
-                if (nextIdx !== index) preloadNextMusicTrack(nextIdx);
+                const startPlayback = async () => {
+                    try {
+                        await audioEl.play();
+                        isPlaying = true;
+                        updatePlayPauseBtn();
+                        
+                        // Set MediaSession metadata AFTER playback starts to ensure OS registers the active audio session
+                        if ('mediaSession' in navigator) {
+                            navigator.mediaSession.metadata = new MediaMetadata({
+                                title: track.title,
+                                artist: track.artist,
+                                album: 'SRM Student Hub',
+                                artwork: [ { src: track.cover_data || 'https://via.placeholder.com/512', sizes: '512x512', type: 'image/png' } ]
+                            });
+                            navigator.mediaSession.setActionHandler('play', toggleMusicPlay);
+                            navigator.mediaSession.setActionHandler('pause', toggleMusicPlay);
+                            navigator.mediaSession.setActionHandler('previoustrack', prevMusicTrack);
+                            navigator.mediaSession.setActionHandler('nexttrack', nextMusicTrack);
+                        }
+
+                    } catch(e) {
+                        console.error("Playback prevented:", e);
+                        // Auto-skip to next track on playback failure
+                        setTimeout(() => { nextMusicTrack(); }, 500);
+                        return;
+                    }
+                    localStorage.setItem('lastPlayedTrackId', track.id);
+                    
+                    // Preload the next track so it can play synchronously in the background later
+                    let nextIdx = index + 1;
+                    if (nextIdx >= currentPlaylist.length && currentPlaylist.length > 0) nextIdx = 0;
+                    if (nextIdx !== index) preloadNextMusicTrack(nextIdx);
+                };
+                
+                if (isStreamUrl) {
+                    // For HTTP URLs, wait until browser has buffered enough audio data
+                    audioEl.load();
+                    await new Promise((resolve, reject) => {
+                        const onCanPlay = () => { cleanup(); resolve(); };
+                        const onError = () => { cleanup(); reject(audioEl.error); };
+                        const cleanup = () => {
+                            audioEl.removeEventListener('canplay', onCanPlay);
+                            audioEl.removeEventListener('error', onError);
+                        };
+                        audioEl.addEventListener('canplay', onCanPlay, { once: true });
+                        audioEl.addEventListener('error', onError, { once: true });
+                        // Safety timeout: if nothing happens in 15 seconds, reject
+                        setTimeout(() => { cleanup(); reject(new Error('Audio load timeout')); }, 15000);
+                    }).catch(e => {
+                        console.error("Stream load failed:", e);
+                        setTimeout(() => { nextMusicTrack(); }, 500);
+                        return;
+                    });
+                    await startPlayback();
+                } else {
+                    // For data: URIs, audio is immediately available
+                    await startPlayback();
+                }
             };
 
             // If we have it cached, play IMMEDIATELY (synchronously) to bypass mobile background restrictions
