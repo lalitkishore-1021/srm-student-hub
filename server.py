@@ -2003,16 +2003,33 @@ def get_music():
     conn = get_db()
     if DATABASE_URL:
         cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-        cur.execute("SELECT id, title, artist, cover_data, uploaded_by, net_id, created_at, video_data FROM music_hub ORDER BY order_index ASC, created_at DESC")
+        cur.execute("SELECT id, title, artist, cover_data, uploaded_by, net_id, created_at, CASE WHEN video_data IS NOT NULL AND video_data != '' THEN 1 ELSE 0 END as has_video FROM music_hub ORDER BY order_index ASC, created_at DESC")
     else:
         cur = conn.cursor()
-        cur.execute("SELECT id, title, artist, cover_data, uploaded_by, net_id, created_at, video_data FROM music_hub ORDER BY order_index ASC, created_at DESC")
+        cur.execute("SELECT id, title, artist, cover_data, uploaded_by, net_id, created_at, CASE WHEN video_data IS NOT NULL AND video_data != '' THEN 1 ELSE 0 END as has_video FROM music_hub ORDER BY order_index ASC, created_at DESC")
     
     rows = cur.fetchall()
     items = [dict(row) for row in rows]
     cur.close()
     conn.close()
     return jsonify(items)
+
+@app.route('/api/music/video/<int:track_id>', methods=['GET'])
+def get_music_video(track_id):
+    conn = get_db()
+    cur = conn.cursor()
+    if DATABASE_URL:
+        cur.execute("SELECT video_data FROM music_hub WHERE id = %s", (track_id,))
+    else:
+        cur.execute("SELECT video_data FROM music_hub WHERE id = ?", (track_id,))
+    
+    row = cur.fetchone()
+    cur.close()
+    conn.close()
+    
+    if row and row[0]:
+        return jsonify({'video_data': row[0]})
+    return jsonify({'video_data': None})
 
 @app.route('/api/music/audio/<int:track_id>', methods=['GET'])
 def get_music_audio(track_id):

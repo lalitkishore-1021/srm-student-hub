@@ -3319,6 +3319,7 @@
         <div class="mobile-progress-bar"><div class="mobile-progress-fill" id="mobile-progress-fill"></div></div>
         <div class="player-left">
             <img id="player-cover" class="player-cover" src="" alt="Cover" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMzMzIi8+PC9zdmc+'">
+            <video id="player-video" class="player-cover" loop muted playsinline style="display: none;"></video>
             <div class="player-info">
                 <div id="player-title" style="color: #fff; font-weight: bold; font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">No track</div>
                 <div id="player-artist" style="color: #aaa; font-size: 0.8rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">-</div>
@@ -3367,6 +3368,7 @@
         </div>
         <div class="fs-cover-container">
             <img id="fs-cover" class="fs-cover" src="" alt="Cover">
+            <video id="fs-video" class="fs-cover" loop muted playsinline style="display: none; box-shadow: 0 20px 45px rgba(0,0,0,0.55);"></video>
         </div>
         <div class="fs-glass-panel">
             <div class="fs-info">
@@ -6662,16 +6664,44 @@
             document.getElementById('music-player-bar').classList.add('active');
             document.getElementById('player-title').innerText = track.title;
             document.getElementById('player-artist').innerText = track.artist;
-            document.getElementById('player-cover').src = track.cover_data || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMzMzIi8+PC9zdmc+';
             const coverSrc = track.cover_data || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMzMzIi8+PC9zdmc+';
             document.getElementById('fs-bg-blur').src = coverSrc;
+            
+            const playerImg = document.getElementById('player-cover');
+            const playerVid = document.getElementById('player-video');
+            const fsImg = document.getElementById('fs-cover');
+            const fsVid = document.getElementById('fs-video');
+            
+            playerVid.style.display = 'none';
+            playerVid.src = '';
+            playerImg.style.display = 'block';
+            playerImg.src = coverSrc;
+            
+            if (fsVid) { fsVid.style.display = 'none'; fsVid.src = ''; }
+            if (fsImg) { fsImg.style.display = 'block'; fsImg.src = coverSrc; }
             
             if (document.getElementById('music-fullscreen').style.display === 'flex') {
                 document.getElementById('fs-title').innerText = track.title;
                 document.getElementById('fs-artist').innerText = track.artist;
-                document.getElementById('fs-cover').src = coverSrc;
-            } else {
-                document.getElementById('fs-cover').src = coverSrc;
+            }
+            
+            if (track.has_video) {
+                fetch(`${BACKEND_URL}/api/music/video/${track.id}`).then(r => r.json()).then(data => {
+                    if (data.video_data && track.id === currentPlaylist[currentTrackIndex].id) {
+                        if (playerVid) {
+                            playerVid.src = data.video_data;
+                            playerVid.style.display = 'block';
+                            playerImg.style.display = 'none';
+                            playerVid.play().catch(e=>{});
+                        }
+                        if (fsVid) {
+                            fsVid.src = data.video_data;
+                            fsVid.style.display = 'block';
+                            fsImg.style.display = 'none';
+                            fsVid.play().catch(e=>{});
+                        }
+                    }
+                }).catch(e=>{});
             }
             
             // Auto refresh lyrics if open
@@ -6778,8 +6808,19 @@
         
         function toggleMusicPlay() {
             const audioEl = document.getElementById('music-audio-element');
+            const playerVid = document.getElementById('player-video');
+            const fsVid = document.getElementById('fs-video');
+            
             if (!audioEl.src) return;
-            if (isPlaying) { audioEl.pause(); } else { audioEl.play(); }
+            if (isPlaying) { 
+                audioEl.pause(); 
+                if(playerVid && playerVid.style.display !== 'none') playerVid.pause();
+                if(fsVid && fsVid.style.display !== 'none') fsVid.pause();
+            } else { 
+                audioEl.play(); 
+                if(playerVid && playerVid.style.display !== 'none') playerVid.play();
+                if(fsVid && fsVid.style.display !== 'none') fsVid.play();
+            }
             isPlaying = !isPlaying;
             updatePlayPauseBtn();
         }
