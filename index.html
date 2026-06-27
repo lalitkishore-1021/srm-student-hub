@@ -3093,6 +3093,19 @@
             <div id="class-chat-history" class="liquid-glass" style="flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding: 15px; border-radius: 20px; max-width: 600px; margin: 0 auto; width: 100%; margin-bottom: 15px; scroll-behavior: smooth;">
                 <div class="css-loader" style="margin: 40px auto;"></div>
             </div>
+            
+            <!-- Class Chat APK Download Card -->
+            <div class="glass-card fade-in-up" style="flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; background: linear-gradient(135deg, rgba(29, 185, 84, 0.15), rgba(29, 185, 84, 0.05)); border: 1px solid rgba(29, 185, 84, 0.3); margin: 0 auto 15px auto; max-width: 600px; width: 100%; padding: 15px; border-radius: 15px;">
+                <div style="flex: 1; padding-right: 15px;">
+                    <h3 style="margin: 0 0 5px 0; color: #1DB954; font-size: 1.1rem; display: flex; align-items: center; gap: 8px;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                        Download App (APK)
+                    </h3>
+                    <p style="margin: 0; font-size: 0.85rem; color: rgba(255,255,255,0.7); line-height: 1.4;">Get the restriction-free APK for background music and notifications.</p>
+                </div>
+                <button onclick="installPWA()" style="background: #1DB954; color: #fff; border: none; padding: 10px 18px; border-radius: 12px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 15px rgba(29, 185, 84, 0.4); white-space: nowrap;">Download APK</button>
+            </div>
+
             <div class="liquid-glass" style="flex-shrink: 0; max-width: 600px; margin: 0 auto; width: 100%; display: flex; gap: 10px; align-items: center; padding: 10px; border-radius: 20px;">
                 <label for="chat-image-input" style="cursor: pointer; padding: 10px; background: rgba(255,170,0,0.1); border-radius: 50%; color: #ffaa00;"><svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg></label>
                 <input type="file" id="chat-image-input" accept="image/*" style="display: none;" onchange="handleChatImageUpload(event)">
@@ -3102,21 +3115,9 @@
                 <input type="text" id="class-chat-input" placeholder="Type a message or hold ..." style="flex: 1; background: transparent; border: none; outline: none; color: #fff; font-family: 'Montserrat', sans-serif; font-size: 1rem; padding: 5px;" onkeypress="if(event.key==='Enter') sendClassChat()">
                 <button onclick="sendClassChat()" style="background: linear-gradient(135deg, #00cc66, #00994d); color: #fff; border: none; padding: 10px 20px; border-radius: 15px; cursor: pointer; font-weight: bold; letter-spacing: 1px;"><svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg></button>
             </div>
-            <div id="chat-image-preview-container" style="display:none; max-width: 600px; margin: 5px auto 0; background: rgba(0,0,0,0.5); padding: 10px; border-radius: 15px; position: relative; width: 100%;">
+            <div id="chat-image-preview-container" style="display:none; flex-shrink: 0; max-width: 600px; margin: 5px auto 0; background: rgba(0,0,0,0.5); padding: 10px; border-radius: 15px; position: relative; width: 100%;">
                 <img id="chat-image-preview" src="" style="max-height: 100px; border-radius: 10px;">
                 <button onclick="clearChatImage()" style="position: absolute; top: -5px; right: -5px; background: #ff4757; color: white; border: none; border-radius: 50%; width: 25px; height: 25px; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center;"></button>
-            </div>
-            
-            <!-- Class Chat APK Download Card -->
-            <div class="glass-card fade-in-up" style="display: flex; align-items: center; justify-content: space-between; background: linear-gradient(135deg, rgba(29, 185, 84, 0.15), rgba(29, 185, 84, 0.05)); border: 1px solid rgba(29, 185, 84, 0.3); margin-top: 15px; margin-left: auto; margin-right: auto; max-width: 600px; width: 100%; padding: 15px; border-radius: 15px;">
-                <div style="flex: 1; padding-right: 15px;">
-                    <h3 style="margin: 0 0 5px 0; color: #1DB954; font-size: 1.1rem; display: flex; align-items: center; gap: 8px;">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-                        Download App (APK)
-                    </h3>
-                    <p style="margin: 0; font-size: 0.85rem; color: rgba(255,255,255,0.7); line-height: 1.4;">Get the restriction-free APK for background music and notifications.</p>
-                </div>
-                <button onclick="installPWA()" style="background: #1DB954; color: #fff; border: none; padding: 10px 18px; border-radius: 12px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 15px rgba(29, 185, 84, 0.4); white-space: nowrap;">Download APK</button>
             </div>
         </div>
 
