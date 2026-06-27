@@ -2106,8 +2106,15 @@ def stream_music_audio(track_id):
         header, encoded = data_url.split(",", 1)
         mime_type = header.split(";")[0].split(":")[1]
         binary_data = base64.b64decode(encoded)
-        from flask import Response
-        return Response(binary_data, mimetype=mime_type, headers={'Accept-Ranges': 'bytes'})
+        from flask import send_file
+        import io
+        
+        # Using send_file automatically handles HTTP 206 Partial Content Range requests required by Chrome/Safari for media
+        return send_file(
+            io.BytesIO(binary_data),
+            mimetype=mime_type,
+            as_attachment=False
+        )
     except Exception as e:
         return str(e), 500
 
