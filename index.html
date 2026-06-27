@@ -6790,10 +6790,8 @@
                 } catch(e) {}
                 
                 if (!audioData) {
-                    const res = await fetch(`${BACKEND_URL}/api/music/audio/${track.id}`);
-                    const data = await res.json();
-                    if (currentReqId !== playRequestId) return;
-                    audioData = data.audio_data;
+                    // INSTANT PLAY via streaming endpoint! No waiting for base64 JSON fetch!
+                    audioData = `${BACKEND_URL}/api/music/audio/${track.id}/stream`;
                 }
                 
                 if (audioData) {

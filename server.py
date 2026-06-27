@@ -2080,9 +2080,36 @@ def get_music_audio(track_id):
     row = cur.fetchone()
     cur.close()
     conn.close()
-    if row:
+    
+    if row and row[0]:
         return jsonify({'audio_data': row[0]})
-    return jsonify({'error': 'Track not found'}), 404
+    return jsonify({'audio_data': None})
+
+@app.route('/api/music/audio/<int:track_id>/stream', methods=['GET'])
+def stream_music_audio(track_id):
+    conn = get_db()
+    cur = conn.cursor()
+    if DATABASE_URL:
+        cur.execute("SELECT audio_data FROM music_hub WHERE id = %s", (track_id,))
+    else:
+        cur.execute("SELECT audio_data FROM music_hub WHERE id = ?", (track_id,))
+    
+    row = cur.fetchone()
+    cur.close()
+    conn.close()
+    
+    if not row or not row[0]:
+        return "Not found", 404
+        
+    data_url = row[0]
+    try:
+        header, encoded = data_url.split(",", 1)
+        mime_type = header.split(";")[0].split(":")[1]
+        binary_data = base64.b64decode(encoded)
+        from flask import Response
+        return Response(binary_data, mimetype=mime_type, headers={'Accept-Ranges': 'bytes'})
+    except Exception as e:
+        return str(e), 500
 
 @app.route('/api/music/submit', methods=['POST'])
 def submit_music():
