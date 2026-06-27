@@ -93,7 +93,9 @@
 
         body {
             font-family: 'Open Sans', sans-serif;
-            background-color: #000000;
+            background: radial-gradient(ellipse at 20% 20%, rgba(255, 170, 0, 0.15) 0%, transparent 50%),
+                        radial-gradient(ellipse at 80% 80%, rgba(138, 43, 226, 0.10) 0%, transparent 50%),
+                        #0a0a0a;
             color: var(--text-main);
             margin: 0;
             padding: 0;
@@ -104,40 +106,7 @@
             position: relative;
         }
 
-        /* Premium Aurora Background Effect - FLICKER FREE (Static) */
-        body::before, body::after {
-            content: '';
-            position: fixed;
-            border-radius: 50%;
-            z-index: -1;
-            opacity: 0.8;
-            pointer-events: none;
-            transform: translate3d(0, 0, 0);
-        }
-
-        body::before {
-            background: radial-gradient(circle, rgba(255, 170, 0, 0.25) 0%, rgba(255, 170, 0, 0.05) 50%, transparent 70%);
-            width: 100vw;
-            height: 100vh;
-            top: -20%;
-            left: -20%;
-        }
-
-        body::after {
-            background: radial-gradient(circle, rgba(138, 43, 226, 0.20) 0%, rgba(138, 43, 226, 0.05) 50%, transparent 70%);
-            width: 100vw;
-            height: 100vh;
-            bottom: -20%;
-            right: -20%;
-            animation-duration: 25s;
-            animation-direction: alternate-reverse;
-        }
-
-        @keyframes auroraFloat {
-            0% { transform: translate(0, 0) scale(1); }
-            50% { transform: translate(10vw, 10vh) scale(1.2); }
-            100% { transform: translate(-10vw, 5vh) scale(0.9); }
-        }
+        /* Simple gradient background - NO pseudo-elements, NO animation, ZERO flicker */
 
         #mobile-lock {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
