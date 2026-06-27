@@ -115,6 +115,10 @@
             opacity: 0.6;
             animation: auroraFloat 20s infinite alternate ease-in-out;
             pointer-events: none;
+            /* Anti-flickering for PC/Laptop */
+            transform: translate3d(0, 0, 0);
+            backface-visibility: hidden;
+            will-change: transform, filter;
         }
 
         body::before {
@@ -3807,8 +3811,27 @@
             const avatarImg = document.getElementById('id-avatar-img');
             const fallback = document.getElementById('id-avatar-fallback');
             if (avatarImg && profile.regNo) {
-                // Use DiceBear avataaars (Bitmoji style) with light blue bg
-                avatarImg.src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${profile.regNo}&backgroundColor=b6e3f4`;
+                // Change avatar everyday!
+                const dateSeed = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+                const nameStr = (profile.name || profile.regNo).toLowerCase();
+                const fullSeed = nameStr.replace(/\s+/g, '-') + "-" + dateSeed;
+                
+                // Simple gender heuristic based on Indian names
+                const girlNames = ["priya","shreya","neha","anjali","swati","pooja","shruti","aarti","divya","kavya","nandini","riya","isha","sneha","megha","lakshmi","sita","sri"];
+                const isGirl = girlNames.some(n => nameStr.includes(n));
+                const boyNames = ["lalit","kishore","kumar","raju","babu","sai","ram","krishna","rahul","amit","rohit","vikas","manish","balaga"];
+                const isBoy = boyNames.some(n => nameStr.includes(n)) || !isGirl; // Default to boy if unknown
+
+                let avatarUrl = `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(fullSeed)}&backgroundColor=b6e3f4`;
+                
+                // Force male/female features (Hero/Heroine look)
+                if (isBoy && !isGirl) {
+                    avatarUrl += '&top=shortHair,eyepatch,frizzle,shaggy,shaggyMullet,shortCurly,shortFlat,shortRound,shortWaved,theCaesar,theCaesarAndSidePart&facialHairProbability=20';
+                } else if (isGirl) {
+                    avatarUrl += '&top=longHair,straight01,straight02,straightStrand,curly,curvy,dreads,frida,miaWallace,notTooLong&facialHairProbability=0';
+                }
+
+                avatarImg.src = avatarUrl;
                 avatarImg.style.display = 'block';
                 if(fallback) fallback.style.display = 'none';
             }
