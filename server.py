@@ -135,14 +135,19 @@ def init_db():
             poster_name TEXT, net_id TEXT, created_at TEXT)''')
         cur.execute('''CREATE TABLE IF NOT EXISTS music_hub (
             id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT NOT NULL, artist TEXT, audio_data TEXT NOT NULL, cover_data TEXT,
-            uploaded_by TEXT, net_id TEXT, created_at TEXT, order_index INTEGER DEFAULT 0)''')
+            uploaded_by TEXT, net_id TEXT, created_at TEXT, order_index INTEGER DEFAULT 0, video_data TEXT)''')
         cur.execute('''CREATE TABLE IF NOT EXISTS class_chats (
-            id INTEGER PRIMARY KEY AUTOINCREMENT, section TEXT NOT NULL, sender_name TEXT, sender_net_id TEXT, message TEXT, image_url TEXT, deleted_for_all INTEGER DEFAULT 0, deleted_by TEXT, created_at TEXT)''')
+            id INTEGER PRIMARY KEY AUTOINCREMENT, section TEXT NOT NULL, sender_name TEXT, sender_net_id TEXT, message TEXT, image_url TEXT, deleted_for_all INTEGER DEFAULT 0, deleted_by TEXT, created_at TEXT, audio_url TEXT)''')
         cur.execute('''CREATE TABLE IF NOT EXISTS spotted_feed (
             id INTEGER PRIMARY KEY AUTOINCREMENT, message TEXT NOT NULL, likes INTEGER DEFAULT 0, net_id TEXT, created_at TEXT)''')
         
         try:
             cur.execute("ALTER TABLE music_hub ADD COLUMN order_index INTEGER DEFAULT 0")
+            conn.commit()
+        except Exception:
+            conn.rollback()
+        try:
+            cur.execute("ALTER TABLE music_hub ADD COLUMN video_data TEXT")
             conn.commit()
         except Exception:
             conn.rollback()
@@ -1993,10 +1998,10 @@ def get_music():
     conn = get_db()
     if DATABASE_URL:
         cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-        cur.execute("SELECT id, title, artist, cover_data, uploaded_by, net_id, created_at FROM music_hub ORDER BY order_index ASC, created_at DESC")
+        cur.execute("SELECT id, title, artist, cover_data, uploaded_by, net_id, created_at, video_data FROM music_hub ORDER BY order_index ASC, created_at DESC")
     else:
         cur = conn.cursor()
-        cur.execute("SELECT id, title, artist, cover_data, uploaded_by, net_id, created_at FROM music_hub ORDER BY order_index ASC, created_at DESC")
+        cur.execute("SELECT id, title, artist, cover_data, uploaded_by, net_id, created_at, video_data FROM music_hub ORDER BY order_index ASC, created_at DESC")
     
     rows = cur.fetchall()
     items = [dict(row) for row in rows]
@@ -2034,16 +2039,16 @@ def submit_music():
     try:
         if DATABASE_URL:
             cur.execute("""
-                INSERT INTO music_hub (title, artist, audio_data, cover_data, uploaded_by, net_id, created_at)
-                VALUES (%s, %s, %s, %s, %s, %s, %s)
+                INSERT INTO music_hub (title, artist, audio_data, cover_data, uploaded_by, net_id, created_at, video_data)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
             """, (data.get('title'), data.get('artist'), data.get('audio_data'), data.get('cover_data'),
-                  data.get('uploaded_by'), data.get('net_id'), now_str))
+                  data.get('uploaded_by'), data.get('net_id'), now_str, data.get('video_data')))
         else:
             cur.execute("""
-                INSERT INTO music_hub (title, artist, audio_data, cover_data, uploaded_by, net_id, created_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO music_hub (title, artist, audio_data, cover_data, uploaded_by, net_id, created_at, video_data)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """, (data.get('title'), data.get('artist'), data.get('audio_data'), data.get('cover_data'),
-                  data.get('uploaded_by'), data.get('net_id'), now_str))
+                  data.get('uploaded_by'), data.get('net_id'), now_str, data.get('video_data')))
         conn.commit()
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500

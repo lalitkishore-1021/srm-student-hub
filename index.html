@@ -104,17 +104,15 @@
             position: relative;
         }
 
-        /* Premium Aurora Background Effect - FLICKER FREE */
+        /* Premium Aurora Background Effect - FLICKER FREE (Static) */
         body::before, body::after {
             content: '';
             position: fixed;
             border-radius: 50%;
             z-index: -1;
             opacity: 0.8;
-            animation: auroraFloat 20s infinite alternate ease-in-out;
             pointer-events: none;
             transform: translate3d(0, 0, 0);
-            will-change: transform;
         }
 
         body::before {
@@ -3363,6 +3361,11 @@
                     <input type="file" id="music-cover-file" accept="image/*" style="display: none;" onchange="document.getElementById('music-cover-text').innerText = this.files.length ? ' Cover Selected: ' + this.files[0].name : ' Upload Cover Art (Optional)';">
                 </label>
                 
+                <label for="music-video-file" style="background: rgba(0,0,0,0.3); border: 1px dashed var(--glass-border); color: #fff; padding: 13px; border-radius: 12px; cursor: pointer; text-align: center;">
+                    <span id="music-video-text"> Upload Visualizer/Video (Optional)</span>
+                    <input type="file" id="music-video-file" accept="video/*" style="display: none;" onchange="document.getElementById('music-video-text').innerText = this.files.length ? ' Video Selected: ' + this.files[0].name : ' Upload Visualizer/Video (Optional)';">
+                </label>
+                
                 <label for="music-audio-file" style="background: rgba(29, 185, 84, 0.1); border: 1px dashed #1DB954; color: #fff; padding: 13px; border-radius: 12px; cursor: pointer; text-align: center;">
                     <span id="music-audio-text"> Upload MP3 File *</span>
                     <input type="file" id="music-audio-file" accept="audio/*" style="display: none;" onchange="document.getElementById('music-audio-text').innerText = this.files.length ? ' Audio Selected: ' + this.files[0].name : ' Upload MP3 File *';">
@@ -6476,7 +6479,13 @@
                     return `
                     <div class="music-card fade-in-up" data-id="${p.id}" onclick="playMusicTrack(${index})" style="transform: none; cursor: grab;">
                         <div style="color: rgba(255,255,255,0.2); margin-right: 10px; font-size: 1.2rem;">⋮⋮</div>
-                        <img src="${cover}" class="music-cover" alt="${p.title}">
+                        <div style="position: relative; width: 60px; height: 60px; flex-shrink: 0; margin-right: 15px; cursor: pointer;"
+                             onpointerdown="if('${p.video_data}' !== 'null' && '${p.video_data}' !== '') { const v = this.querySelector('video'); if(v){ v.style.display='block'; v.play(); } }"
+                             onpointerup="const v = this.querySelector('video'); if(v){ v.style.display='none'; v.pause(); }"
+                             onpointerleave="const v = this.querySelector('video'); if(v){ v.style.display='none'; v.pause(); }">
+                            <img src="${cover}" class="music-cover" alt="${p.title}" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; margin: 0;">
+                            ${p.video_data ? \`<video src="\${p.video_data}" loop muted playsinline style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; display: none; border-radius: 12px; z-index: 2; pointer-events: none;"></video>\` : ''}
+                        </div>
                         <div class="music-info">
                             <h4 class="music-title">${p.title}</h4>
                             <p class="music-artist">${p.artist}</p>
@@ -7216,6 +7225,7 @@
             const artist = document.getElementById('music-artist').value.trim();
             const audioFile = document.getElementById('music-audio-file')?.files[0];
             const coverFile = document.getElementById('music-cover-file')?.files[0];
+            const videoFile = document.getElementById('music-video-file')?.files[0];
             const status = document.getElementById('music-status');
             
             if (!title || !artist || !audioFile) {
@@ -7234,6 +7244,20 @@
             try {
                 let coverData = '';
                 if (coverFile) { coverData = await compressImage(coverFile); }
+                let videoData = null;
+                if (videoFile) {
+                    if (videoFile.size > 20 * 1024 * 1024) {
+                        status.innerText = "Video file too large (Max 20MB)";
+                        status.style.color = 'var(--danger)';
+                        return;
+                    }
+                    videoData = await new Promise((resolve, reject) => {
+                        const reader = new FileReader();
+                        reader.readAsDataURL(videoFile);
+                        reader.onload = () => resolve(reader.result);
+                        reader.onerror = e => reject(e);
+                    });
+                }
                 const audioBase64 = await new Promise((resolve, reject) => {
                     const reader = new FileReader();
                     reader.readAsDataURL(audioFile);
@@ -7242,7 +7266,7 @@
                 });
                 status.innerText = "Uploading... This may take a moment.";
                 const payload = {
-                    title: title, artist: artist, audio_data: audioBase64, cover_data: coverData,
+                    title: title, artist: artist, audio_data: audioBase64, cover_data: coverData, video_data: videoData,
                     uploaded_by: 'Student', net_id: getCurrentNetId()
                 };
                 const res = await fetch(`${BACKEND_URL}/api/music/submit`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
