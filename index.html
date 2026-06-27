@@ -2633,7 +2633,7 @@
                     </div>
                 </div>
                 
-                <div class="action-card" onclick="installPWA()">
+                <div class="action-card" onclick="downloadRealAPK()">
                     <div class="action-icon" style="color: #1DB954;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg></div>
                     <div>
                         <h4 class="action-title">Download APK</h4>
@@ -8614,26 +8614,23 @@
             }
         });
 
-        // --- PWA / APK INSTALL LOGIC ---
-        let deferredPrompt;
-        window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault();
-            deferredPrompt = e;
-        });
-
-        async function installPWA() {
-            if (deferredPrompt) {
-                deferredPrompt.prompt();
-                const { outcome } = await deferredPrompt.userChoice;
-                deferredPrompt = null;
-            } else {
-                const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-                if (isIOS) {
-                    alert("Your device is ready!\n\nTo install the App: Tap the 'Share' button at the bottom of Safari, then scroll down and tap 'Add to Home Screen'.");
-                } else {
-                    alert("Your device is ready!\n\nTo download the APK: Tap the menu (⋮) in your browser and select 'Install app' or 'Add to Home screen'.");
-                }
-            }
+        // --- REAL APK DOWNLOAD LOGIC ---
+        function downloadRealAPK() {
+            // Pointing to the actual .apk file that will be hosted on the server
+            const apkUrl = "/static/srm-hub.apk";
+            
+            // Create a temporary anchor element to trigger the download
+            const a = document.createElement('a');
+            a.href = apkUrl;
+            a.download = "SRM-Student-Hub.apk";
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            
+            // Also notify the user to allow unknown sources if needed
+            setTimeout(() => {
+                alert("Downloading the Real APK...\n\nNote: If the download fails, it means the 'srm-hub.apk' file has not been uploaded to the server yet. Once downloaded, you may need to allow 'Install from Unknown Sources' in your Android settings.");
+            }, 1000);
         }
     </script>
 </body>
