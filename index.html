@@ -1866,40 +1866,8 @@
         /* Removed Hologram CSS */
 
         /* ================= DYNAMIC ATMOSPHERES & STORY ================= */
-        .theme-sunset {
-            background: linear-gradient(135deg, #2c0b2e 0%, #170824 50%, #000000 100%) !important;
-        }
-        .theme-sunset::before {
-            content: ""; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: radial-gradient(circle at 80% 20%, rgba(255,100,50,0.15) 0%, transparent 60%);
-            z-index: -1;
-        }
-        .theme-night {
-            background-color: #050505 !important;
-        }
-        .theme-night::before {
-            content: ""; position: fixed; top: 0; left: 0; width: 2px; height: 2px;
-            background: transparent;
-            box-shadow: 
-                10vw 20vh #fff, 20vw 80vh #fff, 30vw 10vh #fff, 40vw 50vh #fff, 50vw 90vh #fff, 
-                60vw 30vh #fff, 70vw 70vh #fff, 80vw 20vh #fff, 90vw 60vh #fff, 95vw 85vh #fff,
-                15vw 40vh #fff, 25vw 60vh #fff, 35vw 90vh #fff, 45vw 20vh #fff, 55vw 70vh #fff, 
-                65vw 10vh #fff, 75vw 50vh #fff, 85vw 95vh #fff, 5vw 15vh #fff, 10vw 55vh #fff,
-                50vw 40vh #fff, 80vw 80vh #fff, 20vw 15vh #fff, 60vw 90vh #fff;
-            border-radius: 50%;
-            animation: twinkleBg 4s infinite alternate;
-            z-index: -2;
-            pointer-events: none;
-        }
-        @keyframes twinkleBg { 0% { opacity: 0.3; transform: scale(0.8); } 100% { opacity: 0.9; transform: scale(1.1); } }
-        .theme-rain::after {
-            content: ""; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            background: linear-gradient(to bottom, rgba(255,255,255,0) 0%, rgba(255,255,255,0.05) 100%);
-            z-index: 9999; pointer-events: none;
-            animation: rainDrop 0.2s linear infinite;
-        }
-        @keyframes twinkle { 0% { opacity: 0.2; } 50% { opacity: 0.5; } 100% { opacity: 0.2; } }
-        @keyframes rainDrop { 0% { background-position: 0 0; } 100% { background-position: 10px 100vh; } }
+        /* Dynamic atmosphere themes removed to fix laptop flickering */
+
 
         .story-ring {
             border: 3px solid transparent;
@@ -8473,28 +8441,7 @@
             btn.style.transform = 'scale(1)';
         }
 
-        // ================= DYNAMIC ATMOSPHERES =================
-        function applyDynamicAtmospheres() {
-            const hour = new Date().getHours();
-            document.body.classList.remove('theme-sunset', 'theme-night', 'theme-rain');
-            if (hour >= 17 && hour < 19) document.body.classList.add('theme-sunset');
-            else if (hour >= 19 || hour < 5) document.body.classList.add('theme-night');
-
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(async (pos) => {
-                    try {
-                        const lat = pos.coords.latitude;
-                        const lon = pos.coords.longitude;
-                        const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=precipitation`);
-                        const data = await res.json();
-                        if (data && data.current && data.current.precipitation > 0) {
-                            document.body.classList.add('theme-rain');
-                        }
-                    } catch(e) {}
-                });
-            }
-        }
-        setTimeout(applyDynamicAtmospheres, 2000);
+        // Dynamic atmospheres removed to fix laptop flickering
 
         // ================= CINEMATIC DAY RECAP (STORY MODE) =================
         let currentStorySlide = 1;
