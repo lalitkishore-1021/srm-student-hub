@@ -17,15 +17,7 @@ from playwright.sync_api import sync_playwright
 app = Flask(__name__, static_folder='.')
 CORS(app)
 
-from flask_limiter import Limiter
-from flask_limiter.util import get_remote_address
 
-limiter = Limiter(
-    get_remote_address,
-    app=app,
-    default_limits=["200 per day", "50 per hour"],
-    storage_uri="memory://"
-)
 
 import os
 
@@ -1417,7 +1409,6 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
 sync_jobs = {}
 
 @app.route('/api/start_session', methods=['POST'])
-@limiter.limit("2 per minute")
 def start_session():
     data = request.json
     sync_id = str(uuid.uuid4())
@@ -1743,7 +1734,6 @@ def submit_wall():
     return jsonify({'success': True})
 
 @app.route('/api/wall/like/<int:post_id>', methods=['POST'])
-@limiter.limit("30 per minute")
 def like_wall(post_id):
     conn = get_db()
     cur = conn.cursor()
@@ -2195,7 +2185,6 @@ def get_lyrics():
     return jsonify({'success': False, 'error': 'Lyrics not found.'})
 
 @app.route('/api/ai/chat', methods=['POST'])
-@limiter.limit("10 per minute")
 def ai_chat():
     data = request.json
     user_msg = data.get('prompt', '')
