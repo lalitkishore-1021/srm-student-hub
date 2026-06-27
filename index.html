@@ -3317,9 +3317,6 @@
                 
                 <button class="action-btn" onclick="submitMusic()" style="margin-top: 5px; background: #1DB954; color: #fff;">UPLOAD TRACK</button>
                 <p id="music-status" style="font-size: 0.85rem; font-weight: bold; text-align: center; min-height: 20px;"></p>
-                
-                <input type="file" id="music-video-edit-file" accept="video/*" style="display: none;" onchange="uploadVideoForTrack(this)">
-                <input type="hidden" id="music-edit-id">
             </div>
         </div>
     </div>
@@ -6438,7 +6435,6 @@
                             <h4 class="music-title">${p.title}</h4>
                             <p class="music-artist">${p.artist}</p>
                             ${p.uploaded_by ? `<div style="font-size:0.7rem; color: rgba(255,255,255,0.4); margin-top: 5px;">Uploaded by ${p.uploaded_by}</div>` : ''}
-                            ${isOwner && !p.has_video ? `<button onclick="event.stopPropagation(); document.getElementById('music-edit-id').value='${p.id}'; document.getElementById('music-video-edit-file').click();" style="background: rgba(29, 185, 84, 0.1); border: 1px solid #1DB954; color: #1DB954; padding: 2px 8px; border-radius: 10px; font-size: 0.65rem; cursor: pointer; margin-top: 5px;">+ Add Video</button>` : ''}
                         </div>
 
                         <button class="music-play-btn"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></button>
@@ -7272,43 +7268,6 @@
                 status.innerText = "Connection error. File might be too large.";
                 status.style.color = 'var(--danger)';
             }
-        }
-        
-        async function uploadVideoForTrack(input) {
-            const file = input.files[0];
-            if (!file) return;
-            const trackId = document.getElementById('music-edit-id').value;
-            const netId = getCurrentNetId();
-            if (file.size > 20 * 1024 * 1024) {
-                alert("Video file is too large! Maximum size is 20MB.");
-                return;
-            }
-            const reader = new FileReader();
-            reader.onload = async function(e) {
-                const videoData = e.target.result;
-                input.value = '';
-                document.getElementById('music-status').innerText = 'Uploading video...';
-                try {
-                    const res = await fetch(`${BACKEND_URL}/api/music/video/upload`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ id: trackId, net_id: netId, video_data: videoData })
-                    });
-                    const data = await res.json();
-                    if (data.success) {
-                        alert("Video added successfully!");
-                        document.getElementById('music-status').innerText = '';
-                        loadMusicList();
-                    } else {
-                        alert("Error: " + data.error);
-                        document.getElementById('music-status').innerText = '';
-                    }
-                } catch(err) {
-                    alert("Connection error.");
-                    document.getElementById('music-status').innerText = '';
-                }
-            };
-            reader.readAsDataURL(file);
         }
         
         async function deleteMusicTrack(id) {
