@@ -6421,7 +6421,7 @@
                              onpointerup="const v = this.querySelector('video'); if(v){ v.style.display='none'; v.pause(); }"
                              onpointerleave="const v = this.querySelector('video'); if(v){ v.style.display='none'; v.pause(); }">
                             <img src="${cover}" class="music-cover" alt="${p.title}" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; margin: 0;">
-                            ${p.video_data ? \`<video src="\${p.video_data}" loop muted playsinline style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; display: none; border-radius: 12px; z-index: 2; pointer-events: none;"></video>\` : ''}
+                            ${p.video_data ? `<video src="${p.video_data}" loop muted playsinline style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; display: none; border-radius: 12px; z-index: 2; pointer-events: none;"></video>` : ''}
                         </div>
                         <div class="music-info">
                             <h4 class="music-title">${p.title}</h4>
