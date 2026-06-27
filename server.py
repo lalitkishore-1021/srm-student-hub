@@ -2117,7 +2117,7 @@ def call_gemini(prompt, file_base64=None, mime_type=None):
         
     payload = {"contents": [{"parts": parts}]}
     
-    models_to_try = ["gemini-2.0-flash", "gemini-2.5-flash-preview-05-20", "gemini-2.0-flash-lite", "gemini-1.5-flash"]
+    models_to_try = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-2.5-flash-preview-05-20", "gemini-1.5-flash", "gemini-2.0-flash-lite"]
     last_error = ""
     for model in models_to_try:
         url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
@@ -2127,8 +2127,9 @@ def call_gemini(prompt, file_base64=None, mime_type=None):
             if 'error' in data:
                 err_msg = data['error'].get('message', str(data['error']))
                 last_error = err_msg
-                if 'not found' in err_msg.lower() or 'not supported' in err_msg.lower():
-                    continue # try next model
+                # Try the next model for these recoverable errors
+                if 'not found' in err_msg.lower() or 'not supported' in err_msg.lower() or 'quota' in err_msg.lower() or 'rate limit' in err_msg.lower() or 'resource' in err_msg.lower():
+                    continue
                 return "API Error: " + err_msg
             if 'candidates' in data and data['candidates']:
                 return data['candidates'][0]['content']['parts'][0]['text']

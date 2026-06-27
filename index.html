@@ -3807,29 +3807,58 @@
             const avatarImg = document.getElementById('id-avatar-img');
             const fallback = document.getElementById('id-avatar-fallback');
             if (avatarImg && profile.regNo) {
-                // Change avatar everyday!
-                const dateSeed = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+                // Real Indian Hero / Heroine avatars that change every day!
                 const nameStr = (profile.name || profile.regNo).toLowerCase();
-                const fullSeed = nameStr.replace(/\s+/g, '-') + "-" + dateSeed;
                 
-                // Simple gender heuristic based on Indian names
-                const girlNames = ["priya","shreya","neha","anjali","swati","pooja","shruti","aarti","divya","kavya","nandini","riya","isha","sneha","megha","lakshmi","sita","sri"];
+                // Gender detection from Indian names
+                const girlNames = ["priya","shreya","neha","anjali","swati","pooja","shruti","aarti","divya","kavya","nandini","riya","isha","sneha","megha","lakshmi","sita","sri","ananya","tanya","devi","jyoti","meena","radha","geetha","bhavya","harini","sahana","varsha","ammu","keerthi","akshara","shalini","trisha","nithya","oviya","nazriya","rashmika","samantha","tamanna"];
                 const isGirl = girlNames.some(n => nameStr.includes(n));
-                const boyNames = ["lalit","kishore","kumar","raju","babu","sai","ram","krishna","rahul","amit","rohit","vikas","manish","balaga"];
-                const isBoy = boyNames.some(n => nameStr.includes(n)) || !isGirl; // Default to boy if unknown
+                const boyNames = ["lalit","kishore","kumar","raju","babu","sai","ram","krishna","rahul","amit","rohit","vikas","manish","balaga","arjun","vijay","surya","karthi","arun","karthik","pranav","harsha","nikhil","varun","deepak","suresh","ganesh","mahesh","raj","ajay","naveen","pavan","charan","dhoni","kohli","sachin"];
+                const isBoy = boyNames.some(n => nameStr.includes(n)) || !isGirl;
 
-                let avatarUrl = `https://api.dicebear.com/9.x/avataaars/svg?seed=${encodeURIComponent(fullSeed)}&backgroundColor=b6e3f4&skinColor=ae5d29,d08b5b,edb98a&hairColor=2c1b18,000000`;
+                // Indian Heroes (Actors) - public poster/promo images
+                const heroImages = [
+                    "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6e/Shah_Rukh_Khan_grance_the_launch_of_the_new_Tag_Heuer_collection_%28cropped%29.jpg/440px-Shah_Rukh_Khan_grance_the_launch_of_the_new_Tag_Heuer_collection_%28cropped%29.jpg",
+                    "https://upload.wikimedia.org/wikipedia/commons/thumb/c/cc/Allu_Arjun_at_Naa_Peru_Surya_Success_Meet.jpg/440px-Allu_Arjun_at_Naa_Peru_Surya_Success_Meet.jpg",
+                    "https://upload.wikimedia.org/wikipedia/commons/thumb/1/18/Prabhas_at_Mirchi_Success_Meet.jpg/440px-Prabhas_at_Mirchi_Success_Meet.jpg",
+                    "https://upload.wikimedia.org/wikipedia/commons/thumb/8/86/Hrithik_at_Rado_launch.jpg/440px-Hrithik_at_Rado_launch.jpg",
+                    "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b8/Ranveer_Singh_From_The_Sets_Of_Colors_TV%27s_Show_Dance_Deewane_%28cropped%29.jpg/440px-Ranveer_Singh_From_The_Sets_Of_Colors_TV%27s_Show_Dance_Deewane_%28cropped%29.jpg",
+                    "https://upload.wikimedia.org/wikipedia/commons/thumb/8/89/Vijay_in_2014_%28cropped%29.jpg/440px-Vijay_in_2014_%28cropped%29.jpg",
+                    "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Dulquer_Salmaan.jpg/440px-Dulquer_Salmaan.jpg",
+                    "https://upload.wikimedia.org/wikipedia/commons/thumb/b/bc/Ranbir_Kapoor_Yeh_Jawaani_Hai_Deewani.jpg/440px-Ranbir_Kapoor_Yeh_Jawaani_Hai_Deewani.jpg",
+                    "https://upload.wikimedia.org/wikipedia/commons/thumb/0/09/Mahesh_Babu_in_Murari.jpg/440px-Mahesh_Babu_in_Murari.jpg",
+                    "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ae/Ram_Charan_Tej_%28cropped%29.jpg/440px-Ram_Charan_Tej_%28cropped%29.jpg"
+                ];
+
+                // Indian Heroines (Actresses)
+                const heroineImages = [
+                    "https://upload.wikimedia.org/wikipedia/commons/thumb/2/24/Deepika_Padukone_at_Cannes_2017.jpg/440px-Deepika_Padukone_at_Cannes_2017.jpg",
+                    "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b9/Alia_Bhatt_at_Berlinale_2022_Gangubai_02_%28cropped%29.jpg/440px-Alia_Bhatt_at_Berlinale_2022_Gangubai_02_%28cropped%29.jpg",
+                    "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Rashmika_Mandanna_snapped_at_film_studio_in_2023_%28cropped%29.jpg/440px-Rashmika_Mandanna_snapped_at_film_studio_in_2023_%28cropped%29.jpg",
+                    "https://upload.wikimedia.org/wikipedia/commons/thumb/4/40/Samantha_at_Rangasthalam_Pre_Release_Event_%28cropped%29.jpg/440px-Samantha_at_Rangasthalam_Pre_Release_Event_%28cropped%29.jpg",
+                    "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b2/Anushka_Sharma_promote_Zero_on_the_sets_of_Indian_Idol_10_%28cropped%29.jpg/440px-Anushka_Sharma_promote_Zero_on_the_sets_of_Indian_Idol_10_%28cropped%29.jpg",
+                    "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2b/Nayanthara_at_Filmfare_Awards_2014.jpg/440px-Nayanthara_at_Filmfare_Awards_2014.jpg",
+                    "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e6/Shraddha_Kapoor_at_%27OK_Jaanu%27_success_party.jpg/440px-Shraddha_Kapoor_at_%27OK_Jaanu%27_success_party.jpg",
+                    "https://upload.wikimedia.org/wikipedia/commons/thumb/c/cc/Kiara_Advani_snapped_on_17_June_2023_%28cropped%29.jpg/440px-Kiara_Advani_snapped_on_17_June_2023_%28cropped%29.jpg",
+                    "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a7/Pooja_Hegde_snapped_at_the_airport_%28cropped%29.jpg/440px-Pooja_Hegde_snapped_at_the_airport_%28cropped%29.jpg",
+                    "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f0/Tamanna_at_Oopiri_audio.jpg/440px-Tamanna_at_Oopiri_audio.jpg"
+                ];
+
+                // Pick image based on day of year (changes daily!)
+                const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0)) / 86400000);
+                const imageList = (isBoy && !isGirl) ? heroImages : heroineImages;
+                const idx = dayOfYear % imageList.length;
                 
-                // Force male/female features (Hero/Heroine look)
-                if (isBoy && !isGirl) {
-                    avatarUrl += '&top=shortHair,frizzle,shaggy,shaggyMullet,shortCurly,shortFlat,shortRound,shortWaved,theCaesar,theCaesarAndSidePart';
-                } else if (isGirl) {
-                    avatarUrl += '&top=longHair,straight01,straight02,straightStrand,curly,curvy,dreads,frida,miaWallace,notTooLong';
-                }
-
-                avatarImg.src = avatarUrl;
+                avatarImg.src = imageList[idx];
                 avatarImg.style.display = 'block';
+                avatarImg.style.objectFit = 'cover';
+                avatarImg.style.objectPosition = 'top center';
                 if(fallback) fallback.style.display = 'none';
+                
+                // Fallback if Wikipedia image fails to load
+                avatarImg.onerror = function() {
+                    this.src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${profile.regNo}&backgroundColor=b6e3f4`;
+                };
             }
 
             // Also render advisors
