@@ -66,7 +66,7 @@ def init_db():
             poster_name TEXT, net_id TEXT, created_at TEXT)''')
         cur.execute('''CREATE TABLE IF NOT EXISTS music_hub (
             id SERIAL PRIMARY KEY, title TEXT NOT NULL, artist TEXT, audio_data TEXT NOT NULL, cover_data TEXT,
-            uploaded_by TEXT, net_id TEXT, created_at TEXT, order_index INTEGER DEFAULT 0)''')
+            uploaded_by TEXT, net_id TEXT, created_at TEXT, order_index INTEGER DEFAULT 0, video_data TEXT)''')
         cur.execute('''CREATE TABLE IF NOT EXISTS class_chats (
             id SERIAL PRIMARY KEY, section TEXT NOT NULL, sender_name TEXT, sender_net_id TEXT, message TEXT, image_url TEXT, deleted_for_all INTEGER DEFAULT 0, deleted_by TEXT, created_at TEXT)''')
         cur.execute('''CREATE TABLE IF NOT EXISTS spotted_feed (
@@ -74,6 +74,11 @@ def init_db():
         conn.commit()
         try:
             cur.execute("ALTER TABLE music_hub ADD COLUMN order_index INTEGER DEFAULT 0")
+            conn.commit()
+        except Exception:
+            conn.rollback()
+        try:
+            cur.execute("ALTER TABLE music_hub ADD COLUMN video_data TEXT")
             conn.commit()
         except Exception:
             conn.rollback()
