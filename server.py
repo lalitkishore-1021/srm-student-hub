@@ -2031,6 +2031,43 @@ def get_music_video(track_id):
         return jsonify({'video_data': row[0]})
     return jsonify({'video_data': None})
 
+@app.route('/api/music/video/upload', methods=['POST'])
+def upload_music_video():
+    data = request.json
+    track_id = data.get('id')
+    net_id = data.get('net_id', '').lower()
+    video_data = data.get('video_data')
+    
+    if not track_id or not net_id or not video_data:
+        return jsonify({'success': False, 'error': 'Missing required fields'})
+        
+    conn = get_db()
+    cur = conn.cursor()
+    try:
+        # Check ownership
+        if DATABASE_URL:
+            cur.execute("SELECT net_id FROM music_hub WHERE id = %s", (track_id,))
+        else:
+            cur.execute("SELECT net_id FROM music_hub WHERE id = ?", (track_id,))
+            
+        row = cur.fetchone()
+        if not row or row[0].lower() != net_id:
+            return jsonify({'success': False, 'error': 'Unauthorized: Only the uploader can add a video'})
+            
+        # Update video
+        if DATABASE_URL:
+            cur.execute("UPDATE music_hub SET video_data = %s WHERE id = %s", (video_data, track_id))
+        else:
+            cur.execute("UPDATE music_hub SET video_data = ? WHERE id = ?", (video_data, track_id))
+            
+        conn.commit()
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+    finally:
+        cur.close()
+        conn.close()
+
 @app.route('/api/music/audio/<int:track_id>', methods=['GET'])
 def get_music_audio(track_id):
     conn = get_db()
