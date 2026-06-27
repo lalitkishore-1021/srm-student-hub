@@ -104,37 +104,33 @@
             position: relative;
         }
 
-        /* Premium Aurora Background Effect */
+        /* Premium Aurora Background Effect - FLICKER FREE */
         body::before, body::after {
             content: '';
             position: fixed;
             border-radius: 50%;
             z-index: -1;
-            filter: blur(80px);
-            -webkit-filter: blur(80px);
-            opacity: 0.6;
+            opacity: 0.8;
             animation: auroraFloat 20s infinite alternate ease-in-out;
             pointer-events: none;
-            /* Anti-flickering for PC/Laptop */
             transform: translate3d(0, 0, 0);
-            backface-visibility: hidden;
-            will-change: transform, filter;
+            will-change: transform;
         }
 
         body::before {
-            background: radial-gradient(circle, rgba(255, 170, 0, 0.55) 0%, transparent 70%);
-            width: 70vw;
-            height: 70vh;
-            top: -10%;
-            left: -10%;
+            background: radial-gradient(circle, rgba(255, 170, 0, 0.25) 0%, rgba(255, 170, 0, 0.05) 50%, transparent 70%);
+            width: 100vw;
+            height: 100vh;
+            top: -20%;
+            left: -20%;
         }
 
         body::after {
-            background: radial-gradient(circle, rgba(138, 43, 226, 0.45) 0%, transparent 70%);
-            width: 80vw;
-            height: 80vh;
+            background: radial-gradient(circle, rgba(138, 43, 226, 0.20) 0%, rgba(138, 43, 226, 0.05) 50%, transparent 70%);
+            width: 100vw;
+            height: 100vh;
             bottom: -20%;
-            right: -10%;
+            right: -20%;
             animation-duration: 25s;
             animation-direction: alternate-reverse;
         }
@@ -3822,13 +3818,13 @@
                 const boyNames = ["lalit","kishore","kumar","raju","babu","sai","ram","krishna","rahul","amit","rohit","vikas","manish","balaga"];
                 const isBoy = boyNames.some(n => nameStr.includes(n)) || !isGirl; // Default to boy if unknown
 
-                let avatarUrl = `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(fullSeed)}&backgroundColor=b6e3f4`;
+                let avatarUrl = `https://api.dicebear.com/9.x/avataaars/svg?seed=${encodeURIComponent(fullSeed)}&backgroundColor=b6e3f4&skinColor=ae5d29,d08b5b,edb98a&hairColor=2c1b18,000000`;
                 
                 // Force male/female features (Hero/Heroine look)
                 if (isBoy && !isGirl) {
-                    avatarUrl += '&top=shortHair,eyepatch,frizzle,shaggy,shaggyMullet,shortCurly,shortFlat,shortRound,shortWaved,theCaesar,theCaesarAndSidePart&facialHairProbability=20';
+                    avatarUrl += '&top=shortHair,frizzle,shaggy,shaggyMullet,shortCurly,shortFlat,shortRound,shortWaved,theCaesar,theCaesarAndSidePart';
                 } else if (isGirl) {
-                    avatarUrl += '&top=longHair,straight01,straight02,straightStrand,curly,curvy,dreads,frida,miaWallace,notTooLong&facialHairProbability=0';
+                    avatarUrl += '&top=longHair,straight01,straight02,straightStrand,curly,curvy,dreads,frida,miaWallace,notTooLong';
                 }
 
                 avatarImg.src = avatarUrl;
@@ -4251,14 +4247,13 @@
                 const barColor = isGood ? 'var(--success)' : 'var(--danger)';
                 const cardStyleModifier = isGood ? 'border: 1px solid var(--glass-border);' : 'border: 1px solid var(--danger); box-shadow: 0 0 15px rgba(255, 68, 68, 0.2);';
 
-                let marginValue = 0;
-                let marginLabel = 'Margin';
+                let marginLabel = 'Safe Bunks';
                 if (isGood) {
                     marginValue = Math.floor((attended - (0.75 * total)) / 0.75);
                     if (marginValue < 0) marginValue = 0;
                 } else {
                     marginValue = Math.ceil(((0.75 * total) - attended) / 0.25);
-                    marginLabel = 'Need';
+                    marginLabel = 'Must Attend';
                 }
 
                 html += `
@@ -4272,7 +4267,7 @@
                         </div>
                         <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(0,0,0,0.3); border-radius: 12px; padding: 15px; border: 1px solid ${isGood ? 'rgba(0,204,102,0.3)' : 'rgba(255,68,68,0.3)'}; min-width: 80px; text-align: center;">
                             <div style="font-size: 2rem; font-weight: 900; color: ${barColor}; line-height: 1;">${marginValue}</div>
-                            <div style="font-size: 0.75rem; color: ${barColor}; font-weight: 600; text-transform: uppercase; margin-top: 4px; margin-bottom: 10px; letter-spacing: 1px;">${marginLabel}</div>
+                            <div style="font-size: 0.65rem; color: ${barColor}; font-weight: 800; text-transform: uppercase; margin-top: 4px; margin-bottom: 10px; letter-spacing: 0.5px; white-space: nowrap;">${marginLabel}</div>
                             <div style="font-size: 1.3rem; font-family: 'Montserrat', sans-serif; font-weight: 900; color: ${barColor};">${percentage}%</div>
                         </div>
                     </div>
@@ -7631,9 +7626,31 @@
                 const botBubble = document.createElement('div');
                 botBubble.style.cssText = 'background: rgba(138,43,226,0.2); padding: 10px 15px; border-radius: 15px; border-bottom-left-radius: 0; align-self: flex-start; max-width: 80%; color: #fff; white-space: pre-wrap; line-height: 1.5; font-size: 0.95rem;';
                 if(data.success) {
-                    botBubble.innerHTML = data.reply
+                    const formatted = data.reply
                         .replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')
                         .replace(/!\[.*?\]\((.*?)\)/g, '<br><img src="$1" style="max-width: 100%; border-radius: 10px; margin-top: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.5);"><br>');
+                    
+                    botBubble.innerHTML = '';
+                    let i = 0;
+                    let isTag = false;
+                    let text = '';
+                    function typeWriter() {
+                        if (i < formatted.length) {
+                            if (formatted.charAt(i) === '<') isTag = true;
+                            text += formatted.charAt(i);
+                            if (formatted.charAt(i) === '>') isTag = false;
+                            if (isTag) {
+                                i++;
+                                typeWriter();
+                            } else {
+                                botBubble.innerHTML = text;
+                                history.scrollTop = history.scrollHeight;
+                                i++;
+                                setTimeout(typeWriter, 15);
+                            }
+                        }
+                    }
+                    typeWriter();
                 } else {
                     botBubble.innerText = "Error: " + data.error;
                     botBubble.style.color = "#ff4757";
