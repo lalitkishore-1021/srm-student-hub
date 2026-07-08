@@ -3783,33 +3783,32 @@
                 const boyNames = ["lalit","kishore","kumar","raju","babu","sai","ram","krishna","rahul","amit","rohit","vikas","manish","balaga","arjun","vijay","surya","karthi","arun","karthik","pranav","harsha","nikhil","varun","deepak","suresh","ganesh","mahesh","raj","ajay","naveen","pavan","charan","dhoni","kohli","sachin"];
                 const isBoy = boyNames.some(n => nameStr.includes(n)) || !isGirl;
 
-                // Indian Heroes (Actors) - public poster/promo images
+                // Indian Heroes (Actors) - proxied for reliability
                 const heroImages = [
-                    "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6e/Shah_Rukh_Khan_grance_the_launch_of_the_new_Tag_Heuer_collection_%28cropped%29.jpg/440px-Shah_Rukh_Khan_grance_the_launch_of_the_new_Tag_Heuer_collection_%28cropped%29.jpg",
-                    "https://upload.wikimedia.org/wikipedia/commons/thumb/c/cc/Allu_Arjun_at_Naa_Peru_Surya_Success_Meet.jpg/440px-Allu_Arjun_at_Naa_Peru_Surya_Success_Meet.jpg",
-                    "https://upload.wikimedia.org/wikipedia/commons/thumb/1/18/Prabhas_at_Mirchi_Success_Meet.jpg/440px-Prabhas_at_Mirchi_Success_Meet.jpg",
-                    "https://upload.wikimedia.org/wikipedia/commons/thumb/8/86/Hrithik_at_Rado_launch.jpg/440px-Hrithik_at_Rado_launch.jpg",
-                    "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b8/Ranveer_Singh_From_The_Sets_Of_Colors_TV%27s_Show_Dance_Deewane_%28cropped%29.jpg/440px-Ranveer_Singh_From_The_Sets_Of_Colors_TV%27s_Show_Dance_Deewane_%28cropped%29.jpg",
-                    "https://upload.wikimedia.org/wikipedia/commons/thumb/8/89/Vijay_in_2014_%28cropped%29.jpg/440px-Vijay_in_2014_%28cropped%29.jpg",
-                    "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Dulquer_Salmaan.jpg/440px-Dulquer_Salmaan.jpg",
-                    "https://upload.wikimedia.org/wikipedia/commons/thumb/b/bc/Ranbir_Kapoor_Yeh_Jawaani_Hai_Deewani.jpg/440px-Ranbir_Kapoor_Yeh_Jawaani_Hai_Deewani.jpg",
-                    "https://upload.wikimedia.org/wikipedia/commons/thumb/0/09/Mahesh_Babu_in_Murari.jpg/440px-Mahesh_Babu_in_Murari.jpg",
-                    "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ae/Ram_Charan_Tej_%28cropped%29.jpg/440px-Ram_Charan_Tej_%28cropped%29.jpg"
+                    "https://wsrv.nl/?url=upload.wikimedia.org/wikipedia/commons/6/6e/Shah_Rukh_Khan_graces_the_launch_of_the_new_Santro.jpg",
+                    "https://wsrv.nl/?url=upload.wikimedia.org/wikipedia/commons/thumb/0/09/Allu_Arjun_at_Pushpa_2_The_Rule_meet.jpg/500px-Allu_Arjun_at_Pushpa_2_The_Rule_meet.jpg",
+                    "https://wsrv.nl/?url=upload.wikimedia.org/wikipedia/commons/thumb/2/22/Prabhas_by_Gage_Skidmore.jpg/500px-Prabhas_by_Gage_Skidmore.jpg",
+                    "https://wsrv.nl/?url=upload.wikimedia.org/wikipedia/commons/9/9c/Hrithik_at_Rado_launch.jpg",
+                    "https://wsrv.nl/?url=upload.wikimedia.org/wikipedia/commons/3/32/Ranveer_Singh_in_2023_%281%29_%28cropped%29.jpg",
+                    "https://wsrv.nl/?url=upload.wikimedia.org/wikipedia/commons/8/82/Dulquer_Salmaan_at_Karwaan_promotions_%28cropped%29.jpg",
+                    "https://wsrv.nl/?url=upload.wikimedia.org/wikipedia/commons/a/a0/Ranbir_Kapoor_snapped_at_Kalina_airport.jpg",
+                    "https://wsrv.nl/?url=upload.wikimedia.org/wikipedia/commons/thumb/9/9a/Mahesh_Babu_in_Spyder_%28cropped%29.jpg/500px-Mahesh_Babu_in_Spyder_%28cropped%29.jpg",
+                    "https://wsrv.nl/?url=upload.wikimedia.org/wikipedia/commons/thumb/d/d3/Ram_Charan_at_Game_Changer_trailer_launch.jpg/500px-Ram_Charan_at_Game_Changer_trailer_launch.jpg"
                 ];
 
-                // Indian Heroines (Actresses)
+                // Indian Heroines (Actresses) - proxied for reliability
                 const heroineImages = [
-                    "https://upload.wikimedia.org/wikipedia/commons/thumb/2/24/Deepika_Padukone_at_Cannes_2017.jpg/440px-Deepika_Padukone_at_Cannes_2017.jpg",
-                    "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b9/Alia_Bhatt_at_Berlinale_2022_Gangubai_02_%28cropped%29.jpg/440px-Alia_Bhatt_at_Berlinale_2022_Gangubai_02_%28cropped%29.jpg",
-                    "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Rashmika_Mandanna_snapped_at_film_studio_in_2023_%28cropped%29.jpg/440px-Rashmika_Mandanna_snapped_at_film_studio_in_2023_%28cropped%29.jpg",
-                    "https://upload.wikimedia.org/wikipedia/commons/thumb/4/40/Samantha_at_Rangasthalam_Pre_Release_Event_%28cropped%29.jpg/440px-Samantha_at_Rangasthalam_Pre_Release_Event_%28cropped%29.jpg",
-                    "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b2/Anushka_Sharma_promote_Zero_on_the_sets_of_Indian_Idol_10_%28cropped%29.jpg/440px-Anushka_Sharma_promote_Zero_on_the_sets_of_Indian_Idol_10_%28cropped%29.jpg",
-                    "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2b/Nayanthara_at_Filmfare_Awards_2014.jpg/440px-Nayanthara_at_Filmfare_Awards_2014.jpg",
-                    "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e6/Shraddha_Kapoor_at_%27OK_Jaanu%27_success_party.jpg/440px-Shraddha_Kapoor_at_%27OK_Jaanu%27_success_party.jpg",
-                    "https://upload.wikimedia.org/wikipedia/commons/thumb/c/cc/Kiara_Advani_snapped_on_17_June_2023_%28cropped%29.jpg/440px-Kiara_Advani_snapped_on_17_June_2023_%28cropped%29.jpg",
-                    "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a7/Pooja_Hegde_snapped_at_the_airport_%28cropped%29.jpg/440px-Pooja_Hegde_snapped_at_the_airport_%28cropped%29.jpg",
-                    "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f0/Tamanna_at_Oopiri_audio.jpg/440px-Tamanna_at_Oopiri_audio.jpg"
+                    "https://wsrv.nl/?url=upload.wikimedia.org/wikipedia/commons/thumb/e/e8/Alia_Bhatt_attends_at_the_2026_Cannes_Film_Festival_%28cropped%29_%28cropped%29.jpg/500px-Alia_Bhatt_attends_at_the_2026_Cannes_Film_Festival_%28cropped%29_%28cropped%29.jpg",
+                    "https://wsrv.nl/?url=upload.wikimedia.org/wikipedia/commons/4/4b/Rashmika-Mandanna_at_the_music_launch_of_Chhaava_%28cropped%29.jpg",
+                    "https://wsrv.nl/?url=upload.wikimedia.org/wikipedia/commons/thumb/9/9a/Samantha_at_Kushi_Musical_concert_%282%29_%28cropped%29.jpg/500px-Samantha_at_Kushi_Musical_concert_%282%29_%28cropped%29.jpg",
+                    "https://wsrv.nl/?url=upload.wikimedia.org/wikipedia/commons/e/e6/Anushka_Sharma_promoting_Zero.jpg",
+                    "https://wsrv.nl/?url=upload.wikimedia.org/wikipedia/commons/8/80/Nayanthara_at_Filmfare_Awards.jpg",
+                    "https://wsrv.nl/?url=upload.wikimedia.org/wikipedia/commons/thumb/7/7b/Shraddha_Kapoor_promoting_Street_Dancer_3D.jpg/500px-Shraddha_Kapoor_promoting_Street_Dancer_3D.jpg",
+                    "https://wsrv.nl/?url=upload.wikimedia.org/wikipedia/commons/thumb/d/d4/Kiara_Advani_snapped_at_the_screening_of_Shershaah_%28cropped%29.jpg/500px-Kiara_Advani_snapped_at_the_screening_of_Shershaah_%28cropped%29.jpg",
+                    "https://wsrv.nl/?url=upload.wikimedia.org/wikipedia/commons/thumb/5/59/Pooja_Hegde_at_Beast_Telugu_press_meet_%281%29.jpg/500px-Pooja_Hegde_at_Beast_Telugu_press_meet_%281%29.jpg",
+                    "https://wsrv.nl/?url=upload.wikimedia.org/wikipedia/commons/6/60/Tamannaah_Bhatia_at_a_song_launch_from_the_film_Vedaa_%28cropped%29.jpg"
                 ];
+
 
                 // Pick image based on day of year (changes daily!)
                 const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0)) / 86400000);
