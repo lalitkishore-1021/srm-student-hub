@@ -1241,31 +1241,64 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
                 data_cells = row[1:]
                 time_count = sum(
                     1 for c in data_cells
-                    if re.match(r'^\d{1,2}:\d{2}$', str(c).strip())
+                    if re.search(r'\d{1,2}:\d{2}', str(c))
                 )
                 if time_count < 3:
                     continue
+                extracted = [str(c).strip() for c in data_cells]
                 if not from_times:
-                    from_times = [str(c).strip() for c in data_cells]
+                    from_times = extracted
                 elif not to_times:
-                    to_times = [str(c).strip() for c in data_cells]
+                    to_times = extracted
                     break
             if from_times and to_times:
                 break
-
-        n_periods = min(len(from_times), len(to_times)) if (from_times and to_times) else 0
-        period_times = [
-            {
-                "period":    i + 1,
-                "time_from": from_times[i],
-                "time_to":   to_times[i],
-                "time_str":  f"{from_times[i]} - {to_times[i]}"
-            }
-            for i in range(n_periods)
-        ]
+                
+        period_times = []
+        if from_times and not to_times:
+            for i, t in enumerate(from_times):
+                if '-' in t:
+                    parts = t.split('-')
+                    period_times.append({
+                        "period": i + 1,
+                        "time_from": parts[0].strip(),
+                        "time_to": parts[-1].strip(),
+                        "time_str": t
+                    })
+                else:
+                    period_times.append({
+                        "period": i + 1,
+                        "time_from": t,
+                        "time_to": "",
+                        "time_str": t
+                    })
+            n_periods = len(period_times)
+        else:
+            n_periods = min(len(from_times), len(to_times)) if (from_times and to_times) else 0
+            period_times = [
+                {
+                    "period":    i + 1,
+                    "time_from": from_times[i],
+                    "time_to":   to_times[i],
+                    "time_str":  f"{from_times[i]} - {to_times[i]}"
+                }
+                for i in range(n_periods)
+            ]
+            
         print(f"[{reg_no}] period_times ({n_periods}): {period_times[:3]} ...")
         if n_periods == 0:
-            print(f"[{reg_no}] Warning: period_times is empty!")
+            print(f"[{reg_no}] Warning: period_times is empty! Falling back to standard SRM times.")
+            std_times = ["08:00 - 08:50", "08:50 - 09:40", "09:45 - 10:35", "10:35 - 11:25", "11:30 - 12:20", "12:20 - 13:10", "13:15 - 14:05", "14:05 - 14:55", "15:00 - 15:50", "15:50 - 16:40"]
+            n_periods = len(std_times)
+            period_times = []
+            for i, t in enumerate(std_times):
+                parts = t.split('-')
+                period_times.append({
+                    "period": i + 1,
+                    "time_from": parts[0].strip(),
+                    "time_to": parts[1].strip(),
+                    "time_str": t
+                })
 
         for table in master_tables:
             for row in table:
