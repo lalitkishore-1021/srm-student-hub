@@ -2288,10 +2288,7 @@
                     <span id="toggle-pwd" style="position: absolute; right: 15px; top: 50%; transform: translateY(-50%); cursor: pointer; opacity: 0.7; z-index: 10;" onclick="const pwd=document.getElementById('srm-pwd'); if(pwd.type==='password'){pwd.type='text'; this.innerHTML=''}else{pwd.type='password'; this.innerHTML=''}"></span>
                 </div>
                 
-                <div class="batch-toggle" style="margin-bottom: 25px;">
-                    <div class="batch-btn active" onclick="toggleBatch(this, 1)">Batch 1</div>
-                    <div class="batch-btn" onclick="toggleBatch(this, 2)">Batch 2</div>
-                </div>
+                <!-- Batch selection removed as it is now automatically detected by the backend -->
                 
                 <button class="action-btn" onclick="startLiveSync()" style="width: 100%; background: linear-gradient(135deg, #ffaa00, #ff8800); color: #000; font-weight: 900; letter-spacing: 1px;">AUTHENTICATE & SYNC</button>
             </div>
@@ -3059,8 +3056,7 @@
                 <h3
                     style="color: var(--primary); margin-bottom: 15px; font-family: 'Montserrat', sans-serif; text-transform: uppercase;">
                     No Timetable Found</h3>
-                <p style="color: var(--text-sub); line-height: 1.6; font-size: 1.1rem;">If you are Batch 2, change the
-                    Batch setting in the Sync Menu and fetch your schedule.</p>
+                <p style="color: var(--text-sub); line-height: 1.6; font-size: 1.1rem;">The scraper found zero classes for this day.</p>
             </div>
             <div id="timetable-grid" style="max-width: 600px; margin: 0 auto; display: none;"></div>
         </div>
@@ -3892,8 +3888,7 @@
 
         // ================= LIVE SYNC API CALL =================
         function toggleBatch(element, batchNum) {
-            document.querySelectorAll('.batch-btn').forEach(btn => btn.classList.remove('active'));
-            element.classList.add('active');
+            // Function preserved to avoid JS errors if clicked, but UI is removed
             currentBatch = batchNum;
         }
 
@@ -4631,7 +4626,7 @@
                 noData.style.display = 'block';
                 grid.style.display = 'none';
                 noData.querySelector('h3').innerText = "No Classes Found";
-                noData.querySelector('p').innerHTML = "The scraper found zero classes. Switch between <strong style='color:var(--primary);'>Batch 1</strong> and <strong style='color:var(--primary);'>Batch 2</strong>, then click Sync again.";
+                noData.querySelector('p').innerHTML = "The scraper found zero classes. Your batch is automatically detected from your profile.";
                 return;
             }
 
