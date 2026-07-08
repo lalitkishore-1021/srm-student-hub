@@ -1027,6 +1027,8 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
         # --- TIMETABLE STEP 1 (STUDENT SLOTS) ---
         print(f"[{reg_no}] 6. Scoping Registered Slots...")
         student_slots = {}
+        slot_map = {}
+        student_batch = 1
         timetable_urls_pool = [
             "https://academia.srmist.edu.in/#Page:My_Time_Table_2023_24",
             "https://academia.srmist.edu.in/#Page:My_Time_Table_2024_25",
@@ -1079,7 +1081,11 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
                         elif "department" in k:
                             if len(v) > 2: profile_data["department"] = v.strip()
                         elif "combo" in k or "batch" in k:
-                            if len(v) > 0: profile_data["batch"] = v.strip()
+                            if len(v) > 0: 
+                                profile_data["batch"] = v.strip()
+                                parts = v.strip().split("/")
+                                if len(parts) >= 2 and parts[-1].strip().isdigit():
+                                    student_batch = int(parts[-1].strip())
                         elif "class room" in k or "classroom" in k:
                             if len(v) > 0: profile_data["classRoom"] = v.strip()
                         elif "program" in k:
@@ -1127,77 +1133,67 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
         print(f"[{reg_no}] Profile extracted: regNo={profile_data.get('regNo','?')}, dept={profile_data.get('department','?')}, FA={profile_data.get('fa_name','?')}, AA={profile_data.get('aa_name','?')}")
         
         # --- PARSE STUDENT SLOTS ---
-        slot_credits = {}  # Map course_code -> credit value from timetable
         for table in slot_tables:
             if not table: continue
             headers, header_str, h_idx = get_table_headers(table)
             
-            if "slot" in header_str and "code" in header_str:
-                try:
-                    idx_code = get_col_index(headers, "code")
-                    idx_title = get_col_index(headers, "title", "name", "description", "desc", "subject")
-                    idx_slot = get_col_index(headers, "slot")
-                    idx_room = get_col_index(headers, "room")
-                    idx_credit_tt = get_col_index(headers, "credit", "max credit", "credits")
-                    
-                    if -1 in (idx_code, idx_title, idx_slot, idx_room): continue
-                    
-                    for row in table[h_idx+1:]:
-                        if len(row) > idx_room:
-                            # Extract credits from timetable if available
-                            if idx_credit_tt != -1 and len(row) > idx_credit_tt:
-                                try:
-                                    cr = float(row[idx_credit_tt])
-                                    code = row[idx_code].strip()
-                                    if code and cr >= 0:
-                                        slot_credits[code] = cr
-                                except: pass
-                            
-                            # Refined Regex matching (matches A, P49, PT2, etc)
-                            slots_found = re.findall(r'\b[A-Z]{1,2}\d*\b', row[idx_slot])
-                            for s in slots_found:
-                                # Use subject title if possible, else subject code
-                                subj_name = row[idx_title].strip() if idx_title != -1 and len(row) > idx_title and row[idx_title].strip() else row[idx_code].strip()
-                                student_slots[s] = {
-                                    "subject": subj_name,
-                                    "room": row[idx_room].strip() if idx_room != -1 and len(row) > idx_room else "TBA",
-                                    "code": row[idx_code].strip() if idx_code != -1 and len(row) > idx_code else ""
-                                }
-                except Exception as e:
-                    print("Parsing error (Slots):", str(e))
+            if "slot" not in header_str or "code" not in header_str:
+                continue
+                
+            idx_code    = get_col_index(headers, "code")
+            idx_title   = get_col_index(headers, "title", "name", "description", "desc", "subject")
+            idx_credit  = get_col_index(headers, "credit", "max credit", "credits")
+            idx_type    = get_col_index(headers, "course type", "type")
+            idx_faculty = get_col_index(headers, "faculty")
+            idx_slot    = get_col_index(headers, "slot")
+            idx_room    = get_col_index(headers, "room")
+            
+            if -1 in (idx_code, idx_slot):
+                continue
+                
+            for row in table[h_idx + 1:]:
+                if len(row) <= max(idx_code, idx_slot):
                     continue
-        
-        # Cross-reference credits from timetable to marks and attendance
-        if slot_credits:
-            print(f"[{reg_no}] Found credits from timetable: {slot_credits}")
-            for item in parsed_marks:
-                code = item.get("courseCode", "")
-                if code in slot_credits and (item.get("credits", 3.0) == 3.0):
-                    item["credits"] = slot_credits[code]
-            for item in parsed_att:
-                title = item.get("courseTitle", "")
-                att_code = title.split(" - ")[0].strip() if " - " in title else ""
-                if att_code in slot_credits and (item.get("credits", 3.0) == 3.0):
-                    item["credits"] = slot_credits[att_code]
+                code     = row[idx_code].strip()
+                slot_raw = row[idx_slot].strip().rstrip("-")
+                room     = row[idx_room].strip() if idx_room != -1 and len(row) > idx_room else "TBA"
+                title    = row[idx_title].strip() if idx_title != -1 and len(row) > idx_title else code
+                ctype    = row[idx_type].strip() if idx_type != -1 and len(row) > idx_type else ""
+                faculty  = row[idx_faculty].strip() if idx_faculty != -1 and len(row) > idx_faculty else ""
+                credit   = 0.0
+                try:
+                    credit = float(row[idx_credit]) if idx_credit != -1 and len(row) > idx_credit else 0.0
+                except (ValueError, IndexError):
+                    pass
+            
+                if not code or not slot_raw:
+                    continue
+                if "/" in code or "." in code or " " in code:
+                    continue   # garbage row
+            
+                # RULE 1: split on "-", NOT re.findall
+                individual_codes = [c.strip() for c in slot_raw.split("-") if c.strip()]
+                for sc in individual_codes:
+                    slot_map[sc] = {
+                        "code": code, "title": title, "room": room,
+                        "type": ctype, "faculty": faculty,
+                        "credit": credit, "slot_raw": slot_raw
+                    }
+                    student_slots[sc] = {"subject": title, "room": room, "code": code}
+
+        print(f"[{reg_no}] slot_map has {len(slot_map)} entries: {list(slot_map.keys())}")
+        print(f"[{reg_no}] student_batch = {student_batch}")
 
         # --- TIMETABLE STEP 2 (MASTER TIMINGS) ---
-        print(f"[{reg_no}] 7. Mapping to Master (Batch {batch})...")
+        print(f"[{reg_no}] 7. Mapping to Master (Batch {student_batch})...")
         final_tt = {"1": [], "2": [], "3": [], "4": [], "5": []}
-        global_seen_entries = {"1": set(), "2": set(), "3": set(), "4": set(), "5": set()}
-        
-        # Smart year extraction from registration number
-        # Formats: RA2311003010123 (RA + 23 = 2023), KR4495 (KR + 44 = invalid)
-        # Only accept years between 2018 and current_year+1
+
         import datetime as dt_module
         current_year = dt_module.datetime.now().year
         joining_year = str(current_year)  # Default to current year
         
-        # Try to extract year from common SRM reg number formats
-        # Format 1: RA23xxxxxxx - 2 letter prefix + 2 digit year
         reg_clean = reg_no.split('@')[0].upper()
         year_found = False
-        
-        # Try matching RA23, RM24 etc (2 letter + 2 digit year)
         reg_year_match = re.match(r'^[A-Z]{2}(\d{2})', reg_clean)
         if reg_year_match:
             y = int(reg_year_match.group(1))
@@ -1205,9 +1201,7 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
             if 2018 <= full_year <= current_year + 1:
                 joining_year = str(full_year)
                 year_found = True
-                print(f"[{reg_no}] Extracted joining year {joining_year} from reg prefix")
         
-        # If that didn't work, try longer patterns like RA2311003...
         if not year_found:
             reg_year_match2 = re.search(r'(20[12]\d)', reg_clean)
             if reg_year_match2:
@@ -1215,17 +1209,11 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
                 if 2018 <= full_year <= current_year + 1:
                     joining_year = str(full_year)
                     year_found = True
-                    print(f"[{reg_no}] Extracted joining year {joining_year} from 4-digit pattern")
-        
-        if not year_found:
-            print(f"[{reg_no}] Could not extract valid year from reg number. Using current year: {joining_year}")
-            
-        print(f"[{reg_no}] Using joining year: {joining_year}")
         
         timetable_years = [joining_year, str(current_year), str(current_year - 1), str(current_year - 2)]
-        timetable_years = list(dict.fromkeys(timetable_years))  # Remove duplicates
+        timetable_years = list(dict.fromkeys(timetable_years))
         
-        master_urls_pool = [f"https://academia.srmist.edu.in/#Page:Unified_Time_Table_{y}_Batch_{batch}" for y in timetable_years]
+        master_urls_pool = [f"https://academia.srmist.edu.in/#Page:Unified_Time_Table_{y}_Batch_{student_batch}" for y in timetable_years]
         valid_master_urls = [u for u in master_urls_pool if any(u.split('#Page:')[1] in link for link in unique_links)]
         if not valid_master_urls:
             valid_master_urls = master_urls_pool
@@ -1240,116 +1228,107 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
                 break
         else:
             print(f"[{reg_no}] Warning: No unified timetable tables found. Reloading primary...")
-            url = f"https://academia.srmist.edu.in/#Page:Unified_Time_Table_{joining_year}_Batch_{batch}"
+            url = f"https://academia.srmist.edu.in/#Page:Unified_Time_Table_{joining_year}_Batch_{student_batch}"
             navigate_to_page(url)
             page.wait_for_timeout(3000)
             master_tables = wait_for_data_tables(["day 1", "day order", "timings", "time"], timeout=15000)
         
-        print(f"[{reg_no}] Found {len(master_tables)} master tables")
-        
-        last_good_time_cols = []
-        for t_idx, table in enumerate(master_tables):
-            if not table: continue
-            
-            time_cols = []
-            from_row = []
-            to_row = []
-            start_row = -1
-            
-            for r_idx, row in enumerate(table):
-                first_cell = str(row[0]).lower().replace('\n', ' ').strip()
-                
-                # Check for \d+:\d+ pattern in the row to deeply detect timing rows
-                time_matches = [re.search(r'\d{1,2}:\d{2}', str(c)) for c in row[1:]]
-                has_times = sum(1 for m in time_matches if m is not None) >= 3
-                
-                if has_times:
-                    extracted = [str(c).replace('\n', ' ').strip() for c in row[1:]]
-                    if not from_row:
-                        from_row = extracted
-                    elif not to_row:
-                        to_row = extracted
-                    elif len(time_cols) == 0:
-                        # Fallback if both filled but another time row found
-                        time_cols = extracted
-                
-                # Sometimes a row has explicitly '8:00 - 8:50'
-                combined_match = [re.search(r'\d{1,2}:\d{2}\s*-\s*\d{1,2}:\d{2}', str(c)) for c in row[1:]]
-                if sum(1 for m in combined_match if m is not None) >= 3:
-                    time_cols = [str(c).replace('\n', ' ').strip() for c in row[1:]]
-                
-                # Identify where days start
-                if ("day" in first_cell or "order" in first_cell) and any(str(i) in first_cell for i in range(1, 6)):
-                    start_row = r_idx
+        from_times = []
+        to_times   = []
+
+        for table in master_tables:
+            for row in table:
+                data_cells = row[1:]
+                time_count = sum(
+                    1 for c in data_cells
+                    if re.match(r'^\d{1,2}:\d{2}$', str(c).strip())
+                )
+                if time_count < 3:
+                    continue
+                if not from_times:
+                    from_times = [str(c).strip() for c in data_cells]
+                elif not to_times:
+                    to_times = [str(c).strip() for c in data_cells]
                     break
-                    
-            if not time_cols and from_row and to_row:
-                for f, t in zip(from_row, to_row):
-                    f_clean = f.strip()
-                    t_clean = t.strip()
-                    if f_clean and t_clean:
-                        time_cols.append(f"{f_clean} - {t_clean}")
-                    elif f_clean:
-                        time_cols.append(f_clean)
-                    else:
-                        time_cols.append("")
-            elif not time_cols and from_row and not to_row:
-                time_cols = from_row
-                        
-            # Inherit from previous tables if split
-            if time_cols:
-                last_good_time_cols = time_cols
-            elif last_good_time_cols:
-                time_cols = last_good_time_cols
-                
-            # Debug: print extracted time columns
-            if time_cols:
-                print(f"[{reg_no}] Table {t_idx}: time_cols ({len(time_cols)}) = {time_cols[:10]}")
-            elif from_row:
-                print(f"[{reg_no}] Table {t_idx}: fallback from_row ({len(from_row)}) = {from_row[:10]}")
-                    
-            if start_row != -1:
-                print(f"[{reg_no}] Table {t_idx}: Day rows start at row {start_row}")
-                for row in table[start_row:]:
-                    try:
-                        day_match = re.search(r'\d+', row[0])
-                        if not day_match: continue
-                        day_order = day_match.group()
-                        
-                        if day_order in final_tt:
-                            for i, cell in enumerate(row[1:]):
-                                slots_in_cell = re.findall(r'\b[A-Z]{1,2}\d*\b', cell)
-                                for s in slots_in_cell:
-                                    if s in student_slots:
-                                        t_str = time_cols[i] if i < len(time_cols) else f"Period {i+1}"
-                                        
-                                        # Validate if t_str actually contains a time. If it got corrupted with a slot string, fallback to standard SRM times.
-                                        if not re.search(r'\d{1,2}:\d{2}', t_str):
-                                            std_times = ["08:00 - 08:50", "08:50 - 09:40", "09:45 - 10:35", "10:35 - 11:25", "11:30 - 12:20", "12:20 - 13:10", "13:15 - 14:05", "14:05 - 14:55", "15:00 - 15:50", "15:50 - 16:40"]
-                                            t_str = std_times[i] if i < len(std_times) else f"Period {i+1}"
-                                            
-                                        t_str = re.sub(r'\s+', ' ', t_str).strip()
-                                        
-                                        entry_key = f"{t_str}-{student_slots[s]['subject']}"
-                                        if entry_key not in global_seen_entries[day_order]:
-                                            last_entry = final_tt[day_order][-1] if final_tt[day_order] else None
-                                            
-                                            # Merge continuous identical slots to avoid unnecessary extra cards
-                                            if last_entry and last_entry["subject"] == student_slots[s]['subject']:
-                                                old_start = last_entry["time"].split('-')[0].strip()
-                                                new_end = t_str.split('-')[-1].strip() if '-' in t_str else t_str
-                                                last_entry["time"] = f"{old_start} - {new_end}"
-                                            else:
-                                                final_tt[day_order].append({
-                                                    "time": t_str,
-                                                    "subject": student_slots[s]['subject'],
-                                                    "room": student_slots[s]['room']
-                                                })
-                                            global_seen_entries[day_order].add(entry_key)
-                                            print(f"[{reg_no}]   Day {day_order}: slot {s} -> {t_str} | {student_slots[s]['subject']}")
-                    except Exception as e:
-                        print("Parsing error (Master TT Row):", str(e))
+            if from_times and to_times:
+                break
+
+        n_periods = min(len(from_times), len(to_times)) if (from_times and to_times) else 0
+        period_times = [
+            {
+                "period":    i + 1,
+                "time_from": from_times[i],
+                "time_to":   to_times[i],
+                "time_str":  f"{from_times[i]} - {to_times[i]}"
+            }
+            for i in range(n_periods)
+        ]
+        print(f"[{reg_no}] period_times ({n_periods}): {period_times[:3]} ...")
+        if n_periods == 0:
+            print(f"[{reg_no}] Warning: period_times is empty!")
+
+        for table in master_tables:
+            for row in table:
+                if not row: continue
+                label = str(row[0]).strip()
+                day_match = re.match(r'^Day\s*(\d+)$', label, re.IGNORECASE)
+                if not day_match:
+                    continue
+                day_order = day_match.group(1)
+                if day_order not in final_tt:
+                    continue
+
+                data_cells = row[1:]   # RULE 4: skip label column
+
+                for i, cell in enumerate(data_cells):
+                    if i >= len(period_times):
+                        break
+
+                    pt       = period_times[i]
+                    raw_cell = str(cell).strip()
+                    if not raw_cell:
                         continue
+
+                    # RULE 2: split on "/", NOT re.findall
+                    possible_codes = [c.strip() for c in raw_cell.split("/") if c.strip()]
+                    matched = None
+                    for pc in possible_codes:
+                        if pc in slot_map:
+                            matched = slot_map[pc]
+                            break
+
+                    if not matched:
+                        continue   # free period or unrecognised L-slot
+
+                    entry = {
+                        "time":       pt["time_str"],
+                        "subject":    matched["title"],
+                        "code":       matched["code"],
+                        "room":       matched["room"],
+                        "type":       matched["type"],
+                        "faculty":    matched["faculty"],
+                        "slot":       raw_cell,
+                        "period":     pt["period"],
+                        "period_end": pt["period"]
+                    }
+
+                    # RULE 8: merge consecutive same-course periods
+                    last = final_tt[day_order][-1] if final_tt[day_order] else None
+                    if (last and
+                            last["code"] == entry["code"] and
+                            last["period_end"] == pt["period"] - 1):
+                        last["time"]       = f"{last['time'].split(' - ')[0]} - {pt['time_to']}"
+                        last["period_end"] = pt["period"]
+                    else:
+                        final_tt[day_order].append(entry)
+
+                    print(f"[{reg_no}] Day {day_order} P{pt['period']} ({pt['time_str']}): {raw_cell} → {matched['code']}")
+
+        # RULE 7: sort by period ascending
+        for day in final_tt:
+            final_tt[day].sort(key=lambda e: e.get("period", 0))
+
+        print(f"[{reg_no}] Timetable done. Counts per day: " + ", ".join(f"Day {d}: {len(final_tt[d])}" for d in sorted(final_tt)))
 
         # Debug Logging for Empty Parsing
         if not parsed_att and not parsed_marks and not student_slots:
