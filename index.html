@@ -4224,26 +4224,53 @@
                 let safeId = rawId.toString().replace(/[^a-zA-Z0-9]/g, '');
                 
                 let sim = simulationState[safeId] || { bunked: 0, attended: 0 };
-                let baseAttended = parseInt(sub.attended) || 0;
-                let baseTotal = parseInt(sub.total) || 0;
                 
+                let pct = parseFloat(sub.attended) || 0;
+                let C   = parseInt(sub.classes_per_cycle) || 1;
+
+                const TARGET = 0.75;
+
+                let best_N = 1;
+                let best_diff = Infinity;
+                for (let N = 1; N <= 30; N++) {
+                    let t_held = N * C;
+                    let c_att = Math.round((pct / 100) * t_held);
+                    let c_pct = (c_att / t_held) * 100;
+                    let diff = Math.abs(c_pct - pct);
+                    if (diff < best_diff) {
+                        best_diff = diff;
+                        best_N = N;
+                    }
+                }
+
+                let baseTotal = best_N * C;
+                let baseAttended = Math.round((pct / 100) * baseTotal);
+
                 let attended = baseAttended + sim.attended;
                 let total = baseTotal + sim.bunked + sim.attended;
 
                 totalAtt += attended;
                 totalClasses += total;
 
-                const percentage = total === 0 ? 0 : ((attended / total) * 100).toFixed(1);
-                const isGood = percentage >= 75;
+                let simulated_pct_val = total === 0 ? 0 : (attended / total) * 100;
+                const percentage = (sim.attended === 0 && sim.bunked === 0) 
+                                 ? pct.toFixed(1) 
+                                 : simulated_pct_val.toFixed(1);
+
+                const isGood = simulated_pct_val >= TARGET * 100;
                 const barColor = isGood ? 'var(--success)' : 'var(--danger)';
                 const cardStyleModifier = isGood ? 'border: 1px solid var(--glass-border);' : 'border: 1px solid var(--danger); box-shadow: 0 0 15px rgba(255, 68, 68, 0.2);';
 
                 let marginLabel = 'Safe Bunks';
+                let marginValue = 0;
+                
                 if (isGood) {
-                    marginValue = Math.floor((attended - (0.75 * total)) / 0.75);
-                    if (marginValue < 0) marginValue = 0;
+                    marginValue = Math.floor((attended - TARGET * total) / TARGET);
+                    marginValue = Math.max(0, marginValue);
+                    marginLabel = 'Safe Bunks';
                 } else {
-                    marginValue = Math.ceil(((0.75 * total) - attended) / 0.25);
+                    marginValue = Math.ceil((TARGET * total - attended) / (1 - TARGET));
+                    marginValue = Math.max(0, marginValue);
                     marginLabel = 'Must Attend';
                 }
 

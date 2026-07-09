@@ -1414,6 +1414,19 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
             if c in best_titles:
                 a["courseTitle"] = f"{c} - {best_titles[c]}"
                 
+        # --- BUNK CALCULATION: CLASSES PER CYCLE ---
+        for sub in parsed_att:
+            course_code = sub["courseTitle"].split(" - ")[0].strip()
+            count = 0
+            for day_key in ["1", "2", "3", "4", "5"]:
+                for entry in final_tt.get(day_key, []):
+                    tt_code = entry["subject"].split(" - ")[0].strip()
+                    if tt_code == course_code:
+                        count += 1
+            # FALLBACK (RULE 2): If not in timetable, assume 1 to avoid division by zero
+            sub["classes_per_cycle"] = count if count > 0 else 1
+            print(f"[{reg_no}] {course_code}: {sub['classes_per_cycle']} classes/cycle in final_tt")
+                
         out_queue.put({
             'success': True, 
             'profile': profile_data,
