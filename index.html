@@ -1932,6 +1932,132 @@
             animation: shimmer 1.4s infinite linear;
             border-radius: 6px;
         }
+
+        /* MUSIC UPLOAD MODAL GLASSMORPHISM */
+        .music-upload-modal {
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 460px; max-width: 92vw; border-radius: 28px;
+            background: rgba(255, 255, 255, 0.06);
+            backdrop-filter: blur(40px) saturate(180%) brightness(1.1); -webkit-backdrop-filter: blur(40px) saturate(180%) brightness(1.1);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 0 0 0 0.5px rgba(255,255,255,0.08) inset, 0 32px 64px rgba(0,0,0,0.6), 0 0 120px rgba(245,158,11,0.12);
+            padding: 36px 32px; animation: modalSpring 0.45s cubic-bezier(0.34,1.56,0.64,1); z-index: 10000;
+        }
+        @keyframes modalSpring {
+            from { opacity:0; transform: translate(-50%, -50%) scale(0.88) translateY(24px); }
+            to   { opacity:1; transform: translate(-50%, -50%) scale(1) translateY(0); }
+        }
+        .music-upload-modal::before {
+            content: ''; position: absolute; inset: 0; border-radius: 28px;
+            background: linear-gradient(135deg, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0.04) 40%, rgba(255,255,255,0.0) 60%, rgba(245,158,11,0.08) 100%); pointer-events: none;
+        }
+        .music-upload-title {
+            font-size: 18px; font-weight: 700; letter-spacing: 0.08em;
+            background: linear-gradient(135deg, #f59e0b 0%, #fb923c 50%, #fbbf24 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            text-align: center; margin-bottom: 28px;
+        }
+        .music-upload-close {
+            position: absolute; top: 16px; right: 16px;
+            width: 32px; height: 32px; border-radius: 50%; background: rgba(255,255,255,0.08);
+            backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.12); color: rgba(255,255,255,0.7);
+            font-size: 18px; display: flex; align-items: center; justify-content: center;
+            transition: all 0.2s cubic-bezier(0.34,1.56,0.64,1); cursor: pointer; z-index: 2;
+        }
+        .music-upload-close:hover { background: rgba(255,255,255,0.15); transform: scale(1.1); }
+        .music-upload-input {
+            background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.10);
+            border-radius: 14px; padding: 14px 16px; color: #ffffff; font-size: 15px; width: 100%; margin-bottom: 12px;
+            backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+            transition: border 0.25s, box-shadow 0.25s; box-sizing: border-box;
+        }
+        .music-upload-input::placeholder { color: rgba(255,255,255,0.35); }
+        .music-upload-input:focus {
+            border-color: rgba(245,158,11,0.6); box-shadow: 0 0 0 3px rgba(245,158,11,0.12), 0 0 20px rgba(245,158,11,0.08); outline: none;
+        }
+        .music-file-btn {
+            background: rgba(255,255,255,0.05); border: 1.5px dashed rgba(255,255,255,0.18);
+            border-radius: 14px; padding: 16px; display: flex; align-items: center; gap: 12px;
+            cursor: pointer; transition: all 0.25s cubic-bezier(0.34,1.56,0.64,1); margin-bottom: 10px; position: relative; z-index: 2;
+        }
+        .music-file-btn:hover { background: rgba(255,255,255,0.09); border-color: rgba(245,158,11,0.4); box-shadow: 0 0 24px rgba(245,158,11,0.08); }
+        .music-file-btn.required-mp3 { border-color: rgba(245,158,11,0.5); background: rgba(245,158,11,0.07); color: #f59e0b; }
+        .music-file-icon { font-size: 20px; }
+        .music-file-text { display: flex; flex-direction: column; flex: 1; }
+        .music-file-title { color: rgba(255,255,255,0.7); font-size: 14px; font-weight: 500; }
+        .music-file-btn.required-mp3 .music-file-title { color: #f59e0b; }
+        .music-file-subtext { color: rgba(255,255,255,0.35); font-size: 12px; margin-top: 2px; }
+        .music-upload-cta {
+            margin-top: 20px; width: 100%; padding: 16px; border-radius: 16px; background: linear-gradient(135deg, #f59e0b 0%, #ea580c 100%);
+            border: none; color: #000000; font-weight: 800; font-size: 15px; letter-spacing: 0.06em;
+            text-transform: uppercase; cursor: pointer; position: relative; overflow: hidden;
+            box-shadow: 0 8px 32px rgba(245,158,11,0.35); transition: all 0.3s cubic-bezier(0.34,1.56,0.64,1); z-index: 2; display: flex; align-items: center; justify-content: center; gap: 8px;
+        }
+        .music-upload-cta:hover { transform: translateY(-2px); box-shadow: 0 12px 40px rgba(245,158,11,0.5); }
+        .music-upload-cta:active { transform: translateY(0) scale(0.98); }
+        .music-upload-cta::after {
+            content: ''; position: absolute; top:0; left:-100%; width:60%; height:100%; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent); transition: left 0.5s;
+        }
+        .music-upload-cta:hover::after { left: 140%; }
+        .music-upload-backdrop {
+            background: rgba(0,0,0,0.65); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+            animation: fadeIn 0.3s ease; position: fixed; inset: 0; z-index: 9999; display: none; align-items: center; justify-content: center;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .upload-spinner { width: 18px; height: 18px; border: 2px solid rgba(0,0,0,0.2); border-top: 2px solid #000; border-radius: 50%; animation: spin 0.7s linear infinite; display: inline-block; }
+
+        /* LOGIN PAGE ENHANCED MASTER THEME */
+        .login-grid-bg {
+            position: fixed; inset: 0; pointer-events: none; z-index: 0;
+            background-image: linear-gradient(rgba(245,158,11,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(245,158,11,0.03) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+        .orb-1, .orb-2 { position: fixed; border-radius: 50%; pointer-events: none; z-index: 0; }
+        .orb-1 { width: 300px; height: 300px; background: radial-gradient(circle, rgba(245,158,11,0.08), transparent 70%); top: 20%; left: 15%; animation: floatOrb 8s ease-in-out infinite; }
+        .orb-2 { width: 200px; height: 200px; background: radial-gradient(circle, rgba(234,88,12,0.07), transparent 70%); bottom: 25%; right: 20%; animation: floatOrb 11s ease-in-out infinite reverse; }
+        @keyframes floatOrb { 0%, 100% { transform: translate(0,0); } 50% { transform: translate(20px, -30px); } }
+        
+        .login-card-enhanced {
+            max-width: 480px; width: 90vw; margin: auto; border-radius: 24px; background: rgba(15, 10, 3, 0.80);
+            backdrop-filter: blur(30px) saturate(150%); -webkit-backdrop-filter: blur(30px) saturate(150%);
+            border: 1px solid rgba(245,158,11,0.20);
+            box-shadow: 0 0 0 1px rgba(245,158,11,0.08) inset, 0 40px 80px rgba(0,0,0,0.7), 0 0 80px rgba(245,158,11,0.08);
+            padding: 48px 40px; position: relative; overflow: hidden;
+            animation: cardEntrance 0.6s cubic-bezier(0.34,1.56,0.64,1); z-index: 1; text-align: center;
+        }
+        @keyframes cardEntrance { from { opacity:0; transform: translateY(32px) scale(0.96); } to { opacity:1; transform: translateY(0) scale(1); } }
+        .login-card-enhanced::before {
+            content: ''; position: absolute; top: -1px; left: 20%; right: 20%; height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(245,158,11,0.6), transparent);
+        }
+        .login-logo-ring {
+            width: 72px; height: 72px; border-radius: 50%; background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.20);
+            box-shadow: 0 0 30px rgba(245,158,11,0.15); display: flex; align-items: center; justify-content: center; margin: 0 auto 24px;
+        }
+        .login-headline { font-size: 28px; font-weight: 800; color: #ffffff; letter-spacing: 0.02em; margin: 0 0 8px 0; }
+        .login-subtext { color: rgba(156,163,175,0.8); font-size: 14px; margin: 0 0 32px 0; }
+        .login-input-wrapper { position: relative; margin-bottom: 14px; width: 100%; text-align: left; }
+        .login-input {
+            background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.09); border-radius: 14px; padding: 15px 18px 15px 44px;
+            color: #ffffff; font-size: 15px; width: 100%; transition: border 0.2s, box-shadow 0.2s; box-sizing: border-box;
+        }
+        .login-input:focus { border-color: rgba(245,158,11,0.5); box-shadow: 0 0 0 3px rgba(245,158,11,0.10); outline: none; }
+        .login-input-icon { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: rgba(245,158,11,0.5); font-size: 16px; pointer-events: none; }
+        .login-pwd-toggle { position: absolute; right: 16px; top: 50%; transform: translateY(-50%); color: rgba(255,255,255,0.4); font-size: 16px; cursor: pointer; transition: color 0.2s; }
+        .login-pwd-toggle:hover { color: rgba(245,158,11,0.7); }
+        .login-auth-btn {
+            width: 100%; background: #f59e0b; color: #000; border-radius: 14px; font-weight: 800; letter-spacing: 0.05em; padding: 16px;
+            box-shadow: 0 8px 24px rgba(245,158,11,0.30); border: none; cursor: pointer; transition: all 0.3s cubic-bezier(0.34,1.56,0.64,1);
+            text-transform: uppercase; margin-top: 10px; display: flex; justify-content: center; align-items: center; gap: 8px;
+        }
+        .login-auth-btn:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(245,158,11,0.45); }
+        .login-auth-btn:active { transform: translateY(0) scale(0.98); }
+        .login-loading-bar {
+            height: 2px; position: absolute; top: 0; left: 0; width: 100%; background: linear-gradient(90deg, #f59e0b, #ea580c, #f59e0b);
+            background-size: 200% 100%; animation: loadingBar 1.5s linear infinite; display: none;
+        }
+        @keyframes loadingBar { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
     </style>
     <style>
         /* Music Lounge Styles */
@@ -2279,37 +2405,48 @@
         </div>
     </div>
 
-    <div id="login-view" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 10000; flex-direction: column; justify-content: center; align-items: center; background: transparent; backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);">
-        <div class="image-card" style="max-width: 450px; width: 90%; padding: 40px; text-align: center; animation: fadeInUp 0.8s ease forwards;">
-            <svg viewBox="0 0 100 100" width="80" height="80" style="margin-bottom: 20px;">
-                <defs>
-                    <linearGradient id="lockGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                        <stop offset="0%" stop-color="#ffaa00" />
-                        <stop offset="100%" stop-color="#8a2be2" />
-                    </linearGradient>
-                </defs>
-                <path d="M 30 20 L 10 50 L 30 80 M 70 20 L 90 50 L 70 80 M 35 65 L 45 65 L 45 50 L 55 50 L 55 35 L 65 35" fill="none" stroke="url(#lockGradient)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" />
-            </svg>
-            <h2 style="margin: 0 0 10px 0; font-size: 1.8rem; font-family: 'Montserrat', sans-serif; text-transform: uppercase;">Login Required</h2>
-            <p style="color: var(--text-sub); margin-bottom: 30px; font-size: 0.9rem;">Sync with Academia to access your dashboard.</p>
+    <div id="login-view" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 10000; flex-direction: column; justify-content: center; align-items: center; background: transparent;">
+        <div class="login-grid-bg"></div>
+        <div class="orb-1"></div>
+        <div class="orb-2"></div>
+        
+        <div class="login-card-enhanced">
+            <div class="login-logo-ring">
+                <svg viewBox="0 0 100 100" width="36" height="36">
+                    <defs>
+                        <linearGradient id="lockGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#ffaa00" />
+                            <stop offset="100%" stop-color="#8a2be2" />
+                        </linearGradient>
+                    </defs>
+                    <path d="M 30 20 L 10 50 L 30 80 M 70 20 L 90 50 L 70 80 M 35 65 L 45 65 L 45 50 L 55 50 L 55 35 L 65 35" fill="none" stroke="url(#lockGradient)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+            </div>
+            
+            <h2 class="login-headline">LOGIN REQUIRED</h2>
+            <p class="login-subtext">Sync with Academia to access your dashboard.</p>
             
             <div id="login-form-container">
-                <input type="text" id="srm-reg" placeholder="NetID (e.g. ab1234@srmist.edu.in)" class="modal-input" style="width: 100%; box-sizing: border-box; margin-bottom: 15px; background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; padding: 15px; border-radius: 12px;">
-                <div class="input-group" style="position: relative; margin-bottom: 15px;">
-                    <input type="password" id="srm-pwd" placeholder="Password" required class="modal-input" style="width: 100%; box-sizing: border-box; background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; padding: 15px; border-radius: 12px; padding-right: 40px;">
-                    <span id="toggle-pwd" style="position: absolute; right: 15px; top: 50%; transform: translateY(-50%); cursor: pointer; opacity: 0.7; z-index: 10;" onclick="const pwd=document.getElementById('srm-pwd'); if(pwd.type==='password'){pwd.type='text'; this.innerHTML=''}else{pwd.type='password'; this.innerHTML=''}"></span>
+                <div class="login-input-wrapper">
+                    <span class="login-input-icon">✉</span>
+                    <input type="text" id="srm-reg" placeholder="NetID (e.g. ab1234@srmist.edu.in)" class="login-input">
                 </div>
                 
-                <!-- Batch selection removed as it is now automatically detected by the backend -->
+                <div class="login-input-wrapper">
+                    <span class="login-input-icon">🔒</span>
+                    <input type="password" id="srm-pwd" placeholder="Password" required class="login-input">
+                    <span class="login-pwd-toggle" onclick="const pwd=document.getElementById('srm-pwd'); if(pwd.type==='password'){pwd.type='text'; this.innerHTML='👁🗨';}else{pwd.type='password'; this.innerHTML='👁';}">👁</span>
+                </div>
                 
-                <button class="action-btn" onclick="startLiveSync()" style="width: 100%; background: linear-gradient(135deg, #ffaa00, #ff8800); color: #000; font-weight: 900; letter-spacing: 1px;">AUTHENTICATE & SYNC</button>
+                <button class="login-auth-btn" id="login-auth-btn" onclick="startLiveSync()">AUTHENTICATE & SYNC</button>
             </div>
 
             <div id="login-loader-container" style="display: none; flex-direction: column; align-items: center; justify-content: center; margin-top: 20px;">
-                <div class="css-loader" style="margin-bottom: 20px;"></div>
-                <h3 id="sync-status" style="margin: 0 0 10px 0; font-size: 1.2rem; color: var(--primary);"> Connecting... <span id="sync-timer" style="background: rgba(255,170,0,0.2); padding: 2px 8px; border-radius: 6px;">0s</span></h3>
+                <div class="login-loading-bar" id="login-top-bar" style="display: block;"></div>
+                <div class="upload-spinner" style="width: 32px; height: 32px; border-color: rgba(245,158,11,0.2); border-top-color: #f59e0b; border-width: 3px; margin-bottom: 16px;"></div>
+                <h3 id="sync-status" style="margin: 0 0 10px 0; font-size: 1.2rem; color: #f59e0b;"> Scraping your data... <span id="sync-timer" style="background: rgba(245,158,11,0.2); padding: 2px 8px; border-radius: 6px;">0s</span></h3>
                 <div style="width: 100%; height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; overflow: hidden; margin-bottom: 20px;">
-                    <div id="login-progress-bar" style="width: 0%; height: 100%; background: var(--primary); transition: width 1s linear;"></div>
+                    <div id="login-progress-bar" style="width: 0%; height: 100%; background: #ea580c; transition: width 1s linear;"></div>
                 </div>
                 <div id="login-tip" style="color: var(--text-sub); font-size: 0.9rem; font-style: italic; min-height: 40px; padding: 0 10px;"> Did you know? The library has a massive collection of e-books available for free.</div>
             </div>
@@ -3302,31 +3439,43 @@
     </div>
 
     <!-- MUSIC SUBMIT MODAL -->
-    <div id="musicSubmitModal" class="lightbox" onclick="if(event.target===this) document.getElementById('musicSubmitModal').style.display='none'">
-        <div class="sync-modal-content">
-            <span class="close-btn" style="top:10px;right:15px;font-size:30px;" onclick="document.getElementById('musicSubmitModal').style.display='none'">&times;</span>
-            <h3 style="color:#1DB954; font-family:'Montserrat',sans-serif; margin-bottom: 20px;">Upload to Music Lounge</h3>
-            <div style="display: flex; flex-direction: column; gap: 12px;">
-                <input id="music-title" class="modal-input" placeholder="Song Title *" style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; padding: 13px; border-radius: 12px;">
-                <input id="music-artist" class="modal-input" placeholder="Artist Name *" style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); color: #fff; padding: 13px; border-radius: 12px;">
+    <div id="musicSubmitModal" class="music-upload-backdrop" onclick="if(event.target===this) document.getElementById('musicSubmitModal').style.display='none'">
+        <div class="music-upload-modal">
+            <span class="music-upload-close" onclick="document.getElementById('musicSubmitModal').style.display='none'">&times;</span>
+            <div class="music-upload-title">🎵 UPLOAD TO MUSIC LOUNGE</div>
+            <div style="display: flex; flex-direction: column;">
+                <input id="music-title" class="music-upload-input" placeholder="Song Title *">
+                <input id="music-artist" class="music-upload-input" placeholder="Artist Name *">
                 
-                <label for="music-cover-file" style="background: rgba(0,0,0,0.3); border: 1px dashed var(--glass-border); color: #fff; padding: 13px; border-radius: 12px; cursor: pointer; text-align: center;">
-                    <span id="music-cover-text"> Upload Cover Art (Optional)</span>
-                    <input type="file" id="music-cover-file" accept="image/*" style="display: none;" onchange="document.getElementById('music-cover-text').innerText = this.files.length ? ' Cover Selected: ' + this.files[0].name : ' Upload Cover Art (Optional)';">
+                <label for="music-cover-file" class="music-file-btn">
+                    <span class="music-file-icon">🖼️</span>
+                    <div class="music-file-text">
+                        <span class="music-file-title">Upload Cover Art</span>
+                        <span class="music-file-subtext" id="music-cover-text">Optional · JPG, PNG, WebP</span>
+                    </div>
+                    <input type="file" id="music-cover-file" accept="image/*" style="display: none;" onchange="if(this.files.length) { document.getElementById('music-cover-text').innerHTML = '<span style=\'color:#4ade80;\'>✓ ' + this.files[0].name + '</span>'; } else { document.getElementById('music-cover-text').innerText = 'Optional · JPG, PNG, WebP'; }">
                 </label>
                 
-                <label for="music-video-file" style="background: rgba(0,0,0,0.3); border: 1px dashed var(--glass-border); color: #fff; padding: 13px; border-radius: 12px; cursor: pointer; text-align: center;">
-                    <span id="music-video-text"> Upload Visualizer/Video (Optional)</span>
-                    <input type="file" id="music-video-file" accept="video/*" style="display: none;" onchange="document.getElementById('music-video-text').innerText = this.files.length ? ' Video Selected: ' + this.files[0].name : ' Upload Visualizer/Video (Optional)';">
+                <label for="music-video-file" class="music-file-btn">
+                    <span class="music-file-icon">🎬</span>
+                    <div class="music-file-text">
+                        <span class="music-file-title">Upload Visualizer/Video</span>
+                        <span class="music-file-subtext" id="music-video-text">Optional · MP4, WebM</span>
+                    </div>
+                    <input type="file" id="music-video-file" accept="video/*" style="display: none;" onchange="if(this.files.length) { document.getElementById('music-video-text').innerHTML = '<span style=\'color:#4ade80;\'>✓ ' + this.files[0].name + '</span>'; } else { document.getElementById('music-video-text').innerText = 'Optional · MP4, WebM'; }">
                 </label>
                 
-                <label for="music-audio-file" style="background: rgba(29, 185, 84, 0.1); border: 1px dashed #1DB954; color: #fff; padding: 13px; border-radius: 12px; cursor: pointer; text-align: center;">
-                    <span id="music-audio-text"> Upload MP3 File *</span>
-                    <input type="file" id="music-audio-file" accept="audio/*" style="display: none;" onchange="document.getElementById('music-audio-text').innerText = this.files.length ? ' Audio Selected: ' + this.files[0].name : ' Upload MP3 File *';">
+                <label for="music-audio-file" class="music-file-btn required-mp3">
+                    <span class="music-file-icon">🎵</span>
+                    <div class="music-file-text">
+                        <span class="music-file-title">Upload MP3 File *</span>
+                        <span class="music-file-subtext" id="music-audio-text" style="color: inherit;">Required · MP3, WAV, OGG · Max 10MB</span>
+                    </div>
+                    <input type="file" id="music-audio-file" accept="audio/*" style="display: none;" onchange="if(this.files.length) { document.getElementById('music-audio-text').innerHTML = '<span style=\'color:#4ade80;\'>✓ ' + this.files[0].name + '</span>'; } else { document.getElementById('music-audio-text').innerText = 'Required · MP3, WAV, OGG · Max 10MB'; }">
                 </label>
                 
-                <button class="action-btn" onclick="submitMusic()" style="margin-top: 5px; background: #1DB954; color: #fff;">UPLOAD TRACK</button>
-                <p id="music-status" style="font-size: 0.85rem; font-weight: bold; text-align: center; min-height: 20px;"></p>
+                <button class="music-upload-cta" id="music-upload-cta" onclick="submitMusic()">UPLOAD TRACK</button>
+                <p id="music-status" style="font-size: 0.85rem; font-weight: bold; text-align: center; min-height: 20px; color: rgba(255,255,255,0.7); margin-top: 10px;"></p>
             </div>
         </div>
     </div>
@@ -7364,6 +7513,8 @@
             }
             status.innerText = "Processing audio... Please wait.";
             status.style.color = 'var(--primary)';
+            const ctaBtn = document.getElementById('music-upload-cta');
+            if (ctaBtn) { ctaBtn.innerHTML = '<span class="upload-spinner"></span> Uploading...'; ctaBtn.style.pointerEvents = 'none'; ctaBtn.style.opacity = '0.8'; }
             
             try {
                 let coverData = '';
@@ -7373,6 +7524,7 @@
                     if (videoFile.size > 20 * 1024 * 1024) {
                         status.innerText = "Video file too large (Max 20MB)";
                         status.style.color = 'var(--danger)';
+                        if (ctaBtn) { ctaBtn.innerHTML = 'UPLOAD TRACK'; ctaBtn.style.pointerEvents = 'auto'; ctaBtn.style.opacity = '1'; }
                         return;
                     }
                     videoData = await new Promise((resolve, reject) => {
@@ -7400,15 +7552,18 @@
                     status.style.color = '#1DB954';
                     setTimeout(() => {
                         document.getElementById('musicSubmitModal').style.display = 'none';
+                        if (ctaBtn) { ctaBtn.innerHTML = 'UPLOAD TRACK'; ctaBtn.style.pointerEvents = 'auto'; ctaBtn.style.opacity = '1'; }
                         loadMusicList();
                     }, 1500);
                 } else {
                     status.innerText = "Error: " + (data.error || "Upload failed");
                     status.style.color = 'var(--danger)';
+                    if (ctaBtn) { ctaBtn.innerHTML = 'UPLOAD TRACK'; ctaBtn.style.pointerEvents = 'auto'; ctaBtn.style.opacity = '1'; }
                 }
             } catch (e) {
                 status.innerText = "Connection error. File might be too large.";
                 status.style.color = 'var(--danger)';
+                if (ctaBtn) { ctaBtn.innerHTML = 'UPLOAD TRACK'; ctaBtn.style.pointerEvents = 'auto'; ctaBtn.style.opacity = '1'; }
             }
         }
         
