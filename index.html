@@ -6722,11 +6722,28 @@
                 currentPlaylist = data;
                 musicCache = data;
                 renderTracks(data, list);
-                    list.innerHTML = `<div style="text-align: center; color: var(--text-sub); padding: 40px;">No tracks found. Upload the first one!</div>`;
-                    return;
-                }
                 initMusicSortable(list);
                 
+                const lastId = localStorage.getItem('lastPlayedTrackId');
+                if (lastId && !isPlaying && currentTrackIndex === -1) {
+                    const idx = currentPlaylist.findIndex(t => t.id == lastId);
+                    if (idx !== -1) {
+                        currentTrackIndex = idx;
+                        const track = currentPlaylist[idx];
+                        document.getElementById('player-title').innerText = track.title;
+                        document.getElementById('player-artist').innerText = track.artist;
+                        document.getElementById('player-cover').src = track.cover_data || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMzMzIi8+PC9zdmc+';
+                        document.getElementById('music-player-bar').classList.add('active');
+                        fetch(`${BACKEND_URL}/api/music/audio/${track.id}`).then(r=>r.json()).then(d=>{
+                            if(d.audio_data) audioPlayer.src = d.audio_data;
+                        });
+                    }
+                }
+            } catch (e) {
+                list.innerHTML = '<div style="text-align:center; color: var(--danger); padding: 40px;">Could not load music.</div>';
+            }
+        }
+        
         function initMusicSortable(list) {
             if (window.musicSortable) {
                 window.musicSortable.destroy();
@@ -6750,26 +6767,6 @@
                     } catch(e) { console.error(e); }
                 }
             });
-        }
-                
-                const lastId = localStorage.getItem('lastPlayedTrackId');
-                if (lastId && !isPlaying && currentTrackIndex === -1) {
-                    const idx = currentPlaylist.findIndex(t => t.id == lastId);
-                    if (idx !== -1) {
-                        currentTrackIndex = idx;
-                        const track = currentPlaylist[idx];
-                        document.getElementById('player-title').innerText = track.title;
-                        document.getElementById('player-artist').innerText = track.artist;
-                        document.getElementById('player-cover').src = track.cover_data || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMzMzIi8+PC9zdmc+';
-                        document.getElementById('music-player-bar').classList.add('active');
-                        fetch(`${BACKEND_URL}/api/music/audio/${track.id}`).then(r=>r.json()).then(d=>{
-                            if(d.audio_data) audioPlayer.src = d.audio_data;
-                        });
-                    }
-                }
-            } catch (e) {
-                list.innerHTML = '<div style="text-align:center; color: var(--danger); padding: 40px;">Could not load music.</div>';
-            }
         }
         
         // ====== ONBOARDING WALKTHROUGH JS ======
@@ -7117,9 +7114,16 @@
         }
         
         function toggleMusicPlay() {
+            if (!audioPlayer) return;
+            const playerVid = document.querySelector('#music-list .music-card.playing .vid-toggle') ? document.querySelector('#music-list .music-card.playing video') : null;
+            const fsVid = document.getElementById('fs-video-bg');
+            
+            if (isPlaying) {
+                audioPlayer.pause();
+                if(playerVid && playerVid.style.display !== 'none') playerVid.pause();
                 if(fsVid && fsVid.style.display !== 'none') fsVid.pause();
             } else { 
-                audioEl.play(); 
+                audioPlayer.play().catch(e => console.warn(e)); 
                 if(playerVid && playerVid.style.display !== 'none') playerVid.play();
                 if(fsVid && fsVid.style.display !== 'none') fsVid.play();
             }
@@ -8872,7 +8876,7 @@
             } else {
                 closeStoryMode();
             }
-        });
+        }
 
         // --- REAL APK DOWNLOAD LOGIC ---
         function downloadRealAPK() {
