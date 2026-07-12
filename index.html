@@ -2196,21 +2196,24 @@
             left: 0;
             width: 100%;
             height: 75%;
-            background: var(--fs-accent-2, rgba(0,0,0,0.85));
-            border-radius: 30px 30px 0 0;
+            background: linear-gradient(135deg, var(--fs-accent-1, rgba(29,185,84,0.15)), var(--fs-accent-2, rgba(20,120,50,0.2)), var(--fs-accent-3, rgba(0,0,0,0.3)));
+            border-radius: 40px 40px 0 0;
             padding: 20px;
             overflow-y: auto;
             color: #fff;
             font-size: 1.1rem;
             line-height: 1.8;
             text-align: left;
-            backdrop-filter: blur(25px);
-            -webkit-backdrop-filter: blur(25px);
+            backdrop-filter: blur(40px) saturate(250%);
+            -webkit-backdrop-filter: blur(40px) saturate(250%);
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+            border-left: 1px solid rgba(255, 255, 255, 0.05);
+            border-right: 1px solid rgba(255, 255, 255, 0.05);
             z-index: 20;
             box-sizing: border-box;
             transform: translateY(100%);
             transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), background 0.5s ease;
-            box-shadow: 0 -10px 40px rgba(0,0,0,0.3);
+            box-shadow: 0 -20px 50px rgba(0,0,0,0.5), inset 0 1px 2px rgba(255,255,255,0.2);
         }
         .fs-lyrics-bottom-sheet.active {
             transform: translateY(0);
