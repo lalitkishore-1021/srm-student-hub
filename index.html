@@ -7051,6 +7051,7 @@
                 
                 if (isStreamUrl) {
                     audioPlayer.load();
+                    let streamLoaded = false;
                     await new Promise((resolve, reject) => {
                         const onCanPlay = () => { cleanup(); resolve(); };
                         const onError = () => { cleanup(); reject(audioPlayer.error); };
@@ -7061,11 +7062,12 @@
                         audioPlayer.addEventListener('canplay', onCanPlay, { once: true });
                         audioPlayer.addEventListener('error', onError, { once: true });
                         setTimeout(() => { cleanup(); reject(new Error('Audio load timeout')); }, 15000);
+                    }).then(() => {
+                        streamLoaded = true;
                     }).catch(e => {
                         console.error("Stream load failed:", e);
-                        return;
                     });
-                    await startPlayback();
+                    if (streamLoaded) await startPlayback();
                 } else {
                     await startPlayback();
                 }
@@ -7210,10 +7212,12 @@
         }
 
         function handleMusicError() {
+            // Don't skip if src is empty (we clear it intentionally while loading new tracks)
+            if (!audioPlayer.src || audioPlayer.src === '' || audioPlayer.src === window.location.href) return;
             console.warn('Audio element error, auto-skipping to next track...');
             isPlaying = false;
             updatePlayPauseBtn();
-            setTimeout(() => { nextMusicTrack(); }, 500);
+            setTimeout(() => { nextMusicTrack(); }, 1000);
         }
 
         function extractAlbumColors(imgEl) {
