@@ -6626,6 +6626,7 @@
         let musicCache = null;
         let userManuallyStopped = false;
         let wakeLock = null;
+        let isLoadingTrack = false;
 
         const audioPlayer = new Audio();
         audioPlayer.preload = 'metadata';
@@ -6946,6 +6947,7 @@
         
         async function playMusicTrack(index) {
             if (index < 0 || index >= currentPlaylist.length) return;
+            isLoadingTrack = true;
             currentTrackIndex = index;
             const track = currentPlaylist[index];
             playRequestId++;
@@ -7020,6 +7022,7 @@
                 const startPlayback = async () => {
                     try {
                         await audioPlayer.play();
+                        isLoadingTrack = false;
                         isPlaying = true;
                         updatePlayPauseBtn();
                         userManuallyStopped = false;
@@ -7039,6 +7042,7 @@
                         }
                     } catch(e) {
                         console.error("Playback prevented:", e);
+                        isLoadingTrack = false;
                         // Do NOT auto-skip here; it causes jumps on mobile when play is blocked.
                         return;
                     }
@@ -7107,10 +7111,12 @@
                     playAudioData(audioData);
                 } else {
                     console.warn("Audio not found.");
+                    isLoadingTrack = false;
                     updatePlayPauseBtn();
                 }
             } catch(e) {
                 console.warn("Error loading audio.", e);
+                isLoadingTrack = false;
                 updatePlayPauseBtn();
             }
         }
@@ -7203,6 +7209,7 @@
         }
         
         function handleMusicEnded() {
+            if (isLoadingTrack) return;
             if (isRepeat) {
                 audioPlayer.currentTime = 0;
                 audioPlayer.play().catch(e => { console.error('Repeat play failed:', e); });
@@ -7212,12 +7219,14 @@
         }
 
         function handleMusicError() {
+            // Don't skip if we're in the middle of loading a new track
+            if (isLoadingTrack) return;
             // Don't skip if src is empty (we clear it intentionally while loading new tracks)
             if (!audioPlayer.src || audioPlayer.src === '' || audioPlayer.src === window.location.href) return;
             console.warn('Audio element error, auto-skipping to next track...');
             isPlaying = false;
             updatePlayPauseBtn();
-            setTimeout(() => { nextMusicTrack(); }, 1000);
+            setTimeout(() => { nextMusicTrack(); }, 1500);
         }
 
         function extractAlbumColors(imgEl) {
