@@ -684,7 +684,7 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
 
         def get_all_tables():
             try:
-                page.wait_for_selector("iframe", state="attached", timeout=5000)
+                page.wait_for_selector("iframe", state="attached", timeout=200)
             except: pass
             all_tables = []
             for frame in page.frames:
