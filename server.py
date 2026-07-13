@@ -684,7 +684,7 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
 
         def get_all_tables():
             try:
-                page.wait_for_selector("iframe", state="attached", timeout=200)
+                page.wait_for_selector("iframe", state="attached", timeout=1500)
             except: pass
             all_tables = []
             for frame in page.frames:
@@ -801,7 +801,7 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
         for att_url in att_urls:
             print(f"[{reg_no}] Trying attendance URL: {att_url}")
             navigate_to_page(att_url)
-            raw_tables = wait_for_data_tables(["attn", "attendance", "conducted", "absent", "hour", "code"], timeout=5000)
+            raw_tables = wait_for_data_tables(["attn", "attendance", "conducted", "absent", "hour", "code"], timeout=15000)
             if raw_tables and len(raw_tables) > 0:
                 # Check if any table actually has attendance-like data
                 has_att_data = False
@@ -821,7 +821,7 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
             print(f"[{reg_no}] Attendance data not found on any URL. Trying reload...")
             navigate_to_page(att_urls[0])
             page.wait_for_timeout(2000)
-            raw_tables = wait_for_data_tables(["attn", "attendance", "conducted", "absent", "code"], timeout=5000)
+            raw_tables = wait_for_data_tables(["attn", "attendance", "conducted", "absent", "code"], timeout=12000)
         
         # Log what we found
         if raw_tables:
@@ -1043,7 +1043,7 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
         for url in timetable_urls:
             print(f"[{reg_no}] Trying timetable URL: {url}")
             navigate_to_page(url)
-            slot_tables = wait_for_data_tables(["slot", "course", "code"], timeout=5000)
+            slot_tables = wait_for_data_tables(["slot", "course", "code"], timeout=12000)
             if any(k in str(c).lower() for k in ["slot", "course", "code"] for t in slot_tables for row in t for c in row):
                 print(f"[{reg_no}] Successfully loaded timetable from {url}")
                 break
@@ -1051,7 +1051,7 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
             print(f"[{reg_no}] Warning: No slot tables found with primary URLs. Attempting page reload on primary...")
             navigate_to_page(timetable_urls[0])
             page.wait_for_timeout(2000)
-            slot_tables = wait_for_data_tables(["slot", "course", "code"], timeout=8000)
+            slot_tables = wait_for_data_tables(["slot", "course", "code"], timeout=15000)
             if not slot_tables:
                 try:
                     print(f"[{reg_no}] DIAGNOSTIC: Timetable page has NO tables. URL: {page.url}")
