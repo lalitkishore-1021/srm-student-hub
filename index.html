@@ -7128,9 +7128,13 @@
         async function preloadNextMusicTrack(index) {
             if (index < 0 || index >= currentPlaylist.length) return;
             const track = currentPlaylist[index];
-            // Cache stream URL for instant playback on next track
-            const streamUrl = `${BACKEND_URL}/api/music/audio/${track.id}/stream`;
-            nextTrackCache = { index: index, audio_data: streamUrl };
+            try {
+                const streamUrl = `${BACKEND_URL}/api/music/audio/${track.id}/stream`;
+                const res = await fetch(streamUrl);
+                const blob = await res.blob();
+                const objectUrl = URL.createObjectURL(blob);
+                nextTrackCache = { index: index, audio_data: objectUrl };
+            } catch(e) {}
         }
         
         let bgFadeTimeout = null;
@@ -7378,28 +7382,8 @@
                     if (nextIdx !== index) preloadNextMusicTrack(nextIdx);
                 };
                 
-                if (isStreamUrl) {
-                    audioPlayer.load();
-                    let streamLoaded = false;
-                    await new Promise((resolve, reject) => {
-                        const onCanPlay = () => { cleanup(); resolve(); };
-                        const onError = () => { cleanup(); reject(audioPlayer.error); };
-                        const cleanup = () => {
-                            audioPlayer.removeEventListener('canplay', onCanPlay);
-                            audioPlayer.removeEventListener('error', onError);
-                        };
-                        audioPlayer.addEventListener('canplay', onCanPlay, { once: true });
-                        audioPlayer.addEventListener('error', onError, { once: true });
-                        setTimeout(() => { cleanup(); reject(new Error('Audio load timeout')); }, 15000);
-                    }).then(() => {
-                        streamLoaded = true;
-                    }).catch(e => {
-                        console.error("Stream load failed:", e);
-                    });
-                    if (streamLoaded) await startPlayback();
-                } else {
-                    await startPlayback();
-                }
+                audioPlayer.load();
+                await startPlayback();
             };
 
             // If we have it cached, play IMMEDIATELY (synchronously) to bypass mobile background restrictions
@@ -7430,10 +7414,13 @@
                     // Offline cached data — play from data URL
                     playAudioData(audioData);
                 } else {
-                    // Use streaming endpoint for instant playback
+                    // Fetch as binary blob to avoid JSON parsing and multiple Range requests
                     const streamUrl = `${BACKEND_URL}/api/music/audio/${track.id}/stream`;
+                    const res = await fetch(streamUrl);
+                    const blob = await res.blob();
                     if (currentReqId !== playRequestId) return;
-                    playAudioData(streamUrl);
+                    const objectUrl = URL.createObjectURL(blob);
+                    playAudioData(objectUrl);
                 }
             } catch(e) {
                 console.warn("Error loading audio.", e);
