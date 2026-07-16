@@ -2248,7 +2248,8 @@
         .volume-slider { width: 80px; margin-right: 15px; cursor: pointer; accent-color: #1DB954; }
         
         /* Fullscreen Player */
-        .music-fullscreen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 3000; background: #000; display: none; flex-direction: column; padding: 25px; padding-top: max(25px, env(safe-area-inset-top)); animation: slideUp 0.3s ease forwards; overflow: hidden; justify-content: center; align-items: center; }
+        .music-fullscreen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 3000; background: #000; display: none; flex-direction: column; padding: 25px; padding-top: max(25px, env(safe-area-inset-top)); animation: slideUp 0.3s ease forwards; overflow-y: auto; overflow-x: hidden; align-items: center; justify-content: flex-start; }
+        .fs-player-container { display: flex; flex-direction: column; min-height: calc(100vh - 50px); width: 100%; align-items: center; justify-content: center; position: relative; }
         .fs-bg-orbs-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: -2; overflow: hidden; pointer-events: none; }
         .fs-orb { position: absolute; border-radius: 50%; filter: blur(70px); opacity: 0.85; transition: background 1.5s ease-in-out; }
         .fs-orb-1 { width: 320px; height: 320px; background: var(--fs-accent-1, rgba(255, 170, 0, 0.15)); top: -40px; left: -40px; animation: drift1 8s infinite alternate ease-in-out; }
@@ -3608,7 +3609,6 @@
             <div style="display: flex; flex-direction: column;">
                 <input id="music-title" class="music-upload-input" placeholder="Song Title *">
                 <input id="music-artist" class="music-upload-input" placeholder="Artist Name *">
-                <textarea id="music-lyrics" class="music-upload-input" placeholder="Lyrics (Optional)" style="min-height: 80px; resize: vertical; padding-top: 12px; font-family: inherit; line-height: 1.4;"></textarea>
                 
                 <label for="music-cover-file" class="music-file-btn">
                     <span class="music-file-icon">🖼️</span>
@@ -3694,13 +3694,15 @@
         </div>
         <img id="fs-bg-blur" class="fs-bg-blur" src="">
         <div class="fs-bg-overlay"></div>
-        <div class="fs-header">
-            <button class="fs-close" onclick="closeFullscreenPlayer()"><svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg></button>
-            <span>Now Playing</span>
-            <button class="fs-close" id="fs-download-btn" onclick="downloadCurrentTrack()" style="font-size:24px;" title="Download Offline"><svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg></button>
-        </div>
-        <div class="fs-cover-container">
-            <img id="fs-cover" class="fs-cover" src="" alt="Cover">
+        
+        <div class="fs-player-container">
+            <div class="fs-header">
+                <button class="fs-close" onclick="closeFullscreenPlayer()"><svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg></button>
+                <span>Now Playing</span>
+                <button class="fs-close" id="fs-download-btn" onclick="downloadCurrentTrack()" style="font-size:24px;" title="Download Offline"><svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg></button>
+            </div>
+            <div id="fs-cover-container" class="fs-cover-container">
+                <img id="fs-cover" class="fs-cover" src="" alt="Cover">
             <video id="fs-video" class="fs-cover" loop muted playsinline style="display: none; box-shadow: 0 20px 45px rgba(0,0,0,0.55);"></video>
         </div>
         <div class="fs-glass-panel">
@@ -3728,8 +3730,7 @@
             </div>
             <!-- Bottom utility buttons -->
             <div class="fs-utility-row">
-                <button class="fs-util-btn" onclick="shareCurrentTrack()" title="Share"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z"/></svg></button>
-                <button class="fs-util-btn" onclick="togglePlaylistQueue()" title="Queue"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M4 6h16v2H4zm0 5h16v2H4zm0 5h10v2H4zm14.5-2.5v-3H17v3h-3v1.5h3v3h1.5v-3h3v-1.5z"/></svg></button>
+                <button class="fs-util-btn" onclick="shareCurrentTrack()" title="Share Track"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z"/></svg></button>
                 <div style="position:relative; display:inline-block;">
                     <button class="fs-util-btn" onclick="toggleSleepTimerMenu()" title="Sleep Timer"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg></button>
                     <div id="sleep-timer-menu" style="display:none; position:absolute; bottom:40px; left:-50px; background:rgba(20,20,30,0.95); border-radius:12px; border:1px solid rgba(255,255,255,0.1); flex-direction:column; overflow:hidden; z-index:100; backdrop-filter:blur(10px); min-width: 120px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
@@ -3738,19 +3739,18 @@
                         <button onclick="setSleepTimer(30)" style="background:none; border:none; color:#fff; padding:12px 20px; cursor:pointer; font-size:0.95rem; text-align:left; width:100%;">30 mins</button>
                     </div>
                 </div>
-                <button class="fs-util-btn" onclick="showDevices()" title="Connect to device"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M4 6h16v10H4zm16 12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2H0v2h24v-2h-4z"/></svg></button>
-                <button class="fs-util-btn" onclick="toggleLyrics()" title="Lyrics"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M21.99 4c0-1.1-.89-2-1.99-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h14l4 4-.01-18zM18 14H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/></svg></button>
             </div>
         </div>
         
-        <!-- Spotify-style bottom sheet lyrics -->
-        <div id="fs-lyrics-container" class="fs-lyrics-bottom-sheet">
-            <div class="fs-lyrics-handle" onclick="toggleLyrics()"></div>
-            <div id="fs-lyrics-content" style="padding-bottom: 50px;">
-                Loading lyrics...
+        <div id="fs-inline-lyrics-container" style="width: 100%; max-width: 500px; padding: 20px 20px 50px 20px; margin: 0 auto; display: flex; flex-direction: column; align-items: flex-start; z-index: 10; position: relative; box-sizing: border-box;">
+            <h3 style="color: #fff; font-size: 1.2rem; font-weight: 700; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 1px;">Lyrics</h3>
+            <div id="fs-inline-lyrics-content" style="width: 100%;">
+                <div style="opacity:0.5; font-size:1.1rem; color:white;">Loading lyrics...</div>
             </div>
         </div>
+        
     </div>
+
 
     <div id="cgpaModal" class="lightbox" onclick="if(event.target === this) closeCGPACalculator()">
         <div class="sync-modal-content" style="max-width: 500px; padding: 0; background: rgba(25, 25, 30, 0.65); backdrop-filter: blur(25px); border: 1px solid rgba(255, 255, 255, 0.1); overflow: hidden; position: relative;">
@@ -7137,6 +7137,7 @@
         function updateVideoBackground(track, videoData = null) {
             const bgVideoPlayer = document.getElementById('bg-video-player');
             const musicVideoBg = document.getElementById('music-video-bg');
+            const fsCoverContainer = document.getElementById('fs-cover-container');
             if (!bgVideoPlayer || !musicVideoBg) return;
 
             clearTimeout(bgFadeTimeout);
@@ -7154,6 +7155,7 @@
                 };
                 const oldFallback = musicVideoBg.querySelector('.bg-cover-fallback');
                 if (oldFallback) oldFallback.remove();
+                if (fsCoverContainer) fsCoverContainer.style.display = 'none';
             } else {
                 bgVideoPlayer.src = '';
                 const img = document.createElement('img');
@@ -7166,26 +7168,26 @@
                 img.style.opacity = '0';
                 img.style.transition = 'opacity 1.2s ease';
                 bgFadeTimeout = setTimeout(() => { img.style.opacity = '1'; }, 100);
+                if (fsCoverContainer) fsCoverContainer.style.display = 'flex';
             }
         }
 
-        function loadLyricsForTrack(track) {
-            const lyricsContent = document.getElementById('fs-lyrics-content');
+        async function loadLyricsForTrack(track) {
+            const lyricsContent = document.getElementById('fs-inline-lyrics-content');
             if (!lyricsContent) return;
             
-            if (track.lyrics && track.lyrics.trim() !== '') {
-                const lines = track.lyrics.split('\n');
-                let html = '';
-                lines.forEach((line, i) => {
-                    if (line.trim() === '') {
-                        html += '<br>';
-                    } else {
-                        html += `<div class="lyrics-line" id="lyric-line-${i}">${escHtml(line)}</div>`;
-                    }
-                });
-                lyricsContent.innerHTML = html;
-            } else {
-                lyricsContent.innerHTML = '<div style="display:flex; height:100%; justify-content:center; align-items:center; opacity:0.5; font-size:1.2rem;">No lyrics available</div>';
+            lyricsContent.innerHTML = '<div style="opacity:0.5; font-size:1.1rem; color:white;">Loading lyrics...</div>';
+            
+            try {
+                const res = await fetch(`${BACKEND_URL}/api/music/lyrics?artist=${encodeURIComponent(track.artist)}&title=${encodeURIComponent(track.title)}`);
+                const data = await res.json();
+                if (data.success && data.lyrics) {
+                    renderLyrics(data, lyricsContent);
+                } else {
+                    lyricsContent.innerHTML = '<div style="display:flex; height:100px; justify-content:flex-start; align-items:center; opacity:0.5; font-size:1.2rem; color:white;">Lyrics not found for this track.</div>';
+                }
+            } catch (e) {
+                lyricsContent.innerHTML = '<div style="display:flex; height:100px; justify-content:flex-start; align-items:center; opacity:0.5; font-size:1.2rem; color:var(--danger);">Failed to load lyrics.</div>';
             }
         }
 
@@ -7294,6 +7296,11 @@
             
             if (fsVid) { fsVid.style.display = 'none'; fsVid.src = ''; }
             if (fsImg) { fsImg.style.display = 'block'; fsImg.src = coverSrc; }
+            
+            const fsCoverContainer = document.getElementById('fs-cover-container');
+            if (fsCoverContainer) {
+                fsCoverContainer.style.display = track.has_video ? 'none' : 'flex';
+            }
             
             if (document.getElementById('music-fullscreen').style.display === 'flex') {
                 document.getElementById('fs-title').innerText = track.title;
@@ -7651,26 +7658,7 @@
             container.innerHTML = html;
         }
 
-        async function toggleLyrics() {
-            const sheet = document.getElementById('fs-lyrics-container');
-            const content = document.getElementById('fs-lyrics-content');
-            if (!sheet || !content) return;
-            
-            if (sheet.classList.contains('active')) {
-                sheet.classList.remove('active');
-                return;
-            }
-            
-            sheet.classList.add('active');
-            
-            const track = currentPlaylist[currentTrackIndex];
-            if (!track) {
-                content.innerText = "No track playing.";
-                return;
-            }
-            
-            loadLyricsForTrack(track);
-        }
+
 
         let sleepTimerTimeout = null;
         function toggleSleepTimerMenu() {
@@ -7808,7 +7796,6 @@
             const audioFile = document.getElementById('music-audio-file')?.files[0];
             const coverFile = document.getElementById('music-cover-file')?.files[0];
             const videoFile = document.getElementById('music-video-file')?.files[0];
-            const lyrics = document.getElementById('music-lyrics') ? document.getElementById('music-lyrics').value.trim() : '';
             const status = document.getElementById('music-status');
             
             if (!title || !artist || !audioFile) {
@@ -7852,7 +7839,7 @@
                 });
                 status.innerText = "Uploading... This may take a moment.";
                 const payload = {
-                    title: title, artist: artist, audio_data: audioBase64, cover_data: coverData, video_data: videoData, lyrics: lyrics,
+                    title: title, artist: artist, audio_data: audioBase64, cover_data: coverData, video_data: videoData,
                     uploaded_by: 'Student', net_id: getCurrentNetId()
                 };
                 const res = await fetch(`${BACKEND_URL}/api/music/submit`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
