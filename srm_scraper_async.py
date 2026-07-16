@@ -13,46 +13,80 @@ async def fetch_and_parse_concurrently(reg_no, cookies, unique_links):
                 '--disable-dev-shm-usage',
                 '--disable-blink-features=AutomationControlled',
                 '--disable-infobars',
-                '--window-size=1920,1080'
+                '--window-size=1920,1080',
+                '--disable-gpu',
+                '--disable-software-rasterizer',
+                '--disable-extensions',
+                '--blink-settings=imagesEnabled=false',
+                '--disable-background-networking',
+                '--disable-default-apps',
+                '--disable-sync',
+                '--disable-translate',
+                '--hide-scrollbars',
+                '--mute-audio',
+                '--no-first-run',
+                '--disable-logging',
+                '--disable-notifications',
             ]
         )
         
         context = await browser.new_context(
             user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
-            viewport={'width': 1920, 'height': 1080}
+            viewport={'width': 1920, 'height': 1080},
+            extra_http_headers={"Accept-Language": "en-US,en;q=0.9"}
         )
         
         # Load ZOHO auth cookies
         await context.add_cookies(cookies)
         
+        # --- Attendance URL (dynamic year detection) ---
         att_url = "https://academia.srmist.edu.in/#Page:My_Attendance"
-        if any("My_Attendance_2024_25" in link for link in unique_links):
-            att_url = "https://academia.srmist.edu.in/#Page:My_Attendance_2024_25"
-        elif any("My_Attendance_2025_26" in link for link in unique_links):
-            att_url = "https://academia.srmist.edu.in/#Page:My_Attendance_2025_26"
-            
-        marks_url = "https://academia.srmist.edu.in/#Page:My_Marks"
+        att_url_pool = [
+            "https://academia.srmist.edu.in/#Page:My_Attendance_2025_26",
+            "https://academia.srmist.edu.in/#Page:My_Attendance_2024_25",
+            "https://academia.srmist.edu.in/#Page:My_Attendance_2023_24",
+            "https://academia.srmist.edu.in/#Page:My_Attendance",
+        ]
+        for candidate in att_url_pool:
+            page_key = candidate.split('#Page:')[1]
+            if any(page_key in link for link in unique_links):
+                att_url = candidate
+                break
         
-        tt_url = "https://academia.srmist.edu.in/#Page:My_Time_Table_2024_25_Even"
-        if any("My_Time_Table_2024_25_Odd" in link for link in unique_links):
-            tt_url = "https://academia.srmist.edu.in/#Page:My_Time_Table_2024_25_Odd"
+        # Marks are on the SAME attendance page in SRM (no separate My_Marks page)
+        # So we only need att_url for both attendance + marks data
+        
+        # --- Timetable URL (dynamic year detection) ---
+        tt_url = None
+        tt_url_pool = [
+            "https://academia.srmist.edu.in/#Page:My_Time_Table_2025_26",
+            "https://academia.srmist.edu.in/#Page:My_Time_Table_2024_25",
+            "https://academia.srmist.edu.in/#Page:My_Time_Table_2023_24",
+            "https://academia.srmist.edu.in/#Page:My_Time_Table"
+        ]
+        for candidate in tt_url_pool:
+            page_key = candidate.split('#Page:')[1]
+            if any(page_key in link for link in unique_links):
+                tt_url = candidate
+                break
+        if not tt_url:
+            tt_url = tt_url_pool[0]
 
+        # Only 2 tabs needed: Attendance+Marks (same page) and Slot Timetable
         page_att = await context.new_page()
-        page_marks = await context.new_page()
-        page_tt = await context.new_page()
+        page_slots = await context.new_page()
 
-        # Concurrent Navigation
-        print(f"[{reg_no}] Opening 3 tabs simultaneously...")
+        # Concurrent Navigation (2 tabs in parallel)
+        print(f"[{reg_no}] Opening 2 tabs simultaneously: att={att_url}, slots={tt_url}")
         await asyncio.gather(
             page_att.goto(att_url, wait_until="domcontentloaded", timeout=30000),
-            page_marks.goto(marks_url, wait_until="domcontentloaded", timeout=30000),
-            page_tt.goto(tt_url, wait_until="domcontentloaded", timeout=30000),
+            page_slots.goto(tt_url, wait_until="domcontentloaded", timeout=30000),
             return_exceptions=True
         )
 
         async def get_all_tables(page):
             try:
-                await page.wait_for_selector("iframe", state="attached", timeout=5000)
+                await page.wait_for_selector("iframe", state="attached", timeout=3000)
             except: pass
             all_tables = []
             for frame in page.frames:
@@ -90,25 +124,20 @@ async def fetch_and_parse_concurrently(reg_no, cookies, unique_links):
                 await page.wait_for_timeout(500)
             return await get_all_tables(page)
 
-        print(f"[{reg_no}] Fetching data tables concurrently...")
+        print(f"[{reg_no}] Fetching data tables concurrently (2 tabs)...")
         results = await asyncio.gather(
-            wait_for_data_tables(page_att, ["attn", "attendance", "conducted", "absent", "hour", "code"]),
-            wait_for_data_tables(page_marks, ["test performance", "assessment", "marks", "internal"]),
-            wait_for_data_tables(page_tt, ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday"]),
+            wait_for_data_tables(page_att, ["attn", "attendance", "conducted", "absent", "code", "test performance", "assessment"]),
+            wait_for_data_tables(page_slots, ["slot", "course", "code", "credit", "room"]),
             return_exceptions=True
         )
 
-        att_tables = results[0] if not isinstance(results[0], Exception) else []
-        marks_tables = results[1] if not isinstance(results[1], Exception) else []
-        tt_tables = results[2] if not isinstance(results[2], Exception) else []
+        raw_tables = results[0] if not isinstance(results[0], Exception) else []
+        slot_tables = results[1] if not isinstance(results[1], Exception) else []
         
-        if not att_tables: att_tables = []
-        if not marks_tables: marks_tables = []
-        if not tt_tables: tt_tables = []
+        if not raw_tables: raw_tables = []
+        if not slot_tables: slot_tables = []
 
-        print(f"[{reg_no}] Data fetched. Parsed {len(att_tables)} att tables, {len(marks_tables)} marks tables, {len(tt_tables)} tt tables.")
-        
-        # Combine att and marks tables for the parser (since old logic expected them together)
-        raw_tables = att_tables + marks_tables
+        print(f"[{reg_no}] Data fetched. Parsed {len(raw_tables)} att+marks tables, {len(slot_tables)} slot tables.")
 
-        return raw_tables, tt_tables
+        await browser.close()
+        return raw_tables, slot_tables
