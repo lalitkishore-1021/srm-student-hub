@@ -7123,13 +7123,9 @@
         async function preloadNextMusicTrack(index) {
             if (index < 0 || index >= currentPlaylist.length) return;
             const track = currentPlaylist[index];
-            try {
-                const res = await fetch(`${BACKEND_URL}/api/music/audio/${track.id}`);
-                const data = await res.json();
-                if (data.audio_data) {
-                    nextTrackCache = { index: index, audio_data: data.audio_data };
-                }
-            } catch(e) {}
+            // Cache stream URL for instant playback on next track
+            const streamUrl = `${BACKEND_URL}/api/music/audio/${track.id}/stream`;
+            nextTrackCache = { index: index, audio_data: streamUrl };
         }
         
         let bgFadeTimeout = null;
@@ -7417,6 +7413,7 @@
             
             try {
                 let audioData = null;
+                // Check offline cache first
                 try {
                     const offlineTrack = await getOfflineTrack(track.id);
                     if (offlineTrack && offlineTrack.audio_data) {
@@ -7424,19 +7421,14 @@
                     }
                 } catch(e) {}
                 
-                if (!audioData) {
-                    const res = await fetch(`${BACKEND_URL}/api/music/audio/${track.id}`);
-                    const data = await res.json();
-                    if (currentReqId !== playRequestId) return;
-                    audioData = data.audio_data;
-                }
-                
                 if (audioData) {
+                    // Offline cached data — play from data URL
                     playAudioData(audioData);
                 } else {
-                    console.warn("Audio not found.");
-                    isLoadingTrack = false;
-                    updatePlayPauseBtn();
+                    // Use streaming endpoint for instant playback
+                    const streamUrl = `${BACKEND_URL}/api/music/audio/${track.id}/stream`;
+                    if (currentReqId !== playRequestId) return;
+                    playAudioData(streamUrl);
                 }
             } catch(e) {
                 console.warn("Error loading audio.", e);

@@ -2141,15 +2141,38 @@ def stream_music_audio(track_id):
         header, encoded = data_url.split(",", 1)
         mime_type = header.split(";")[0].split(":")[1]
         binary_data = base64.b64decode(encoded)
-        from flask import send_file
-        import io
         
-        # Using send_file automatically handles HTTP 206 Partial Content Range requests required by Chrome/Safari for media
-        return send_file(
-            io.BytesIO(binary_data),
-            mimetype=mime_type,
-            as_attachment=False
-        )
+        total_size = len(binary_data)
+        range_header = request.headers.get('Range')
+        
+        if range_header:
+            # Handle Range request for seeking and progressive playback
+            byte_range = range_header.replace('bytes=', '').split('-')
+            start = int(byte_range[0])
+            end = int(byte_range[1]) if byte_range[1] else total_size - 1
+            end = min(end, total_size - 1)
+            chunk_size = end - start + 1
+            
+            resp = app.response_class(
+                binary_data[start:end+1],
+                status=206,
+                mimetype=mime_type
+            )
+            resp.headers['Content-Range'] = f'bytes {start}-{end}/{total_size}'
+            resp.headers['Content-Length'] = str(chunk_size)
+            resp.headers['Accept-Ranges'] = 'bytes'
+            resp.headers['Cache-Control'] = 'public, max-age=3600'
+            return resp
+        else:
+            resp = app.response_class(
+                binary_data,
+                status=200,
+                mimetype=mime_type
+            )
+            resp.headers['Content-Length'] = str(total_size)
+            resp.headers['Accept-Ranges'] = 'bytes'
+            resp.headers['Cache-Control'] = 'public, max-age=3600'
+            return resp
     except Exception as e:
         return str(e), 500
 
