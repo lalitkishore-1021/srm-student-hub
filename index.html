@@ -2089,26 +2089,28 @@
         @keyframes loadingBar { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
         /* === FEATURE 1: VIDEO BACKGROUND === */
         .music-video-bg {
-          position: absolute;
-          inset: 0;
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
           z-index: 0;
           overflow: hidden;
-          border-radius: inherit;
+          pointer-events: none;
         }
         .bg-video {
           width: 100%; height: 100%;
           object-fit: cover;
-          filter: blur(18px) brightness(0.35) saturate(1.4);
-          transform: scale(1.08);   /* hide blur edges */
+          filter: brightness(0.7) saturate(1.2);
           transition: opacity 1.2s ease;
         }
         .bg-video-overlay {
           position: absolute; inset: 0;
           background: linear-gradient(
             to bottom,
-            rgba(0,0,0,0.25) 0%,
-            rgba(0,0,0,0.55) 60%,
-            rgba(0,0,0,0.85) 100%
+            rgba(0,0,0,0.05) 0%,
+            rgba(0,0,0,0.3) 50%,
+            rgba(0,0,0,0.75) 100%
           );
         }
         .bg-cover-fallback {
@@ -2331,14 +2333,15 @@
         }
 
         .apple-lyric-line {
-            font-size: 1.6rem;
-            font-weight: 800;
-            color: rgba(255, 255, 255, 0.4);
+            font-size: 1.15rem;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.45);
             transition: color 0.3s ease, transform 0.3s ease, text-shadow 0.3s ease;
-            margin-bottom: 15px;
+            margin-bottom: 12px;
             cursor: pointer;
-            letter-spacing: -0.5px;
+            letter-spacing: -0.3px;
             text-align: left;
+            line-height: 1.6;
         }
         .apple-lyric-line:hover {
             color: #ffffff !important;
@@ -2347,8 +2350,9 @@
         }
         .active-lyric {
             color: #ffffff !important;
-            transform: scale(1.05) translateX(15px);
-            text-shadow: 0 0 15px rgba(255, 255, 255, 0.9), 0 0 25px rgba(255, 255, 255, 0.7) !important;
+            transform: scale(1.03) translateX(8px);
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.7), 0 0 20px rgba(255, 255, 255, 0.4) !important;
+            font-size: 1.25rem;
         }
         .fs-lyrics-bottom-sheet {
             position: absolute;
@@ -3742,10 +3746,11 @@
             </div>
         </div>
         
-        <div id="fs-inline-lyrics-container" style="width: 100%; max-width: 500px; padding: 20px 20px 50px 20px; margin: 0 auto; display: flex; flex-direction: column; align-items: flex-start; z-index: 10; position: relative; box-sizing: border-box;">
-            <h3 style="color: #fff; font-size: 1.2rem; font-weight: 700; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 1px;">Lyrics</h3>
+        <div id="fs-inline-lyrics-container" style="width: 100%; max-width: 500px; padding: 30px 20px 60px 20px; margin: 0 auto; z-index: 10; position: relative; box-sizing: border-box;">
+            <div style="width: 40px; height: 4px; background: rgba(255,255,255,0.2); border-radius: 2px; margin: 0 auto 25px auto;"></div>
+            <h3 style="color: rgba(255,255,255,0.6); font-size: 0.8rem; font-weight: 600; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 2px;">Lyrics</h3>
             <div id="fs-inline-lyrics-content" style="width: 100%;">
-                <div style="opacity:0.5; font-size:1.1rem; color:white;">Loading lyrics...</div>
+                <div style="opacity:0.4; font-size:0.95rem; color:white;">Scroll down to see lyrics...</div>
             </div>
         </div>
         
