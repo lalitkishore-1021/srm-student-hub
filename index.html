@@ -7297,6 +7297,9 @@
             const coverSrc = track.cover_data || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMzMzIi8+PC9zdmc+';
             document.getElementById('fs-bg-blur').src = coverSrc;
             
+            // Auto open fullscreen player
+            openFullscreenPlayer(null, true);
+            
             const playerImg = document.getElementById('player-cover');
             const playerVid = document.getElementById('player-video');
             const fsImg = document.getElementById('fs-cover');
@@ -7793,9 +7796,9 @@
             audioPlayer.currentTime = (e.offsetX / bar.clientWidth) * audioPlayer.duration;
         }
         
-        function openFullscreenPlayer(e) {
+        function openFullscreenPlayer(e, force = false) {
             if(e && e.target.closest('.player-controls') || e && e.target.closest('.progress-container') || e && e.target.closest('.player-right')) return;
-            if(!audioPlayer.src) return;
+            if(!audioPlayer.src && !force) return;
             
             const track = currentPlaylist[currentTrackIndex];
             document.getElementById('fs-title').innerText = track.title;
