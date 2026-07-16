@@ -6632,6 +6632,7 @@
                     artist: track.artist,
                     cover_data: track.cover_data || '',
                     audio_data: audioData,
+                    has_video: track.has_video ? 1 : 0,
                     downloaded_at: Date.now()
                 });
                 tx.oncomplete = () => resolve();
@@ -6750,7 +6751,11 @@
             if (!track || !track.audio_data) return alert('Track data not found offline.');
             
             let savedOrder = JSON.parse(localStorage.getItem('downloadsOrder') || '[]');
-            currentPlaylist = tracks.sort((a, b) => {
+            currentPlaylist = tracks.map(t => {
+                const onlineTrack = window.allMusicTracks ? window.allMusicTracks.find(ot => ot.id === t.id) : null;
+                if (onlineTrack && onlineTrack.has_video) t.has_video = 1;
+                return t;
+            }).sort((a, b) => {
                 let idxA = savedOrder.indexOf(a.id);
                 let idxB = savedOrder.indexOf(b.id);
                 if (idxA !== -1 && idxB !== -1) return idxA - idxB;
