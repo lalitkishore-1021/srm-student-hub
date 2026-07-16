@@ -7130,12 +7130,12 @@
             if (index < 0 || index >= currentPlaylist.length) return;
             const track = currentPlaylist[index];
             try {
-                const streamUrl = `${BACKEND_URL}/api/music/audio/${track.id}/stream`;
-                const res = await fetch(streamUrl);
-                const blob = await res.blob();
-                const objectUrl = URL.createObjectURL(blob);
-                nextTrackCache = { index: index, audio_data: objectUrl };
-            } catch (e) {}
+                const res = await fetch(`${BACKEND_URL}/api/music/audio/${track.id}`);
+                const data = await res.json();
+                if (data.audio_data) {
+                    nextTrackCache = { index: index, audio_data: data.audio_data };
+                }
+            } catch(e) {}
         }
         
         let bgFadeTimeout = null;
@@ -7338,11 +7338,6 @@
             updateVideoBackground(track);
             loadLyricsForTrack(track);
             
-            const btnPlayPause = document.getElementById('player-play-btn');
-            
-            // Auto refresh lyrics if open
-            // (Handled by loadLyricsForTrack)
-
             const playAudioData = async (audioData) => {
                 audioPlayer.pause();
                 audioPlayer.src = audioData;
@@ -7383,8 +7378,28 @@
                     if (nextIdx !== index) preloadNextMusicTrack(nextIdx);
                 };
                 
-                audioPlayer.load();
-                await startPlayback();
+                if (isStreamUrl) {
+                    audioPlayer.load();
+                    let streamLoaded = false;
+                    await new Promise((resolve, reject) => {
+                        const onCanPlay = () => { cleanup(); resolve(); };
+                        const onError = () => { cleanup(); reject(audioPlayer.error); };
+                        const cleanup = () => {
+                            audioPlayer.removeEventListener('canplay', onCanPlay);
+                            audioPlayer.removeEventListener('error', onError);
+                        };
+                        audioPlayer.addEventListener('canplay', onCanPlay, { once: true });
+                        audioPlayer.addEventListener('error', onError, { once: true });
+                        setTimeout(() => { cleanup(); reject(new Error('Audio load timeout')); }, 15000);
+                    }).then(() => {
+                        streamLoaded = true;
+                    }).catch(e => {
+                        console.error("Stream load failed:", e);
+                    });
+                    if (streamLoaded) await startPlayback();
+                } else {
+                    await startPlayback();
+                }
             };
 
             // If we have it cached, play IMMEDIATELY (synchronously) to bypass mobile background restrictions
@@ -7403,24 +7418,26 @@
             
             try {
                 let audioData = null;
-                // Check offline cache first only if offline, otherwise stream instantly to preserve user gesture token
-                if (!navigator.onLine) {
-                    try {
-                        const offlineTrack = await getOfflineTrack(track.id);
-                        if (offlineTrack && offlineTrack.audio_data) {
-                            audioData = offlineTrack.audio_data;
-                        }
-                    } catch(e) {}
+                try {
+                    const offlineTrack = await getOfflineTrack(track.id);
+                    if (offlineTrack && offlineTrack.audio_data) {
+                        audioData = offlineTrack.audio_data;
+                    }
+                } catch(e) {}
+                
+                if (!audioData) {
+                    const res = await fetch(`${BACKEND_URL}/api/music/audio/${track.id}`);
+                    const data = await res.json();
+                    if (currentReqId !== playRequestId) return;
+                    audioData = data.audio_data;
                 }
                 
                 if (audioData) {
-                    // Offline cached data — play from data URL
                     playAudioData(audioData);
                 } else {
-                    // Use streaming endpoint for instant playback via progressive download
-                    const streamUrl = `${BACKEND_URL}/api/music/audio/${track.id}/stream`;
-                    if (currentReqId !== playRequestId) return;
-                    playAudioData(streamUrl);
+                    console.warn("Audio not found.");
+                    isLoadingTrack = false;
+                    updatePlayPauseBtn();
                 }
             } catch(e) {
                 console.warn("Error loading audio.", e);
