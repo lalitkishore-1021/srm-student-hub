@@ -10,7 +10,9 @@ import requests
 import uuid
 import urllib.parse
 from datetime import datetime
-from flask import Flask, request, jsonify, send_from_directory
+from flask import Flask, request, jsonify, send_from_directory, Response
+from functools import lru_cache
+import base64
 from flask_cors import CORS
 from playwright.sync_api import sync_playwright
 
@@ -2120,8 +2122,8 @@ def get_music_audio(track_id):
         return jsonify({'audio_data': row[0]})
     return jsonify({'audio_data': None})
 
-@app.route('/api/music/audio/<int:track_id>/stream', methods=['GET'])
-def stream_music_audio(track_id):
+@lru_cache(maxsize=32)
+def get_track_binary(track_id):
     conn = get_db()
     cur = conn.cursor()
     if DATABASE_URL:
@@ -2134,14 +2136,24 @@ def stream_music_audio(track_id):
     conn.close()
     
     if not row or not row[0]:
-        return "Not found", 404
+        return None, None
         
     data_url = row[0]
     try:
         header, encoded = data_url.split(",", 1)
         mime_type = header.split(";")[0].split(":")[1]
         binary_data = base64.b64decode(encoded)
+        return binary_data, mime_type
+    except Exception:
+        return None, None
+
+@app.route('/api/music/audio/<int:track_id>/stream', methods=['GET'])
+def stream_music_audio(track_id):
+    binary_data, mime_type = get_track_binary(track_id)
+    if not binary_data:
+        return "Not found", 404
         
+    try:
         total_size = len(binary_data)
         range_header = request.headers.get('Range')
         
@@ -2149,11 +2161,11 @@ def stream_music_audio(track_id):
             # Handle Range request for seeking and progressive playback
             byte_range = range_header.replace('bytes=', '').split('-')
             start = int(byte_range[0])
-            end = int(byte_range[1]) if byte_range[1] else total_size - 1
+            end = int(byte_range[1]) if len(byte_range) > 1 and byte_range[1] else total_size - 1
             end = min(end, total_size - 1)
             chunk_size = end - start + 1
             
-            resp = app.response_class(
+            resp = Response(
                 binary_data[start:end+1],
                 status=206,
                 mimetype=mime_type
@@ -2164,7 +2176,7 @@ def stream_music_audio(track_id):
             resp.headers['Cache-Control'] = 'public, max-age=3600'
             return resp
         else:
-            resp = app.response_class(
+            resp = Response(
                 binary_data,
                 status=200,
                 mimetype=mime_type

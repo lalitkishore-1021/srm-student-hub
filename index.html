@@ -7128,13 +7128,8 @@
         async function preloadNextMusicTrack(index) {
             if (index < 0 || index >= currentPlaylist.length) return;
             const track = currentPlaylist[index];
-            try {
-                const streamUrl = `${BACKEND_URL}/api/music/audio/${track.id}/stream`;
-                const res = await fetch(streamUrl);
-                const blob = await res.blob();
-                const objectUrl = URL.createObjectURL(blob);
-                nextTrackCache = { index: index, audio_data: objectUrl };
-            } catch(e) {}
+            const streamUrl = `${BACKEND_URL}/api/music/audio/${track.id}/stream`;
+            nextTrackCache = { index: index, audio_data: streamUrl };
         }
         
         let bgFadeTimeout = null;
@@ -7414,13 +7409,10 @@
                     // Offline cached data — play from data URL
                     playAudioData(audioData);
                 } else {
-                    // Fetch as binary blob to avoid JSON parsing and multiple Range requests
+                    // Use streaming endpoint for instant playback via progressive download
                     const streamUrl = `${BACKEND_URL}/api/music/audio/${track.id}/stream`;
-                    const res = await fetch(streamUrl);
-                    const blob = await res.blob();
                     if (currentReqId !== playRequestId) return;
-                    const objectUrl = URL.createObjectURL(blob);
-                    playAudioData(objectUrl);
+                    playAudioData(streamUrl);
                 }
             } catch(e) {
                 console.warn("Error loading audio.", e);
