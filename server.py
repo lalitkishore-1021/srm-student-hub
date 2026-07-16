@@ -83,6 +83,11 @@ def init_db():
         except Exception:
             conn.rollback()
         try:
+            cur.execute("ALTER TABLE music_hub ADD COLUMN lyrics TEXT")
+            conn.commit()
+        except Exception:
+            conn.rollback()
+        try:
             cur.execute("ALTER TABLE lost_found RENAME COLUMN item_name TO title")
             conn.commit()
         except Exception:
@@ -153,6 +158,11 @@ def init_db():
             conn.rollback()
         try:
             cur.execute("ALTER TABLE music_hub ADD COLUMN video_data TEXT")
+            conn.commit()
+        except Exception:
+            conn.rollback()
+        try:
+            cur.execute("ALTER TABLE music_hub ADD COLUMN lyrics TEXT")
             conn.commit()
         except Exception:
             conn.rollback()
