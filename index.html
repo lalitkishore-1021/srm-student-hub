@@ -3608,6 +3608,7 @@
             <div style="display: flex; flex-direction: column;">
                 <input id="music-title" class="music-upload-input" placeholder="Song Title *">
                 <input id="music-artist" class="music-upload-input" placeholder="Artist Name *">
+                <textarea id="music-lyrics" class="music-upload-input" placeholder="Lyrics (Optional)" style="min-height: 80px; resize: vertical; padding-top: 12px; font-family: inherit; line-height: 1.4;"></textarea>
                 
                 <label for="music-cover-file" class="music-file-btn">
                     <span class="music-file-icon">🖼️</span>
@@ -7807,6 +7808,7 @@
             const audioFile = document.getElementById('music-audio-file')?.files[0];
             const coverFile = document.getElementById('music-cover-file')?.files[0];
             const videoFile = document.getElementById('music-video-file')?.files[0];
+            const lyrics = document.getElementById('music-lyrics') ? document.getElementById('music-lyrics').value.trim() : '';
             const status = document.getElementById('music-status');
             
             if (!title || !artist || !audioFile) {
@@ -7850,7 +7852,7 @@
                 });
                 status.innerText = "Uploading... This may take a moment.";
                 const payload = {
-                    title: title, artist: artist, audio_data: audioBase64, cover_data: coverData, video_data: videoData,
+                    title: title, artist: artist, audio_data: audioBase64, cover_data: coverData, video_data: videoData, lyrics: lyrics,
                     uploaded_by: 'Student', net_id: getCurrentNetId()
                 };
                 const res = await fetch(`${BACKEND_URL}/api/music/submit`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });

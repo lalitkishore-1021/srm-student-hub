@@ -2167,16 +2167,16 @@ def submit_music():
     try:
         if DATABASE_URL:
             cur.execute("""
-                INSERT INTO music_hub (title, artist, audio_data, cover_data, uploaded_by, net_id, created_at, video_data)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                INSERT INTO music_hub (title, artist, audio_data, cover_data, uploaded_by, net_id, created_at, video_data, lyrics)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
             """, (data.get('title'), data.get('artist'), data.get('audio_data'), data.get('cover_data'),
-                  data.get('uploaded_by'), data.get('net_id'), now_str, data.get('video_data')))
+                  data.get('uploaded_by'), data.get('net_id'), now_str, data.get('video_data'), data.get('lyrics')))
         else:
             cur.execute("""
-                INSERT INTO music_hub (title, artist, audio_data, cover_data, uploaded_by, net_id, created_at, video_data)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO music_hub (title, artist, audio_data, cover_data, uploaded_by, net_id, created_at, video_data, lyrics)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (data.get('title'), data.get('artist'), data.get('audio_data'), data.get('cover_data'),
-                  data.get('uploaded_by'), data.get('net_id'), now_str, data.get('video_data')))
+                  data.get('uploaded_by'), data.get('net_id'), now_str, data.get('video_data'), data.get('lyrics')))
         conn.commit()
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
