@@ -2250,7 +2250,7 @@
         .volume-slider { width: 80px; margin-right: 15px; cursor: pointer; accent-color: #1DB954; }
         
         /* Fullscreen Player */
-        .music-fullscreen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 3000; background: #000; display: none; flex-direction: column; padding: 25px; padding-top: max(25px, env(safe-area-inset-top)); animation: slideUp 0.3s ease forwards; overflow-y: auto; overflow-x: hidden; align-items: center; justify-content: flex-start; }
+        .music-fullscreen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 3000; background: #000; display: none; flex-direction: column; padding: 25px; padding-top: max(25px, env(safe-area-inset-top)); animation: slideUp 0.3s ease forwards; overflow: hidden; align-items: center; justify-content: flex-start; }
         .fs-player-container { display: flex; flex-direction: column; min-height: calc(100vh - 50px); width: 100%; align-items: center; justify-content: center; position: relative; }
         .fs-bg-orbs-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: -2; overflow: hidden; pointer-events: none; }
         .fs-orb { position: absolute; border-radius: 50%; filter: blur(70px); opacity: 0.85; transition: background 1.5s ease-in-out; }
@@ -3735,6 +3735,7 @@
             <!-- Bottom utility buttons -->
             <div class="fs-utility-row">
                 <button class="fs-util-btn" onclick="shareCurrentTrack()" title="Share Track"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z"/></svg></button>
+                <button class="fs-util-btn" onclick="toggleLyrics()" title="Lyrics"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M21.99 4c0-1.1-.89-2-1.99-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h14l4 4-.01-18zM18 14H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/></svg></button>
                 <div style="position:relative; display:inline-block;">
                     <button class="fs-util-btn" onclick="toggleSleepTimerMenu()" title="Sleep Timer"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg></button>
                     <div id="sleep-timer-menu" style="display:none; position:absolute; bottom:40px; left:-50px; background:rgba(20,20,30,0.95); border-radius:12px; border:1px solid rgba(255,255,255,0.1); flex-direction:column; overflow:hidden; z-index:100; backdrop-filter:blur(10px); min-width: 120px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
@@ -3746,11 +3747,11 @@
             </div>
         </div>
         
-        <div id="fs-inline-lyrics-container" style="width: 100%; max-width: 500px; padding: 30px 20px 60px 20px; margin: 0 auto; z-index: 10; position: relative; box-sizing: border-box;">
-            <div style="width: 40px; height: 4px; background: rgba(255,255,255,0.2); border-radius: 2px; margin: 0 auto 25px auto;"></div>
-            <h3 style="color: rgba(255,255,255,0.6); font-size: 0.8rem; font-weight: 600; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 2px;">Lyrics</h3>
-            <div id="fs-inline-lyrics-content" style="width: 100%;">
-                <div style="opacity:0.4; font-size:0.95rem; color:white;">Scroll down to see lyrics...</div>
+        <!-- Spotify-style bottom sheet lyrics -->
+        <div id="fs-lyrics-container" class="fs-lyrics-bottom-sheet">
+            <div class="fs-lyrics-handle" onclick="toggleLyrics()"></div>
+            <div id="fs-lyrics-content" style="padding-bottom: 50px;">
+                Loading lyrics...
             </div>
         </div>
         
@@ -7128,8 +7129,13 @@
         async function preloadNextMusicTrack(index) {
             if (index < 0 || index >= currentPlaylist.length) return;
             const track = currentPlaylist[index];
-            const streamUrl = `${BACKEND_URL}/api/music/audio/${track.id}/stream`;
-            nextTrackCache = { index: index, audio_data: streamUrl };
+            try {
+                const streamUrl = `${BACKEND_URL}/api/music/audio/${track.id}/stream`;
+                const res = await fetch(streamUrl);
+                const blob = await res.blob();
+                const objectUrl = URL.createObjectURL(blob);
+                nextTrackCache = { index: index, audio_data: objectUrl };
+            } catch (e) {}
         }
         
         let bgFadeTimeout = null;
@@ -7173,7 +7179,7 @@
         }
 
         async function loadLyricsForTrack(track) {
-            const lyricsContent = document.getElementById('fs-inline-lyrics-content');
+            const lyricsContent = document.getElementById('fs-lyrics-content');
             if (!lyricsContent) return;
             
             lyricsContent.innerHTML = '<div style="opacity:0.5; font-size:1.1rem; color:white;">Loading lyrics...</div>';
@@ -7397,13 +7403,15 @@
             
             try {
                 let audioData = null;
-                // Check offline cache first
-                try {
-                    const offlineTrack = await getOfflineTrack(track.id);
-                    if (offlineTrack && offlineTrack.audio_data) {
-                        audioData = offlineTrack.audio_data;
-                    }
-                } catch(e) {}
+                // Check offline cache first only if offline, otherwise stream instantly to preserve user gesture token
+                if (!navigator.onLine) {
+                    try {
+                        const offlineTrack = await getOfflineTrack(track.id);
+                        if (offlineTrack && offlineTrack.audio_data) {
+                            audioData = offlineTrack.audio_data;
+                        }
+                    } catch(e) {}
+                }
                 
                 if (audioData) {
                     // Offline cached data — play from data URL
@@ -7635,6 +7643,27 @@
         }
 
 
+
+        async function toggleLyrics() {
+            const sheet = document.getElementById('fs-lyrics-container');
+            const content = document.getElementById('fs-lyrics-content');
+            if (!sheet || !content) return;
+            
+            if (sheet.classList.contains('active')) {
+                sheet.classList.remove('active');
+                return;
+            }
+            
+            sheet.classList.add('active');
+            
+            const track = currentPlaylist[currentTrackIndex];
+            if (!track) {
+                content.innerText = "No track playing.";
+                return;
+            }
+            
+            loadLyricsForTrack(track);
+        }
 
         let sleepTimerTimeout = null;
         function toggleSleepTimerMenu() {
