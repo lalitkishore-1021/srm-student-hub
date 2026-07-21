@@ -1245,133 +1245,112 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
             page.wait_for_timeout(3000)
             master_tables = wait_for_data_tables(["day 1", "day order", "timings", "time"], timeout=15000)
         
-        from_times = []
-        to_times   = []
+        def normalize_time(time_str):
+            match = re.search(r'\d{1,2}:\d{2}', str(time_str))
+            return match.group(0) if match else ""
 
+        from_times = []
+        to_times = []
+
+        # 1. Parse Headers for Dynamic Timings
         for table in master_tables:
             for row in table:
-                data_cells = row[1:]
-                time_count = sum(
-                    1 for c in data_cells
-                    if re.search(r'\d{1,2}:\d{2}', str(c))
-                )
-                if time_count < 3:
-                    continue
-                extracted = [str(c).strip() for c in data_cells]
-                if not from_times:
-                    from_times = extracted
-                elif not to_times:
-                    to_times = extracted
-                    break
+                if not row: continue
+                label = str(row[0]).strip().upper()
+                if label == "FROM" and not from_times:
+                    from_times = [normalize_time(c) for c in row[1:]]
+                elif label == "TO" and not to_times:
+                    to_times = [normalize_time(c) for c in row[1:]]
             if from_times and to_times:
                 break
-                
-        period_times = []
-        if from_times and not to_times:
-            for i, t in enumerate(from_times):
-                if '-' in t:
-                    parts = t.split('-')
-                    period_times.append({
-                        "period": i + 1,
-                        "time_from": parts[0].strip(),
-                        "time_to": parts[-1].strip(),
-                        "time_str": t
-                    })
-                else:
-                    period_times.append({
-                        "period": i + 1,
-                        "time_from": t,
-                        "time_to": "",
-                        "time_str": t
-                    })
-            n_periods = len(period_times)
-        else:
-            n_periods = min(len(from_times), len(to_times)) if (from_times and to_times) else 0
-            period_times = [
-                {
-                    "period":    i + 1,
-                    "time_from": from_times[i],
-                    "time_to":   to_times[i],
-                    "time_str":  f"{from_times[i]} - {to_times[i]}"
-                }
-                for i in range(n_periods)
-            ]
-            
-        print(f"[{reg_no}] period_times ({n_periods}): {period_times[:3]} ...")
-        if n_periods == 0:
-            print(f"[{reg_no}] Warning: period_times is empty! Falling back to standard SRM times.")
-            std_times = ["08:00 - 08:50", "08:50 - 09:40", "09:45 - 10:35", "10:35 - 11:25", "11:30 - 12:20", "12:20 - 13:10", "13:15 - 14:05", "14:05 - 14:55", "15:00 - 15:50", "15:50 - 16:40"]
-            n_periods = len(std_times)
-            period_times = []
-            for i, t in enumerate(std_times):
-                parts = t.split('-')
-                period_times.append({
-                    "period": i + 1,
-                    "time_from": parts[0].strip(),
-                    "time_to": parts[1].strip(),
-                    "time_str": t
-                })
 
+        print(f"[{reg_no}] Parsed FROM times: {from_times}")
+        print(f"[{reg_no}] Parsed TO times: {to_times}")
+
+        # 2. Build Dynamic Slot Dictionary from Unified Timetable
+        unified_slots = {}
         for table in master_tables:
             for row in table:
                 if not row: continue
                 label = str(row[0]).strip()
                 day_match = re.match(r'^Day\s*(\d+)$', label, re.IGNORECASE)
-                if not day_match:
-                    continue
+                if not day_match: continue
+                
                 day_order = day_match.group(1)
+                
+                # cells from index 1 correspond to times from index 0
+                for i, cell in enumerate(row[1:]):
+                    if i >= len(from_times) or i >= len(to_times):
+                        break
+                        
+                    start_time = from_times[i]
+                    end_time = to_times[i]
+                    if not start_time or not end_time: continue
+                    
+                    # A single cell might contain multiple slots separated by newlines or commas
+                    # (But NOT slashes, since C/X is a valid single slot identifier)
+                    raw_cells = [c.strip() for c in re.split(r'[,|\n]', str(cell)) if c.strip()]
+                    
+                    for rc in raw_cells:
+                        if rc not in unified_slots:
+                            unified_slots[rc] = []
+                        unified_slots[rc].append({
+                            "day": day_order,
+                            "start": start_time,
+                            "end": end_time,
+                            "time_str": f"{start_time} - {end_time}",
+                            "period_idx": i + 1
+                        })
+
+        # 3. Generate Student Timetable
+        for sc, matched in slot_map.items():
+            # sc is the individual slot from My Time Table (e.g., 'C/X', 'P47')
+            occurrences = unified_slots.get(sc, [])
+            
+            for occ in occurrences:
+                day_order = occ["day"]
                 if day_order not in final_tt:
                     continue
+                    
+                entry = {
+                    "time":       occ["time_str"],
+                    "subject":    matched["title"],
+                    "code":       matched["code"],
+                    "room":       matched["room"],
+                    "type":       matched["type"],
+                    "faculty":    matched["faculty"],
+                    "slot":       sc,
+                    "period":     occ["period_idx"],
+                    "period_end": occ["period_idx"],
+                    "start_time": occ["start"],
+                    "end_time":   occ["end"]
+                }
+                final_tt[day_order].append(entry)
+                print(f"[{reg_no}] Day {day_order} {occ['time_str']}: {sc} -> {matched['code']}")
 
-                data_cells = row[1:]   # RULE 4: skip label column
-
-                for i, cell in enumerate(data_cells):
-                    if i >= len(period_times):
-                        break
-
-                    pt       = period_times[i]
-                    raw_cell = str(cell).strip()
-                    if not raw_cell:
-                        continue
-
-                    # RULE 2: split on "/", NOT re.findall
-                    possible_codes = [c.strip() for c in raw_cell.split("/") if c.strip()]
-                    matched = None
-                    for pc in possible_codes:
-                        if pc in slot_map:
-                            matched = slot_map[pc]
-                            break
-
-                    if not matched:
-                        continue   # free period or unrecognised L-slot
-
-                    entry = {
-                        "time":       pt["time_str"],
-                        "subject":    matched["title"],
-                        "code":       matched["code"],
-                        "room":       matched["room"],
-                        "type":       matched["type"],
-                        "faculty":    matched["faculty"],
-                        "slot":       raw_cell,
-                        "period":     pt["period"],
-                        "period_end": pt["period"]
-                    }
-
-                    # RULE 8: merge consecutive same-course periods
-                    last = final_tt[day_order][-1] if final_tt[day_order] else None
-                    if (last and
-                            last["code"] == entry["code"] and
-                            last["period_end"] == pt["period"] - 1):
-                        last["time"]       = f"{last['time'].split(' - ')[0]} - {pt['time_to']}"
-                        last["period_end"] = pt["period"]
-                    else:
-                        final_tt[day_order].append(entry)
-
-                    print(f"[{reg_no}] Day {day_order} P{pt['period']} ({pt['time_str']}): {raw_cell} → {matched['code']}")
-
-        # RULE 7: sort by period ascending
+        # 4. Merge Consecutive Practical Slots & Sort
         for day in final_tt:
+            # Sort chronologically by period index (Start Time)
             final_tt[day].sort(key=lambda e: e.get("period", 0))
+            
+            merged_day = []
+            for entry in final_tt[day]:
+                if not merged_day:
+                    merged_day.append(entry)
+                    continue
+                    
+                last = merged_day[-1]
+                # Merge if same course and consecutive periods
+                if (last["code"] == entry["code"] and 
+                    last["period_end"] == entry["period"] - 1):
+                    last["end_time"] = entry["end_time"]
+                    last["time"] = f"{last['start_time']} - {entry['end_time']}"
+                    last["period_end"] = entry["period"]
+                    last["slot"] = f"{last['slot']}-{entry['slot']}"
+                else:
+                    merged_day.append(entry)
+            
+            final_tt[day] = merged_day
 
         print(f"[{reg_no}] Timetable done. Counts per day: " + ", ".join(f"Day {d}: {len(final_tt[d])}" for d in sorted(final_tt)))
 
