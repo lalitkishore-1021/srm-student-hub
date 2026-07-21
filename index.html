@@ -3343,6 +3343,18 @@
                 <h2 class="gallery-title">Time Table</h2>
             </div>
             
+            <!-- TIMETABLE WRONG TIMING WARNING -->
+            <div id="timetable-warning-banner" class="holiday-banner fade-in-up" style="display: flex; align-items: center; justify-content: space-between; background: rgba(255, 0, 0, 0.1); border: 1px solid rgba(255, 0, 0, 0.3); border-radius: 12px; padding: 10px 15px; margin: 0 15px 15px; width: calc(100% - 30px); max-width: 600px; box-sizing: border-box;">
+                <p style="margin: 0; font-size: 0.8rem; color: #ff6b6b; text-align: left; padding-right: 10px;">⚠️ In time table timing are wrong please check official time table and it will fix soon.</p>
+                <div onclick="this.parentElement.style.display='none'" style="cursor: pointer; color: #ff6b6b; font-size: 1.2rem; font-weight: bold; padding: 5px;">&times;</div>
+            </div>
+            <script>
+                setTimeout(function() {
+                    var el = document.getElementById('timetable-warning-banner');
+                    if (el) el.style.display = 'none';
+                }, 5000);
+            </script>
+            
             <!-- HOLIDAY BANNER (TIMETABLE) -->
             <div id="timetable-holiday-banner" class="holiday-banner fade-in-up" style="display: none; align-items: center; justify-content: center; background: linear-gradient(135deg, rgba(255, 170, 0, 0.15), rgba(255, 85, 0, 0.1)); border: 1px solid rgba(255, 170, 0, 0.3); border-radius: 15px; padding: 12px 15px; margin: 0 15px 20px; width: calc(100% - 30px); max-width: 600px; color: var(--text-main); font-family: 'Montserrat', sans-serif; gap: 12px; box-shadow: 0 10px 30px rgba(255,170,0,0.1); box-sizing: border-box;">
                 <div style="font-size: 2rem; filter: drop-shadow(0 0 10px rgba(255,170,0,0.5)); flex-shrink: 0;"></div>
@@ -7327,7 +7339,9 @@
             const isOwner = myNetId && track.net_id && myNetId === (track.net_id || '').toLowerCase();
             const addVideoBtn = document.getElementById('fs-add-video-btn');
             if (addVideoBtn) {
-                addVideoBtn.style.display = isOwner ? 'inline-flex' : 'none';
+                // Allow ANY user to add a video if the track doesn't have one.
+                // If it already has one, only the owner can see the button to edit it.
+                addVideoBtn.style.display = (!track.has_video || isOwner) ? 'inline-flex' : 'none';
             }
             
             if (track.has_video) {

@@ -2083,13 +2083,18 @@ def upload_music_video():
     try:
         # Check ownership
         if DATABASE_URL:
-            cur.execute("SELECT net_id FROM music_hub WHERE id = %s", (track_id,))
+            cur.execute("SELECT net_id, video_data FROM music_hub WHERE id = %s", (track_id,))
         else:
-            cur.execute("SELECT net_id FROM music_hub WHERE id = ?", (track_id,))
+            cur.execute("SELECT net_id, video_data FROM music_hub WHERE id = ?", (track_id,))
             
         row = cur.fetchone()
-        if not row or row[0].lower() != net_id:
-            return jsonify({'success': False, 'error': 'Unauthorized: Only the uploader can add a video'})
+        if not row:
+            return jsonify({'success': False, 'error': 'Track not found'})
+            
+        owner_id = row[0].lower()
+        has_video = bool(row[1])
+        if has_video and owner_id != net_id:
+            return jsonify({'success': False, 'error': 'Unauthorized: This track already has a video. Only the original uploader can change it.'})
             
         # Update video
         if DATABASE_URL:
