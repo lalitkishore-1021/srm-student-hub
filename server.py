@@ -1253,16 +1253,39 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
         to_times = []
 
         # 1. Parse Headers for Dynamic Timings
+        from_times_raw = []
+        to_times_raw = []
+        
         for table in master_tables:
             for row in table:
                 if not row: continue
-                label = str(row[0]).strip().upper()
-                if label == "FROM" and not from_times:
-                    from_times = [normalize_time(c) for c in row[1:]]
-                elif label == "TO" and not to_times:
-                    to_times = [normalize_time(c) for c in row[1:]]
-            if from_times and to_times:
+                data_cells = row[1:]
+                time_count = sum(1 for c in data_cells if re.search(r'\d{1,2}:\d{2}', str(c)))
+                
+                if time_count >= 2:
+                    extracted = [str(c).strip() for c in data_cells]
+                    if not from_times_raw:
+                        from_times_raw = extracted
+                    elif not to_times_raw:
+                        to_times_raw = extracted
+                        break
+            if from_times_raw:
                 break
+                
+        if from_times_raw and not to_times_raw:
+            # Single row format: "08:00 - 08:50"
+            for t in from_times_raw:
+                if '-' in t:
+                    parts = t.split('-')
+                    from_times.append(normalize_time(parts[0]))
+                    to_times.append(normalize_time(parts[-1]))
+                else:
+                    from_times.append(normalize_time(t))
+                    to_times.append("")
+        elif from_times_raw and to_times_raw:
+            # Two rows format (FROM and TO)
+            from_times = [normalize_time(t) for t in from_times_raw]
+            to_times = [normalize_time(t) for t in to_times_raw]
 
         print(f"[{reg_no}] Parsed FROM times: {from_times}")
         print(f"[{reg_no}] Parsed TO times: {to_times}")
