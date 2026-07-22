@@ -1144,238 +1144,216 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
         
         print(f"[{reg_no}] Profile extracted: regNo={profile_data.get('regNo','?')}, dept={profile_data.get('department','?')}, FA={profile_data.get('fa_name','?')}, AA={profile_data.get('aa_name','?')}")
         
-        # --- PARSE STUDENT SLOTS ---
-        for table in slot_tables:
-            if not table: continue
-            headers, header_str, h_idx = get_table_headers(table)
-            
-            if "slot" not in header_str or "code" not in header_str:
-                continue
-                
-            idx_code    = get_col_index(headers, "code")
-            idx_title   = get_col_index(headers, "title", "name", "description", "desc", "subject")
-            idx_credit  = get_col_index(headers, "credit", "max credit", "credits")
-            idx_type    = get_col_index(headers, "course type", "type")
-            idx_faculty = get_col_index(headers, "faculty")
-            idx_slot    = get_col_index(headers, "slot")
-            idx_room    = get_col_index(headers, "room")
-            
-            if -1 in (idx_code, idx_slot):
-                continue
-                
-            for row in table[h_idx + 1:]:
-                if len(row) <= max(idx_code, idx_slot):
-                    continue
-                code     = row[idx_code].strip()
-                slot_raw = row[idx_slot].strip().rstrip("-")
-                room     = row[idx_room].strip() if idx_room != -1 and len(row) > idx_room else "TBA"
-                title    = row[idx_title].strip() if idx_title != -1 and len(row) > idx_title else code
-                ctype    = row[idx_type].strip() if idx_type != -1 and len(row) > idx_type else ""
-                faculty  = row[idx_faculty].strip() if idx_faculty != -1 and len(row) > idx_faculty else ""
-                credit   = 0.0
-                try:
-                    credit = float(row[idx_credit]) if idx_credit != -1 and len(row) > idx_credit else 0.0
-                except (ValueError, IndexError):
-                    pass
-            
-                if not code or not slot_raw:
-                    continue
-                if "/" in code or "." in code or " " in code:
-                    continue   # garbage row
-            
-                # RULE 1: split on "-", NOT re.findall
-                individual_codes = [c.strip() for c in slot_raw.split("-") if c.strip()]
-                for sc in individual_codes:
-                    slot_map[sc] = {
-                        "code": code, "title": title, "room": room,
-                        "type": ctype, "faculty": faculty,
-                        "credit": credit, "slot_raw": slot_raw
-                    }
-                    student_slots[sc] = {"subject": title, "room": room, "code": code}
-
-        print(f"[{reg_no}] slot_map has {len(slot_map)} entries: {list(slot_map.keys())}")
-        print(f"[{reg_no}] student_batch = {student_batch}")
-
-        # --- TIMETABLE STEP 2 (MASTER TIMINGS) ---
-        print(f"[{reg_no}] 7. Mapping to Master (Batch {student_batch})...")
+        # --- GRADEX TIMETABLE SCRAPER ---
+        print(f"[{reg_no}] 6. Navigating to Gradex for Timetable...")
+        
         final_tt = {"1": [], "2": [], "3": [], "4": [], "5": []}
-
-        import datetime as dt_module
-        current_year = dt_module.datetime.now().year
-        joining_year = str(current_year)  # Default to current year
         
-        reg_clean = reg_no.split('@')[0].upper()
-        year_found = False
-        reg_year_match = re.match(r'^[A-Z]{2}(\d{2})', reg_clean)
-        if reg_year_match:
-            y = int(reg_year_match.group(1))
-            full_year = 2000 + y
-            if 2018 <= full_year <= current_year + 1:
-                joining_year = str(full_year)
-                year_found = True
-        
-        if not year_found:
-            reg_year_match2 = re.search(r'(20[12]\d)', reg_clean)
-            if reg_year_match2:
-                full_year = int(reg_year_match2.group(1))
-                if 2018 <= full_year <= current_year + 1:
-                    joining_year = str(full_year)
-                    year_found = True
-        
-        timetable_years = [joining_year, str(current_year), str(current_year - 1), str(current_year - 2)]
-        timetable_years = list(dict.fromkeys(timetable_years))
-        
-        master_urls_pool = [f"https://academia.srmist.edu.in/#Page:Unified_Time_Table_{y}_Batch_{student_batch}" for y in timetable_years]
-        valid_master_urls = [u for u in master_urls_pool if any(u.split('#Page:')[1] in link for link in unique_links)]
-        if not valid_master_urls:
-            valid_master_urls = master_urls_pool
-        
-        master_tables = []
-        for url in valid_master_urls:
-            print(f"[{reg_no}] Trying unified timetable URL: {url}")
-            navigate_to_page(url)
-            master_tables = wait_for_data_tables(["day 1", "day order", "timings", "time"], timeout=8000)
-            if any("day 1" in str(c).lower() for t in master_tables for row in t for c in row):
-                print(f"[{reg_no}] Successfully loaded unified timetable from {url}")
-                break
-        else:
-            print(f"[{reg_no}] Warning: No unified timetable tables found. Reloading primary...")
-            url = f"https://academia.srmist.edu.in/#Page:Unified_Time_Table_{joining_year}_Batch_{student_batch}"
-            navigate_to_page(url)
+        try:
+            # Login to Gradex
+            page.goto("https://gradex.bond/srm-login")
+            
+            # Fill inputs
+            page.wait_for_selector("input", timeout=15000)
+            inputs = page.locator("input").all()
+            if len(inputs) >= 2:
+                inputs[0].fill(reg_no)
+                inputs[1].fill(pwd)
+            else:
+                print(f"[{reg_no}] Error: Gradex login inputs not found!")
+                
+            # Click CONNECT
+            connect_btn = page.locator("button:has-text('CONNECT'), button:has-text('Connect'), button:has-text('Login')").first
+            if connect_btn:
+                connect_btn.click()
+            
+            # Wait for Navigation and go to schedule
             page.wait_for_timeout(3000)
-            master_tables = wait_for_data_tables(["day 1", "day order", "timings", "time"], timeout=15000)
-        
-        def normalize_time(time_str):
-            match = re.search(r'\d{1,2}:\d{2}', str(time_str))
-            return match.group(0) if match else ""
-
-        from_times = []
-        to_times = []
-
-        # 1. Parse Headers for Dynamic Timings
-        from_times_raw = []
-        to_times_raw = []
-        
-        for table in master_tables:
-            for row in table:
-                if not row: continue
-                data_cells = row[1:]
-                time_count = sum(1 for c in data_cells if re.search(r'\d{1,2}:\d{2}', str(c)))
-                
-                if time_count >= 2:
-                    extracted = [str(c).strip() for c in data_cells]
-                    if not from_times_raw:
-                        from_times_raw = extracted
-                    elif not to_times_raw:
-                        to_times_raw = extracted
-                        break
-            if from_times_raw:
-                break
-                
-        if from_times_raw and not to_times_raw:
-            # Single row format: "08:00 - 08:50"
-            for t in from_times_raw:
-                if '-' in t:
-                    parts = t.split('-')
-                    from_times.append(normalize_time(parts[0]))
-                    to_times.append(normalize_time(parts[-1]))
-                else:
-                    from_times.append(normalize_time(t))
-                    to_times.append("")
-        elif from_times_raw and to_times_raw:
-            # Two rows format (FROM and TO)
-            from_times = [normalize_time(t) for t in from_times_raw]
-            to_times = [normalize_time(t) for t in to_times_raw]
-
-        print(f"[{reg_no}] Parsed FROM times: {from_times}")
-        print(f"[{reg_no}] Parsed TO times: {to_times}")
-
-        # 2. Build Dynamic Slot Dictionary from Unified Timetable
-        unified_slots = {}
-        for table in master_tables:
-            for row in table:
-                if not row: continue
-                label = str(row[0]).strip()
-                day_match = re.match(r'^Day\s*(\d+)$', label, re.IGNORECASE)
-                if not day_match: continue
-                
-                day_order = day_match.group(1)
-                
-                # cells from index 1 correspond to times from index 0
-                for i, cell in enumerate(row[1:]):
-                    if i >= len(from_times) or i >= len(to_times):
-                        break
-                        
-                    start_time = from_times[i]
-                    end_time = to_times[i]
-                    if not start_time or not end_time: continue
-                    
-                    # A single cell might contain multiple slots separated by newlines or commas
-                    # (But NOT slashes, since C/X is a valid single slot identifier)
-                    raw_cells = [c.strip() for c in re.split(r'[,|\n]', str(cell)) if c.strip()]
-                    
-                    for rc in raw_cells:
-                        if rc not in unified_slots:
-                            unified_slots[rc] = []
-                        unified_slots[rc].append({
-                            "day": day_order,
-                            "start": start_time,
-                            "end": end_time,
-                            "time_str": f"{start_time} - {end_time}",
-                            "period_idx": i + 1
-                        })
-
-        # 3. Generate Student Timetable
-        for sc, matched in slot_map.items():
-            # sc is the individual slot from My Time Table (e.g., 'C/X', 'P47')
-            occurrences = unified_slots.get(sc, [])
+            page.goto("https://gradex.bond/schedule?theme=dark")
+            page.wait_for_timeout(5000) # Wait for network and rendering
             
-            for occ in occurrences:
-                day_order = occ["day"]
-                if day_order not in final_tt:
-                    continue
-                    
-                entry = {
-                    "time":       occ["time_str"],
-                    "subject":    matched["title"],
-                    "code":       matched["code"],
-                    "room":       matched["room"],
-                    "type":       matched["type"],
-                    "faculty":    matched["faculty"],
-                    "slot":       sc,
-                    "period":     occ["period_idx"],
-                    "period_end": occ["period_idx"],
-                    "start_time": occ["start"],
-                    "end_time":   occ["end"]
+            # Close popups if they exist
+            try:
+                for popup_text in ["A new look for your Schedule", "Join Our Community"]:
+                    if page.locator(f"text={popup_text}").is_visible(timeout=1500):
+                        close_btn = page.locator("button:has-text('Got It'), button:has-text('X'), button:has-text('Maybe later'), .close-button").first
+                        if close_btn.is_visible():
+                            close_btn.click()
+                            page.wait_for_timeout(1000)
+            except: pass
+            
+            # We wait for the schedule headers to load
+            page.wait_for_selector("text=Slot 1", timeout=15000)
+            
+            script = """
+            () => {
+                const results = {"1": [], "2": [], "3": [], "4": [], "5": []};
+                
+                function extractTime(text) {
+                    const matches = text.match(/(\\d{1,2}:\\d{2}\\s*(?:AM|PM)?)/ig);
+                    if (matches && matches.length >= 2) {
+                        return {
+                            start: matches[0].trim(),
+                            end: matches[1].trim()
+                        };
+                    }
+                    return null;
                 }
-                final_tt[day_order].append(entry)
-                print(f"[{reg_no}] Day {day_order} {occ['time_str']}: {sc} -> {matched['code']}")
-
-        # 4. Merge Consecutive Practical Slots & Sort
-        for day in final_tt:
-            # Sort chronologically by period index (Start Time)
-            final_tt[day].sort(key=lambda e: e.get("period", 0))
-            
-            merged_day = []
-            for entry in final_tt[day]:
-                if not merged_day:
-                    merged_day.append(entry)
-                    continue
+                
+                // Try Table Format
+                const table = document.querySelector('table');
+                if (table) {
+                    const rows = table.querySelectorAll('tr');
+                    if (rows.length < 2) return {error: "Table found but too few rows"};
                     
-                last = merged_day[-1]
-                # Merge if same course and consecutive periods
-                if (last["code"] == entry["code"] and 
-                    last["period_end"] == entry["period"] - 1):
-                    last["end_time"] = entry["end_time"]
-                    last["time"] = f"{last['start_time']} - {entry['end_time']}"
-                    last["period_end"] = entry["period"]
-                    last["slot"] = f"{last['slot']}-{entry['slot']}"
-                else:
-                    merged_day.append(entry)
+                    const headerCells = rows[0].querySelectorAll('th, td');
+                    const slotTimings = [];
+                    for (let i = 1; i < headerCells.length; i++) {
+                        const timing = extractTime(headerCells[i].innerText);
+                        slotTimings.push(timing ? { period: i, ...timing } : null);
+                    }
+                    
+                    for (let r = 1; r < rows.length; r++) {
+                        const cells = rows[r].querySelectorAll('th, td');
+                        if (cells.length === 0) continue;
+                        
+                        const dayMatch = cells[0].innerText.match(/Day\\s*(\\d)/i);
+                        if (!dayMatch) continue;
+                        const dayOrder = dayMatch[1];
+                        
+                        let colIdx = 1;
+                        for (let c = 1; c < cells.length; c++) {
+                            const cell = cells[c];
+                            const colspan = parseInt(cell.getAttribute('colspan') || '1');
+                            const text = cell.innerText.trim();
+                            
+                            if (text.length > 2 && colIdx - 1 < slotTimings.length) {
+                                const t = slotTimings[colIdx - 1];
+                                if (t) {
+                                    const lines = text.split('\\n').map(l => l.trim()).filter(l => l.length > 0);
+                                    let subject = lines[0];
+                                    let room = lines.length > 1 ? lines[lines.length - 1] : "N/A";
+                                    
+                                    results[dayOrder].push({
+                                        time: `${t.start} - ${t.end}`,
+                                        subject: subject,
+                                        code: subject,
+                                        room: room,
+                                        type: "",
+                                        faculty: "",
+                                        slot: `Slot ${t.period}`,
+                                        period: t.period,
+                                        period_end: t.period + colspan - 1,
+                                        start_time: t.start,
+                                        end_time: t.end
+                                    });
+                                }
+                            }
+                            colIdx += colspan;
+                        }
+                    }
+                    return results;
+                }
+                
+                // Fallback Div-Grid Bounding Box Format
+                const slots = Array.from(document.querySelectorAll('*')).filter(el => 
+                    el.innerText && el.innerText.trim().match(/^Slot\\s*\\d+/) && el.children.length === 0);
+                
+                if (slots.length === 0) return {error: "No table and no Slot headers found."};
+                
+                const cols = [];
+                for (let el of slots) {
+                    const rect = el.getBoundingClientRect();
+                    const parentText = el.parentElement ? el.parentElement.innerText : el.innerText;
+                    const timing = extractTime(parentText);
+                    const slotMatch = el.innerText.match(/Slot\\s*(\\d+)/i);
+                    if (timing && slotMatch) {
+                        cols.push({
+                            x: rect.x,
+                            width: rect.width,
+                            period: parseInt(slotMatch[1]),
+                            start: timing.start,
+                            end: timing.end
+                        });
+                    }
+                }
+                cols.sort((a,b) => a.x - b.x);
+                
+                const days = Array.from(document.querySelectorAll('*')).filter(el => 
+                    el.innerText && el.innerText.trim().match(/^Day\\s*\\d+$/i) && el.children.length === 0);
+                
+                const rowDefs = [];
+                for (let el of days) {
+                    const rect = el.getBoundingClientRect();
+                    const match = el.innerText.match(/^Day\\s*(\\d+)/i);
+                    if (match) {
+                        rowDefs.push({
+                            y: rect.y,
+                            height: rect.height,
+                            dayOrder: match[1]
+                        });
+                    }
+                }
+                rowDefs.sort((a,b) => a.y - b.y);
+                
+                const allElements = document.querySelectorAll('*');
+                for (let el of allElements) {
+                    const text = el.innerText;
+                    if (!text || text.trim().length < 3) continue;
+                    if (text.match(/^Slot/i) || text.match(/^Day/i)) continue;
+                    if (el.children.length > 3) continue; 
+                    
+                    const lines = text.split('\\n').map(l => l.trim()).filter(l => l.length > 0);
+                    if (lines.length < 2) continue; 
+                    
+                    const rect = el.getBoundingClientRect();
+                    if (rect.width < 50 || rect.height < 30) continue; 
+                    
+                    const row = rowDefs.find(r => rect.y >= r.y - 20 && rect.y <= r.y + r.height + 20);
+                    if (!row) continue;
+                    
+                    const startCol = cols.find(c => Math.abs(rect.x - c.x) < 30);
+                    if (!startCol) continue;
+                    
+                    let spanCount = Math.round(rect.width / cols[0].width);
+                    if (spanCount < 1) spanCount = 1;
+                    
+                    let subject = lines[0];
+                    let room = lines[lines.length - 1];
+                    
+                    results[row.dayOrder].push({
+                        time: `${startCol.start} - ${startCol.end}`,
+                        subject: subject,
+                        code: subject,
+                        room: room,
+                        type: "",
+                        faculty: "",
+                        slot: `Slot ${startCol.period}`,
+                        period: startCol.period,
+                        period_end: startCol.period + spanCount - 1,
+                        start_time: startCol.start,
+                        end_time: startCol.end
+                    });
+                }
+                return results;
+            }
+            """
             
-            final_tt[day] = merged_day
+            gradex_tt = page.evaluate(script)
+            
+            if "error" in gradex_tt:
+                print(f"[{reg_no}] Gradex TT Parse Error: {gradex_tt['error']}")
+            else:
+                final_tt = gradex_tt
+                print(f"[{reg_no}] Gradex TT Parsing Successful.")
+                
+        except Exception as e:
+            print(f"[{reg_no}] Error during Gradex scraping: {str(e)}")
 
-        print(f"[{reg_no}] Timetable done. Counts per day: " + ", ".join(f"Day {d}: {len(final_tt[d])}" for d in sorted(final_tt)))
+        for day in final_tt:
+            final_tt[day].sort(key=lambda e: e.get("period", 0))
+
+        print(f"[{reg_no}] Timetable done. Counts per day: " + ", ".join(f"Day {d}: {len(final_tt.get(str(d), []))}" for d in range(1,6)))
 
         # Debug Logging for Empty Parsing
         if not parsed_att and not parsed_marks and not student_slots:
@@ -1412,11 +1390,6 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
             t = m.get("courseTitle", "")
             if c and t and t != c and len(t) > len(best_titles.get(c, "")): best_titles[c] = t
             
-        for s_data in student_slots.values():
-            c = s_data.get("code")
-            t = s_data.get("subject", "")
-            if c and t and t != c and len(t) > len(best_titles.get(c, "")): best_titles[c] = t
-
         # Apply the best titles back to the data
         for m in parsed_marks:
             c = m.get("courseCode")
@@ -1429,17 +1402,28 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
                 a["courseTitle"] = f"{c} - {best_titles[c]}"
                 
         # --- BUNK CALCULATION: CLASSES PER CYCLE ---
+        import re
+        def normalize_str(s):
+            return re.sub(r'[^a-z0-9]', '', str(s).lower())
+
         for sub in parsed_att:
-            course_code = sub["courseTitle"].split(" - ")[0].strip()
+            # courseTitle from attendance might be "21CSC202J - Operating Systems"
+            att_parts = sub.get("courseTitle", "").split(" - ", 1)
+            att_subj = att_parts[-1].strip() # "Operating Systems"
+            
+            norm_att_subj = normalize_str(att_subj)
+            
             count = 0
             for day_key in ["1", "2", "3", "4", "5"]:
                 for entry in final_tt.get(day_key, []):
-                    tt_code = entry["subject"].split(" - ")[0].strip()
-                    if tt_code == course_code:
+                    tt_subj = entry.get("subject", "")
+                    # Direct match or normalized match
+                    if normalize_str(tt_subj) == norm_att_subj or (len(norm_att_subj) > 5 and norm_att_subj in normalize_str(tt_subj)):
                         count += 1
+                        
             # FALLBACK (RULE 2): If not in timetable, assume 1 to avoid division by zero
             sub["classes_per_cycle"] = count if count > 0 else 1
-            print(f"[{reg_no}] {course_code}: {sub['classes_per_cycle']} classes/cycle in final_tt")
+            print(f"[{reg_no}] {att_subj}: {sub['classes_per_cycle']} classes/cycle in final_tt")
                 
         out_queue.put({
             'success': True, 
