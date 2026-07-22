@@ -1402,7 +1402,6 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
                 a["courseTitle"] = f"{c} - {best_titles[c]}"
                 
         # --- BUNK CALCULATION: CLASSES PER CYCLE ---
-        import re
         def normalize_str(s):
             return re.sub(r'[^a-z0-9]', '', str(s).lower())
 
