@@ -1182,173 +1182,175 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
                             page.wait_for_timeout(1000)
             except: pass
             
-            # We wait for the schedule headers to load
-            page.wait_for_selector("text=Slot 1", timeout=15000)
+            # We wait for the schedule table to load
+            page.wait_for_selector("table", timeout=15000)
+            page.wait_for_timeout(2000)  # Extra time for table to fully render
+            
+            # First, dump the raw table HTML for debugging
+            try:
+                raw_html = page.evaluate("() => { const t = document.querySelector('table'); return t ? t.outerHTML.substring(0, 3000) : 'NO TABLE'; }")
+                print(f"[{reg_no}] Gradex table preview: {raw_html[:500]}")
+            except: pass
             
             script = """
             () => {
                 const results = {"1": [], "2": [], "3": [], "4": [], "5": []};
+                const debug = [];
                 
-                function extractTime(text) {
-                    const matches = text.match(/(\\d{1,2}:\\d{2}\\s*(?:AM|PM)?)/ig);
-                    if (matches && matches.length >= 2) {
-                        return {
-                            start: matches[0].trim(),
-                            end: matches[1].trim()
-                        };
-                    }
-                    return null;
-                }
-                
-                // Try Table Format
                 const table = document.querySelector('table');
-                if (table) {
-                    const rows = table.querySelectorAll('tr');
-                    if (rows.length < 2) return {error: "Table found but too few rows"};
-                    
-                    const headerCells = rows[0].querySelectorAll('th, td');
-                    const slotTimings = [];
-                    for (let i = 1; i < headerCells.length; i++) {
-                        const timing = extractTime(headerCells[i].innerText);
-                        slotTimings.push(timing ? { period: i, ...timing } : null);
+                if (!table) return {error: "No table found on Gradex schedule page"};
+                
+                const allRows = table.querySelectorAll('tr');
+                if (allRows.length < 2) return {error: "Table has fewer than 2 rows"};
+                
+                // Step 1: Find the header row (the one containing "Slot 1", "Slot 2", etc.)
+                let headerRow = null;
+                let headerRowIdx = -1;
+                for (let i = 0; i < Math.min(allRows.length, 5); i++) {
+                    const text = allRows[i].innerText;
+                    if (text.includes('Slot 1') || text.includes('Slot 2')) {
+                        headerRow = allRows[i];
+                        headerRowIdx = i;
+                        break;
                     }
+                }
+                if (!headerRow) return {error: "Could not find header row with Slot columns"};
+                
+                debug.push("Found header row at index " + headerRowIdx);
+                
+                // Step 2: Extract slot timings from header cells
+                const headerCells = headerRow.querySelectorAll('th, td');
+                const slotTimings = []; // index 0 = first slot column
+                
+                for (let i = 0; i < headerCells.length; i++) {
+                    const cellText = headerCells[i].innerText.trim();
                     
-                    for (let r = 1; r < rows.length; r++) {
-                        const cells = rows[r].querySelectorAll('th, td');
-                        if (cells.length === 0) continue;
+                    // Skip the "Time" / "Day" label column
+                    if (cellText.toLowerCase() === 'time' || cellText.toLowerCase() === 'day') continue;
+                    
+                    // Extract times like "8:00 AM - 8:50 AM" or "8:00AM-8:50AM"
+                    const timeMatches = cellText.match(/(\\d{1,2}:\\d{2}\\s*(?:AM|PM)?)/ig);
+                    const slotMatch = cellText.match(/Slot\\s*(\\d+)/i);
+                    
+                    if (timeMatches && timeMatches.length >= 2) {
+                        slotTimings.push({
+                            slotNum: slotMatch ? parseInt(slotMatch[1]) : slotTimings.length + 1,
+                            start: timeMatches[0].trim(),
+                            end: timeMatches[1].trim()
+                        });
+                    } else {
+                        slotTimings.push(null); // Empty/unparseable column
+                    }
+                }
+                
+                debug.push("Parsed " + slotTimings.filter(s => s).length + " slot timings out of " + slotTimings.length + " columns");
+                debug.push("Slots: " + JSON.stringify(slotTimings.filter(s => s).map(s => s.start + "-" + s.end)));
+                
+                // Step 3: Parse each Day row
+                for (let r = headerRowIdx + 1; r < allRows.length; r++) {
+                    const row = allRows[r];
+                    const cells = row.querySelectorAll('th, td');
+                    if (cells.length === 0) continue;
+                    
+                    // Find the day number from the first cell
+                    const firstCellText = cells[0].innerText.trim();
+                    const dayMatch = firstCellText.match(/Day\\s*(\\d)/i);
+                    if (!dayMatch) continue;
+                    const dayOrder = dayMatch[1];
+                    if (!results[dayOrder]) continue;
+                    
+                    // Walk through the remaining cells, tracking column position via colspan
+                    let colPos = 0; // 0-indexed into slotTimings
+                    for (let c = 1; c < cells.length; c++) {
+                        const cell = cells[c];
+                        const colspan = parseInt(cell.getAttribute('colspan') || '1');
+                        const text = cell.innerText.trim();
                         
-                        const dayMatch = cells[0].innerText.match(/Day\\s*(\\d)/i);
-                        if (!dayMatch) continue;
-                        const dayOrder = dayMatch[1];
-                        
-                        let colIdx = 1;
-                        for (let c = 1; c < cells.length; c++) {
-                            const cell = cells[c];
-                            const colspan = parseInt(cell.getAttribute('colspan') || '1');
-                            const text = cell.innerText.trim();
+                        // Only process non-empty cells that look like actual class entries
+                        if (text.length > 2 && colPos < slotTimings.length) {
+                            const startSlot = slotTimings[colPos];
+                            // For multi-slot (lab), find the last slot's end time
+                            let endSlotIdx = Math.min(colPos + colspan - 1, slotTimings.length - 1);
+                            let endSlot = slotTimings[endSlotIdx];
                             
-                            if (text.length > 2 && colIdx - 1 < slotTimings.length) {
-                                const t = slotTimings[colIdx - 1];
-                                if (t) {
-                                    const lines = text.split('\\n').map(l => l.trim()).filter(l => l.length > 0);
-                                    let subject = lines[0];
-                                    let room = lines.length > 1 ? lines[lines.length - 1] : "N/A";
-                                    
-                                    results[dayOrder].push({
-                                        time: `${t.start} - ${t.end}`,
-                                        subject: subject,
-                                        code: subject,
-                                        room: room,
-                                        type: "",
-                                        faculty: "",
-                                        slot: `Slot ${t.period}`,
-                                        period: t.period,
-                                        period_end: t.period + colspan - 1,
-                                        start_time: t.start,
-                                        end_time: t.end
-                                    });
-                                }
+                            // Walk backwards if endSlot is null
+                            while (!endSlot && endSlotIdx > colPos) {
+                                endSlotIdx--;
+                                endSlot = slotTimings[endSlotIdx];
                             }
-                            colIdx += colspan;
+                            
+                            if (startSlot) {
+                                const endTime = (endSlot && colspan > 1) ? endSlot.end : startSlot.end;
+                                
+                                // Split text into lines to get subject and room
+                                const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+                                let subject = lines[0] || text;
+                                let room = "N/A";
+                                
+                                // Room is typically the last line, often like "TP 606" or "UB 801"
+                                if (lines.length > 1) {
+                                    room = lines[lines.length - 1];
+                                }
+                                
+                                // Clean up subject - remove room from subject if it's repeated
+                                if (subject === room && lines.length > 1) {
+                                    subject = lines[0];
+                                }
+                                
+                                results[dayOrder].push({
+                                    time: startSlot.start + " - " + endTime,
+                                    subject: subject,
+                                    code: subject,
+                                    room: room,
+                                    type: colspan > 1 ? "LAB" : "",
+                                    faculty: "",
+                                    slot: "Slot " + startSlot.slotNum,
+                                    period: startSlot.slotNum,
+                                    period_end: (endSlot || startSlot).slotNum,
+                                    start_time: startSlot.start,
+                                    end_time: endTime
+                                });
+                            }
                         }
-                    }
-                    return results;
-                }
-                
-                // Fallback Div-Grid Bounding Box Format
-                const slots = Array.from(document.querySelectorAll('*')).filter(el => 
-                    el.innerText && el.innerText.trim().match(/^Slot\\s*\\d+/) && el.children.length === 0);
-                
-                if (slots.length === 0) return {error: "No table and no Slot headers found."};
-                
-                const cols = [];
-                for (let el of slots) {
-                    const rect = el.getBoundingClientRect();
-                    const parentText = el.parentElement ? el.parentElement.innerText : el.innerText;
-                    const timing = extractTime(parentText);
-                    const slotMatch = el.innerText.match(/Slot\\s*(\\d+)/i);
-                    if (timing && slotMatch) {
-                        cols.push({
-                            x: rect.x,
-                            width: rect.width,
-                            period: parseInt(slotMatch[1]),
-                            start: timing.start,
-                            end: timing.end
-                        });
+                        
+                        colPos += colspan;
                     }
                 }
-                cols.sort((a,b) => a.x - b.x);
                 
-                const days = Array.from(document.querySelectorAll('*')).filter(el => 
-                    el.innerText && el.innerText.trim().match(/^Day\\s*\\d+$/i) && el.children.length === 0);
+                // Add debug info
+                results._debug = debug;
+                let totalClasses = 0;
+                for (let d = 1; d <= 5; d++) totalClasses += (results[String(d)] || []).length;
+                results._totalClasses = totalClasses;
                 
-                const rowDefs = [];
-                for (let el of days) {
-                    const rect = el.getBoundingClientRect();
-                    const match = el.innerText.match(/^Day\\s*(\\d+)/i);
-                    if (match) {
-                        rowDefs.push({
-                            y: rect.y,
-                            height: rect.height,
-                            dayOrder: match[1]
-                        });
-                    }
-                }
-                rowDefs.sort((a,b) => a.y - b.y);
-                
-                const allElements = document.querySelectorAll('*');
-                for (let el of allElements) {
-                    const text = el.innerText;
-                    if (!text || text.trim().length < 3) continue;
-                    if (text.match(/^Slot/i) || text.match(/^Day/i)) continue;
-                    if (el.children.length > 3) continue; 
-                    
-                    const lines = text.split('\\n').map(l => l.trim()).filter(l => l.length > 0);
-                    if (lines.length < 2) continue; 
-                    
-                    const rect = el.getBoundingClientRect();
-                    if (rect.width < 50 || rect.height < 30) continue; 
-                    
-                    const row = rowDefs.find(r => rect.y >= r.y - 20 && rect.y <= r.y + r.height + 20);
-                    if (!row) continue;
-                    
-                    const startCol = cols.find(c => Math.abs(rect.x - c.x) < 30);
-                    if (!startCol) continue;
-                    
-                    let spanCount = Math.round(rect.width / cols[0].width);
-                    if (spanCount < 1) spanCount = 1;
-                    
-                    let subject = lines[0];
-                    let room = lines[lines.length - 1];
-                    
-                    results[row.dayOrder].push({
-                        time: `${startCol.start} - ${startCol.end}`,
-                        subject: subject,
-                        code: subject,
-                        room: room,
-                        type: "",
-                        faculty: "",
-                        slot: `Slot ${startCol.period}`,
-                        period: startCol.period,
-                        period_end: startCol.period + spanCount - 1,
-                        start_time: startCol.start,
-                        end_time: startCol.end
-                    });
-                }
                 return results;
             }
             """
             
             gradex_tt = page.evaluate(script)
             
+            # Log debug info
+            if "_debug" in gradex_tt:
+                for dbg in gradex_tt["_debug"]:
+                    print(f"[{reg_no}] Gradex DEBUG: {dbg}")
+                del gradex_tt["_debug"]
+            if "_totalClasses" in gradex_tt:
+                print(f"[{reg_no}] Gradex total classes found: {gradex_tt['_totalClasses']}")
+                del gradex_tt["_totalClasses"]
+            
             if "error" in gradex_tt:
                 print(f"[{reg_no}] Gradex TT Parse Error: {gradex_tt['error']}")
             else:
                 final_tt = gradex_tt
+                for d in ["1","2","3","4","5"]:
+                    if d in final_tt:
+                        print(f"[{reg_no}] Day {d}: {len(final_tt[d])} classes -> {[e.get('subject','?')[:30] for e in final_tt[d]]}")
                 print(f"[{reg_no}] Gradex TT Parsing Successful.")
                 
         except Exception as e:
+            import traceback
             print(f"[{reg_no}] Error during Gradex scraping: {str(e)}")
+            traceback.print_exc()
 
         for day in final_tt:
             final_tt[day].sort(key=lambda e: e.get("period", 0))
@@ -1356,22 +1358,11 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
         print(f"[{reg_no}] Timetable done. Counts per day: " + ", ".join(f"Day {d}: {len(final_tt.get(str(d), []))}" for d in range(1,6)))
 
         # Debug Logging for Empty Parsing
-        if not parsed_att and not parsed_marks and not student_slots:
+        if not parsed_att and not parsed_marks:
             try:
                 with open("debug_tables.txt", "w", encoding="utf-8") as f:
-                    f.write("RAW TABLES:\n" + str(raw_tables) + "\n\nSLOT TABLES:\n" + str(slot_tables) + "\n\nMASTER TABLES:\n" + str(master_tables))
+                    f.write("RAW TABLES:\n" + str(raw_tables) + "\n\nFINAL_TT:\n" + str(final_tt))
                 print(f"[{reg_no}] Empty arrays detected. Saved to debug_tables.txt")
-                print(f"[{reg_no}] DIAGNOSTIC: Current URL: {page.url} | Title: {page.title()}")
-                page_text = page.evaluate("document.body.innerText")
-                clean_text = ' | '.join([line.strip() for line in page_text.split('\n') if line.strip()][:30])
-                print(f"[{reg_no}] DIAGNOSTIC PAGE TEXT: {clean_text}")
-                for i, f in enumerate(page.frames):
-                    try:
-                        f_text = f.evaluate("document.body.innerText")
-                        f_clean = ' | '.join([line.strip() for line in f_text.split('\n') if line.strip()][:15])
-                        if f_clean:
-                            print(f"[{reg_no}] DIAGNOSTIC FRAME {i} TEXT: {f_clean}")
-                    except: pass
             except Exception as e:
                 print(f"Failed to write debug file or logs: {str(e)}")
 
