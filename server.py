@@ -1145,81 +1145,124 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
         print(f"[{reg_no}] Profile extracted: regNo={profile_data.get('regNo','?')}, dept={profile_data.get('department','?')}, FA={profile_data.get('fa_name','?')}, AA={profile_data.get('aa_name','?')}")
         
         # --- STUDIQUE TIMETABLE SCRAPER ---
-        print(f"[{reg_no}] 6. Navigating to Studique for Timetable...")
+        print(f"[{reg_no}] 7. Navigating to Studique for Timetable...")
         
         final_tt = {"1": [], "2": [], "3": [], "4": [], "5": []}
         
         try:
-            # Login to Studique
-            page.goto("https://studique.in/auth/login")
+            # Step 1: Login to Studique
+            page.goto("https://studique.in/auth/login", wait_until="networkidle")
+            page.wait_for_timeout(3000)  # Wait for Next.js hydration
             
-            # Fill inputs
-            page.wait_for_selector("input", timeout=15000)
-            inputs = page.locator("input").all()
-            if len(inputs) >= 2:
-                inputs[0].fill(reg_no)
-                inputs[1].fill(pwd)
-            else:
-                print(f"[{reg_no}] Error: Studique login inputs not found!")
-                
-            # Click Sign In Securely
-            connect_btn = page.locator("button:has-text('Sign In Securely'), button:has-text('Login'), button:has-text('Sign In')").first
-            if connect_btn:
-                connect_btn.click()
-                
-            # Wait for schedule page
+            # Wait for the actual login form to render (not skeleton)
             try:
-                page.wait_for_url("**/schedule**", timeout=25000)
-                page.wait_for_timeout(3000) # Extra rendering time
+                page.wait_for_selector("input[type='text'], input[placeholder*='Net'], input[placeholder*='net'], input[placeholder*='ID']", timeout=15000)
             except:
-                print(f"[{reg_no}] URL didn't change to /schedule. Current URL: {page.url}")
-                page.goto("https://studique.in/schedule")
-                page.wait_for_timeout(4000)
+                print(f"[{reg_no}] Studique: Could not find NetID input. Trying generic input...")
             
-            script = r"""
+            page.wait_for_timeout(1000)
+            
+            # Fill credentials - look for visible inputs
+            all_inputs = page.locator("input:visible").all()
+            print(f"[{reg_no}] Studique: Found {len(all_inputs)} visible inputs")
+            
+            if len(all_inputs) >= 2:
+                all_inputs[0].fill(reg_no)
+                all_inputs[1].fill(pwd)
+                print(f"[{reg_no}] Studique: Filled credentials")
+            elif len(all_inputs) == 1:
+                # Maybe password is type=password
+                all_inputs[0].fill(reg_no)
+                pwd_input = page.locator("input[type='password']:visible").first
+                if pwd_input:
+                    pwd_input.fill(pwd)
+                print(f"[{reg_no}] Studique: Filled credentials (alt method)")
+            else:
+                print(f"[{reg_no}] Studique ERROR: No visible inputs found!")
+                # Log what's on the page
+                page_text = page.evaluate("() => document.body.innerText.substring(0, 500)")
+                print(f"[{reg_no}] Studique page text: {page_text}")
+                
+            # Click Sign In
+            page.wait_for_timeout(500)
+            sign_in_btn = page.locator("button:visible").filter(has_text="Sign In").first
+            if sign_in_btn.is_visible():
+                sign_in_btn.click()
+                print(f"[{reg_no}] Studique: Clicked Sign In button")
+            else:
+                # Fallback: click any visible button
+                buttons = page.locator("button:visible").all()
+                print(f"[{reg_no}] Studique: Sign In not found, {len(buttons)} visible buttons")
+                for b in buttons:
+                    txt = b.inner_text().strip()
+                    print(f"[{reg_no}]   Button: '{txt}'")
+                    if 'sign' in txt.lower() or 'login' in txt.lower() or 'connect' in txt.lower():
+                        b.click()
+                        print(f"[{reg_no}] Studique: Clicked '{txt}'")
+                        break
+            
+            # Step 2: Wait for login to complete, then navigate to schedule
+            page.wait_for_timeout(5000)  # Give login time to process
+            current_url = page.url
+            print(f"[{reg_no}] Studique: After login, URL = {current_url}")
+            
+            # Navigate directly to schedule page
+            page.goto("https://studique.in/schedule", wait_until="networkidle")
+            page.wait_for_timeout(3000)
+            
+            # Check if we're on the schedule page
+            current_url = page.url
+            print(f"[{reg_no}] Studique: Schedule page URL = {current_url}")
+            
+            # Wait for "Daily Schedule" text to appear
+            try:
+                page.wait_for_selector("text=Daily Schedule", timeout=10000)
+                print(f"[{reg_no}] Studique: 'Daily Schedule' found on page!")
+            except:
+                print(f"[{reg_no}] Studique: 'Daily Schedule' NOT found. Dumping page content...")
+                page_text = page.evaluate("() => document.body.innerText.substring(0, 1000)")
+                print(f"[{reg_no}] Studique page text: {page_text[:500]}")
+            
+            page.wait_for_timeout(2000)  # Extra render time
+            
+            # Step 3: Parse schedule for each day
+            # The extraction script reads all class cards on the currently visible day
+            parse_script = r"""
             () => {
-                const result = {day: null, classes: []};
+                const result = {day: null, classes: [], debug: []};
                 
-                const all = Array.from(document.querySelectorAll('*'));
-                let dailyHeader = all.find(el => el.children.length === 0 && el.textContent.trim() === 'Daily Schedule');
-                let dayTextEl = null;
+                // Get ALL text content on the page
+                const bodyText = document.body.innerText;
+                result.debug.push("Page length: " + bodyText.length);
+                result.debug.push("First 200 chars: " + bodyText.substring(0, 200).replace(/\n/g, ' | '));
                 
-                if (dailyHeader) {
-                    let container = dailyHeader.parentElement;
-                    while (container && !dayTextEl) {
-                        const texts = Array.from(container.querySelectorAll('*')).filter(el => el.children.length === 0);
-                        dayTextEl = texts.find(el => el.textContent.trim().match(/^Day\s*[1-5]$/i));
-                        container = container.parentElement;
-                    }
+                // Find "Day X" text
+                const dayMatch = bodyText.match(/Day\s+(\d)/);
+                if (dayMatch) {
+                    result.day = dayMatch[1];
+                    result.debug.push("Found day: " + dayMatch[1]);
+                } else {
+                    result.debug.push("No 'Day X' found in page text");
+                    return result;
                 }
                 
-                if (!dayTextEl) {
-                    dayTextEl = all.find(el => el.children.length === 0 && el.textContent.trim().match(/^Day\s*[1-5]$/i));
-                }
+                // Find all elements containing time patterns like "08:00 AM - 08:50 AM"
+                const allEls = document.querySelectorAll('*');
+                const timeRegex = /\d{1,2}:\d{2}\s*(?:AM|PM)\s*-\s*\d{1,2}:\d{2}\s*(?:AM|PM)/i;
                 
-                if (dayTextEl) {
-                    const match = dayTextEl.textContent.trim().match(/Day\s*([1-5])/i);
-                    if (match) result.day = match[1];
-                }
+                const processedCards = new Set();
                 
-                const timeElements = all.filter(el => el.children.length === 0 && el.textContent.match(/\d{1,2}:\d{2}\s*(?:AM|PM)?\s*-\s*\d{1,2}:\d{2}\s*(?:AM|PM)?/i));
-                
-                const seenTimes = new Set();
-                
-                for (let tEl of timeElements) {
-                    let card = tEl.parentElement;
-                    let levels = 0;
-                    while (card && levels < 5) {
-                        if (card.className && (typeof card.className === 'string') && 
-                           (card.className.includes('border') || card.className.includes('rounded') || card.className.includes('card') || card.className.includes('bg-'))) {
-                            break;
-                        }
-                        card = card.parentElement;
-                        levels++;
-                    }
-                    if (!card) card = tEl.parentElement.parentElement;
+                for (const el of allEls) {
+                    // Only look at leaf-ish elements or small containers
+                    const text = el.innerText || '';
+                    if (!timeRegex.test(text)) continue;
+                    if (text.length > 500) continue; // Skip large containers
                     
-                    const text = card.innerText;
+                    // Avoid duplicates
+                    const cardKey = text.trim().substring(0, 100);
+                    if (processedCards.has(cardKey)) continue;
+                    processedCards.add(cardKey);
+                    
                     const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
                     
                     let time = "";
@@ -1227,15 +1270,19 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
                     let subject = "";
                     let room = "N/A";
                     
-                    for (let l of lines) {
-                        if (l.match(/\d{1,2}:\d{2}/)) time = l;
-                        else if (l.match(/^[A-Z0-9]{6,12}$/) && !l.includes(' ')) code = l;
-                        else if (l.toLowerCase().includes('room:')) room = l.replace(/room:/i, '').trim();
-                        else if (l.length > 3 && !subject && !l.match(/\d{1,2}:\d{2}/) && !l.toLowerCase().includes('room:')) subject = l;
+                    for (const line of lines) {
+                        if (timeRegex.test(line)) {
+                            time = line;
+                        } else if (/^[A-Z0-9]{5,15}$/.test(line) && !line.includes(' ')) {
+                            code = line;
+                        } else if (/room/i.test(line)) {
+                            room = line.replace(/^room\s*:\s*/i, '').trim();
+                        } else if (line.length > 3 && !subject) {
+                            subject = line;
+                        }
                     }
                     
-                    if (time && subject && !seenTimes.has(time)) {
-                        seenTimes.add(time);
+                    if (time && subject) {
                         result.classes.push({
                             time: time,
                             subject: subject,
@@ -1244,78 +1291,123 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
                             type: "",
                             faculty: ""
                         });
+                        result.debug.push("Found class: " + code + " | " + time + " | " + subject);
                     }
                 }
                 
+                result.debug.push("Total classes found: " + result.classes.length);
                 return result;
+            }
+            """
+            
+            # The "+" button click script
+            click_next_script = r"""
+            () => {
+                // Look for a "+" button/element near "Day X"
+                const allEls = Array.from(document.querySelectorAll('*'));
+                
+                // Find elements with just "+" text
+                const plusEls = allEls.filter(el => {
+                    const t = el.textContent.trim();
+                    return t === '+' && el.offsetParent !== null;
+                });
+                
+                if (plusEls.length > 0) {
+                    plusEls[0].click();
+                    return {clicked: true, method: "plus_text", count: plusEls.length};
+                }
+                
+                // Try SVG or button near "Day"
+                const dayEl = allEls.find(el => /^Day\s+\d$/.test(el.textContent.trim()) && el.children.length === 0);
+                if (dayEl && dayEl.parentElement) {
+                    const parent = dayEl.parentElement;
+                    const children = Array.from(parent.children);
+                    const dayIdx = children.indexOf(dayEl);
+                    // Click the element AFTER "Day X" (the + button)
+                    for (let i = dayIdx + 1; i < children.length; i++) {
+                        children[i].click();
+                        return {clicked: true, method: "sibling_after_day"};
+                    }
+                    // If Day is deeply nested, go up and look for + in parent
+                    const grandparent = parent.parentElement;
+                    if (grandparent) {
+                        const gpChildren = Array.from(grandparent.children);
+                        const pIdx = gpChildren.indexOf(parent);
+                        for (let i = pIdx + 1; i < gpChildren.length; i++) {
+                            gpChildren[i].click();
+                            return {clicked: true, method: "grandparent_sibling"};
+                        }
+                    }
+                }
+                
+                return {clicked: false};
             }
             """
             
             seen_days = set()
             
-            for _ in range(12):
-                day_res = page.evaluate(script)
-                day = day_res.get("day")
+            # First, navigate to Day 1 by clicking "-" multiple times
+            click_prev_script = r"""
+            () => {
+                const allEls = Array.from(document.querySelectorAll('*'));
+                const minusEls = allEls.filter(el => {
+                    const t = el.textContent.trim();
+                    return (t === '-' || t === '−' || t === '–') && el.offsetParent !== null;
+                });
+                if (minusEls.length > 0) {
+                    minusEls[0].click();
+                    return true;
+                }
+                return false;
+            }
+            """
+            
+            # Click "-" 5 times to ensure we're at Day 1
+            for _ in range(5):
+                page.evaluate(click_prev_script)
+                page.wait_for_timeout(500)
+            
+            page.wait_for_timeout(1000)
+            
+            # Now iterate Day 1 through Day 5
+            for day_num in range(5):
+                day_res = page.evaluate(parse_script)
                 
-                if day:
+                # Log debug info
+                for dbg in day_res.get("debug", []):
+                    print(f"[{reg_no}] Studique DEBUG: {dbg}")
+                
+                day = day_res.get("day")
+                classes = day_res.get("classes", [])
+                
+                if day and day in final_tt:
                     seen_days.add(day)
-                    
                     if not final_tt[day]:
-                        classes = day_res.get("classes", [])
-                        # Process and format the classes
                         for i, c in enumerate(classes):
                             c['period'] = i + 1
                             c['period_end'] = i + 1
                             c['slot'] = f"Slot {i+1}"
-                            
-                            st = ""
-                            et = ""
+                            st, et = "", ""
                             parts = c['time'].split('-')
                             if len(parts) == 2:
                                 st = parts[0].strip()
                                 et = parts[1].strip()
                             c['start_time'] = st
                             c['end_time'] = et
-                            
                         final_tt[day] = classes
+                        print(f"[{reg_no}] Studique: Day {day} -> {len(classes)} classes")
+                else:
+                    print(f"[{reg_no}] Studique: Could not detect day number (got: {day})")
                 
-                if len(seen_days) >= 5:
-                    break
-                    
-                # Click the + button next to Day X
-                clicked = page.evaluate(r"""
-                () => {
-                    const all = Array.from(document.querySelectorAll('*'));
-                    const dayEls = all.filter(el => el.children.length === 0 && el.textContent.trim().match(/^Day\s*[1-5]$/i));
-                    
-                    if (dayEls.length > 0) {
-                        const textEl = dayEls[0];
-                        // Try finding next sibling that is a button or SVG
-                        let nextEl = textEl.nextElementSibling;
-                        if (nextEl) {
-                            nextEl.click();
-                            return true;
-                        } 
-                        // Fallback: search parent's children
-                        if (textEl.parentElement) {
-                            const siblings = Array.from(textEl.parentElement.children);
-                            const idx = siblings.indexOf(textEl);
-                            if (idx >= 0 && idx < siblings.length - 1) {
-                                siblings[idx+1].click();
-                                return true;
-                            }
-                        }
-                    }
-                    return false;
-                }
-                """)
-                
-                page.wait_for_timeout(1000)
+                if day_num < 4:  # Don't click + after Day 5
+                    click_res = page.evaluate(click_next_script)
+                    print(f"[{reg_no}] Studique: Click + result: {click_res}")
+                    page.wait_for_timeout(1500)
             
+            total = sum(len(final_tt[d]) for d in final_tt)
             for d in ["1","2","3","4","5"]:
-                if d in final_tt:
-                    print(f"[{reg_no}] Day {d}: {len(final_tt[d])} classes -> {[e.get('subject','?')[:30] for e in final_tt[d]]}")
-            print(f"[{reg_no}] Studique TT Parsing Successful.")
+                print(f"[{reg_no}] Day {d}: {len(final_tt[d])} classes -> {[e.get('subject','?')[:30] for e in final_tt[d]]}")
+            print(f"[{reg_no}] Studique TT Parsing Complete. Total: {total} classes")
                 
         except Exception as e:
             import traceback
