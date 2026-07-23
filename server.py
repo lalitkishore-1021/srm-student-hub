@@ -1165,8 +1165,13 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
             # Click CONNECT
             connect_btn = page.locator("button:has-text('CONNECT'), button:has-text('Connect'), button:has-text('Login')").first
             if connect_btn:
-                with page.expect_navigation(timeout=30000):
-                    connect_btn.click()
+                connect_btn.click()
+                
+            # Gradex is an SPA. Wait for the URL to change to /schedule or just wait for the table
+            try:
+                page.wait_for_url("**/schedule**", timeout=25000)
+            except:
+                print(f"[{reg_no}] URL didn't change to /schedule. Current URL: {page.url}")
             
             # After login, Gradex automatically redirects to the schedule page.
             # Close popups if they exist
@@ -1179,9 +1184,9 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
                             page.wait_for_timeout(1000)
             except: pass
             
-            # We wait for the schedule table to load by waiting for the 'Slot 1' text
-            page.wait_for_selector("text=Slot 1", timeout=15000)
-            page.wait_for_timeout(2000)  # Extra time for table to fully render
+            # We wait for the schedule table to load
+            page.wait_for_selector("table", timeout=15000)
+            page.wait_for_timeout(3000)  # Extra time for table to fully render
             
             # First, dump the raw table HTML for debugging
             try:
