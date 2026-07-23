@@ -1350,21 +1350,50 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
                 print(f"[{reg_no}] Studique: Falling back to Day-by-Day parsing...")
                 # --- ATTEMPT 2: Fallback to Day-by-Day parsing ---
                 
+                click_relative_script = r"""
+                (direction) => {
+                    const els = Array.from(document.querySelectorAll('*'));
+                    let dayEl = els.find(e => /^Day\s+[1-5]$/.test(e.textContent.trim()) && e.children.length === 0);
+                    if (!dayEl) return false;
+                    
+                    let current = dayEl;
+                    for (let i = 0; i < 3; i++) {
+                        const parent = current.parentElement;
+                        if (!parent) break;
+                        const children = Array.from(parent.children);
+                        const idx = children.indexOf(current);
+                        
+                        if (direction === 'prev') {
+                            for (let j = idx - 1; j >= 0; j--) {
+                                const sibling = children[j];
+                                if (sibling.tagName === 'BUTTON' || sibling.tagName === 'SVG' || sibling.querySelector('svg') || sibling.getAttribute('role') === 'button') {
+                                    sibling.click();
+                                    return true;
+                                }
+                            }
+                        } else {
+                            for (let j = idx + 1; j < children.length; j++) {
+                                const sibling = children[j];
+                                if (sibling.tagName === 'BUTTON' || sibling.tagName === 'SVG' || sibling.querySelector('svg') || sibling.getAttribute('role') === 'button') {
+                                    sibling.click();
+                                    return true;
+                                }
+                            }
+                        }
+                        current = parent;
+                    }
+                    return false;
+                }
+                """
+                
                 # Navigate to Day 1 first
                 for _ in range(5):
                     try:
-                        # Find a minus button. It's often a button with just a minus sign.
-                        minus_btn = page.locator("button").filter(has_text=re.compile(r"^[-\u2212\u2013]$")).first
-                        if minus_btn.is_visible(timeout=500):
-                            minus_btn.click()
+                        clicked = page.evaluate(click_relative_script, "prev")
+                        if clicked:
                             page.wait_for_timeout(600)
-                            continue
-                    except: pass
-                    # Fallback locator
-                    try:
-                        page.locator("text=-").locator("nth=0").click(timeout=500)
-                    except: pass
-                    page.wait_for_timeout(300)
+                    except Exception as e:
+                        print(f"[{reg_no}] Error clicking prev: {e}")
                 
                 page.wait_for_timeout(1000)
                 
@@ -1435,13 +1464,9 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
                     
                     if day_num < 4:
                         try:
-                            # Robust locator for the "+" button
-                            plus_btn = page.locator("button").filter(has_text=re.compile(r"^\+$")).first
-                            if plus_btn.is_visible(timeout=500):
-                                plus_btn.click()
-                            else:
-                                # Try alternative JS click
-                                page.evaluate("Array.from(document.querySelectorAll('button')).find(b => b.textContent.trim() === '+')?.click()")
+                            clicked = page.evaluate(click_relative_script, "next")
+                            if not clicked:
+                                print(f"[{reg_no}] Studique: Failed to click Next for day {day_num+1}")
                         except Exception as e:
                             print(f"[{reg_no}] Studique: Error clicking + : {e}")
             
