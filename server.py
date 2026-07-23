@@ -1144,14 +1144,14 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
         
         print(f"[{reg_no}] Profile extracted: regNo={profile_data.get('regNo','?')}, dept={profile_data.get('department','?')}, FA={profile_data.get('fa_name','?')}, AA={profile_data.get('aa_name','?')}")
         
-        # --- GRADEX TIMETABLE SCRAPER ---
-        print(f"[{reg_no}] 6. Navigating to Gradex for Timetable...")
+        # --- STUDIQUE TIMETABLE SCRAPER ---
+        print(f"[{reg_no}] 6. Navigating to Studique for Timetable...")
         
         final_tt = {"1": [], "2": [], "3": [], "4": [], "5": []}
         
         try:
-            # Login to Gradex
-            page.goto("https://gradex.bond/srm-login")
+            # Login to Studique
+            page.goto("https://studique.in/auth/login")
             
             # Fill inputs
             page.wait_for_selector("input", timeout=15000)
@@ -1160,201 +1160,166 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
                 inputs[0].fill(reg_no)
                 inputs[1].fill(pwd)
             else:
-                print(f"[{reg_no}] Error: Gradex login inputs not found!")
+                print(f"[{reg_no}] Error: Studique login inputs not found!")
                 
-            # Click CONNECT
-            connect_btn = page.locator("button:has-text('CONNECT'), button:has-text('Connect'), button:has-text('Login')").first
+            # Click Sign In Securely
+            connect_btn = page.locator("button:has-text('Sign In Securely'), button:has-text('Login'), button:has-text('Sign In')").first
             if connect_btn:
                 connect_btn.click()
                 
-            # Gradex is an SPA. Wait for the URL to change to /schedule or just wait for the table
+            # Wait for schedule page
             try:
                 page.wait_for_url("**/schedule**", timeout=25000)
+                page.wait_for_timeout(3000) # Extra rendering time
             except:
                 print(f"[{reg_no}] URL didn't change to /schedule. Current URL: {page.url}")
-            
-            # After login, Gradex automatically redirects to the schedule page.
-            # Close popups if they exist
-            try:
-                for popup_text in ["A new look for your Schedule", "Join Our Community"]:
-                    if page.locator(f"text={popup_text}").is_visible(timeout=1500):
-                        close_btn = page.locator("button:has-text('Got It'), button:has-text('X'), button:has-text('Maybe later'), .close-button").first
-                        if close_btn.is_visible():
-                            close_btn.click()
-                            page.wait_for_timeout(1000)
-            except: pass
-            
-            # We wait for the schedule table to load
-            page.wait_for_selector("table", timeout=15000)
-            page.wait_for_timeout(3000)  # Extra time for table to fully render
-            
-            # First, dump the raw table HTML for debugging
-            try:
-                raw_html = page.evaluate("() => { const t = document.querySelector('table'); return t ? t.outerHTML.substring(0, 3000) : 'NO TABLE'; }")
-                print(f"[{reg_no}] Gradex table preview: {raw_html[:500]}")
-            except: pass
+                page.goto("https://studique.in/schedule")
+                page.wait_for_timeout(4000)
             
             script = r"""
             () => {
-                const results = {"1": [], "2": [], "3": [], "4": [], "5": []};
-                const debug = [];
+                const result = {day: null, classes: []};
                 
-                const allTables = document.querySelectorAll('table');
-                let table = null;
-                for (let t of allTables) {
-                    if (t.innerText.includes('Slot 1') || t.innerText.includes('Slot 2') || t.innerText.includes('Day 1')) {
-                        table = t;
-                        break;
+                const all = Array.from(document.querySelectorAll('*'));
+                let dailyHeader = all.find(el => el.children.length === 0 && el.textContent.trim() === 'Daily Schedule');
+                let dayTextEl = null;
+                
+                if (dailyHeader) {
+                    let container = dailyHeader.parentElement;
+                    while (container && !dayTextEl) {
+                        const texts = Array.from(container.querySelectorAll('*')).filter(el => el.children.length === 0);
+                        dayTextEl = texts.find(el => el.textContent.trim().match(/^Day\s*[1-5]$/i));
+                        container = container.parentElement;
                     }
                 }
                 
-                if (!table) return {error: "No schedule table found on Gradex page. Tables present: " + allTables.length};
-                
-                const allRows = table.querySelectorAll('tr');
-                if (allRows.length < 2) return {error: "Table has fewer than 2 rows: " + allRows.length};
-                
-                debug.push("Total rows in schedule table: " + allRows.length);
-                
-                // Step 1: Find the header row containing "Slot"
-                let headerRow = null;
-                let headerRowIdx = -1;
-                for (let i = 0; i < Math.min(allRows.length, 5); i++) {
-                    const text = allRows[i].innerText;
-                    if (text.includes('Slot 1') || text.includes('Slot 2')) {
-                        headerRow = allRows[i];
-                        headerRowIdx = i;
-                        break;
-                    }
-                }
-                if (!headerRow) return {error: "Could not find header row. Row0: " + (allRows[0] ? allRows[0].innerText.substring(0, 200) : "EMPTY")};
-                
-                debug.push("Found header at row " + headerRowIdx);
-                
-                // Step 2: Extract slot timings from header cells
-                const headerCells = headerRow.querySelectorAll('th, td');
-                const slotTimings = [];
-                
-                debug.push("Header has " + headerCells.length + " cells");
-                
-                for (let i = 0; i < headerCells.length; i++) {
-                    const cellText = headerCells[i].innerText.trim();
-                    
-                    if (cellText.toLowerCase() === 'time' || cellText.toLowerCase() === 'day') continue;
-                    
-                    const timeMatches = cellText.match(/(\d{1,2}:\d{2}\s*(?:AM|PM)?)/ig);
-                    const slotMatch = cellText.match(/Slot\s*(\d+)/i);
-                    
-                    if (timeMatches && timeMatches.length >= 2) {
-                        slotTimings.push({
-                            slotNum: slotMatch ? parseInt(slotMatch[1]) : slotTimings.length + 1,
-                            start: timeMatches[0].trim(),
-                            end: timeMatches[1].trim()
-                        });
-                    } else {
-                        slotTimings.push(null);
-                    }
+                if (!dayTextEl) {
+                    dayTextEl = all.find(el => el.children.length === 0 && el.textContent.trim().match(/^Day\s*[1-5]$/i));
                 }
                 
-                debug.push("Parsed " + slotTimings.filter(s => s).length + " slot timings");
-                debug.push("Slots: " + JSON.stringify(slotTimings.filter(s => s).map(s => s.start + " - " + s.end)));
+                if (dayTextEl) {
+                    const match = dayTextEl.textContent.trim().match(/Day\s*([1-5])/i);
+                    if (match) result.day = match[1];
+                }
                 
-                // Step 3: Parse each Day row
-                for (let r = headerRowIdx + 1; r < allRows.length; r++) {
-                    const row = allRows[r];
-                    const cells = row.querySelectorAll('th, td');
-                    if (cells.length === 0) continue;
-                    
-                    const firstCellText = cells[0].innerText.trim();
-                    const dayMatch = firstCellText.match(/Day\s*(\d)/i);
-                    if (!dayMatch) continue;
-                    const dayOrder = dayMatch[1];
-                    if (!results[dayOrder]) continue;
-                    
-                    debug.push("Day " + dayOrder + " at row " + r + ", " + cells.length + " cells");
-                    
-                    let colPos = 0;
-                    for (let c = 1; c < cells.length; c++) {
-                        const cell = cells[c];
-                        const colspan = parseInt(cell.getAttribute('colspan') || '1');
-                        const text = cell.innerText.trim();
-                        
-                        if (text.length > 2 && colPos < slotTimings.length) {
-                            const startSlot = slotTimings[colPos];
-                            let endSlotIdx = Math.min(colPos + colspan - 1, slotTimings.length - 1);
-                            let endSlot = slotTimings[endSlotIdx];
-                            
-                            while (!endSlot && endSlotIdx > colPos) {
-                                endSlotIdx--;
-                                endSlot = slotTimings[endSlotIdx];
-                            }
-                            
-                            if (startSlot) {
-                                const endTime = (endSlot && colspan > 1) ? endSlot.end : startSlot.end;
-                                
-                                const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-                                let subject = lines[0] || text;
-                                let room = "N/A";
-                                
-                                if (lines.length > 1) {
-                                    room = lines[lines.length - 1];
-                                }
-                                
-                                if (subject === room && lines.length > 1) {
-                                    subject = lines[0];
-                                }
-                                
-                                results[dayOrder].push({
-                                    time: startSlot.start + " - " + endTime,
-                                    subject: subject,
-                                    code: subject,
-                                    room: room,
-                                    type: colspan > 1 ? "LAB" : "",
-                                    faculty: "",
-                                    slot: "Slot " + startSlot.slotNum,
-                                    period: startSlot.slotNum,
-                                    period_end: (endSlot || startSlot).slotNum,
-                                    start_time: startSlot.start,
-                                    end_time: endTime
-                                });
-                            }
+                const timeElements = all.filter(el => el.children.length === 0 && el.textContent.match(/\d{1,2}:\d{2}\s*(?:AM|PM)?\s*-\s*\d{1,2}:\d{2}\s*(?:AM|PM)?/i));
+                
+                const seenTimes = new Set();
+                
+                for (let tEl of timeElements) {
+                    let card = tEl.parentElement;
+                    let levels = 0;
+                    while (card && levels < 5) {
+                        if (card.className && (typeof card.className === 'string') && 
+                           (card.className.includes('border') || card.className.includes('rounded') || card.className.includes('card') || card.className.includes('bg-'))) {
+                            break;
                         }
-                        
-                        colPos += colspan;
+                        card = card.parentElement;
+                        levels++;
+                    }
+                    if (!card) card = tEl.parentElement.parentElement;
+                    
+                    const text = card.innerText;
+                    const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+                    
+                    let time = "";
+                    let code = "";
+                    let subject = "";
+                    let room = "N/A";
+                    
+                    for (let l of lines) {
+                        if (l.match(/\d{1,2}:\d{2}/)) time = l;
+                        else if (l.match(/^[A-Z0-9]{6,12}$/) && !l.includes(' ')) code = l;
+                        else if (l.toLowerCase().includes('room:')) room = l.replace(/room:/i, '').trim();
+                        else if (l.length > 3 && !subject && !l.match(/\d{1,2}:\d{2}/) && !l.toLowerCase().includes('room:')) subject = l;
+                    }
+                    
+                    if (time && subject && !seenTimes.has(time)) {
+                        seenTimes.add(time);
+                        result.classes.push({
+                            time: time,
+                            subject: subject,
+                            code: code || subject,
+                            room: room,
+                            type: "",
+                            faculty: ""
+                        });
                     }
                 }
                 
-                results._debug = debug;
-                let totalClasses = 0;
-                for (let d = 1; d <= 5; d++) totalClasses += (results[String(d)] || []).length;
-                results._totalClasses = totalClasses;
-                
-                return results;
+                return result;
             }
             """
             
-            gradex_tt = page.evaluate(script)
+            seen_days = set()
             
-            # Log debug info
-            if "_debug" in gradex_tt:
-                for dbg in gradex_tt["_debug"]:
-                    print(f"[{reg_no}] Gradex DEBUG: {dbg}")
-                del gradex_tt["_debug"]
-            if "_totalClasses" in gradex_tt:
-                print(f"[{reg_no}] Gradex total classes found: {gradex_tt['_totalClasses']}")
-                del gradex_tt["_totalClasses"]
+            for _ in range(12):
+                day_res = page.evaluate(script)
+                day = day_res.get("day")
+                
+                if day:
+                    seen_days.add(day)
+                    
+                    if not final_tt[day]:
+                        classes = day_res.get("classes", [])
+                        # Process and format the classes
+                        for i, c in enumerate(classes):
+                            c['period'] = i + 1
+                            c['period_end'] = i + 1
+                            c['slot'] = f"Slot {i+1}"
+                            
+                            st = ""
+                            et = ""
+                            parts = c['time'].split('-')
+                            if len(parts) == 2:
+                                st = parts[0].strip()
+                                et = parts[1].strip()
+                            c['start_time'] = st
+                            c['end_time'] = et
+                            
+                        final_tt[day] = classes
+                
+                if len(seen_days) >= 5:
+                    break
+                    
+                # Click the + button next to Day X
+                clicked = page.evaluate(r"""
+                () => {
+                    const all = Array.from(document.querySelectorAll('*'));
+                    const dayEls = all.filter(el => el.children.length === 0 && el.textContent.trim().match(/^Day\s*[1-5]$/i));
+                    
+                    if (dayEls.length > 0) {
+                        const textEl = dayEls[0];
+                        // Try finding next sibling that is a button or SVG
+                        let nextEl = textEl.nextElementSibling;
+                        if (nextEl) {
+                            nextEl.click();
+                            return true;
+                        } 
+                        // Fallback: search parent's children
+                        if (textEl.parentElement) {
+                            const siblings = Array.from(textEl.parentElement.children);
+                            const idx = siblings.indexOf(textEl);
+                            if (idx >= 0 && idx < siblings.length - 1) {
+                                siblings[idx+1].click();
+                                return true;
+                            }
+                        }
+                    }
+                    return false;
+                }
+                """)
+                
+                page.wait_for_timeout(1000)
             
-            if "error" in gradex_tt:
-                print(f"[{reg_no}] Gradex TT Parse Error: {gradex_tt['error']}")
-            else:
-                final_tt = gradex_tt
-                for d in ["1","2","3","4","5"]:
-                    if d in final_tt:
-                        print(f"[{reg_no}] Day {d}: {len(final_tt[d])} classes -> {[e.get('subject','?')[:30] for e in final_tt[d]]}")
-                print(f"[{reg_no}] Gradex TT Parsing Successful.")
+            for d in ["1","2","3","4","5"]:
+                if d in final_tt:
+                    print(f"[{reg_no}] Day {d}: {len(final_tt[d])} classes -> {[e.get('subject','?')[:30] for e in final_tt[d]]}")
+            print(f"[{reg_no}] Studique TT Parsing Successful.")
                 
         except Exception as e:
             import traceback
-            print(f"[{reg_no}] Error during Gradex scraping: {str(e)}")
+            print(f"[{reg_no}] Error during Studique scraping: {str(e)}")
             traceback.print_exc()
 
         for day in final_tt:
