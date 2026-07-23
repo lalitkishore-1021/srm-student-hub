@@ -1192,7 +1192,7 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
                 print(f"[{reg_no}] Gradex table preview: {raw_html[:500]}")
             except: pass
             
-            script = """
+            script = r"""
             () => {
                 const results = {"1": [], "2": [], "3": [], "4": [], "5": []};
                 const debug = [];
@@ -1201,9 +1201,11 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
                 if (!table) return {error: "No table found on Gradex schedule page"};
                 
                 const allRows = table.querySelectorAll('tr');
-                if (allRows.length < 2) return {error: "Table has fewer than 2 rows"};
+                if (allRows.length < 2) return {error: "Table has fewer than 2 rows: " + allRows.length};
                 
-                // Step 1: Find the header row (the one containing "Slot 1", "Slot 2", etc.)
+                debug.push("Total rows in table: " + allRows.length);
+                
+                // Step 1: Find the header row containing "Slot"
                 let headerRow = null;
                 let headerRowIdx = -1;
                 for (let i = 0; i < Math.min(allRows.length, 5); i++) {
@@ -1214,23 +1216,23 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
                         break;
                     }
                 }
-                if (!headerRow) return {error: "Could not find header row with Slot columns"};
+                if (!headerRow) return {error: "Could not find header row. Row0: " + (allRows[0] ? allRows[0].innerText.substring(0, 200) : "EMPTY")};
                 
-                debug.push("Found header row at index " + headerRowIdx);
+                debug.push("Found header at row " + headerRowIdx);
                 
                 // Step 2: Extract slot timings from header cells
                 const headerCells = headerRow.querySelectorAll('th, td');
-                const slotTimings = []; // index 0 = first slot column
+                const slotTimings = [];
+                
+                debug.push("Header has " + headerCells.length + " cells");
                 
                 for (let i = 0; i < headerCells.length; i++) {
                     const cellText = headerCells[i].innerText.trim();
                     
-                    // Skip the "Time" / "Day" label column
                     if (cellText.toLowerCase() === 'time' || cellText.toLowerCase() === 'day') continue;
                     
-                    // Extract times like "8:00 AM - 8:50 AM" or "8:00AM-8:50AM"
-                    const timeMatches = cellText.match(/(\\d{1,2}:\\d{2}\\s*(?:AM|PM)?)/ig);
-                    const slotMatch = cellText.match(/Slot\\s*(\\d+)/i);
+                    const timeMatches = cellText.match(/(\d{1,2}:\d{2}\s*(?:AM|PM)?)/ig);
+                    const slotMatch = cellText.match(/Slot\s*(\d+)/i);
                     
                     if (timeMatches && timeMatches.length >= 2) {
                         slotTimings.push({
@@ -1239,12 +1241,12 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
                             end: timeMatches[1].trim()
                         });
                     } else {
-                        slotTimings.push(null); // Empty/unparseable column
+                        slotTimings.push(null);
                     }
                 }
                 
-                debug.push("Parsed " + slotTimings.filter(s => s).length + " slot timings out of " + slotTimings.length + " columns");
-                debug.push("Slots: " + JSON.stringify(slotTimings.filter(s => s).map(s => s.start + "-" + s.end)));
+                debug.push("Parsed " + slotTimings.filter(s => s).length + " slot timings");
+                debug.push("Slots: " + JSON.stringify(slotTimings.filter(s => s).map(s => s.start + " - " + s.end)));
                 
                 // Step 3: Parse each Day row
                 for (let r = headerRowIdx + 1; r < allRows.length; r++) {
@@ -1252,28 +1254,25 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
                     const cells = row.querySelectorAll('th, td');
                     if (cells.length === 0) continue;
                     
-                    // Find the day number from the first cell
                     const firstCellText = cells[0].innerText.trim();
-                    const dayMatch = firstCellText.match(/Day\\s*(\\d)/i);
+                    const dayMatch = firstCellText.match(/Day\s*(\d)/i);
                     if (!dayMatch) continue;
                     const dayOrder = dayMatch[1];
                     if (!results[dayOrder]) continue;
                     
-                    // Walk through the remaining cells, tracking column position via colspan
-                    let colPos = 0; // 0-indexed into slotTimings
+                    debug.push("Day " + dayOrder + " at row " + r + ", " + cells.length + " cells");
+                    
+                    let colPos = 0;
                     for (let c = 1; c < cells.length; c++) {
                         const cell = cells[c];
                         const colspan = parseInt(cell.getAttribute('colspan') || '1');
                         const text = cell.innerText.trim();
                         
-                        // Only process non-empty cells that look like actual class entries
                         if (text.length > 2 && colPos < slotTimings.length) {
                             const startSlot = slotTimings[colPos];
-                            // For multi-slot (lab), find the last slot's end time
                             let endSlotIdx = Math.min(colPos + colspan - 1, slotTimings.length - 1);
                             let endSlot = slotTimings[endSlotIdx];
                             
-                            // Walk backwards if endSlot is null
                             while (!endSlot && endSlotIdx > colPos) {
                                 endSlotIdx--;
                                 endSlot = slotTimings[endSlotIdx];
@@ -1282,17 +1281,14 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
                             if (startSlot) {
                                 const endTime = (endSlot && colspan > 1) ? endSlot.end : startSlot.end;
                                 
-                                // Split text into lines to get subject and room
                                 const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
                                 let subject = lines[0] || text;
                                 let room = "N/A";
                                 
-                                // Room is typically the last line, often like "TP 606" or "UB 801"
                                 if (lines.length > 1) {
                                     room = lines[lines.length - 1];
                                 }
                                 
-                                // Clean up subject - remove room from subject if it's repeated
                                 if (subject === room && lines.length > 1) {
                                     subject = lines[0];
                                 }
@@ -1317,7 +1313,6 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
                     }
                 }
                 
-                // Add debug info
                 results._debug = debug;
                 let totalClasses = 0;
                 for (let d = 1; d <= 5; d++) totalClasses += (results[String(d)] || []).length;
