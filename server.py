@@ -1211,154 +1211,239 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
             body_len = page.evaluate("() => document.body.innerText.length")
             print(f"[{reg_no}] Studique: Body text length after wait: {body_len}")
             
-            # Step 3: Navigate to Day 1 first by clicking "-" multiple times
-            for _ in range(5):
-                try:
-                    # The "-" button is near "Day X" text
-                    minus_btn = page.locator("button:visible, [role='button']:visible, svg:visible").filter(has_text="\u2212").first
-                    if minus_btn.is_visible(timeout=500):
-                        minus_btn.click()
-                        page.wait_for_timeout(600)
-                        continue
-                except:
-                    pass
-                # Fallback: try clicking element with just "-" text
-                try:
-                    page.evaluate(r"""() => {
-                        const els = Array.from(document.querySelectorAll('*'));
-                        for (const el of els) {
-                            const t = el.textContent.trim();
-                            if ((t === '-' || t === '\u2212' || t === '\u2013') && el.offsetParent !== null && el.getBoundingClientRect().width < 50) {
-                                el.click();
-                                return true;
+            # --- ATTEMPT 1: Try to open and parse the Full Table (Download view) ---
+            print(f"[{reg_no}] Studique: Attempting to find Full Timetable view...")
+            try:
+                page.evaluate(r"""
+                () => {
+                    const btns = document.querySelectorAll('button');
+                    for (const btn of btns) {
+                        // The download button has an SVG and is near the Day pill
+                        if (btn.innerHTML.includes('<svg') && (btn.className.includes('orange') || btn.innerHTML.includes('download') || btn.innerHTML.includes('M20.59'))) {
+                            btn.click();
+                            return;
+                        }
+                    }
+                    // Fallback: click last button in the day selector row
+                    const dayPills = Array.from(document.querySelectorAll('*')).filter(e => /^Day\s+[1-5]$/.test(e.textContent.trim()) && e.children.length === 0);
+                    if (dayPills.length > 0) {
+                        const row = dayPills[0].closest('div.flex');
+                        if (row) {
+                            const rowBtns = row.querySelectorAll('button');
+                            if (rowBtns.length > 0) rowBtns[rowBtns.length - 1].click();
+                        }
+                    }
+                }
+                """)
+                page.wait_for_timeout(2000) # Wait for table/modal to render
+            except Exception as e:
+                print(f"[{reg_no}] Studique: Error clicking download button: {e}")
+                
+            # Try to parse the full table
+            parse_full_table_script = r"""
+            () => {
+                const result = { success: false, data: {"1": [], "2": [], "3": [], "4": [], "5": []}, debug: [] };
+                
+                // Look for a real HTML table
+                const tables = document.querySelectorAll('table');
+                let targetTable = null;
+                for (const t of tables) {
+                    const txt = t.innerText;
+                    if (txt.includes('08:00 AM') && txt.includes('Day 1') && txt.includes('Day 5')) {
+                        targetTable = t;
+                        break;
+                    }
+                }
+                
+                if (targetTable) {
+                    result.debug.push("Found Full Timetable <table>!");
+                    const rows = targetTable.querySelectorAll('tr');
+                    let headers = [];
+                    
+                    for (const row of rows) {
+                        const rText = row.innerText.trim();
+                        if (rText.includes('08:00 AM') || rText.includes('DAY')) {
+                            const cells = row.querySelectorAll('th, td');
+                            headers = Array.from(cells).map(c => c.innerText.trim());
+                            result.debug.push("Extracted headers: " + headers.join("|"));
+                        } else if (rText.match(/^Day\s+([1-5])/i)) {
+                            const dayMatch = rText.match(/^Day\s+([1-5])/i);
+                            const d = dayMatch[1];
+                            const cells = row.querySelectorAll('th, td');
+                            
+                            let colIdx = 0;
+                            for (let i = 0; i < cells.length; i++) {
+                                const cell = cells[i];
+                                const cText = cell.innerText.trim();
+                                
+                                // Check if this cell is just the row header (e.g., 'Day 1')
+                                if (/^Day\s+[1-5]$/i.test(cText)) {
+                                    if (i === 0 || cText.match(/^Day/i)) colIdx = 1; // start after Day column
+                                    continue;
+                                }
+                                
+                                const colspan = parseInt(cell.getAttribute('colspan') || '1');
+                                
+                                if (cText && cText.length > 3) {
+                                    const lines = cText.split('\n').map(l=>l.trim()).filter(l=>l.length>0);
+                                    let subject = lines[0];
+                                    let room = "N/A";
+                                    if (lines.length > 1) {
+                                        room = lines[lines.length-1].replace(/^room\s*[:\-]\s*/i, '').trim();
+                                    }
+                                    
+                                    // Use headers array to determine times based on colIdx
+                                    // Make sure colIdx is within bounds
+                                    const hIdx = Math.min(colIdx, headers.length - 1);
+                                    let startH = headers[hIdx] || "";
+                                    let endHIdx = Math.min(colIdx + colspan, headers.length - 1);
+                                    let endH = headers[endHIdx] || "";
+                                    
+                                    // Fallback if headers are weird
+                                    if (!startH.includes(':')) startH = "08:00 AM"; // safety fallback
+                                    
+                                    result.data[d].push({
+                                        time: startH + (endH ? " - " + endH : ""),
+                                        subject: subject,
+                                        code: subject,
+                                        room: room,
+                                        type: colspan > 1 ? "LAB" : "THEORY",
+                                        faculty: "",
+                                        start_time: startH,
+                                        end_time: endH
+                                    });
+                                }
+                                colIdx += colspan;
                             }
                         }
-                        return false;
-                    }""")
-                except:
-                    pass
-                page.wait_for_timeout(600)
-            
-            page.wait_for_timeout(1500)
-            
-            # Step 4: Parse each day (Day 1 through Day 5)
-            parse_script = r"""
-            () => {
-                const result = {day: null, classes: [], debug: []};
-                
-                const bodyText = document.body.innerText;
-                result.debug.push("Body length: " + bodyText.length);
-                
-                // Find current Day number
-                const dayMatch = bodyText.match(/Day\s+(\d)/);
-                if (dayMatch) {
-                    result.day = dayMatch[1];
+                    }
+                    
+                    let totalClasses = 0;
+                    for (let d=1; d<=5; d++) totalClasses += result.data[d.toString()].length;
+                    
+                    if (totalClasses > 5) { // Ensure we got a reasonable amount of data
+                        result.success = true;
+                    }
                 } else {
-                    result.debug.push("No Day X found");
-                    return result;
+                    result.debug.push("No suitable <table> found for Full Timetable.");
                 }
                 
-                // Time regex: handles regular dash, en-dash, em-dash, minus sign
-                const timeRegex = /\d{1,2}:\d{2}\s*(?:AM|PM)\s*[-\u2013\u2014\u2212]\s*\d{1,2}:\d{2}\s*(?:AM|PM)/i;
-                
-                // Find all elements whose innerText contains a time pattern
-                const allEls = document.querySelectorAll('*');
-                const seen = new Set();
-                
-                for (const el of allEls) {
-                    const text = (el.innerText || '').trim();
-                    if (!text || text.length > 400 || text.length < 15) continue;
-                    if (!timeRegex.test(text)) continue;
-                    
-                    // Dedup by first 80 chars
-                    const key = text.substring(0, 80);
-                    if (seen.has(key)) continue;
-                    seen.add(key);
-                    
-                    const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-                    
-                    let time = "", code = "", subject = "", room = "N/A";
-                    
-                    for (const line of lines) {
-                        if (timeRegex.test(line)) {
-                            time = line;
-                        } else if (/^[A-Z0-9]{5,15}$/.test(line)) {
-                            code = line;
-                        } else if (/room/i.test(line)) {
-                            room = line.replace(/^room\s*[:\-]\s*/i, '').trim();
-                        } else if (line.length > 3 && !subject && !/daily\s*schedule/i.test(line) && !/academic/i.test(line)) {
-                            subject = line;
-                        }
-                    }
-                    
-                    if (time && subject) {
-                        result.classes.push({
-                            time: time,
-                            subject: subject,
-                            code: code || subject,
-                            room: room,
-                            type: "",
-                            faculty: ""
-                        });
-                    }
-                }
-                
-                result.debug.push("Classes found: " + result.classes.length);
-                if (result.classes.length > 0) {
-                    result.debug.push("First: " + result.classes[0].code + " " + result.classes[0].time);
-                }
                 return result;
             }
             """
             
-            for day_num in range(5):
-                # Wait for content after day change
-                if day_num > 0:
-                    page.wait_for_timeout(1500)
+            full_tt_res = page.evaluate(parse_full_table_script)
+            for dbg in full_tt_res.get("debug", []):
+                print(f"[{reg_no}] Studique FullTT: {dbg}")
                 
-                day_res = page.evaluate(parse_script)
-                
-                for dbg in day_res.get("debug", []):
-                    print(f"[{reg_no}] Studique [{day_num+1}/5]: {dbg}")
-                
-                day = day_res.get("day")
-                classes = day_res.get("classes", [])
-                
-                if day and day in final_tt and not final_tt[day]:
+            if full_tt_res.get("success"):
+                print(f"[{reg_no}] Studique: Successfully parsed FULL TIMETABLE view!")
+                data = full_tt_res.get("data", {})
+                for d in ["1", "2", "3", "4", "5"]:
+                    classes = data.get(d, [])
                     for i, c in enumerate(classes):
                         c['period'] = i + 1
                         c['period_end'] = i + 1
                         c['slot'] = f"Slot {i+1}"
-                        st, et = "", ""
-                        # Split time on any dash character
-                        import re as _re
-                        parts = _re.split(r'[-\u2013\u2014\u2212]', c.get('time', ''))
-                        if len(parts) == 2:
-                            st = parts[0].strip()
-                            et = parts[1].strip()
-                        c['start_time'] = st
-                        c['end_time'] = et
-                    final_tt[day] = classes
-                    print(f"[{reg_no}] Studique: Day {day} -> {len(classes)} classes")
-                else:
-                    print(f"[{reg_no}] Studique: Day iteration {day_num+1}, detected day={day}, classes={len(classes)}")
+                    final_tt[d] = classes
+            else:
+                print(f"[{reg_no}] Studique: Falling back to Day-by-Day parsing...")
+                # --- ATTEMPT 2: Fallback to Day-by-Day parsing ---
                 
-                # Click "+" to go to next day (except after last day)
-                if day_num < 4:
+                # Navigate to Day 1 first
+                for _ in range(5):
                     try:
-                        page.evaluate(r"""() => {
-                            const els = Array.from(document.querySelectorAll('*'));
-                            for (const el of els) {
-                                const t = el.textContent.trim();
-                                if (t === '+' && el.offsetParent !== null && el.getBoundingClientRect().width < 50) {
-                                    el.click();
-                                    return true;
-                                }
-                            }
-                            return false;
-                        }""")
-                    except:
-                        pass
+                        # Find a minus button. It's often a button with just a minus sign.
+                        minus_btn = page.locator("button").filter(has_text=re.compile(r"^[-\u2212\u2013]$")).first
+                        if minus_btn.is_visible(timeout=500):
+                            minus_btn.click()
+                            page.wait_for_timeout(600)
+                            continue
+                    except: pass
+                    # Fallback locator
+                    try:
+                        page.locator("text=-").locator("nth=0").click(timeout=500)
+                    except: pass
+                    page.wait_for_timeout(300)
+                
+                page.wait_for_timeout(1000)
+                
+                parse_cards_script = r"""
+                () => {
+                    const result = {day: null, classes: [], debug: []};
+                    const bodyText = document.body.innerText;
+                    
+                    const dayMatch = bodyText.match(/Day\s+(\d)/);
+                    if (dayMatch) result.day = dayMatch[1];
+                    else return result;
+                    
+                    const timeRegex = /\d{1,2}:\d{2}\s*(?:AM|PM)\s*[-\u2013\u2014\u2212]\s*\d{1,2}:\d{2}\s*(?:AM|PM)/i;
+                    const allEls = document.querySelectorAll('*');
+                    const seen = new Set();
+                    
+                    for (const el of allEls) {
+                        const text = (el.innerText || '').trim();
+                        if (!text || text.length > 400 || text.length < 15) continue;
+                        if (!timeRegex.test(text)) continue;
+                        
+                        const key = text.substring(0, 80);
+                        if (seen.has(key)) continue;
+                        seen.add(key);
+                        
+                        const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+                        let time = "", code = "", subject = "", room = "N/A";
+                        
+                        for (const line of lines) {
+                            if (timeRegex.test(line)) time = line;
+                            else if (/^[A-Z0-9]{5,15}$/.test(line)) code = line;
+                            else if (/room/i.test(line)) room = line.replace(/^room\s*[:\-]\s*/i, '').trim();
+                            else if (line.length > 3 && !subject && !/daily\s*schedule/i.test(line) && !/academic/i.test(line)) subject = line;
+                        }
+                        
+                        if (time && subject) {
+                            result.classes.push({ time, subject, code: code || subject, room, type: "", faculty: "" });
+                        }
+                    }
+                    return result;
+                }
+                """
+                
+                for day_num in range(5):
+                    if day_num > 0: page.wait_for_timeout(1500)
+                    
+                    day_res = page.evaluate(parse_cards_script)
+                    day = day_res.get("day")
+                    classes = day_res.get("classes", [])
+                    
+                    if day and day in final_tt and not final_tt[day]:
+                        for i, c in enumerate(classes):
+                            c['period'] = i + 1
+                            c['period_end'] = i + 1
+                            c['slot'] = f"Slot {i+1}"
+                            st, et = "", ""
+                            import re as _re
+                            parts = _re.split(r'[-\u2013\u2014\u2212]', c.get('time', ''))
+                            if len(parts) == 2:
+                                st = parts[0].strip()
+                                et = parts[1].strip()
+                            c['start_time'] = st
+                            c['end_time'] = et
+                        final_tt[day] = classes
+                        print(f"[{reg_no}] Studique: Day {day} -> {len(classes)} classes")
+                    else:
+                        print(f"[{reg_no}] Studique: Day iteration {day_num+1}, detected day={day}, classes={len(classes)}")
+                    
+                    if day_num < 4:
+                        try:
+                            # Robust locator for the "+" button
+                            plus_btn = page.locator("button").filter(has_text=re.compile(r"^\+$")).first
+                            if plus_btn.is_visible(timeout=500):
+                                plus_btn.click()
+                            else:
+                                # Try alternative JS click
+                                page.evaluate("Array.from(document.querySelectorAll('button')).find(b => b.textContent.trim() === '+')?.click()")
+                        except Exception as e:
+                            print(f"[{reg_no}] Studique: Error clicking + : {e}")
             
             total = sum(len(final_tt[d]) for d in final_tt)
             for d in ["1","2","3","4","5"]:
