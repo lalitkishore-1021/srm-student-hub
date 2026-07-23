@@ -1182,8 +1182,8 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
                             page.wait_for_timeout(1000)
             except: pass
             
-            # We wait for the schedule table to load
-            page.wait_for_selector("table", timeout=15000)
+            # We wait for the schedule table to load by waiting for the 'Slot 1' text
+            page.wait_for_selector("text=Slot 1", timeout=15000)
             page.wait_for_timeout(2000)  # Extra time for table to fully render
             
             # First, dump the raw table HTML for debugging
@@ -1197,13 +1197,21 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
                 const results = {"1": [], "2": [], "3": [], "4": [], "5": []};
                 const debug = [];
                 
-                const table = document.querySelector('table');
-                if (!table) return {error: "No table found on Gradex schedule page"};
+                const allTables = document.querySelectorAll('table');
+                let table = null;
+                for (let t of allTables) {
+                    if (t.innerText.includes('Slot 1') || t.innerText.includes('Slot 2') || t.innerText.includes('Day 1')) {
+                        table = t;
+                        break;
+                    }
+                }
+                
+                if (!table) return {error: "No schedule table found on Gradex page. Tables present: " + allTables.length};
                 
                 const allRows = table.querySelectorAll('tr');
                 if (allRows.length < 2) return {error: "Table has fewer than 2 rows: " + allRows.length};
                 
-                debug.push("Total rows in table: " + allRows.length);
+                debug.push("Total rows in schedule table: " + allRows.length);
                 
                 // Step 1: Find the header row containing "Slot"
                 let headerRow = null;
