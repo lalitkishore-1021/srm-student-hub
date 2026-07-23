@@ -1037,115 +1037,10 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
                     continue
 
         # --- TIMETABLE STEP 1 (STUDENT SLOTS) ---
-        print(f"[{reg_no}] 6. Scoping Registered Slots...")
-        student_slots = {}
-        slot_map = {}
-        student_batch = 1
-        timetable_urls_pool = [
-            "https://academia.srmist.edu.in/#Page:My_Time_Table_2023_24",
-            "https://academia.srmist.edu.in/#Page:My_Time_Table_2024_25",
-            "https://academia.srmist.edu.in/#Page:My_Time_Table_2025_26",
-            "https://academia.srmist.edu.in/#Page:My_Time_Table"
-        ]
-        timetable_urls = [u for u in timetable_urls_pool if any(u.split('#Page:')[1] in link for link in unique_links)]
-        if not timetable_urls:
-            timetable_urls = timetable_urls_pool
-        
-        slot_tables = []
-        for url in timetable_urls:
-            print(f"[{reg_no}] Trying timetable URL: {url}")
-            navigate_to_page(url)
-            slot_tables = wait_for_data_tables(["slot", "course", "code"], timeout=12000)
-            if any(k in str(c).lower() for k in ["slot", "course", "code"] for t in slot_tables for row in t for c in row):
-                print(f"[{reg_no}] Successfully loaded timetable from {url}")
-                break
-        else:
-            print(f"[{reg_no}] Warning: No slot tables found with primary URLs. Attempting page reload on primary...")
-            navigate_to_page(timetable_urls[0])
-            page.wait_for_timeout(2000)
-            slot_tables = wait_for_data_tables(["slot", "course", "code"], timeout=15000)
-            if not slot_tables:
-                try:
-                    print(f"[{reg_no}] DIAGNOSTIC: Timetable page has NO tables. URL: {page.url}")
-                    page_text = page.evaluate("document.body.innerText")
-                    clean_text = ' | '.join([line.strip() for line in page_text.split('\n') if line.strip()][:25])
-                    print(f"[{reg_no}] DIAGNOSTIC TIMETABLE PAGE TEXT: {clean_text}")
-                    for i, f in enumerate(page.frames):
-                        try:
-                            f_text = f.evaluate("document.body.innerText")
-                            f_clean = ' | '.join([line.strip() for line in f_text.split('\n') if line.strip()][:10])
-                            if f_clean:
-                                print(f"[{reg_no}] DIAGNOSTIC TIMETABLE FRAME {i} TEXT: {f_clean}")
-                        except: pass
-                except Exception as e:
-                    print(f"[{reg_no}] Failed to log timetable diagnostics: {e}")
-        
-        # --- EXTRACT RICH PROFILE DATA FROM TIMETABLE PAGE ---
-        for table in slot_tables:
-            if not table: continue
-            for row in table:
-                if len(row) >= 2:
-                    for i in range(len(row) - 1):
-                        k = str(row[i]).replace(':', '').strip().lower()
-                        v = str(row[i+1]).replace(':', '').strip()
-                        if "registration" in k and "number" in k:
-                            if len(v) > 5: profile_data["regNo"] = v.strip()
-                        elif "department" in k:
-                            if len(v) > 2: profile_data["department"] = v.strip()
-                        elif "combo" in k or "batch" in k:
-                            if len(v) > 0: 
-                                profile_data["batch"] = v.strip()
-                                parts = v.strip().split("/")
-                                if len(parts) >= 2 and parts[-1].strip().isdigit():
-                                    student_batch = int(parts[-1].strip())
-                        elif "class room" in k or "classroom" in k:
-                            if len(v) > 0: profile_data["classRoom"] = v.strip()
-                        elif "program" in k:
-                            if len(v) > 2: profile_data["course"] = v.strip()[:35]
-                        elif "semester" in k:
-                            if len(v) > 0 and len(v) <= 2: profile_data["semester"] = v.strip()
-                        elif "name" in k and "father" not in k and "mother" not in k and "faculty" not in k:
-                            if len(v) > 2 and profile_data["name"] == "STUDENT": profile_data["name"] = v.strip()
-        
-        # --- EXTRACT ADVISOR DATA FROM TIMETABLE PAGE ---
-        print(f"[{reg_no}] 6a. Extracting Advisor Details...")
-        for table in slot_tables:
-            if not table: continue
-            for r_idx, row in enumerate(table):
-                for c_idx, cell in enumerate(row):
-                    cell_str = str(cell).strip()
-                    cell_lower = cell_str.lower()
-                    
-                    # Faculty Advisor detection (usually in one multiline cell)
-                    if 'faculty advisor' in cell_lower:
-                        lines = [line.strip() for line in cell_str.split('\n') if line.strip()]
-                        for k, line in enumerate(lines):
-                            ll = line.lower()
-                            if 'faculty advisor' in ll:
-                                if k > 0 and len(lines[k-1]) > 3:
-                                    profile_data['fa_name'] = lines[k-1]
-                            elif '@' in ll and 'srmist' in ll:
-                                profile_data['fa_email'] = line
-                            elif re.match(r'^\+?[0-9\s-]{10,}$', line) and len(re.sub(r'\D', '', line)) >= 10:
-                                profile_data['fa_phone'] = re.sub(r'\D', '', line)[-10:]
-                    
-                    # Academic Advisor detection
-                    if 'academic advisor' in cell_lower:
-                        lines = [line.strip() for line in cell_str.split('\n') if line.strip()]
-                        for k, line in enumerate(lines):
-                            ll = line.lower()
-                            if 'academic advisor' in ll:
-                                if k > 0 and len(lines[k-1]) > 3:
-                                    profile_data['aa_name'] = lines[k-1]
-                            elif '@' in ll and 'srmist' in ll:
-                                profile_data['aa_email'] = line
-                            elif re.match(r'^\+?[0-9\s-]{10,}$', line) and len(re.sub(r'\D', '', line)) >= 10:
-                                profile_data['aa_phone'] = re.sub(r'\D', '', line)[-10:]
-        
-        print(f"[{reg_no}] Profile extracted: regNo={profile_data.get('regNo','?')}, dept={profile_data.get('department','?')}, FA={profile_data.get('fa_name','?')}, AA={profile_data.get('aa_name','?')}")
+        print(f"[{reg_no}] 6. Skipping SRM Timetable Page (Gradex handles timetable now).")
         
         # --- GRADEX TIMETABLE SCRAPER ---
-        print(f"[{reg_no}] 6. Navigating to Gradex for Timetable...")
+        print(f"[{reg_no}] 7. Logging into Gradex for Timetable...")
         
         final_tt = {"1": [], "2": [], "3": [], "4": [], "5": []}
         
@@ -1165,13 +1060,10 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
             # Click CONNECT
             connect_btn = page.locator("button:has-text('CONNECT'), button:has-text('Connect'), button:has-text('Login')").first
             if connect_btn:
-                connect_btn.click()
+                with page.expect_navigation(timeout=30000):
+                    connect_btn.click()
             
-            # Wait for Navigation and go to schedule
-            page.wait_for_timeout(3000)
-            page.goto("https://gradex.bond/schedule?theme=dark")
-            page.wait_for_timeout(5000) # Wait for network and rendering
-            
+            # After login, Gradex automatically redirects to the schedule page.
             # Close popups if they exist
             try:
                 for popup_text in ["A new look for your Schedule", "Join Our Community"]:
