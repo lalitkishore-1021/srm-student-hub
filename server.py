@@ -1144,84 +1144,71 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
         
         print(f"[{reg_no}] Profile extracted: regNo={profile_data.get('regNo','?')}, dept={profile_data.get('department','?')}, FA={profile_data.get('fa_name','?')}, AA={profile_data.get('aa_name','?')}")
         
-        # --- STUDIQUE TIMETABLE SCRAPER ---
-        print(f"[{reg_no}] 7. Navigating to Studique for Timetable...")
+        # --- CONSOLE X ACADEMIA TIMETABLE SCRAPER ---
+        print(f"[{reg_no}] 7. Navigating to Console X Academia for Timetable...")
         
         final_tt = {"1": [], "2": [], "3": [], "4": [], "5": []}
         
         try:
-            # --- CONSOLE X ACADEMIA TIMETABLE SCRAPER ---
-            print(f"[{reg_no}] 7. Navigating to Console X Academia for Timetable...")
-            
-            page.goto("https://console-x-academia.vercel.app/login", wait_until="networkidle")
+            # Step 1: Go to the Console X login page
+            page.goto("https://console-x-academia.vercel.app", wait_until="domcontentloaded", timeout=60000)
             page.wait_for_timeout(3000)
+            print(f"[{reg_no}] Console X: Loaded page, URL = {page.url}")
             
-            # Wait for actual input fields
+            # Step 2: Fill login form using Playwright's fill() which properly triggers React state
             try:
-                page.wait_for_selector("input:visible", timeout=15000)
-            except:
-                print(f"[{reg_no}] Console X: No visible inputs after 15s, maybe already logged in?")
-            
-            # Fill credentials using script
-            login_script = r"""
-            (args) => {
-                const email = args[0];
-                const pwd = args[1];
-                let filled = false;
-                const inputs = document.querySelectorAll('input');
-                for (const input of inputs) {
-                    const p = (input.placeholder || '').toLowerCase();
-                    if (p.includes('email') || p.includes('netid') || p.includes('register') || p.includes('user') || input.type === 'email' || p.includes('ra2')) {
-                        input.value = email;
-                        input.dispatchEvent(new Event('input', { bubbles: true }));
-                        filled = true;
-                    } else if (input.type === 'password' || p.includes('password') || p.includes('pass')) {
-                        input.value = pwd;
-                        input.dispatchEvent(new Event('input', { bubbles: true }));
-                        filled = true;
-                    }
-                }
-                if (filled) {
-                    const btns = document.querySelectorAll('button');
-                    for (const btn of btns) {
-                        const t = (btn.textContent || '').toLowerCase();
-                        if (t.includes('login') || t.includes('sign in') || t.includes('submit') || t.includes('continue')) {
-                            btn.click();
-                            return true;
-                        }
-                    }
-                }
-                return false;
-            }
-            """
-            did_login = page.evaluate(login_script, [reg_no, pwd])
-            if did_login:
-                print(f"[{reg_no}] Console X: Submitted login form.")
-                page.wait_for_timeout(6000)
+                # The email input has placeholder "netid@srmist.edu.in"
+                email_input = page.locator("input[placeholder*='netid'], input[placeholder*='srmist'], input[type='text']").first
+                email_input.wait_for(timeout=10000)
+                email_input.fill(reg_no)
+                print(f"[{reg_no}] Console X: Filled email")
                 
-            # Navigate via dashboard and dropdown (to avoid 404 on direct deep link)
-            page.goto("https://console-x-academia.vercel.app/dashboard", wait_until="networkidle")
-            page.wait_for_timeout(4000)
+                pwd_input = page.locator("input[type='password']").first
+                pwd_input.fill(pwd)
+                print(f"[{reg_no}] Console X: Filled password")
+                
+                # Click the Login button (it's a submit button)
+                login_btn = page.locator("button[type='submit']").first
+                login_btn.click()
+                print(f"[{reg_no}] Console X: Clicked Login button")
+                
+                # Wait for navigation to dashboard
+                page.wait_for_timeout(8000)
+                print(f"[{reg_no}] Console X: After login, URL = {page.url}")
+            except Exception as e:
+                print(f"[{reg_no}] Console X: Login error: {e}")
+            
+            # Step 3: Ensure we're on the dashboard
+            current_url = page.url
+            if '/dashboard' not in current_url:
+                print(f"[{reg_no}] Console X: Not on dashboard yet, navigating...")
+                page.goto("https://console-x-academia.vercel.app/dashboard", wait_until="domcontentloaded", timeout=60000)
+                page.wait_for_timeout(4000)
+            
             print(f"[{reg_no}] Console X: Dashboard URL = {page.url}")
             
+            # Step 4: Click Academics dropdown -> Timetable
             print(f"[{reg_no}] Console X: Clicking Academics dropdown...")
             try:
-                # Find and click "Academics" (using JS for reliability if it's a span/div)
-                page.evaluate("""() => {
-                    Array.from(document.querySelectorAll('*')).find(e => e.textContent.trim().startsWith('Academics')).click()
-                }""")
-                page.wait_for_timeout(1000)
+                # Use Playwright's getByText which handles partial/exact matching
+                academics_link = page.get_by_text("Academics", exact=False).first
+                academics_link.click()
+                page.wait_for_timeout(1500)
+                print(f"[{reg_no}] Console X: Clicked Academics")
                 
-                # Find and click "Timetable"
-                page.evaluate("""() => {
-                    Array.from(document.querySelectorAll('*')).find(e => e.textContent.trim() === 'Timetable').click()
-                }""")
-                page.wait_for_timeout(4000)
-                print(f"[{reg_no}] Console X: Reached Timetable via dropdown.")
+                # Now click Timetable from the dropdown
+                timetable_link = page.get_by_text("Timetable", exact=True).first
+                timetable_link.click()
+                page.wait_for_timeout(5000)
+                print(f"[{reg_no}] Console X: Clicked Timetable, URL = {page.url}")
             except Exception as e:
-                print(f"[{reg_no}] Console X: Error clicking dropdown: {e}. Trying direct navigation as fallback...")
-                page.goto("https://console-x-academia.vercel.app/timetable", wait_until="networkidle")
-                page.wait_for_timeout(4000)
+                print(f"[{reg_no}] Console X: Dropdown navigation error: {e}")
+                # Last resort: try direct URL
+                try:
+                    page.goto("https://console-x-academia.vercel.app/timetable", wait_until="domcontentloaded", timeout=60000)
+                    page.wait_for_timeout(4000)
+                except:
+                    pass
             
             # Check for Day Order text to ensure it loaded
             try:
