@@ -1352,12 +1352,24 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
                 
                 click_relative_script = r"""
                 (direction) => {
-                    const els = Array.from(document.querySelectorAll('*'));
-                    let dayEl = els.find(e => /^Day\s+[1-5]$/.test(e.textContent.trim()) && e.children.length === 0);
-                    if (!dayEl) return false;
+                    const allEls = Array.from(document.querySelectorAll('*'));
+                    let dayEl = null;
+                    
+                    // In React, "Day 4" might be split across multiple text nodes (e.g. "Day " and "4").
+                    // A pre-order traversal (querySelectorAll) means parents come before children.
+                    // Therefore, the LAST element whose entire textContent is exactly "Day X"
+                    // will be the absolute deepest/innermost wrapper of that text!
+                    for (const el of allEls) {
+                        if (/^Day\s+[1-5]$/i.test(el.textContent.trim())) {
+                            dayEl = el;
+                        }
+                    }
+                    
+                    if (!dayEl) return 'no_day_element';
                     
                     let current = dayEl;
-                    for (let i = 0; i < 3; i++) {
+                    // Go up to 5 levels deep to find the sibling buttons
+                    for (let i = 0; i < 5; i++) {
                         const parent = current.parentElement;
                         if (!parent) break;
                         const children = Array.from(parent.children);
@@ -1366,31 +1378,31 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
                         if (direction === 'prev') {
                             for (let j = idx - 1; j >= 0; j--) {
                                 const sibling = children[j];
-                                if (sibling.tagName === 'BUTTON' || sibling.tagName === 'SVG' || sibling.querySelector('svg') || sibling.getAttribute('role') === 'button') {
+                                if (sibling.tagName === 'BUTTON' || sibling.getAttribute('role') === 'button' || sibling.tagName === 'SVG' || sibling.querySelector('svg') || sibling.textContent.trim() === '-' || sibling.textContent.trim() === '\u2212') {
                                     sibling.click();
-                                    return true;
+                                    return 'clicked_prev';
                                 }
                             }
                         } else {
                             for (let j = idx + 1; j < children.length; j++) {
                                 const sibling = children[j];
-                                if (sibling.tagName === 'BUTTON' || sibling.tagName === 'SVG' || sibling.querySelector('svg') || sibling.getAttribute('role') === 'button') {
+                                if (sibling.tagName === 'BUTTON' || sibling.getAttribute('role') === 'button' || sibling.tagName === 'SVG' || sibling.querySelector('svg') || sibling.textContent.trim() === '+') {
                                     sibling.click();
-                                    return true;
+                                    return 'clicked_next';
                                 }
                             }
                         }
                         current = parent;
                     }
-                    return false;
+                    return 'no_button_found';
                 }
                 """
                 
                 # Navigate to Day 1 first
                 for _ in range(5):
                     try:
-                        clicked = page.evaluate(click_relative_script, "prev")
-                        if clicked:
+                        res = page.evaluate(click_relative_script, "prev")
+                        if res == 'clicked_prev':
                             page.wait_for_timeout(600)
                     except Exception as e:
                         print(f"[{reg_no}] Error clicking prev: {e}")
@@ -1402,7 +1414,7 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
                     const result = {day: null, classes: [], debug: []};
                     const bodyText = document.body.innerText;
                     
-                    const dayMatch = bodyText.match(/Day\s+(\d)/);
+                    const dayMatch = bodyText.match(/Day\s+(\d)/i);
                     if (dayMatch) result.day = dayMatch[1];
                     else return result;
                     
