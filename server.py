@@ -1199,10 +1199,29 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
                 print(f"[{reg_no}] Console X: Submitted login form.")
                 page.wait_for_timeout(6000)
                 
-            # Navigate to timetable page
-            page.goto("https://console-x-academia.vercel.app/timetable", wait_until="networkidle")
+            # Navigate via dashboard and dropdown (to avoid 404 on direct deep link)
+            page.goto("https://console-x-academia.vercel.app/dashboard", wait_until="networkidle")
             page.wait_for_timeout(4000)
-            print(f"[{reg_no}] Console X: Timetable URL = {page.url}")
+            print(f"[{reg_no}] Console X: Dashboard URL = {page.url}")
+            
+            print(f"[{reg_no}] Console X: Clicking Academics dropdown...")
+            try:
+                # Find and click "Academics" (using JS for reliability if it's a span/div)
+                page.evaluate("""() => {
+                    Array.from(document.querySelectorAll('*')).find(e => e.textContent.trim().startsWith('Academics')).click()
+                }""")
+                page.wait_for_timeout(1000)
+                
+                # Find and click "Timetable"
+                page.evaluate("""() => {
+                    Array.from(document.querySelectorAll('*')).find(e => e.textContent.trim() === 'Timetable').click()
+                }""")
+                page.wait_for_timeout(4000)
+                print(f"[{reg_no}] Console X: Reached Timetable via dropdown.")
+            except Exception as e:
+                print(f"[{reg_no}] Console X: Error clicking dropdown: {e}. Trying direct navigation as fallback...")
+                page.goto("https://console-x-academia.vercel.app/timetable", wait_until="networkidle")
+                page.wait_for_timeout(4000)
             
             # Check for Day Order text to ensure it loaded
             try:
