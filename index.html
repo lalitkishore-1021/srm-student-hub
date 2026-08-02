@@ -4273,7 +4273,7 @@
         
         async function fetchCaptcha() {
             try {
-                let res = await fetch('/api/sp/captcha');
+                let res = await fetch(`${BACKEND_URL}/api/sp/captcha`);
                 let data = await res.json();
                 if (data.captchaImage) {
                     document.getElementById('captcha-img').src = data.captchaImage;
