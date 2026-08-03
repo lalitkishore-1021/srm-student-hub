@@ -53,10 +53,18 @@ def get_captcha():
     b64_img = base64.b64encode(img_res.content).decode('utf-8')
     content_type = img_res.headers.get("content-type", "image/png")
     
+    # Extract all form inputs to handle dynamic honeypot fields like ph_xxxxx
+    inputs = {}
+    for inp in soup.find_all('input'):
+        name = inp.get('name')
+        if name:
+            inputs[name] = inp.get('value', '')
+            
     temp_id = str(uuid.uuid4())
     live_sessions[temp_id] = {
         'session': session,
-        'expires_at': datetime.now() + timedelta(minutes=10)
+        'expires_at': datetime.now() + timedelta(minutes=10),
+        'default_payload': inputs
     }
     
     return {
@@ -69,16 +77,16 @@ def sp_login(username, password, captcha, temp_id):
         raise Exception("Session expired. Please reload the captcha.")
         
     session = live_sessions[temp_id]['session']
+    default_payload = live_sessions[temp_id].get('default_payload', {})
     
     # Post to LoginServlet
-    payload = {
+    payload = default_payload.copy()
+    payload.update({
         "username": username,
         "password": password,
-        "captcha": captcha,
-        "fpPayload": "",
-        "fpToken": "",
-        "recaptchaToken": ""
-    }
+        "captcha": captcha
+    })
+    
     headers = {
         "Content-Type": "application/x-www-form-urlencoded",
         "Referer": f"{SP_BASE}/students/loginManager/youLogin.jsp",
