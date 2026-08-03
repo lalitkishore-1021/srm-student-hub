@@ -6,7 +6,6 @@ import os
 import re
 import sqlite3
 import json
-import sp_scraper
 import requests
 import uuid
 import urllib.parse
@@ -339,7 +338,7 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
 
         print(f"[{reg_no}] 1. Loading Academia...")
         try:
-            page.goto("https://academia.srmist.edu.in/portal/academia-academic-services/redirectFromLogin", wait_until="domcontentloaded", timeout=45000)
+            page.goto("https://academia.srmist.edu.in/", wait_until="domcontentloaded", timeout=45000)
             print(f"[{reg_no}] 2. Page loaded. Current URL: {page.url}")
         except Exception as e:
             out_queue.put({'success': False, 'error': f'Portal failed to load: {str(e)}'})
@@ -449,7 +448,7 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
                 else:
                     # Look for email input field
                     email_input = None
-                    for attempt in range(15):
+                    for attempt in range(5):
                         if find_in_frames('#Welcome, .profile-header, #ul-main-menu, .user-name, #zohoviewer, .tab-title, [class*="profile"]'):
                             print(f"[{reg_no}] Dashboard loaded belatedly during email check (attempt {attempt+1}). Authenticated!")
                             login_success = True
@@ -802,9 +801,24 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
         cookies = context.cookies()
         requests_cookies = {c['name']: c['value'] for c in cookies}
         
-        # We will use page.evaluate to fetch the data directly in the browser context!
-        # This guarantees all headers, cookies, and CSRF tokens are perfect.
+        # We can safely close playwright now, we have the session cookies!
+        browser.close()
+        p.stop()
+        browser = None
+        p = None
         
+        session = requests.Session()
+        session.cookies.update(requests_cookies)
+        session.headers.update({
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+            "Accept-Language": "en-US,en;q=0.5",
+            "Connection": "keep-alive",
+            "Upgrade-Insecure-Requests": "1",
+            "Sec-Fetch-Dest": "document",
+            "Sec-Fetch-Mode": "navigate",
+            "Sec-Fetch-Site": "same-origin"
+        })
         
         from bs4 import BeautifulSoup
 
@@ -819,13 +833,11 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
             return html
 
         # 1. Fetch Attendance (Includes Profile, Photo, Marks, Attendance)
-        print(f"[{reg_no}] Fetching My_Attendance via page.evaluate...")
+        print(f"[{reg_no}] HTTP Fetching My_Attendance...")
+        att_res = session.get("https://academia.srmist.edu.in/portal/academia-academic-services/My_Attendance")
+        
         try:
-            att_res_text = page.evaluate('''async () => {
-                let res = await fetch("https://academia.srmist.edu.in/portal/academia-academic-services/My_Attendance");
-                return await res.text();
-            }''')
-            att_html = extract_sanitized_html(att_res_text)
+            att_html = extract_sanitized_html(att_res.text)
         except Exception as e:
             out_queue.put({'success': False, 'error': f'Failed to parse Academia payload (Attendance): {str(e)}'})
             return
@@ -916,13 +928,10 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
                 break
 
         # 2. Fetch Timetable
-        print(f"[{reg_no}] Fetching Unified_Time_Table via page.evaluate...")
+        print(f"[{reg_no}] HTTP Fetching Unified_Time_Table...")
+        tt_res = session.get("https://academia.srmist.edu.in/portal/academia-academic-services/Unified_Time_Table")
         try:
-            tt_res_text = page.evaluate('''async () => {
-                let res = await fetch("https://academia.srmist.edu.in/portal/academia-academic-services/Unified_Time_Table");
-                return await res.text();
-            }''')
-            tt_html = extract_sanitized_html(tt_res_text)
+            tt_html = extract_sanitized_html(tt_res.text)
         except Exception as e:
             out_queue.put({'success': False, 'error': f'Failed to parse Academia payload (Timetable): {str(e)}'})
             return
@@ -986,18 +995,25 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
             'timetable': timetable,
             'overall_attendance': overall_att
         })
+        
+        # This replaces up to `out_queue.put({`, so we don't need to put it again.
+        # But wait, end_idx was the START of `out_queue.put({`.
+        # The string to replace is `content[start_idx:end_idx]`.
+        # So we just replace that chunk with `hybrid_fetching_code` + `out_queue.put({`
+
+        out_queue.put({
+            'success': True, 
+            'profile': profile_data,
+            'data': parsed_att,
+            'marks': parsed_marks,
+            'timetable': final_tt
+        })
 
     except Exception as e:
-        import traceback
-        print(traceback.format_exc())
         out_queue.put({'success': False, 'error': f"Scraper Exception: {str(e)}"})
     finally:
-        if browser: 
-            try: browser.close()
-            except: pass
-        if p: 
-            try: p.stop()
-            except: pass
+        if browser: browser.close()
+        if p: p.stop()
 
 sync_jobs = {}
 
@@ -1943,74 +1959,6 @@ def ai_predict():
     if reply and not reply.startswith("Sorry, I could not generate a response"):
         return jsonify({'success': True, 'reply': reply})
     return jsonify({'success': False, 'error': reply or 'AI failed to predict.'})
-
-
-@app.route('/api/sp/captcha', methods=['GET'])
-def api_sp_captcha():
-    try:
-        data = sp_scraper.get_captcha()
-        return jsonify(data)
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/api/sp/login', methods=['POST'])
-def api_sp_login():
-    data = request.json
-    username = data.get('username')
-    password = data.get('password')
-    captcha = data.get('captcha')
-    temp_id = data.get('tempId')
-    batch = data.get('batch', 'B.Tech')
-    
-    try:
-        login_data = sp_scraper.sp_login(username, password, captcha, temp_id)
-        session_id = login_data['token']
-        profile = login_data['profile']
-        
-        # Fetch data immediately
-        all_data = sp_scraper.get_all_data(session_id)
-        
-        # We need to map this data to our users table
-        name = all_data['profile'].get('name', 'Unknown')
-        reg_no = all_data['profile'].get('regNo', username)
-        
-        # Just update the DB
-        conn = get_db()
-        cur = conn.cursor()
-        now = datetime.now().isoformat()
-        
-        try:
-            if DATABASE_URL:
-                cur.execute("""
-                    INSERT INTO users (net_id, name, batch, last_sync, data_payload)
-                    VALUES (%s, %s, %s, %s, %s)
-                    ON CONFLICT (net_id) DO UPDATE SET 
-                        name = EXCLUDED.name,
-                        batch = EXCLUDED.batch,
-                        last_sync = EXCLUDED.last_sync,
-                        data_payload = EXCLUDED.data_payload
-                """, (username, name, batch, now, json.dumps(all_data)))
-            else:
-                cur.execute("""
-                    INSERT INTO users (net_id, name, batch, last_sync, data_payload)
-                    VALUES (?, ?, ?, ?, ?)
-                    ON CONFLICT(net_id) DO UPDATE SET
-                        name = excluded.name,
-                        batch = excluded.batch,
-                        last_sync = excluded.last_sync,
-                        data_payload = excluded.data_payload
-                """, (username, name, batch, now, json.dumps(all_data)))
-            conn.commit()
-        except Exception as e:
-            print("DB error:", e)
-        finally:
-            cur.close()
-            conn.close()
-            
-        return jsonify({'success': True, 'data': all_data})
-    except Exception as e:
-        print("Login error:", e)
-        return jsonify({'success': False, 'error': str(e)})
 
 # --- CHAT & SPOTTED ENDPOINTS ---
 

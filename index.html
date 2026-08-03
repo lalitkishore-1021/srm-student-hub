@@ -2605,14 +2605,6 @@
                     <span class="login-pwd-toggle" onclick="const pwd=document.getElementById('srm-pwd'); if(pwd.type==='password'){pwd.type='text'; this.innerHTML='<svg viewBox=\'0 0 24 24\' width=\'18\' height=\'18\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'2.5\' stroke-linecap=\'round\' stroke-linejoin=\'round\'><path d=\'M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24\'></path><line x1=\'1\' y1=\'1\' x2=\'23\' y2=\'23\'></line></svg>';}else{pwd.type='password'; this.innerHTML='<svg viewBox=\'0 0 24 24\' width=\'18\' height=\'18\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'2.5\' stroke-linecap=\'round\' stroke-linejoin=\'round\'><path d=\'M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z\'></path><circle cx=\'12\' cy=\'12\' r=\'3\'></circle></svg>';}"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg></span>
                 </div>
                 
-                <div id="captcha-container" style="display: none; margin-top: 15px; flex-direction: column; align-items: center; gap: 10px;">
-                    <img id="captcha-img" src="" alt="Captcha" style="border-radius: 8px; border: 1px solid var(--glass-border); max-width: 150px;">
-                    <div class="login-input-wrapper">
-                        <span class="login-input-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg></span>
-                        <input type="text" id="srm-captcha" placeholder="Enter Captcha" class="login-input">
-                    </div>
-                </div>
-                
                 <button class="login-auth-btn" id="login-auth-btn" onclick="startLiveSync()">AUTHENTICATE & SYNC</button>
             </div>
 
@@ -4269,35 +4261,13 @@
             }
         }
 
-        let tempSessionId = "";
-        
-        async function fetchCaptcha() {
-            try {
-                let res = await fetch(`${BACKEND_URL}/api/sp/captcha`);
-                let data = await res.json();
-                if (data.captchaImage) {
-                    document.getElementById('captcha-img').src = data.captchaImage;
-                    tempSessionId = data.tempId;
-                    document.getElementById('captcha-container').style.display = 'flex';
-                }
-            } catch (e) {
-                console.error("Captcha fetch error", e);
-            }
-        }
-        
-        // Fetch captcha when modal opens
-        document.addEventListener('DOMContentLoaded', () => {
-            fetchCaptcha();
-        });
-
         async function startLiveSync() {
             const regNo = document.getElementById('srm-reg').value.trim();
             const pwd = document.getElementById('srm-pwd').value;
-            const captcha = document.getElementById('srm-captcha').value.trim();
             const statusText = document.getElementById('sync-status');
 
-            if (!regNo || !pwd || !captcha) {
-                alert("Please enter your NetID, Password, and Captcha.");
+            if (!regNo || !pwd) {
+                alert("Please enter your NetID/Email and Password.");
                 return;
             }
 
@@ -4305,7 +4275,7 @@
             document.getElementById('login-loader-container').style.display = 'flex';
 
             let secondsPassed = 0;
-            statusText.innerHTML = ` Communicating with SP Portal... <span style="font-family: inherit; font-size: 1.1rem; color: #fff; background: rgba(255,170,0,0.2); padding: 2px 8px; border-radius: 6px;">0s</span>`;
+            statusText.innerHTML = ` Connecting to Academia... <span style="font-family: inherit; font-size: 1.1rem; color: #fff; background: rgba(255,170,0,0.2); padding: 2px 8px; border-radius: 6px;">0s</span>`;
             statusText.style.color = "var(--primary)";
             
             const tips = [
@@ -4319,13 +4289,13 @@
 
             let timerInterval = setInterval(() => {
                 secondsPassed++;
-                statusText.innerHTML = ` Extracting academic records... <span style="font-family: inherit; font-size: 1.1rem; color: #fff; background: rgba(255,170,0,0.2); padding: 2px 8px; border-radius: 6px;">${secondsPassed}s</span>`;
+                statusText.innerHTML = ` Syncing securely... <span style="font-family: inherit; font-size: 1.1rem; color: #fff; background: rgba(255,170,0,0.2); padding: 2px 8px; border-radius: 6px;">${secondsPassed}s</span>`;
                 
-                let prog = Math.min((secondsPassed / 10) * 100, 95);
+                let prog = Math.min((secondsPassed / 50) * 100, 95);
                 let pb = document.getElementById('login-progress-bar');
                 if (pb) pb.style.width = prog + '%';
 
-                if (secondsPassed % 3 === 0) {
+                if (secondsPassed % 5 === 0) {
                     tipIndex = (tipIndex + 1) % tips.length;
                     let tipEl = document.getElementById('login-tip');
                     if (tipEl) {
@@ -4339,32 +4309,56 @@
             }, 1000);
 
             try {
-                const initRes = await fetch(`${BACKEND_URL}/api/sp/login`, {
+                const initRes = await fetch(`${BACKEND_URL}/api/start_session`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ username: regNo, password: pwd, captcha: captcha, tempId: tempSessionId, batch: currentBatch })
+                    body: JSON.stringify({ regNo: regNo, pwd: pwd, batch: currentBatch })
                 });
 
                 const initData = await initRes.json();
-                let result = null;
-                
                 if (!initData.success) {
                     clearInterval(timerInterval);
-                    statusText.innerText = ` ${initData.error || "Login failed."}`;
+                    statusText.innerText = ` ${initData.error}`;
                     statusText.style.color = "var(--danger)";
                     return;
-                } else {
-                    result = initData.data; // success
+                }
+
+                const syncId = initData.sync_id;
+                let result = null;
+
+                // Polling loop
+                while (true) {
+                    await new Promise(r => setTimeout(r, 3000)); // wait 3 seconds
+                    try {
+                        const statusRes = await fetch(`${BACKEND_URL}/api/sync_status/${syncId}`);
+                        const statusData = await statusRes.json();
+                        
+                        if (statusData.status === 'completed' || statusData.status === 'failed') {
+                            result = statusData.result;
+                            break;
+                        }
+                    } catch (err) {
+                        console.warn("Polling error (will retry):", err);
+                    }
+                    
+                    if (secondsPassed > 240) { // Hard limit 4 minutes
+                        result = { success: false, error: "Sync timed out. Academia is too slow today." };
+                        break;
+                    }
                 }
 
                 clearInterval(timerInterval);
-                statusText.innerText = " Sync Complete!";
-                
-                const attList = result.subjects || result.attendance || [];
-                const marksList = result.marks || [];
-                const ttDict = result.timetable || {};
-                const profile = result.profile || {};
 
+                if (!result || !result.success) {
+                    statusText.innerText = ` ${result ? result.error : 'Unknown error'} (Failed after ${secondsPassed}s)`;
+                    statusText.style.color = "var(--danger)";
+                    return;
+                }
+
+                statusText.innerText = ` Success! Synced in ${secondsPassed} seconds.`;
+                statusText.style.color = "var(--success)";
+
+                isLoggedIn = true;
                 localStorage.setItem("isLoggedIn", "true");
                 
                 // Store credentials for auto background sync
@@ -4373,6 +4367,11 @@
                 localStorage.setItem("syncBatch", currentBatch);
 
                 updateHomeState();
+
+                const attList = Array.isArray(result.data) ? result.data : [];
+                const marksList = Array.isArray(result.marks) ? result.marks : [];
+                const ttDict = result.timetable || {};
+                const profile = result.profile || {};
 
                 localStorage.setItem('squadProfile', JSON.stringify(profile));
                 localStorage.setItem('squadAttendance', JSON.stringify(attList));
@@ -4562,13 +4561,13 @@
             attendanceData = attData || [];
 
             attendanceData.forEach(sub => {
-                let name = sub.courseTitle || sub.name || sub.title || "Unknown Subject";
-                let rawId = sub.id || sub.courseCode || sub.code || name;
+                let name = sub.courseTitle || sub.name || "Unknown Subject";
+                let rawId = sub.id || sub.courseCode || name;
                 let safeId = rawId.toString().replace(/[^a-zA-Z0-9]/g, '');
                 
                 let sim = simulationState[safeId] || { bunked: 0, attended: 0 };
                 
-                let pct = parseFloat(sub.attended) || parseFloat(sub.attendancePercent) || 0;
+                let pct = parseFloat(sub.attended) || 0;
                 let C   = parseInt(sub.classes_per_cycle) || 1;
 
                 const TARGET = 0.75;
