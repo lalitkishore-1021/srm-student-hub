@@ -34,12 +34,12 @@ def get_captcha():
     # 2. Hit youLogin.jsp to get the captcha image URL
     res = session.get(f"{SP_BASE}/students/loginManager/youLogin.jsp", verify=False)
     soup = BeautifulSoup(res.text, "html.parser")
-    captcha_img = soup.select_one("img[src*='SCaptchaServlet'], img[src*='captcha']")
+    captcha_img = soup.select_one("img#secure_captcha, img[data-src*='SCaptchaServlet'], img[src*='SCaptchaServlet']")
     
     if not captcha_img:
         raise Exception("Captcha image not found in login page.")
         
-    captcha_src = captcha_img['src']
+    captcha_src = captcha_img.get('data-src') or captcha_img.get('src')
     if not captcha_src.startswith("http"):
         captcha_src = f"{SP_BASE}/students/loginManager/" + captcha_src.lstrip("/")
         
