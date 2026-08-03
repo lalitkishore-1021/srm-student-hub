@@ -801,24 +801,9 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
         cookies = context.cookies()
         requests_cookies = {c['name']: c['value'] for c in cookies}
         
-        # We can safely close playwright now, we have the session cookies!
-        browser.close()
-        p.stop()
-        browser = None
-        p = None
+        # We will use page.evaluate to fetch the data directly in the browser context!
+        # This guarantees all headers, cookies, and CSRF tokens are perfect.
         
-        session = requests.Session()
-        session.cookies.update(requests_cookies)
-        session.headers.update({
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
-            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
-            "Accept-Language": "en-US,en;q=0.5",
-            "Connection": "keep-alive",
-            "Upgrade-Insecure-Requests": "1",
-            "Sec-Fetch-Dest": "document",
-            "Sec-Fetch-Mode": "navigate",
-            "Sec-Fetch-Site": "same-origin"
-        })
         
         from bs4 import BeautifulSoup
 
@@ -833,11 +818,13 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
             return html
 
         # 1. Fetch Attendance (Includes Profile, Photo, Marks, Attendance)
-        print(f"[{reg_no}] HTTP Fetching My_Attendance...")
-        att_res = session.get("https://academia.srmist.edu.in/portal/academia-academic-services/My_Attendance")
-        
+        print(f"[{reg_no}] Fetching My_Attendance via page.evaluate...")
         try:
-            att_html = extract_sanitized_html(att_res.text)
+            att_res_text = page.evaluate('''async () => {
+                let res = await fetch("https://academia.srmist.edu.in/portal/academia-academic-services/My_Attendance");
+                return await res.text();
+            }''')
+            att_html = extract_sanitized_html(att_res_text)
         except Exception as e:
             out_queue.put({'success': False, 'error': f'Failed to parse Academia payload (Attendance): {str(e)}'})
             return
@@ -928,10 +915,13 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
                 break
 
         # 2. Fetch Timetable
-        print(f"[{reg_no}] HTTP Fetching Unified_Time_Table...")
-        tt_res = session.get("https://academia.srmist.edu.in/portal/academia-academic-services/Unified_Time_Table")
+        print(f"[{reg_no}] Fetching Unified_Time_Table via page.evaluate...")
         try:
-            tt_html = extract_sanitized_html(tt_res.text)
+            tt_res_text = page.evaluate('''async () => {
+                let res = await fetch("https://academia.srmist.edu.in/portal/academia-academic-services/Unified_Time_Table");
+                return await res.text();
+            }''')
+            tt_html = extract_sanitized_html(tt_res_text)
         except Exception as e:
             out_queue.put({'success': False, 'error': f'Failed to parse Academia payload (Timetable): {str(e)}'})
             return
