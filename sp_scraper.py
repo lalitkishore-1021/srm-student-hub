@@ -41,7 +41,11 @@ def get_captcha():
         
     captcha_src = captcha_img.get('data-src') or captcha_img.get('src')
     if not captcha_src.startswith("http"):
-        captcha_src = f"{SP_BASE}/students/loginManager/" + captcha_src.lstrip("/")
+        if captcha_src.startswith("/"):
+            # it's an absolute path on the domain
+            captcha_src = "https://sp.srmist.edu.in" + captcha_src
+        else:
+            captcha_src = f"{SP_BASE}/students/loginManager/" + captcha_src
         
     # 3. Fetch the captcha image
     img_res = session.get(captcha_src, verify=False)
