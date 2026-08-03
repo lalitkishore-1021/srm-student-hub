@@ -793,204 +793,611 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
                 page.goto(full_url, wait_until="domcontentloaded", timeout=15000)
                 return True
 
-        # =========================================================================
-        # HYBRID API FETCHING PHASE
-        # =========================================================================
-        print(f"[{reg_no}] Auth successful! Extracting cookies for fast HTTP fetch...")
+        # --- ATTENDANCE & MARKS ---
+        print(f"[{reg_no}] 5. Scoping Attendance...")
         
-        cookies = context.cookies()
-        requests_cookies = {c['name']: c['value'] for c in cookies}
+        # Try multiple attendance page URLs
+        att_urls_pool = [
+            "https://academia.srmist.edu.in/#Page:My_Attendance",
+            "https://academia.srmist.edu.in/#Page:My_Attendance_2024_25",
+            "https://academia.srmist.edu.in/#Page:My_Attendance_2025_26",
+            "https://academia.srmist.edu.in/#Page:My_Attendance_2023_24"
+        ]
         
-        # We will use page.evaluate to fetch the data directly in the browser context!
-        # This guarantees all headers, cookies, and CSRF tokens are perfect.
-        
-        
-        from bs4 import BeautifulSoup
-
-        def extract_sanitized_html(raw_html):
-            match = re.search(r"pageSanitizer\.sanitize\('([\s\S]*?)'\);", raw_html)
-            if not match:
-                raise ValueError("Could not find pageSanitizer payload in response")
-            js_string = match.group(1)
-            html = js_string.replace("\'", "'").replace("\\n", "\n").replace("\\/", "/")
-            # Also handle actual newlines if any
-            html = html.encode('utf-8').decode('unicode_escape', errors='ignore')
-            return html
-
-        # 1. Fetch Attendance (Includes Profile, Photo, Marks, Attendance)
-        print(f"[{reg_no}] Fetching My_Attendance via page.evaluate...")
-        try:
-            att_res_text = page.evaluate('''async () => {
-                let res = await fetch("https://academia.srmist.edu.in/portal/academia-academic-services/My_Attendance");
-                return await res.text();
-            }''')
-            att_html = extract_sanitized_html(att_res_text)
-        except Exception as e:
-            out_queue.put({'success': False, 'error': f'Failed to parse Academia payload (Attendance): {str(e)}'})
-            return
+        # Only check URLs that are actually in the student's menu
+        att_urls = [u for u in att_urls_pool if any(u.split('#Page:')[1] in link for link in unique_links)]
+        if not att_urls:
+            att_urls = att_urls_pool
             
-        soup = BeautifulSoup(att_html, "html.parser")
+        raw_tables = []
+        for att_url in att_urls:
+            print(f"[{reg_no}] Trying attendance URL: {att_url}")
+            navigate_to_page(att_url)
+            raw_tables = wait_for_data_tables(["attn", "attendance", "conducted", "absent", "hour", "code"], timeout=15000)
+            if raw_tables and len(raw_tables) > 0:
+                # Check if any table actually has attendance-like data
+                has_att_data = False
+                for t in raw_tables:
+                    for row in t:
+                        row_str = ' '.join(str(c).lower() for c in row)
+                        if any(k in row_str for k in ["attn", "attendance", "conducted", "absent", "hour"]):
+                            has_att_data = True
+                            break
+                    if has_att_data: break
+                if has_att_data:
+                    print(f"[{reg_no}] Found attendance data from {att_url}")
+                    break
         
-        # Extract Profile
-        profile_data = {}
-        first_table = soup.find("table")
-        if first_table:
-            for row in first_table.find_all("tr"):
-                cells = row.find_all("td")
-                if len(cells) >= 2:
-                    label = cells[0].get_text(strip=True).rstrip(":")
-                    value = cells[1].get_text(strip=True)
-                    if label:
-                        profile_data[label] = value
-                        
-        # Extract Photo
-        photo_img = soup.select_one("img[src*='Photo_Upload']")
-        photoUrl = photo_img['src'] if photo_img else None
-        if photoUrl:
-            profile_data['photoUrl'] = photoUrl
-
-        # Extract Attendance
-        subjects = []
-        for table in soup.find_all("table"):
-            if "Course Code" in table.get_text() and "Attn %" in table.get_text():
-                for row in table.find_all("tr")[1:]:  # skip header
-                    cells = row.find_all("td")
-                    if len(cells) >= 6:
-                        code = cells[0].get_text(strip=True).split("\n")[0]
-                        title = cells[1].get_text(strip=True)
-                        category = cells[2].get_text(strip=True)
-                        faculty = cells[3].get_text(strip=True)
-                        slot = cells[4].get_text(strip=True)
-                        room = cells[5].get_text(strip=True)
-                        pct_text = cells[6].get_text(strip=True)
-                        try:
-                            pct = float(pct_text)
-                        except:
-                            pct = 0.0
-                            
-                        subjects.append({
-                            'courseCode': code,
-                            'courseTitle': title,
-                            'category': category,
-                            'faculty': faculty,
-                            'slot': slot,
-                            'room': room,
-                            'attended': pct,
-                            'classes_per_cycle': 1 # Default, will be updated by timetable
-                        })
-                break
-
-        # Extract Marks
-        marks = []
-        for table in soup.find_all("table"):
-            if "Test Performance" in table.get_text():
-                for row in table.find_all("tr")[1:]: # skip header
-                    cells = row.find_all("td", recursive=False)
-                    if len(cells) >= 3:
-                        code = cells[0].get_text(strip=True)
-                        course_type = cells[1].get_text(strip=True)
-                        tests = []
-                        for testCell in cells[2].find_all("td"):
-                            text = testCell.get_text(strip=True)
-                            m = re.search(r'([A-Z]+-[A-Z\d]+)/([\d.]+)\s*\|\s*([\d.]*)', text)
-                            if m:
-                                t_name = m.group(1)
-                                t_max = m.group(2)
-                                t_scored = m.group(3)
-                                tests.append({
-                                    'name': t_name,
-                                    'max': float(t_max) if t_max else 0.0,
-                                    'scored': float(t_scored) if t_scored else 0.0
-                                })
-                        
-                        perf_string_parts = []
-                        for t in tests:
-                            perf_string_parts.append(f"{t['name']}/{t['max']} | {t['scored']}")
-                        perf_string = "   ".join(perf_string_parts)
-                        
-                        marks.append({
-                            'courseTitle': code,
-                            'Test Performance': perf_string
-                        })
-                break
-
-        # 2. Fetch Timetable
-        print(f"[{reg_no}] Fetching Unified_Time_Table via page.evaluate...")
-        try:
-            tt_res_text = page.evaluate('''async () => {
-                let res = await fetch("https://academia.srmist.edu.in/portal/academia-academic-services/Unified_Time_Table");
-                return await res.text();
-            }''')
-            tt_html = extract_sanitized_html(tt_res_text)
-        except Exception as e:
-            out_queue.put({'success': False, 'error': f'Failed to parse Academia payload (Timetable): {str(e)}'})
-            return
-            
-        tt_soup = BeautifulSoup(tt_html, "html.parser")
+        # If still no data, try a reload on the primary URL
+        if not raw_tables or not any(k in str(c).lower() for k in ["attn", "attendance", "conducted", "absent"] for t in raw_tables for row in t for c in row):
+            print(f"[{reg_no}] Attendance data not found on any URL. Trying reload...")
+            navigate_to_page(att_urls[0])
+            page.wait_for_timeout(2000)
+            raw_tables = wait_for_data_tables(["attn", "attendance", "conducted", "absent", "code"], timeout=12000)
         
-        timetable = []
-        first_tt_table = tt_soup.find("table")
-        if first_tt_table:
-            for row in first_tt_table.find_all("tr"):
-                first_cell = row.find("td")
-                if first_cell and first_cell.get_text(strip=True).startswith("Day "):
-                    day = first_cell.get_text(strip=True)
-                    periods = [c.get_text(strip=True) for c in row.find_all("td")[1:]]
-                    timetable.append({'day': day, 'periods': periods})
+        # Log what we found
+        if raw_tables:
+            print(f"[{reg_no}] Found {len(raw_tables)} tables on attendance page")
+            for idx, t in enumerate(raw_tables):
+                if t and len(t) > 0:
+                    print(f"[{reg_no}]   Table {idx}: {len(t)} rows, headers: {t[0][:5] if t[0] else '?'}")
+        else:
+            print(f"[{reg_no}] WARNING: No tables found on attendance page at all. Semester holidays?")
+            try:
+                print(f"[{reg_no}] DIAGNOSTIC: Attendance page has NO tables. URL: {page.url}")
+                page_text = page.evaluate("document.body.innerText")
+                clean_text = ' | '.join([line.strip() for line in page_text.split('\n') if line.strip()][:25])
+                print(f"[{reg_no}] DIAGNOSTIC ATTENDANCE PAGE TEXT: {clean_text}")
+                for i, f in enumerate(page.frames):
+                    try:
+                        f_text = f.evaluate("document.body.innerText")
+                        f_clean = ' | '.join([line.strip() for line in f_text.split('\n') if line.strip()][:10])
+                        if f_clean:
+                            print(f"[{reg_no}] DIAGNOSTIC ATTENDANCE FRAME {i} TEXT: {f_clean}")
+                    except: pass
+            except Exception as e:
+                print(f"[{reg_no}] Failed to log attendance diagnostics: {e}")
+        
+
+        parsed_att = []
+        parsed_marks = []
+        print(f"[{reg_no}] Found {len(parsed_att)} attendance records. Now loading timetable...")
+
+        def get_table_headers(tbl):
+            if not tbl: return [], "", -1
+            for r_idx in range(min(4, len(tbl))):
+                hdrs = [str(h).lower() for h in tbl[r_idx]]
+                hdr_str = " ".join(hdrs)
+                if ("code" in hdr_str and ("title" in hdr_str or "name" in hdr_str)) or "attn" in hdr_str:
+                    return hdrs, hdr_str, r_idx
+            hdrs = [str(h).lower() for h in tbl[0]]
+            return hdrs, " ".join(hdrs), 0
+
+        # Profile Extraction
+        profile_data = {
+            "name": "STUDENT",
+            "regNo": reg_no.split('@')[0].upper(),
+            "course": "B.Tech",
+            "semester": "Current"
+        }
+        for table in raw_tables:
+            if not table: continue
+            for row in table:
+                if len(row) >= 2:
+                    for i in range(len(row) - 1):
+                        k = str(row[i]).replace(':', '').strip().lower()
+                        v = str(row[i+1]).replace(':', '').strip()
+                        if "name" in k and not "father" in k and not "mother" in k:
+                            if len(v) > 2 and profile_data["name"] == "STUDENT": profile_data["name"] = v
+                        elif "program" in k or "course" in k or "degree" in k or "branch" in k:
+                            if len(v) > 2: profile_data["course"] = v[:35]
+                        elif "semester" in k:
+                            if len(v) > 0 and len(v) <= 2: profile_data["semester"] = v
+
+        for table in raw_tables:
+            if not table: continue
+            headers, header_str, h_idx = get_table_headers(table)
+
+            # Dynamic Attendance Parsing
+            if "attn" in header_str or "attendance" in header_str:
+                try:
+                    idx_code = get_col_index(headers, "code")
+                    idx_title = get_col_index(headers, "title", "name", "description", "desc", "subject")
                     
-        # Update classes per cycle for attendance list using the timetable
-        if timetable and subjects:
-            for sub in subjects:
-                slot_code = sub.get('slot', '')
-                if not slot_code:
+                    idx_faculty = get_col_index(headers, "faculty")
+                    idx_slot = get_col_index(headers, "slot")
+                    idx_room = get_col_index(headers, "room")
+                    
+                    # New UI has "attn %" or similar
+                    idx_attn_perc = get_col_index(headers, "attn %", "attn", "attendance")
+                    # Fallback for old UI
+                    idx_cond = get_col_index(headers, "conducted")
+                    idx_abs = get_col_index(headers, "absent")
+                    
+                    # Extract Credits
+                    idx_credit = get_col_index(headers, "max credit", "credit")
+                    
+                    if idx_code != -1 and idx_title != -1:
+                        for row in table[h_idx+1:]:
+                            credit_val = 3.0
+                            if idx_credit != -1 and len(row) > idx_credit:
+                                try: credit_val = float(row[idx_credit])
+                                except: pass
+                                
+                            if idx_attn_perc != -1 and len(row) > idx_attn_perc:
+                                # New Map: Just Attn %
+                                perc_str = str(row[idx_attn_perc]).replace('%', '').strip()
+                                try:
+                                    perc = float(perc_str)
+                                    parsed_att.append({
+                                        "courseTitle": f"{row[idx_code]} - {row[idx_title][:20]}",
+                                        "attended": perc,
+                                        "total": 100,
+                                        "credits": credit_val,
+                                        "facultyName": row[idx_faculty].strip() if idx_faculty != -1 and len(row) > idx_faculty else "N/A",
+                                        "slot": row[idx_slot].strip() if idx_slot != -1 and len(row) > idx_slot else "N/A",
+                                        "roomNo": row[idx_room].strip() if idx_room != -1 and len(row) > idx_room else "N/A"
+                                    })
+                                except: pass
+                            elif idx_cond != -1 and idx_abs != -1 and len(row) > max(idx_cond, idx_abs):
+                                # Old Map: Hours conducted & absent
+                                try:
+                                    cond = int(float(row[idx_cond] or 0))
+                                    absent = int(float(row[idx_abs] or 0))
+                                    parsed_att.append({
+                                        "courseTitle": f"{row[idx_code]} - {row[idx_title][:20]}",
+                                        "attended": max(0, cond - absent),
+                                        "total": cond,
+                                        "credits": credit_val,
+                                        "facultyName": row[idx_faculty].strip() if idx_faculty != -1 and len(row) > idx_faculty else "N/A",
+                                        "slot": row[idx_slot].strip() if idx_slot != -1 and len(row) > idx_slot else "N/A",
+                                        "roomNo": row[idx_room].strip() if idx_room != -1 and len(row) > idx_room else "N/A"
+                                    })
+                                except: pass
+                except Exception as e:
+                    print("Parsing error (Attendance):", str(e))
                     continue
-                # For slots like "A1,A2,A3", split by comma
-                slots = [s.strip() for s in slot_code.split(',')]
-                count = 0
-                for day_data in timetable:
-                    for p in day_data.get('periods', []):
-                        if any(s in p for s in slots):
-                            count += 1
-                sub["classes_per_cycle"] = count if count > 0 else 1
-                
-        # Calculate overall attendance
-        overall_att = 0.0
-        if subjects:
-            overall_att = sum([float(s.get('attended', 0)) for s in subjects]) / len(subjects)
 
-        print(f"[{reg_no}] HTTP Scraping complete! Formatting output...")
+            # Dynamic Marks Parsing
+            elif any(kw in header_str for kw in ["test performance", "assessment", "marks", "internal"]):
+                try:
+                    idx_code = get_col_index(headers, "code")
+                    idx_title = get_col_index(headers, "title", "name", "course name", "description", "desc", "subject")
+                    idx_perf = get_col_index(headers, "performance", "assessment", "marks", "internal")
+                    
+                    idx_max = get_col_index(headers, "max")
+                    idx_obt = get_col_index(headers, "obtained")
+                    
+                    idx_credit = get_col_index(headers, "max credit", "credit")
+                    
+                    if idx_code == -1 or idx_perf == -1: continue
+                    
+                    current_code = ""
+                    current_title = ""
+                    
+                    for row in table[h_idx+1:]:
+                        code_val = row[idx_code].strip() if idx_code != -1 and len(row) > idx_code else ""
+                        title_val = row[idx_title].strip() if idx_title != -1 and len(row) > idx_title else ""
+                        
+                        # If a row has a valid code, update our tracker. Otherwise, inherit from previous row (handles rowspan).
+                        # Only accept valid course codes (no spaces, slashes, or decimals) to prevent parsing garbage tables.
+                        if code_val and len(code_val) > 2 and "/" not in code_val and "." not in code_val and " " not in code_val.strip():
+                            current_code = code_val
+                            current_title = title_val if title_val else code_val
+                        
+                        if not current_code: continue
+                        
+                        credit_val = 3.0
+                        if idx_credit != -1 and len(row) > idx_credit:
+                            try: credit_val = float(row[idx_credit])
+                            except: pass
+                        
+                        if idx_max != -1 and idx_obt != -1 and len(row) > max(idx_perf, idx_obt, idx_max):
+                            # New Format (Separate Max and Obtained columns)
+                            perf_name = row[idx_perf].replace(' ', '')
+                            max_val = str(row[idx_max]).strip()
+                            obt_val = str(row[idx_obt]).strip()
+                            
+                            if not obt_val or not max_val: continue
+                            
+                            formatted_perf = f"{perf_name}/{max_val} | {obt_val}"
+                            
+                            existing = next((item for item in parsed_marks if item["courseCode"] == current_code), None)
+                            if existing:
+                                if formatted_perf not in existing["Test Performance"]:
+                                    existing["Test Performance"] += f" \n {formatted_perf}"
+                                # Upgrade title if we found a better one
+                                if len(current_title) > len(existing.get("courseTitle", "")):
+                                    existing["courseTitle"] = current_title
+                            else:
+                                parsed_marks.append({
+                                    "courseTitle": current_title,
+                                    "courseCode": current_code,
+                                    "Test Performance": formatted_perf,
+                                    "credits": credit_val
+                                })
+                        elif len(row) > idx_perf:
+                            # Old Format Fallback
+                            perf_str = row[idx_perf].replace('\n', ' | ')
+                            if not perf_str.strip(): continue
+                            
+                            existing = next((item for item in parsed_marks if item["courseCode"] == current_code), None)
+                            if existing:
+                                if perf_str not in existing["Test Performance"]:
+                                    existing["Test Performance"] += f" \n {perf_str}"
+                            else:
+                                parsed_marks.append({
+                                    "courseTitle": current_title,
+                                    "courseCode": current_code,
+                                    "Test Performance": perf_str,
+                                    "credits": credit_val
+                                })
+                except Exception as e:
+                    print("Parsing error (Marks):", str(e))
+                    continue
+
+        # --- TIMETABLE STEP 1 (STUDENT SLOTS) ---
+        print(f"[{reg_no}] 6. Scoping Registered Slots...")
+        student_slots = {}
+        slot_map = {}
+        student_batch = 1
+        timetable_urls_pool = [
+            "https://academia.srmist.edu.in/#Page:My_Time_Table_2023_24",
+            "https://academia.srmist.edu.in/#Page:My_Time_Table_2024_25",
+            "https://academia.srmist.edu.in/#Page:My_Time_Table_2025_26",
+            "https://academia.srmist.edu.in/#Page:My_Time_Table"
+        ]
+        timetable_urls = [u for u in timetable_urls_pool if any(u.split('#Page:')[1] in link for link in unique_links)]
+        if not timetable_urls:
+            timetable_urls = timetable_urls_pool
         
-        # Save to DB asynchronously inside the worker to keep background sync simple
+        slot_tables = []
+        for url in timetable_urls:
+            print(f"[{reg_no}] Trying timetable URL: {url}")
+            navigate_to_page(url)
+            slot_tables = wait_for_data_tables(["slot", "course", "code"], timeout=12000)
+            if any(k in str(c).lower() for k in ["slot", "course", "code"] for t in slot_tables for row in t for c in row):
+                print(f"[{reg_no}] Successfully loaded timetable from {url}")
+                break
+        else:
+            print(f"[{reg_no}] Warning: No slot tables found with primary URLs. Attempting page reload on primary...")
+            navigate_to_page(timetable_urls[0])
+            page.wait_for_timeout(2000)
+            slot_tables = wait_for_data_tables(["slot", "course", "code"], timeout=15000)
+            if not slot_tables:
+                try:
+                    print(f"[{reg_no}] DIAGNOSTIC: Timetable page has NO tables. URL: {page.url}")
+                    page_text = page.evaluate("document.body.innerText")
+                    clean_text = ' | '.join([line.strip() for line in page_text.split('\n') if line.strip()][:25])
+                    print(f"[{reg_no}] DIAGNOSTIC TIMETABLE PAGE TEXT: {clean_text}")
+                    for i, f in enumerate(page.frames):
+                        try:
+                            f_text = f.evaluate("document.body.innerText")
+                            f_clean = ' | '.join([line.strip() for line in f_text.split('\n') if line.strip()][:10])
+                            if f_clean:
+                                print(f"[{reg_no}] DIAGNOSTIC TIMETABLE FRAME {i} TEXT: {f_clean}")
+                        except: pass
+                except Exception as e:
+                    print(f"[{reg_no}] Failed to log timetable diagnostics: {e}")
+        
+        # --- EXTRACT RICH PROFILE DATA FROM TIMETABLE PAGE ---
+        for table in slot_tables:
+            if not table: continue
+            for row in table:
+                if len(row) >= 2:
+                    for i in range(len(row) - 1):
+                        k = str(row[i]).replace(':', '').strip().lower()
+                        v = str(row[i+1]).replace(':', '').strip()
+                        if "registration" in k and "number" in k:
+                            if len(v) > 5: profile_data["regNo"] = v.strip()
+                        elif "department" in k:
+                            if len(v) > 2: profile_data["department"] = v.strip()
+                        elif "combo" in k or "batch" in k:
+                            if len(v) > 0: 
+                                profile_data["batch"] = v.strip()
+                                parts = v.strip().split("/")
+                                if len(parts) >= 2 and parts[-1].strip().isdigit():
+                                    student_batch = int(parts[-1].strip())
+                        elif "class room" in k or "classroom" in k:
+                            if len(v) > 0: profile_data["classRoom"] = v.strip()
+                        elif "program" in k:
+                            if len(v) > 2: profile_data["course"] = v.strip()[:35]
+                        elif "semester" in k:
+                            if len(v) > 0 and len(v) <= 2: profile_data["semester"] = v.strip()
+                        elif "name" in k and "father" not in k and "mother" not in k and "faculty" not in k:
+                            if len(v) > 2 and profile_data["name"] == "STUDENT": profile_data["name"] = v.strip()
+        
+        # --- EXTRACT ADVISOR DATA FROM TIMETABLE PAGE ---
+        print(f"[{reg_no}] 6a. Extracting Advisor Details...")
+        for table in slot_tables:
+            if not table: continue
+            for r_idx, row in enumerate(table):
+                for c_idx, cell in enumerate(row):
+                    cell_str = str(cell).strip()
+                    cell_lower = cell_str.lower()
+                    
+                    # Faculty Advisor detection (usually in one multiline cell)
+                    if 'faculty advisor' in cell_lower:
+                        lines = [line.strip() for line in cell_str.split('\n') if line.strip()]
+                        for k, line in enumerate(lines):
+                            ll = line.lower()
+                            if 'faculty advisor' in ll:
+                                if k > 0 and len(lines[k-1]) > 3:
+                                    profile_data['fa_name'] = lines[k-1]
+                            elif '@' in ll and 'srmist' in ll:
+                                profile_data['fa_email'] = line
+                            elif re.match(r'^\+?[0-9\s-]{10,}$', line) and len(re.sub(r'\D', '', line)) >= 10:
+                                profile_data['fa_phone'] = re.sub(r'\D', '', line)[-10:]
+                    
+                    # Academic Advisor detection
+                    if 'academic advisor' in cell_lower:
+                        lines = [line.strip() for line in cell_str.split('\n') if line.strip()]
+                        for k, line in enumerate(lines):
+                            ll = line.lower()
+                            if 'academic advisor' in ll:
+                                if k > 0 and len(lines[k-1]) > 3:
+                                    profile_data['aa_name'] = lines[k-1]
+                            elif '@' in ll and 'srmist' in ll:
+                                profile_data['aa_email'] = line
+                            elif re.match(r'^\+?[0-9\s-]{10,}$', line) and len(re.sub(r'\D', '', line)) >= 10:
+                                profile_data['aa_phone'] = re.sub(r'\D', '', line)[-10:]
+        
+        print(f"[{reg_no}] Profile extracted: regNo={profile_data.get('regNo','?')}, dept={profile_data.get('department','?')}, FA={profile_data.get('fa_name','?')}, AA={profile_data.get('aa_name','?')}")
+        
+        # --- CONSOLE X ACADEMIA TIMETABLE SCRAPER ---
+        print(f"[{reg_no}] 7. Navigating to Console X Academia for Timetable...")
+        
+        final_tt = {"1": [], "2": [], "3": [], "4": [], "5": []}
+        
         try:
-            name = profile_data.get("Name", "").strip() or profile_data.get("Student Name", "").strip()
-            conn = get_db()
-            cur = conn.cursor()
-            cur.execute("SELECT net_id FROM students WHERE net_id = ?", (reg_no,))
-            if cur.fetchone():
-                cur.execute("UPDATE students SET name = ?, register_no = ?, overall_attendance = ?, synced_at = ? WHERE net_id = ?", 
-                            (name, reg_no.split('@')[0].upper(), overall_att, datetime.now().isoformat(), reg_no))
-            else:
-                cur.execute("INSERT INTO students (net_id, name, register_no, overall_attendance, synced_at) VALUES (?, ?, ?, ?, ?)",
-                            (reg_no, name, reg_no.split('@')[0].upper(), overall_att, datetime.now().isoformat()))
-            conn.commit()
-            conn.close()
+            # Step 1: Go to the Console X login page
+            page.goto("https://console-x-academia.vercel.app", wait_until="domcontentloaded", timeout=60000)
+            page.wait_for_timeout(3000)
+            print(f"[{reg_no}] Console X: Loaded page, URL = {page.url}")
+            
+            # Step 2: Fill login form using Playwright's fill() which properly triggers React state
+            try:
+                # The email input has placeholder "netid@srmist.edu.in"
+                email_input = page.locator("input[placeholder*='netid'], input[placeholder*='srmist'], input[type='text']").first
+                email_input.wait_for(timeout=10000)
+                email_input.fill(reg_no)
+                print(f"[{reg_no}] Console X: Filled email")
+                
+                pwd_input = page.locator("input[type='password']").first
+                pwd_input.fill(pwd)
+                print(f"[{reg_no}] Console X: Filled password")
+                
+                # Click the Login button (it's a submit button)
+                login_btn = page.locator("button[type='submit']").first
+                login_btn.click()
+                print(f"[{reg_no}] Console X: Clicked Login button")
+                
+                # Wait for navigation to dashboard
+                page.wait_for_timeout(8000)
+                print(f"[{reg_no}] Console X: After login, URL = {page.url}")
+            except Exception as e:
+                print(f"[{reg_no}] Console X: Login error: {e}")
+            
+            # Step 3: Ensure we're on the dashboard
+            current_url = page.url
+            if '/dashboard' not in current_url:
+                print(f"[{reg_no}] Console X: Not on dashboard yet, navigating...")
+                page.goto("https://console-x-academia.vercel.app/dashboard", wait_until="domcontentloaded", timeout=60000)
+                page.wait_for_timeout(4000)
+            
+            print(f"[{reg_no}] Console X: Dashboard URL = {page.url}")
+            
+            # Step 4: Click Academics dropdown -> Timetable
+            print(f"[{reg_no}] Console X: Clicking Academics dropdown...")
+            try:
+                # Use Playwright's getByText which handles partial/exact matching
+                academics_link = page.get_by_text("Academics", exact=False).first
+                academics_link.click()
+                page.wait_for_timeout(1500)
+                print(f"[{reg_no}] Console X: Clicked Academics")
+                
+                # Now click Timetable from the dropdown
+                timetable_link = page.get_by_text("Timetable", exact=True).first
+                timetable_link.click()
+                page.wait_for_timeout(5000)
+                print(f"[{reg_no}] Console X: Clicked Timetable, URL = {page.url}")
+            except Exception as e:
+                print(f"[{reg_no}] Console X: Dropdown navigation error: {e}")
+                # Last resort: try direct URL
+                try:
+                    page.goto("https://console-x-academia.vercel.app/timetable", wait_until="domcontentloaded", timeout=60000)
+                    page.wait_for_timeout(4000)
+                except:
+                    pass
+            
+            # Check for Day Order text to ensure it loaded
+            try:
+                page.wait_for_function(
+                    "() => document.body.innerText.toUpperCase().includes('DAY ORDER')",
+                    timeout=20000
+                )
+            except:
+                print(f"[{reg_no}] Console X: Day Order text not found after 20s. Content might be missing.")
+            
+            # Parsing script for class cards
+            parse_cards_script = r"""
+            () => {
+                const result = {classes: []};
+                const timeRegex = /\d{2}:\d{2}\s*-\s*\d{2}:\d{2}/;
+                const allEls = document.querySelectorAll('*');
+                const seen = new Set();
+                
+                for (const el of allEls) {
+                    const text = (el.innerText || '').trim();
+                    if (!text || text.length > 300 || text.length < 15) continue;
+                    if (!timeRegex.test(text)) continue;
+                    
+                    const key = text.substring(0, 80);
+                    if (seen.has(key)) continue;
+                    seen.add(key);
+                    
+                    const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+                    let time = "", code = "", subject = "", room = "N/A", faculty = "";
+                    
+                    for (const line of lines) {
+                        if (timeRegex.test(line)) {
+                            time = line;
+                        } else if (/^[A-Z0-9]{5,15}/.test(line) && line.length > 5) {
+                            const match = line.match(/^([A-Z0-9]{5,15})(.*)/);
+                            code = match[1].trim();
+                            faculty = match[2].replace(/^[ΓÇó┬╖\-\s]+/, '').trim();
+                        } else if (/^(CLS|TP|UB|BEL|TECH|CRC|MB|Room)\s*\d+/i.test(line)) {
+                            room = line;
+                        } else if (line.toLowerCase().startsWith('slot')) {
+                            // ignore
+                        } else if (line.length > 4 && !subject && !/day order/i.test(line)) {
+                            subject = line;
+                        }
+                    }
+                    
+                    if (time && subject) {
+                        result.classes.push({ time, subject, code: code || subject, room, faculty, type: "" });
+                    }
+                }
+                return result;
+            }
+            """
+            
+            # Script to click the specific day button
+            click_day_script = r"""
+            (dayNum) => {
+                const allEls = Array.from(document.querySelectorAll('button, div, span'));
+                // 1. Try exact match "DAY ORDER X"
+                for (const el of allEls) {
+                    const text = (el.innerText || '').trim().replace(/\s+/g, ' ').toUpperCase();
+                    if (text === `DAY ORDER ${dayNum}`) {
+                        el.click();
+                        return true;
+                    }
+                }
+                // 2. Try to find a container with both
+                for (const el of allEls) {
+                    const text = (el.innerText || '').trim().toUpperCase();
+                    if (text.includes('DAY ORDER') && text.includes(dayNum.toString()) && text.length < 20) {
+                        el.click();
+                        return true;
+                    }
+                }
+                return false;
+            }
+            """
+            
+            for day_num in range(1, 6):
+                # Click the Day button
+                clicked = page.evaluate(click_day_script, day_num)
+                if not clicked:
+                    print(f"[{reg_no}] Console X: Failed to click Day {day_num} button via script. Trying Playwright locators...")
+                    try:
+                        page.locator(f"text=DAY ORDER {day_num}").first.click(timeout=1000)
+                    except:
+                        pass
+                
+                page.wait_for_timeout(2000)
+                
+                # Fetching might take some time (especially on first load since it queries Academia)
+                classes = []
+                max_retries = 10 if day_num == 1 else 3
+                for _ in range(max_retries):
+                    day_res = page.evaluate(parse_cards_script)
+                    if day_res.get("classes"):
+                        classes = day_res.get("classes")
+                        break
+                    page.wait_for_timeout(1000)
+                
+                for i, c in enumerate(classes):
+                    c['period'] = i + 1
+                    c['period_end'] = i + 1
+                    c['slot'] = f"Slot {i+1}"
+                    st, et = "", ""
+                    import re as _re
+                    parts = _re.split(r'[-\u2013\u2014\u2212]', c.get('time', ''))
+                    if len(parts) == 2:
+                        st = parts[0].strip()
+                        et = parts[1].strip()
+                    c['start_time'] = st
+                    c['end_time'] = et
+                    
+                final_tt[str(day_num)] = classes
+                print(f"[{reg_no}] Console X: Day {day_num} -> {len(classes)} classes")
+            
+            total = sum(len(final_tt[d]) for d in final_tt)
+            for d in ["1","2","3","4","5"]:
+                print(f"[{reg_no}] Day {d}: {len(final_tt[d])} classes -> {[e.get('subject','?')[:30] for e in final_tt[d]]}")
+            print(f"[{reg_no}] Console X TT Complete. Total: {total} classes")
+            
         except Exception as e:
-            print(f"[{reg_no}] WARNING: Failed to update DB: {e}")
+            import traceback
+            print(f"[{reg_no}] Error during Console X scraping: {str(e)}")
+            traceback.print_exc()
 
-        out_queue.put({
-            'success': True, 
-            'profile': profile_data,
-            'data': subjects,
-            'marks': marks,
-            'timetable': timetable,
-            'overall_attendance': overall_att
-        })
+        for day in final_tt:
+            final_tt[day].sort(key=lambda e: e.get("period", 0))
+
+        print(f"[{reg_no}] Timetable done. Counts per day: " + ", ".join(f"Day {d}: {len(final_tt.get(str(d), []))}" for d in range(1,6)))
+
+        # Debug Logging for Empty Parsing
+        if not parsed_att and not parsed_marks:
+            try:
+                with open("debug_tables.txt", "w", encoding="utf-8") as f:
+                    f.write("RAW TABLES:\n" + str(raw_tables) + "\n\nFINAL_TT:\n" + str(final_tt))
+                print(f"[{reg_no}] Empty arrays detected. Saved to debug_tables.txt")
+            except Exception as e:
+                print(f"Failed to write debug file or logs: {str(e)}")
+
+        # --- POST-PROCESS TITLES ---
+        # Collect the absolute best title for each course code across all three data sources
+        best_titles = {}
+        for a in parsed_att:
+            c = a.get("courseCode")
+            t = a.get("courseTitle", "")
+            if c and "-" in t:
+                clean = t.split("-", 1)[1].strip()
+                if clean and len(clean) > len(best_titles.get(c, "")): best_titles[c] = clean
         
-        # This replaces up to `out_queue.put({`, so we don't need to put it again.
-        # But wait, end_idx was the START of `out_queue.put({`.
-        # The string to replace is `content[start_idx:end_idx]`.
-        # So we just replace that chunk with `hybrid_fetching_code` + `out_queue.put({`
+        for m in parsed_marks:
+            c = m.get("courseCode")
+            t = m.get("courseTitle", "")
+            if c and t and t != c and len(t) > len(best_titles.get(c, "")): best_titles[c] = t
+            
+        # Apply the best titles back to the data
+        for m in parsed_marks:
+            c = m.get("courseCode")
+            if c in best_titles and (m.get("courseTitle") == c or not m.get("courseTitle")):
+                m["courseTitle"] = best_titles[c]
+                
+        for a in parsed_att:
+            c = a.get("courseCode")
+            if c in best_titles:
+                a["courseTitle"] = f"{c} - {best_titles[c]}"
+                
+        # --- BUNK CALCULATION: CLASSES PER CYCLE ---
+        def normalize_str(s):
+            return re.sub(r'[^a-z0-9]', '', str(s).lower())
 
+        for sub in parsed_att:
+            # courseTitle from attendance might be "21CSC202J - Operating Systems"
+            att_parts = sub.get("courseTitle", "").split(" - ", 1)
+            att_subj = att_parts[-1].strip() # "Operating Systems"
+            
+            norm_att_subj = normalize_str(att_subj)
+            
+            count = 0
+            for day_key in ["1", "2", "3", "4", "5"]:
+                for entry in final_tt.get(day_key, []):
+                    tt_subj = entry.get("subject", "")
+                    # Direct match or normalized match
+                    if normalize_str(tt_subj) == norm_att_subj or (len(norm_att_subj) > 5 and norm_att_subj in normalize_str(tt_subj)):
+                        count += 1
+                        
+            # FALLBACK (RULE 2): If not in timetable, assume 1 to avoid division by zero
+            sub["classes_per_cycle"] = count if count > 0 else 1
+            print(f"[{reg_no}] {att_subj}: {sub['classes_per_cycle']} classes/cycle in final_tt")
+                
         out_queue.put({
             'success': True, 
             'profile': profile_data,
