@@ -423,7 +423,7 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
             for login_attempt in range(1, 4):
                 print(f"[{reg_no}] Login Attempt {login_attempt} of 3...")
                 # Wait for login page to fully render (Zoho redirect may take time)
-                page.wait_for_timeout(1000)
+                page.wait_for_timeout(500)
                 
                 # Check if we are already logged in
                 current_url = page.url.lower()
@@ -541,7 +541,7 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
                 # Type password
                 pwd_input.click(force=True)
                 page.wait_for_timeout(200)
-                pwd_input.type(pwd, delay=20)
+                pwd_input.type(pwd, delay=10)
                 print(f"[{reg_no}] 4a. Password typed")
                 page.wait_for_timeout(300)
 
@@ -577,7 +577,7 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
 
                 # Fast post-login: handle popups + verify dashboard in one tight loop
                 login_confirmed = False
-                for post_wait in range(16):  # 8 seconds max (16 * 500ms)
+                for post_wait in range(10):  # 5 seconds max (10 * 500ms)
                     current_url = page.url.lower()
                     
                     # Handle block-sessions/terminate popups
@@ -649,7 +649,7 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
 
             # Quick scan for available menu links (used to filter URLs)
             print(f"[{reg_no}] Scanning menu links...")
-            page.wait_for_timeout(1000)
+            page.wait_for_timeout(500)
             
             unique_links = []
             try:
@@ -671,7 +671,7 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
                     if unique_links:
                         print(f"[{reg_no}] Found {len(unique_links)} page links")
                         break
-                    page.wait_for_timeout(1000)
+                    page.wait_for_timeout(500)
                 
                 print(f"[{reg_no}] DIAGNOSTIC Available Pages: {unique_links}")
                 
@@ -813,7 +813,7 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
         for att_url in att_urls:
             print(f"[{reg_no}] Trying attendance URL: {att_url}")
             navigate_to_page(att_url)
-            raw_tables = wait_for_data_tables(["attn", "attendance", "conducted", "absent", "hour", "code"], timeout=15000)
+            raw_tables = wait_for_data_tables(["attn", "attendance", "conducted", "absent", "hour", "code"], timeout=10000)
             if raw_tables and len(raw_tables) > 0:
                 # Check if any table actually has attendance-like data
                 has_att_data = False
@@ -833,7 +833,7 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
             print(f"[{reg_no}] Attendance data not found on any URL. Trying reload...")
             navigate_to_page(att_urls[0])
             page.wait_for_timeout(2000)
-            raw_tables = wait_for_data_tables(["attn", "attendance", "conducted", "absent", "code"], timeout=12000)
+            raw_tables = wait_for_data_tables(["attn", "attendance", "conducted", "absent", "code"], timeout=8000)
         
         # Log what we found
         if raw_tables:
@@ -1055,7 +1055,7 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
         for url in timetable_urls:
             print(f"[{reg_no}] Trying timetable URL: {url}")
             navigate_to_page(url)
-            slot_tables = wait_for_data_tables(["slot", "course", "code"], timeout=12000)
+            slot_tables = wait_for_data_tables(["slot", "course", "code"], timeout=8000)
             if any(k in str(c).lower() for k in ["slot", "course", "code"] for t in slot_tables for row in t for c in row):
                 print(f"[{reg_no}] Successfully loaded timetable from {url}")
                 break
@@ -1063,7 +1063,7 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
             print(f"[{reg_no}] Warning: No slot tables found with primary URLs. Attempting page reload on primary...")
             navigate_to_page(timetable_urls[0])
             page.wait_for_timeout(2000)
-            slot_tables = wait_for_data_tables(["slot", "course", "code"], timeout=15000)
+            slot_tables = wait_for_data_tables(["slot", "course", "code"], timeout=8000)
             if not slot_tables:
                 try:
                     print(f"[{reg_no}] DIAGNOSTIC: Timetable page has NO tables. URL: {page.url}")
@@ -1144,196 +1144,121 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
         
         print(f"[{reg_no}] Profile extracted: regNo={profile_data.get('regNo','?')}, dept={profile_data.get('department','?')}, FA={profile_data.get('fa_name','?')}, AA={profile_data.get('aa_name','?')}")
         
-        # --- CONSOLE X ACADEMIA TIMETABLE SCRAPER ---
-        print(f"[{reg_no}] 7. Navigating to Console X Academia for Timetable...")
+        # --- TIMETABLE FROM ACADEMIA (Unified_Time_Table + Slot Data) ---
+        print(f"[{reg_no}] 7. Building Timetable from Academia Unified_Time_Table...")
         
         final_tt = {"1": [], "2": [], "3": [], "4": [], "5": []}
         
-        try:
-            # Step 1: Go to the Console X login page
-            page.goto("https://console-x-academia.vercel.app", wait_until="domcontentloaded", timeout=60000)
-            page.wait_for_timeout(3000)
-            print(f"[{reg_no}] Console X: Loaded page, URL = {page.url}")
+        # Step 1: Build slot_map from slot_tables (My_Time_Table data)
+        slot_map = {}
+        for table in slot_tables:
+            if not table: continue
+            headers_raw = [str(h).lower().strip() for h in table[0]] if table else []
+            hdr_str = " ".join(headers_raw)
+            if "slot" not in hdr_str or "code" not in hdr_str: continue
             
-            # Step 2: Fill login form using Playwright's fill() which properly triggers React state
-            try:
-                # The email input has placeholder "netid@srmist.edu.in"
-                email_input = page.locator("input[placeholder*='netid'], input[placeholder*='srmist'], input[type='text']").first
-                email_input.wait_for(timeout=10000)
-                email_input.fill(reg_no)
-                print(f"[{reg_no}] Console X: Filled email")
-                
-                pwd_input = page.locator("input[type='password']").first
-                pwd_input.fill(pwd)
-                print(f"[{reg_no}] Console X: Filled password")
-                
-                # Click the Login button (it's a submit button)
-                login_btn = page.locator("button[type='submit']").first
-                login_btn.click()
-                print(f"[{reg_no}] Console X: Clicked Login button")
-                
-                # Wait for navigation to dashboard
-                page.wait_for_timeout(8000)
-                print(f"[{reg_no}] Console X: After login, URL = {page.url}")
-            except Exception as e:
-                print(f"[{reg_no}] Console X: Login error: {e}")
+            idx_slot = idx_code = idx_title = idx_faculty = idx_room = -1
+            for i, h in enumerate(headers_raw):
+                if "slot" in h and idx_slot == -1: idx_slot = i
+                elif "code" in h and idx_code == -1: idx_code = i
+                elif any(k in h for k in ["title", "name", "description", "subject"]) and idx_title == -1: idx_title = i
+                elif "faculty" in h and idx_faculty == -1: idx_faculty = i
+                elif "room" in h and idx_room == -1: idx_room = i
             
-            # Step 3: Ensure we're on the dashboard
-            current_url = page.url
-            if '/dashboard' not in current_url:
-                print(f"[{reg_no}] Console X: Not on dashboard yet, navigating...")
-                page.goto("https://console-x-academia.vercel.app/dashboard", wait_until="domcontentloaded", timeout=60000)
-                page.wait_for_timeout(4000)
+            if idx_slot == -1 or idx_code == -1: continue
             
-            print(f"[{reg_no}] Console X: Dashboard URL = {page.url}")
-            
-            # Step 4: Click Academics dropdown -> Timetable
-            print(f"[{reg_no}] Console X: Clicking Academics dropdown...")
-            try:
-                # Use Playwright's getByText which handles partial/exact matching
-                academics_link = page.get_by_text("Academics", exact=False).first
-                academics_link.click()
-                page.wait_for_timeout(1500)
-                print(f"[{reg_no}] Console X: Clicked Academics")
-                
-                # Now click Timetable from the dropdown
-                timetable_link = page.get_by_text("Timetable", exact=True).first
-                timetable_link.click()
-                page.wait_for_timeout(5000)
-                print(f"[{reg_no}] Console X: Clicked Timetable, URL = {page.url}")
-            except Exception as e:
-                print(f"[{reg_no}] Console X: Dropdown navigation error: {e}")
-                # Last resort: try direct URL
-                try:
-                    page.goto("https://console-x-academia.vercel.app/timetable", wait_until="domcontentloaded", timeout=60000)
-                    page.wait_for_timeout(4000)
-                except:
-                    pass
-            
-            # Check for Day Order text to ensure it loaded
-            try:
-                page.wait_for_function(
-                    "() => document.body.innerText.toUpperCase().includes('DAY ORDER')",
-                    timeout=20000
-                )
-            except:
-                print(f"[{reg_no}] Console X: Day Order text not found after 20s. Content might be missing.")
-            
-            # Parsing script for class cards
-            parse_cards_script = r"""
-            () => {
-                const result = {classes: []};
-                const timeRegex = /\d{2}:\d{2}\s*-\s*\d{2}:\d{2}/;
-                const allEls = document.querySelectorAll('*');
-                const seen = new Set();
-                
-                for (const el of allEls) {
-                    const text = (el.innerText || '').trim();
-                    if (!text || text.length > 300 || text.length < 15) continue;
-                    if (!timeRegex.test(text)) continue;
-                    
-                    const key = text.substring(0, 80);
-                    if (seen.has(key)) continue;
-                    seen.add(key);
-                    
-                    const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-                    let time = "", code = "", subject = "", room = "N/A", faculty = "";
-                    
-                    for (const line of lines) {
-                        if (timeRegex.test(line)) {
-                            time = line;
-                        } else if (/^[A-Z0-9]{5,15}/.test(line) && line.length > 5) {
-                            const match = line.match(/^([A-Z0-9]{5,15})(.*)/);
-                            code = match[1].trim();
-                            faculty = match[2].replace(/^[ΓÇó┬╖\-\s]+/, '').trim();
-                        } else if (/^(CLS|TP|UB|BEL|TECH|CRC|MB|Room)\s*\d+/i.test(line)) {
-                            room = line;
-                        } else if (line.toLowerCase().startsWith('slot')) {
-                            // ignore
-                        } else if (line.length > 4 && !subject && !/day order/i.test(line)) {
-                            subject = line;
+            for row in table[1:]:
+                if len(row) <= max(idx_slot, idx_code): continue
+                slot_val = str(row[idx_slot]).strip()
+                code_val = str(row[idx_code]).strip()
+                if not slot_val or not code_val or len(code_val) < 3: continue
+                for s in re.split(r'[/,]+', slot_val):
+                    s = s.strip()
+                    if s and len(s) >= 1:
+                        slot_map[s] = {
+                            "code": code_val,
+                            "title": str(row[idx_title]).strip() if idx_title != -1 and len(row) > idx_title else code_val,
+                            "faculty": str(row[idx_faculty]).strip() if idx_faculty != -1 and len(row) > idx_faculty else "",
+                            "room": str(row[idx_room]).strip() if idx_room != -1 and len(row) > idx_room else "N/A"
                         }
-                    }
+        
+        print(f"[{reg_no}] Built slot_map: {len(slot_map)} slots -> {list(slot_map.keys())[:12]}")
+        
+        # Step 2: Navigate to Unified_Time_Table in Academia
+        utt_urls_pool = [
+            "https://academia.srmist.edu.in/#Page:Unified_Time_Table_2025_Batch_1",
+            "https://academia.srmist.edu.in/#Page:Unified_Time_Table_2025_26",
+            "https://academia.srmist.edu.in/#Page:Unified_Time_Table",
+        ]
+        utt_urls = [u for u in utt_urls_pool if any(u.split('#Page:')[1] in link for link in unique_links)]
+        if not utt_urls:
+            utt_urls = utt_urls_pool
+        
+        utt_tables = []
+        for utt_url in utt_urls:
+            print(f"[{reg_no}] Trying UTT: {utt_url}")
+            navigate_to_page(utt_url)
+            utt_tables = wait_for_data_tables(["day", "1", "2"], timeout=8000)
+            if utt_tables:
+                has_day = any(re.search(r'day\s*\d', str(row[0]).lower()) for t in utt_tables for row in t if row)
+                if has_day:
+                    print(f"[{reg_no}] UTT data loaded from {utt_url}")
+                    break
+        
+        # Standard SRM period times
+        PERIOD_TIMES = [
+            ("08:00", "08:50"), ("08:50", "09:40"), ("09:45", "10:35"),
+            ("10:40", "11:30"), ("11:35", "12:25"), ("12:30", "13:20"),
+            ("13:20", "14:10"), ("14:10", "15:00"),
+        ]
+        
+        # Step 3: Parse UTT grid -> final_tt
+        for table in utt_tables:
+            if not table: continue
+            for row in table:
+                if not row: continue
+                first_cell = str(row[0]).strip()
+                day_match = re.match(r'Day\s*(\d)', first_cell, re.IGNORECASE)
+                if not day_match: continue
+                day_num = day_match.group(1)
+                if day_num not in final_tt: continue
+                
+                period_idx = 0
+                for cell_idx in range(1, len(row)):
+                    cell_val = str(row[cell_idx]).strip()
+                    if not cell_val or cell_val == "-" or cell_val.lower() == "lunch":
+                        period_idx += 1
+                        continue
                     
-                    if (time && subject) {
-                        result.classes.push({ time, subject, code: code || subject, room, faculty, type: "" });
-                    }
-                }
-                return result;
-            }
-            """
-            
-            # Script to click the specific day button
-            click_day_script = r"""
-            (dayNum) => {
-                const allEls = Array.from(document.querySelectorAll('button, div, span'));
-                // 1. Try exact match "DAY ORDER X"
-                for (const el of allEls) {
-                    const text = (el.innerText || '').trim().replace(/\s+/g, ' ').toUpperCase();
-                    if (text === `DAY ORDER ${dayNum}`) {
-                        el.click();
-                        return true;
-                    }
-                }
-                // 2. Try to find a container with both
-                for (const el of allEls) {
-                    const text = (el.innerText || '').trim().toUpperCase();
-                    if (text.includes('DAY ORDER') && text.includes(dayNum.toString()) && text.length < 20) {
-                        el.click();
-                        return true;
-                    }
-                }
-                return false;
-            }
-            """
-            
-            for day_num in range(1, 6):
-                # Click the Day button
-                clicked = page.evaluate(click_day_script, day_num)
-                if not clicked:
-                    print(f"[{reg_no}] Console X: Failed to click Day {day_num} button via script. Trying Playwright locators...")
-                    try:
-                        page.locator(f"text=DAY ORDER {day_num}").first.click(timeout=1000)
-                    except:
-                        pass
-                
-                page.wait_for_timeout(2000)
-                
-                # Fetching might take some time (especially on first load since it queries Academia)
-                classes = []
-                max_retries = 10 if day_num == 1 else 3
-                for _ in range(max_retries):
-                    day_res = page.evaluate(parse_cards_script)
-                    if day_res.get("classes"):
-                        classes = day_res.get("classes")
-                        break
-                    page.wait_for_timeout(1000)
-                
-                for i, c in enumerate(classes):
-                    c['period'] = i + 1
-                    c['period_end'] = i + 1
-                    c['slot'] = f"Slot {i+1}"
-                    st, et = "", ""
-                    import re as _re
-                    parts = _re.split(r'[-\u2013\u2014\u2212]', c.get('time', ''))
-                    if len(parts) == 2:
-                        st = parts[0].strip()
-                        et = parts[1].strip()
-                    c['start_time'] = st
-                    c['end_time'] = et
-                    
-                final_tt[str(day_num)] = classes
-                print(f"[{reg_no}] Console X: Day {day_num} -> {len(classes)} classes")
-            
-            total = sum(len(final_tt[d]) for d in final_tt)
-            for d in ["1","2","3","4","5"]:
-                print(f"[{reg_no}] Day {d}: {len(final_tt[d])} classes -> {[e.get('subject','?')[:30] for e in final_tt[d]]}")
-            print(f"[{reg_no}] Console X TT Complete. Total: {total} classes")
-            
-        except Exception as e:
-            import traceback
-            print(f"[{reg_no}] Error during Console X scraping: {str(e)}")
-            traceback.print_exc()
+                    for slot_letter in re.split(r'[/\n]+', cell_val):
+                        slot_letter = slot_letter.strip()
+                        if slot_letter in slot_map:
+                            info = slot_map[slot_letter]
+                            st, et = ("", "")
+                            if period_idx < len(PERIOD_TIMES):
+                                st, et = PERIOD_TIMES[period_idx]
+                            
+                            final_tt[day_num].append({
+                                "time": f"{st} - {et}" if st else f"Period {period_idx+1}",
+                                "subject": info["title"],
+                                "code": info["code"],
+                                "room": info["room"],
+                                "faculty": info["faculty"],
+                                "type": "",
+                                "period": period_idx + 1,
+                                "period_end": period_idx + 1,
+                                "slot": slot_letter,
+                                "start_time": st,
+                                "end_time": et,
+                            })
+                            break
+                    period_idx += 1
+        
+        total_tt = sum(len(final_tt[d]) for d in final_tt)
+        for d in ["1","2","3","4","5"]:
+            print(f"[{reg_no}] Day {d}: {len(final_tt[d])} classes -> {[e.get('subject','?')[:30] for e in final_tt[d]]}")
+        print(f"[{reg_no}] Timetable Complete. Total: {total_tt} classes")
+
 
         for day in final_tt:
             final_tt[day].sort(key=lambda e: e.get("period", 0))
