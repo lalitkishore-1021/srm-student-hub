@@ -1205,22 +1205,41 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
                     print(f"[{reg_no}] UTT data loaded from {utt_url}")
                     break
         
-        # Standard SRM period times
-        PERIOD_TIMES = [
-            ("08:00", "08:50"), ("08:50", "09:40"), ("09:45", "10:35"),
-            ("10:40", "11:30"), ("11:35", "12:25"), ("12:30", "13:20"),
-            ("13:20", "14:10"), ("14:10", "15:00"),
-        ]
-        
         # Step 3: Parse UTT grid -> final_tt
+        parsed_days = set()
         for table in utt_tables:
             if not table: continue
+            
+            # Check if this table has a header row with periods
+            period_times = []
+            if len(table) > 0 and len(table[0]) > 1:
+                for cell in table[0][1:]:
+                    match = re.search(r'(\d{2}:\d{2})\s*-\s*(\d{2}:\d{2})', str(cell))
+                    if match:
+                        period_times.append((match.group(1), match.group(2)))
+                    else:
+                        period_times.append(("", ""))
+            
+            # Fallback to standard periods if header doesn't contain time ranges
+            if len([p for p in period_times if p[0]]) < 5:
+                period_times = [
+                    ("08:00", "08:50"), ("08:50", "09:40"), ("09:45", "10:35"),
+                    ("10:40", "11:30"), ("11:35", "12:25"), ("12:30", "13:20"),
+                    ("13:20", "14:10"), ("14:10", "15:00"), ("15:05", "15:55"),
+                    ("16:00", "16:50"), ("16:55", "17:45")
+                ]
+                
             for row in table:
                 if not row: continue
                 first_cell = str(row[0]).strip()
                 day_match = re.match(r'Day\s*(\d)', first_cell, re.IGNORECASE)
                 if not day_match: continue
                 day_num = day_match.group(1)
+                
+                # If we've already parsed this day, skip it (prevents duplicate tables)
+                if day_num in parsed_days: continue
+                parsed_days.add(day_num)
+                
                 if day_num not in final_tt: continue
                 
                 period_idx = 0
@@ -1235,11 +1254,11 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
                         if slot_letter in slot_map:
                             info = slot_map[slot_letter]
                             st, et = ("", "")
-                            if period_idx < len(PERIOD_TIMES):
-                                st, et = PERIOD_TIMES[period_idx]
+                            if period_idx < len(period_times):
+                                st, et = period_times[period_idx]
                             
                             final_tt[day_num].append({
-                                "time": f"{st} - {et}" if st else f"Period {period_idx+1}",
+                                "time": f"{st} - {et}" if st and et else f"Period {period_idx+1}",
                                 "subject": info["title"],
                                 "code": info["code"],
                                 "room": info["room"],
