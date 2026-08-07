@@ -1172,13 +1172,14 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
             hdr_str = " ".join(headers_raw)
             if "slot" not in hdr_str or "code" not in hdr_str: continue
             
-            idx_slot = idx_code = idx_title = idx_faculty = idx_room = -1
+            idx_slot = idx_code = idx_title = idx_faculty = idx_room = idx_category = -1
             for i, h in enumerate(headers_raw):
                 if "slot" in h and idx_slot == -1: idx_slot = i
                 elif "code" in h and idx_code == -1: idx_code = i
                 elif any(k in h for k in ["title", "name", "description", "subject"]) and idx_title == -1: idx_title = i
                 elif "faculty" in h and idx_faculty == -1: idx_faculty = i
                 elif "room" in h and idx_room == -1: idx_room = i
+                elif "category" in h and idx_category == -1: idx_category = i
             
             if idx_slot == -1 or idx_code == -1: continue
             
@@ -1186,15 +1187,19 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
                 if len(row) <= max(idx_slot, idx_code): continue
                 slot_val = str(row[idx_slot]).strip()
                 code_val = str(row[idx_code]).strip()
+                category_val = str(row[idx_category]).strip() if idx_category != -1 and len(row) > idx_category else ""
+                
                 if not slot_val or not code_val or len(code_val) < 3: continue
-                for s in re.split(r'[/,]+', slot_val):
+                # Split slots by comma, slash, OR hyphen (e.g., L51-L52-)
+                for s in re.split(r'[/\,\-]+', slot_val):
                     s = s.strip()
                     if s and len(s) >= 1:
                         slot_map[s] = {
                             "code": code_val,
                             "title": str(row[idx_title]).strip() if idx_title != -1 and len(row) > idx_title else code_val,
                             "faculty": str(row[idx_faculty]).strip() if idx_faculty != -1 and len(row) > idx_faculty else "",
-                            "room": str(row[idx_room]).strip() if idx_room != -1 and len(row) > idx_room else "N/A"
+                            "room": str(row[idx_room]).strip() if idx_room != -1 and len(row) > idx_room else "N/A",
+                            "type": category_val
                         }
         
         print(f"[{reg_no}] Built slot_map: {len(slot_map)} slots -> {list(slot_map.keys())[:12]}")
@@ -1220,57 +1225,67 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
                     print(f"[{reg_no}] UTT data loaded from {utt_url}")
                     break
         
+        # Standard Fallback Timings
+        FALLBACK_TIMES = [
+            ("08:00", "08:50"), ("08:50", "09:40"), ("09:45", "10:35"),
+            ("10:40", "11:30"), ("11:35", "12:25"), ("12:30", "01:20"),
+            ("01:25", "02:15"), ("02:20", "03:10"), ("03:10", "04:00"),
+            ("04:00", "04:50")
+        ]
+        
         # Step 3: Parse UTT grid -> final_tt
         parsed_days = set()
         for table in utt_tables:
-            if not table: continue
+            if not table or len(table) < 2: continue
             
-            # Check if this table has a header row with periods
-            period_times = []
-            if len(table) > 0 and len(table[0]) > 1:
-                for cell in table[0][1:]:
-                    match = re.search(r'(\d{2}:\d{2})\s*-\s*(\d{2}:\d{2})', str(cell))
-                    if match:
-                        period_times.append((match.group(1), match.group(2)))
+            # Find Day column
+            idx_day = 0
+            for i, h in enumerate(table[0]):
+                if "day" in str(h).lower():
+                    idx_day = i
+                    break
+                    
+            # Extract times from header starting from idx_day + 1
+            col_to_time = {}
+            period_count = 0
+            for i in range(idx_day + 1, len(table[0])):
+                cell_str = str(table[0][i]).strip()
+                match = re.search(r'(\d{2}:\d{2})\s*-\s*(\d{2}:\d{2})', cell_str)
+                if match:
+                    col_to_time[i] = (match.group(1), match.group(2))
+                else:
+                    if period_count < len(FALLBACK_TIMES):
+                        col_to_time[i] = FALLBACK_TIMES[period_count]
                     else:
-                        period_times.append(("", ""))
-            
-            # Fallback to standard periods if header doesn't contain time ranges
-            if len([p for p in period_times if p[0]]) < 5:
-                period_times = [
-                    ("08:00", "08:50"), ("08:50", "09:40"), ("09:45", "10:35"),
-                    ("10:40", "11:30"), ("11:35", "12:25"), ("12:30", "13:20"),
-                    ("13:20", "14:10"), ("14:10", "15:00"), ("15:05", "15:55"),
-                    ("16:00", "16:50"), ("16:55", "17:45")
-                ]
+                        col_to_time[i] = ("", "")
+                period_count += 1
                 
-            for row in table:
-                if not row: continue
-                first_cell = str(row[0]).strip()
-                day_match = re.match(r'Day\s*(\d)', first_cell, re.IGNORECASE)
+            for row in table[1:]:
+                if not row or len(row) <= idx_day: continue
+                day_cell = str(row[idx_day]).strip()
+                day_match = re.match(r'Day\s*(\d)', day_cell, re.IGNORECASE)
                 if not day_match: continue
                 day_num = day_match.group(1)
                 
-                # If we've already parsed this day, skip it (prevents duplicate tables)
+                # If we've already parsed this day, skip it
                 if day_num in parsed_days: continue
                 parsed_days.add(day_num)
                 
                 if day_num not in final_tt: continue
                 
                 period_idx = 0
-                for cell_idx in range(1, len(row)):
+                for cell_idx in range(idx_day + 1, len(row)):
                     cell_val = str(row[cell_idx]).strip()
                     if not cell_val or cell_val == "-" or cell_val.lower() == "lunch":
                         period_idx += 1
                         continue
                     
-                    for slot_letter in re.split(r'[/\n]+', cell_val):
+                    st, et = col_to_time.get(cell_idx, FALLBACK_TIMES[period_idx] if period_idx < len(FALLBACK_TIMES) else ("", ""))
+                    
+                    for slot_letter in re.split(r'[/\,\-\n]+', cell_val):
                         slot_letter = slot_letter.strip()
                         if slot_letter in slot_map:
                             info = slot_map[slot_letter]
-                            st, et = ("", "")
-                            if period_idx < len(period_times):
-                                st, et = period_times[period_idx]
                             
                             final_tt[day_num].append({
                                 "time": f"{st} - {et}" if st and et else f"Period {period_idx+1}",
@@ -1278,14 +1293,14 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
                                 "code": info["code"],
                                 "room": info["room"],
                                 "faculty": info["faculty"],
-                                "type": "",
+                                "type": info.get("type", ""),
                                 "period": period_idx + 1,
                                 "period_end": period_idx + 1,
                                 "slot": slot_letter,
                                 "start_time": st,
                                 "end_time": et,
                             })
-                            break
+                            break # Move to next period cell once a valid subject is found for this cell
                     period_idx += 1
         
         total_tt = sum(len(final_tt[d]) for d in final_tt)
