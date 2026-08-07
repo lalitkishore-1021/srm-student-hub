@@ -1407,6 +1407,12 @@
             overflow: hidden;
         }
 
+        .tt-lab-card {
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            box-shadow: 0 5px 15px rgba(106, 17, 203, 0.4);
+            border-color: rgba(191, 90, 242, 0.5);
+        }
+
         .tt-time {
             font-size: 0.8rem;
             opacity: 0.9;
@@ -5088,9 +5094,12 @@
                     let isActive = isClassActive(cls.time) && dayNumber == currentDayOrder;
                     let activeClass = isActive ? 'active-highlight' : '';
                     let badge = isActive ? '<span class="active-badge">HAPPENING NOW</span>' : '';
+                    
+                    let isLab = (cls.type && (cls.type.toLowerCase().includes('practical') || cls.type.toLowerCase().includes('lab')));
+                    let labClass = isLab ? 'tt-lab-card' : '';
 
                     grid.innerHTML += `
-                        <div class="tt-card fade-in-up ${activeClass}">
+                        <div class="tt-card fade-in-up ${activeClass} ${labClass}">
                             <div class="tt-time"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> ${cls.time || 'N/A'} ${badge}</div>
                             <h3 class="tt-subject">${cls.subject || 'Unknown Subject'}</h3>
                             <div class="tt-room"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg> ${cls.room || 'Online/Unknown'}</div>

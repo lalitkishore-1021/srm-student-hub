@@ -1238,29 +1238,41 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
         for table in utt_tables:
             if not table or len(table) < 2: continue
             
-            # Find Day column
+            # Find the index of the Day column by checking all rows until we hit a "Day X"
             idx_day = 0
-            for i, h in enumerate(table[0]):
-                if "day" in str(h).lower():
-                    idx_day = i
-                    break
+            first_day_row_idx = 1
+            for r_idx, row in enumerate(table):
+                found_day = False
+                for c_idx, cell in enumerate(row):
+                    if re.match(r'Day\s*\d', str(cell), re.IGNORECASE):
+                        idx_day = c_idx
+                        first_day_row_idx = r_idx
+                        found_day = True
+                        break
+                if found_day: break
                     
-            # Extract times from header starting from idx_day + 1
+            # Extract times from header (any row before first_day_row_idx)
             col_to_time = {}
+            for r_idx in range(first_day_row_idx):
+                for i in range(idx_day + 1, len(table[r_idx])):
+                    cell_str = str(table[r_idx][i]).strip()
+                    match = re.search(r'(\d{2}:\d{2})\s*-\s*(\d{2}:\d{2})', cell_str)
+                    if match:
+                        col_to_time[i] = (match.group(1), match.group(2))
+            
+            # Fill missing columns with FALLBACK_TIMES sequentially
             period_count = 0
-            for i in range(idx_day + 1, len(table[0])):
-                cell_str = str(table[0][i]).strip()
-                match = re.search(r'(\d{2}:\d{2})\s*-\s*(\d{2}:\d{2})', cell_str)
-                if match:
-                    col_to_time[i] = (match.group(1), match.group(2))
-                else:
+            # We assume the maximum number of columns based on the first day row's length
+            num_cols = len(table[first_day_row_idx]) if first_day_row_idx < len(table) else len(table[0])
+            for i in range(idx_day + 1, num_cols):
+                if i not in col_to_time:
                     if period_count < len(FALLBACK_TIMES):
                         col_to_time[i] = FALLBACK_TIMES[period_count]
                     else:
                         col_to_time[i] = ("", "")
                 period_count += 1
                 
-            for row in table[1:]:
+            for row in table[first_day_row_idx:]:
                 if not row or len(row) <= idx_day: continue
                 day_cell = str(row[idx_day]).strip()
                 day_match = re.match(r'Day\s*(\d)', day_cell, re.IGNORECASE)
