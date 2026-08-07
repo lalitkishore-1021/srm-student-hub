@@ -944,10 +944,25 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
                                 try:
                                     cond = int(float(row[idx_cond] or 0))
                                     absent = int(float(row[idx_abs] or 0))
+                                    present = max(0, cond - absent)
+                                    
+                                    margin = 0
+                                    required = 0
+                                    if cond > 0:
+                                        if (present / cond) >= 0.75:
+                                            # margin = floor(present / 0.75 - cond)
+                                            margin = int((present / 0.75) - cond)
+                                        else:
+                                            # required = ceil(3 * cond - 4 * present)
+                                            import math
+                                            required = math.ceil(3 * cond - 4 * present)
+                                            
                                     parsed_att.append({
                                         "courseTitle": f"{row[idx_code]} - {row[idx_title][:20]}",
-                                        "attended": max(0, cond - absent),
+                                        "attended": present,
                                         "total": cond,
+                                        "margin": max(0, margin),
+                                        "required": max(0, required),
                                         "credits": credit_val,
                                         "facultyName": row[idx_faculty].strip() if idx_faculty != -1 and len(row) > idx_faculty else "N/A",
                                         "slot": row[idx_slot].strip() if idx_slot != -1 and len(row) > idx_slot else "N/A",
