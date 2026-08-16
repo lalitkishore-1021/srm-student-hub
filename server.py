@@ -1232,20 +1232,26 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
             period_times = []
             if len(table) > 0 and len(table[0]) > 1:
                 for cell in table[0][1:]:
-                    match = re.search(r'(\d{2}:\d{2})\s*-\s*(\d{2}:\d{2})', str(cell))
+                    match = re.search(r'(\d{1,2}:\d{2})\s*[-–]\s*(\d{1,2}:\d{2})', str(cell))
                     if match:
                         period_times.append((match.group(1), match.group(2)))
                     else:
                         period_times.append(("", ""))
             
-            # Fallback to standard periods if header doesn't contain time ranges
-            if len([p for p in period_times if p[0]]) < 5:
+            n_header_times = len([p for p in period_times if p[0]])
+            print(f"[{reg_no}] UTT header has {n_header_times} time entries out of {len(period_times)} columns")
+            if n_header_times > 0:
+                print(f"[{reg_no}] UTT header times: {period_times}")
+            
+            # Fallback to standard SRM periods if header doesn't contain time ranges
+            if n_header_times < 3:
                 period_times = [
                     ("08:00", "08:50"), ("08:50", "09:40"), ("09:45", "10:35"),
                     ("10:40", "11:30"), ("11:35", "12:25"), ("12:30", "01:20"),
                     ("01:25", "02:15"), ("02:20", "03:10"), ("03:10", "04:00"),
                     ("04:05", "04:55")
                 ]
+                print(f"[{reg_no}] Using fallback period_times (header had < 3 real times)")
                 
             for row in table:
                 if not row: continue
@@ -1260,40 +1266,41 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
                 
                 if day_num not in final_tt: continue
                 
-                period_idx = 0
                 for cell_idx in range(1, len(row)):
                     cell_val = str(row[cell_idx]).strip()
                     if not cell_val or cell_val == "-" or cell_val.lower() == "lunch":
-                        period_idx += 1
                         continue
+                    
+                    # Use the column index to look up the time from the header
+                    # cell_idx-1 because period_times was built from table[0][1:]
+                    pt_idx = cell_idx - 1
                     
                     for slot_letter in re.split(r'[/\n]+', cell_val):
                         slot_letter = slot_letter.strip()
                         if slot_letter in slot_map:
                             info = slot_map[slot_letter]
                             st, et = ("", "")
-                            if period_idx < len(period_times):
-                                st, et = period_times[period_idx]
+                            if pt_idx < len(period_times):
+                                st, et = period_times[pt_idx]
                             
                             final_tt[day_num].append({
-                                "time": f"{st} - {et}" if st and et else f"Period {period_idx+1}",
+                                "time": f"{st} - {et}" if st and et else f"Period {pt_idx+1}",
                                 "subject": info["title"],
                                 "code": info["code"],
                                 "room": info["room"],
                                 "faculty": info["faculty"],
                                 "type": info.get("type", ""),
-                                "period": period_idx + 1,
-                                "period_end": period_idx + 1,
+                                "period": pt_idx + 1,
+                                "period_end": pt_idx + 1,
                                 "slot": slot_letter,
                                 "start_time": st,
                                 "end_time": et,
                             })
                             break
-                    period_idx += 1
         
         total_tt = sum(len(final_tt[d]) for d in final_tt)
         for d in ["1","2","3","4","5"]:
-            print(f"[{reg_no}] Day {d}: {len(final_tt[d])} classes -> {[e.get('subject','?')[:30] for e in final_tt[d]]}")
+            print(f"[{reg_no}] Day {d}: {len(final_tt[d])} classes -> {[(e.get('subject','?')[:20], e.get('time','?')) for e in final_tt[d]]}")
         print(f"[{reg_no}] Timetable Complete. Total: {total_tt} classes")
 
 
