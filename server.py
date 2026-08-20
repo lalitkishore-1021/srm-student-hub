@@ -19,6 +19,8 @@ from playwright.sync_api import sync_playwright
 app = Flask(__name__, static_folder='.')
 CORS(app)
 
+sync_jobs = {}
+
 
 
 import os
