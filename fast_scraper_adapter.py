@@ -124,7 +124,10 @@ def adapt_marks(marks_data, courses_data):
     for key, m in marks_data.items():
         actual_title = key
         for c_key, c_val in courses_data.items():
-            if c_key == key:
+            # c_key is like "21MAB201TRegularTheory", key is "21MAB201TTHEORY"
+            # So let's match the base course code
+            base_code = c_key.replace('RegularTheory', '').replace('RegularPractical', '')
+            if base_code in key:
                 actual_title = c_val.get('course_title', '')
                 break
         

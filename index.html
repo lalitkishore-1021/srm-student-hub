@@ -520,18 +520,25 @@
             perspective: 1000px;
         }
 
-        /* Liquid glassmorphism base */
+        /* Liquid glassmorphism base (Daily Themes) */
         .id-card::after {
             content: '';
             position: absolute;
             top: -50%; left: -50%; right: -50%; bottom: -50%;
             background: radial-gradient(circle at 50% 50%, #ffaa00, #ff007f, #3a7bd5, #ffaa00);
-            background-size: 200% 200%;
-            animation: liquid-swirl 15s ease-in-out infinite alternate;
             z-index: 0;
             opacity: 0.9;
             filter: blur(40px);
+            transition: background 1s ease;
         }
+
+        .id-card[data-theme="0"]::after { background: radial-gradient(circle at 50% 50%, #e10600, #800000, #e10600); } /* Sunday: F1 Ferrari Red */
+        .id-card[data-theme="1"]::after { background: radial-gradient(circle at 50% 50%, #ff0000, #0000bb, #ff0000); } /* Monday: Spiderman Red & Blue */
+        .id-card[data-theme="2"]::after { background: radial-gradient(circle at 50% 50%, #00ff00, #004400, #00ff00); } /* Tuesday: Hulk Green */
+        .id-card[data-theme="3"]::after { background: radial-gradient(circle at 50% 50%, #ffcc00, #cc0000, #ffcc00); } /* Wednesday: Iron Man Gold & Red */
+        .id-card[data-theme="4"]::after { background: radial-gradient(circle at 50% 50%, #00ffff, #000088, #00ffff); } /* Thursday: Tron Blue */
+        .id-card[data-theme="5"]::after { background: radial-gradient(circle at 50% 50%, #ff00ff, #4b0082, #ff00ff); } /* Friday: Cyberpunk Neon */
+        .id-card[data-theme="6"]::after { background: radial-gradient(circle at 50% 50%, #ffffff, #666666, #ffffff); } /* Saturday: Batman Silver */
 
         /* Plasticmorphism + Glassmorphism shell */
         .id-card::before {
@@ -553,11 +560,7 @@
             border-bottom-color: rgba(255,255,255,0.05);
         }
 
-        @keyframes liquid-swirl {
-            0% { transform: rotate(0deg) scale(1); background-position: 0% 50%; }
-            50% { transform: rotate(180deg) scale(1.3); background-position: 100% 100%; }
-            100% { transform: rotate(360deg) scale(1); background-position: 50% 0%; }
-        }
+
 
         .id-card > * {
             z-index: 1;
@@ -7182,6 +7185,12 @@
         let nextTrackCache = { index: -1, audio_data: null };
 
         document.addEventListener("DOMContentLoaded", () => {
+            // Apply Daily Theme to Profile Card
+            const idCard = document.querySelector('.id-card');
+            if (idCard) {
+                idCard.dataset.theme = new Date().getDay().toString();
+            }
+
             const fsCover = document.getElementById('fs-cover');
             if (fsCover) {
                 fsCover.addEventListener('load', function() {
