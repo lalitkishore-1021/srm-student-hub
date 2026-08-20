@@ -540,6 +540,102 @@
         .id-card[data-theme="5"]::after { background: radial-gradient(circle at 50% 50%, #ff00ff, #4b0082, #ff00ff); } /* Friday: Cyberpunk Neon */
         .id-card[data-theme="6"]::after { background: radial-gradient(circle at 50% 50%, #ffffff, #666666, #ffffff); } /* Saturday: Batman Silver */
 
+        /* Dynamic Theme Art & One-Time Entry Animations */
+        .id-theme-art {
+            position: absolute;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
+            opacity: 0.9;
+        }
+
+        .id-theme-art svg {
+            filter: drop-shadow(0 6px 14px rgba(0,0,0,0.7));
+        }
+
+        .id-theme-tag {
+            font-size: 0.65rem;
+            font-weight: 800;
+            letter-spacing: 1.2px;
+            text-transform: uppercase;
+            padding: 3px 8px;
+            border-radius: 6px;
+            background: rgba(0, 0, 0, 0.55);
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            margin-top: 4px;
+            color: #fff;
+            backdrop-filter: blur(8px);
+            white-space: nowrap;
+        }
+
+        /* One-time entry animations */
+        .anim-f1-entry {
+            animation: f1DriveIn 1.1s cubic-bezier(0.16, 1, 0.3, 1) 0.1s 1 forwards;
+        }
+        @keyframes f1DriveIn {
+            0% { opacity: 0; transform: translateY(-50%) translateX(140px) skewX(-20deg); }
+            65% { opacity: 1; transform: translateY(-50%) translateX(-8px) skewX(4deg); }
+            100% { opacity: 0.92; transform: translateY(-50%) translateX(0) skewX(0); }
+        }
+
+        .anim-spidey-entry {
+            animation: spideySwingIn 1.1s cubic-bezier(0.175, 0.885, 0.32, 1.275) 0.1s 1 forwards;
+        }
+        @keyframes spideySwingIn {
+            0% { opacity: 0; transform: translateY(-130%) rotate(-25deg) scale(0.6); }
+            70% { opacity: 1; transform: translateY(-44%) rotate(4deg) scale(1.06); }
+            100% { opacity: 0.92; transform: translateY(-50%) rotate(0deg) scale(1); }
+        }
+
+        .anim-hulk-entry {
+            animation: hulkSmashIn 0.9s cubic-bezier(0.34, 1.56, 0.64, 1) 0.1s 1 forwards;
+        }
+        @keyframes hulkSmashIn {
+            0% { opacity: 0; transform: translateY(-50%) scale(2.2); filter: blur(6px); }
+            60% { opacity: 1; transform: translateY(-50%) scale(0.92); filter: blur(0); }
+            100% { opacity: 0.92; transform: translateY(-50%) scale(1); }
+        }
+
+        .anim-ironman-entry {
+            animation: ironManPowerUp 1.2s cubic-bezier(0.2, 0.8, 0.2, 1) 0.1s 1 forwards;
+        }
+        @keyframes ironManPowerUp {
+            0% { opacity: 0; transform: translateY(-50%) scale(0.3); filter: brightness(3); }
+            55% { opacity: 1; transform: translateY(-50%) scale(1.15); filter: brightness(1.7); }
+            100% { opacity: 0.92; transform: translateY(-50%) scale(1); filter: brightness(1); }
+        }
+
+        .anim-batman-entry {
+            animation: batmanGlideIn 1.2s cubic-bezier(0.16, 1, 0.3, 1) 0.1s 1 forwards;
+        }
+        @keyframes batmanGlideIn {
+            0% { opacity: 0; transform: translateY(-90%) translateX(70px) scale(0.7); }
+            100% { opacity: 0.92; transform: translateY(-50%) translateX(0) scale(1); }
+        }
+
+        .anim-cyber-entry {
+            animation: cyberSliceIn 1.0s cubic-bezier(0.25, 1, 0.5, 1) 0.1s 1 forwards;
+        }
+        @keyframes cyberSliceIn {
+            0% { opacity: 0; transform: translateY(-50%) translateX(90px) scaleX(1.4); filter: hue-rotate(90deg); }
+            100% { opacity: 0.92; transform: translateY(-50%) translateX(0) scaleX(1); filter: hue-rotate(0deg); }
+        }
+
+        .anim-saiyan-entry {
+            animation: saiyanSurgeIn 1.1s cubic-bezier(0.34, 1.56, 0.64, 1) 0.1s 1 forwards;
+        }
+        @keyframes saiyanSurgeIn {
+            0% { opacity: 0; transform: translateY(-50%) scale(0.4); filter: drop-shadow(0 0 30px #ffd700); }
+            70% { opacity: 1; transform: translateY(-50%) scale(1.12); filter: drop-shadow(0 0 20px #ffd700); }
+            100% { opacity: 0.92; transform: translateY(-50%) scale(1); filter: drop-shadow(0 0 10px rgba(255,215,0,0.5)); }
+        }
+
         /* Plasticmorphism + Glassmorphism shell */
         .id-card::before {
             content: '';
@@ -2849,6 +2945,7 @@
                                     <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
                                 </svg> --</span>
                         </div>
+                        <div class="id-theme-art" id="id-theme-art"></div>
                     </div>
                     <div class="stats-bar">
                         <div class="stat-box">
@@ -4235,6 +4332,9 @@
                     this.src = `https://ui-avatars.com/api/?name=${nameParam}&background=random&color=fff&size=200`;
                 };
             }
+
+            // Apply daily theme
+            if (typeof applyDailyTheme === 'function') applyDailyTheme();
 
             // Also render advisors
             renderAdvisors(profile);
@@ -7184,12 +7284,112 @@
         let isShuffle = false;
         let nextTrackCache = { index: -1, audio_data: null };
 
+        function applyDailyTheme() {
+            const idCard = document.querySelector('.id-card');
+            const themeArt = document.getElementById('id-theme-art');
+            if (!idCard) return;
+            
+            const day = new Date().getDay(); // 0 = Sun, 1 = Mon, ..., 6 = Sat
+            idCard.dataset.theme = day.toString();
+
+            if (!themeArt) return;
+
+            // Define themed artwork with one-time entrance animation
+            const themes = {
+                0: {
+                    name: '🏎️ F1 Scuderia',
+                    anim: 'anim-f1-entry',
+                    svg: `<svg width="74" height="42" viewBox="0 0 100 48" fill="none">
+                        <path d="M5 38 L25 38 L30 32 L55 30 L65 24 L78 24 L85 30 L95 38 L5 38 Z" fill="#ff2800" opacity="0.95"/>
+                        <path d="M12 28 L24 28 L24 38 L12 38 Z" fill="#111" stroke="#ff2800" stroke-width="1.5"/>
+                        <circle cx="22" cy="38" r="8" fill="#111" stroke="#fff" stroke-width="1.5"/>
+                        <circle cx="22" cy="38" r="3" fill="#ff2800"/>
+                        <circle cx="80" cy="38" r="8" fill="#111" stroke="#fff" stroke-width="1.5"/>
+                        <circle cx="80" cy="38" r="3" fill="#ff2800"/>
+                        <path d="M48 24 C52 16, 62 16, 66 24 Z" fill="#fff" opacity="0.9"/>
+                        <path d="M60 18 L70 18 L68 24 Z" fill="#ffeb3b"/>
+                        <path d="M85 24 L98 22 L96 32 Z" fill="#ff2800"/>
+                        <line x1="0" y1="44" x2="100" y2="44" stroke="#ff2800" stroke-width="2" stroke-dasharray="8 4"/>
+                    </svg>`
+                },
+                1: {
+                    name: '🕷️ Spider-Verse',
+                    anim: 'anim-spidey-entry',
+                    svg: `<svg width="56" height="56" viewBox="0 0 64 64" fill="none">
+                        <ellipse cx="32" cy="32" rx="24" ry="28" fill="#e22127" stroke="#111" stroke-width="2.5"/>
+                        <path d="M32 4 L32 60 M8 32 L56 32 M15 12 L49 52 M15 52 L49 12" stroke="#111" stroke-width="1.2" opacity="0.6"/>
+                        <ellipse cx="32" cy="32" rx="14" ry="17" fill="none" stroke="#111" stroke-width="1.2" opacity="0.6"/>
+                        <ellipse cx="32" cy="32" rx="7" ry="9" fill="none" stroke="#111" stroke-width="1.2" opacity="0.6"/>
+                        <path d="M16 25 Q24 20 28 34 Q20 37 16 25 Z" fill="#ffffff" stroke="#111" stroke-width="3"/>
+                        <path d="M48 25 Q40 20 36 34 Q44 37 48 25 Z" fill="#ffffff" stroke="#111" stroke-width="3"/>
+                    </svg>`
+                },
+                2: {
+                    name: '💥 Gamma Beast',
+                    anim: 'anim-hulk-entry',
+                    svg: `<svg width="56" height="56" viewBox="0 0 64 64" fill="none">
+                        <circle cx="32" cy="32" r="26" fill="#003b00" stroke="#00ff66" stroke-width="2.5"/>
+                        <circle cx="32" cy="32" r="6" fill="#00ff66"/>
+                        <path d="M32 10 L32 22 M16 48 L24 38 M48 48 L40 38" stroke="#00ff66" stroke-width="4" stroke-linecap="round"/>
+                        <path d="M22 28 Q32 18 42 28 Q32 46 22 28 Z" fill="#00ff66" opacity="0.85"/>
+                    </svg>`
+                },
+                3: {
+                    name: '⚡ Arc Reactor',
+                    anim: 'anim-ironman-entry',
+                    svg: `<svg width="56" height="56" viewBox="0 0 64 64" fill="none">
+                        <circle cx="32" cy="32" r="26" fill="#1a0000" stroke="#ffaa00" stroke-width="2.5"/>
+                        <circle cx="32" cy="32" r="18" fill="#ffeedd" stroke="#00ffff" stroke-width="3"/>
+                        <circle cx="32" cy="32" r="10" fill="#00ffff"/>
+                        <line x1="32" y1="8" x2="32" y2="16" stroke="#ffaa00" stroke-width="3"/>
+                        <line x1="32" y1="48" x2="32" y2="56" stroke="#ffaa00" stroke-width="3"/>
+                        <line x1="8" y1="32" x2="16" y2="32" stroke="#ffaa00" stroke-width="3"/>
+                        <line x1="48" y1="32" x2="56" y2="32" stroke="#ffaa00" stroke-width="3"/>
+                        <line x1="15" y1="15" x2="21" y2="21" stroke="#ffaa00" stroke-width="3"/>
+                        <line x1="43" y1="43" x2="49" y2="49" stroke="#ffaa00" stroke-width="3"/>
+                    </svg>`
+                },
+                4: {
+                    name: '🦇 Dark Knight',
+                    anim: 'anim-batman-entry',
+                    svg: `<svg width="60" height="46" viewBox="0 0 80 50" fill="none">
+                        <path d="M40 18 Q45 8 50 14 Q56 2 64 12 Q76 16 78 28 Q66 28 58 40 Q48 30 40 44 Q32 30 22 40 Q14 28 2 28 Q4 16 16 12 Q24 2 30 14 Q35 8 40 18 Z" fill="#e0e6ed" stroke="#000" stroke-width="2"/>
+                    </svg>`
+                },
+                5: {
+                    name: '🌆 Night City',
+                    anim: 'anim-cyber-entry',
+                    svg: `<svg width="56" height="56" viewBox="0 0 64 64" fill="none">
+                        <polygon points="32,6 54,20 48,54 32,60 16,54 10,20" fill="#120024" stroke="#ff007f" stroke-width="2.5"/>
+                        <polygon points="32,16 44,26 40,46 32,50 24,46 20,26" fill="#ff007f" opacity="0.85"/>
+                        <line x1="18" y1="30" x2="28" y2="30" stroke="#00ffff" stroke-width="3"/>
+                        <line x1="36" y1="30" x2="46" y2="30" stroke="#00ffff" stroke-width="3"/>
+                        <polygon points="32,36 36,42 28,42" fill="#00ffff"/>
+                    </svg>`
+                },
+                6: {
+                    name: '🔥 Saiyan Elite',
+                    anim: 'anim-saiyan-entry',
+                    svg: `<svg width="56" height="56" viewBox="0 0 64 64" fill="none">
+                        <circle cx="32" cy="32" r="26" fill="#ff8800" stroke="#ffd700" stroke-width="3"/>
+                        <circle cx="32" cy="32" r="20" fill="#ffffff" stroke="#111" stroke-width="2"/>
+                        <path d="M26 22 L38 22 M32 22 L32 44 M24 32 L40 32 M24 44 L40 44" stroke="#111" stroke-width="3" stroke-linecap="round"/>
+                    </svg>`
+                }
+            };
+
+            const activeTheme = themes[day] || themes[0];
+            
+            themeArt.className = `id-theme-art ${activeTheme.anim}`;
+            themeArt.innerHTML = `
+                ${activeTheme.svg}
+                <span class="id-theme-tag">${activeTheme.name}</span>
+            `;
+        }
+
         document.addEventListener("DOMContentLoaded", () => {
             // Apply Daily Theme to Profile Card
-            const idCard = document.querySelector('.id-card');
-            if (idCard) {
-                idCard.dataset.theme = new Date().getDay().toString();
-            }
+            applyDailyTheme();
 
             const fsCover = document.getElementById('fs-cover');
             if (fsCover) {
