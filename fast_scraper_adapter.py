@@ -116,15 +116,31 @@ def adapt_attendance(attendance_data):
         })
     return adapted
 
-def adapt_marks(marks_data):
+def adapt_marks(marks_data, courses_data):
     if not marks_data:
         return []
     
     adapted = []
     for key, m in marks_data.items():
+        actual_title = key
+        for c_key, c_val in courses_data.items():
+            if c_key == key:
+                actual_title = c_val.get('course_title', '')
+                break
+        
+        tests = m.get("tests", [])
+        if tests:
+            perf_list = []
+            for t in tests:
+                perf_list.append(f"{t.get('test_name', '')}/{t.get('max_marks', '')} | {t.get('obtained_marks', '')}")
+            perf_string = "   ".join(perf_list)
+        else:
+            perf_string = "No tests available."
+            
         adapted.append({
-            "courseTitle": key, # Approximated
-            "tests": m.get("tests", [])
+            "courseTitle": actual_title,
+            "performance": perf_string,
+            "courseCode": key
         })
     return adapted
 
@@ -169,7 +185,7 @@ def run_fast_scraper(email, password, out_queue):
         
         # Adapt to frontend format
         attList = adapt_attendance(attendance_data)
-        marksList = adapt_marks(attendance_data.get('marks', {})) # Marks are embedded in attendance parser output
+        marksList = adapt_marks(attendance_data.get('marks', {}), attendance_data.get('courses', {}))
         
         profile = {
             "name": student_info.get("name", "Student"),
