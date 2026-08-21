@@ -154,12 +154,12 @@ def run_fast_scraper(email, password, out_queue):
         
         lookup = client.lookup_user()
         if not lookup:
-            out_queue.put({'success': False, 'error': 'User lookup failed. Check your email ID.'})
+            out_queue.put({'success': False, 'error': 'You entered a wrong email ID or password. Please make sure your email ends with @srmist.edu.in'})
             return
             
         login_res = client.login()
         if not login_res.get("success"):
-            out_queue.put({'success': False, 'error': login_res.get("message", "Login failed")})
+            out_queue.put({'success': False, 'error': 'You entered a wrong email ID or password. Please make sure your email ends with @srmist.edu.in'})
             return
             
         print(f"[{email}] Login successful. Fetching data...")
