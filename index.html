@@ -5718,7 +5718,15 @@
                 const lastAuto = localStorage.getItem('lastAutoSyncTime');
                 if (!lastAuto || new Date(parseInt(lastAuto)) < lastMilestone) {
                     if (typeof backgroundSync === 'function') {
-                        backgroundSync();
+                        const now = new Date();
+                    const hour = now.getHours();
+                    if (hour === 8 || hour === 17 || hour === 0) {
+                        const windowKey = `${now.getFullYear()}-${now.getMonth()}-${now.getDate()}-${hour}`;
+                        if (localStorage.getItem('lastAutoSyncWindow') !== windowKey) {
+                            localStorage.setItem('lastAutoSyncWindow', windowKey);
+                            backgroundSync();
+                        }
+                    }
                         localStorage.setItem('lastAutoSyncTime', now.getTime().toString());
                     }
                 }
@@ -5852,7 +5860,15 @@
                     loadSavedData();
                     switchView('home-view');
                     
-                    backgroundSync();
+                    const now = new Date();
+                    const hour = now.getHours();
+                    if (hour === 8 || hour === 17 || hour === 0) {
+                        const windowKey = `${now.getFullYear()}-${now.getMonth()}-${now.getDate()}-${hour}`;
+                        if (localStorage.getItem('lastAutoSyncWindow') !== windowKey) {
+                            localStorage.setItem('lastAutoSyncWindow', windowKey);
+                            backgroundSync();
+                        }
+                    }
                     
                     const lastSuccessSync = localStorage.getItem('lastSyncSuccessTime');
                     if (!lastSuccessSync || (Date.now() - parseInt(lastSuccessSync) > 12 * 60 * 60 * 1000)) {
