@@ -3125,11 +3125,6 @@
                     </div>
                 </div>
             </div>
-            
-            <!-- AI CHATBOT FAB (Moved inside home-view so it naturally toggles with the view) -->
-            <div id="ai-fab" onclick="document.getElementById('chatModal').style.display='flex'" style="position: fixed; bottom: 120px; right: 20px; width: 60px; height: 60px; background: linear-gradient(135deg, #8a2be2, #ffaa00); border-radius: 50%; box-shadow: 0 10px 30px rgba(138,43,226,0.5); display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 2000; animation: pulseBg 2s infinite alternate;">
-                <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" style="width:30px;height:30px;"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
-            </div>
         </div>
 
         <div id="gallery-view" class="app-view">
@@ -4123,6 +4118,11 @@
         function switchView(viewId, pushToHistory = true) {
             document.querySelectorAll('.app-view').forEach(view => { view.classList.remove('active'); });
             document.getElementById(viewId).classList.add('active');
+            
+            const aiFab = document.getElementById('ai-fab');
+            if (aiFab) {
+                aiFab.style.display = viewId === 'home-view' ? 'flex' : 'none';
+            }
             
             window.scrollTo({ top: 0, behavior: 'smooth' });
             if (pushToHistory) history.pushState({ viewId: viewId }, '', `#${viewId}`);
@@ -8009,10 +8009,17 @@
             }
             
             document.getElementById('music-fullscreen').style.display = 'flex';
+            const fab = document.getElementById('ai-fab');
+            if (fab) fab.style.display = 'none';
         }
         
         function closeFullscreenPlayer() {
             document.getElementById('music-fullscreen').style.display = 'none';
+            const activeView = document.querySelector('.app-view.active');
+            if (activeView && activeView.id === 'home-view') {
+                const fab = document.getElementById('ai-fab');
+                if (fab) fab.style.display = 'flex';
+            }
         }
         
         async function submitMusic() {
@@ -8307,6 +8314,11 @@
     </div>
 
 
+
+    <!-- AI CHATBOT FAB -->
+    <div id="ai-fab" onclick="document.getElementById('chatModal').style.display='flex'" style="position: fixed; bottom: 120px; right: 20px; width: 60px; height: 60px; background: linear-gradient(135deg, #8a2be2, #ffaa00); border-radius: 50%; box-shadow: 0 10px 30px rgba(138,43,226,0.5); display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 9000; animation: pulseBg 2s infinite alternate;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" style="width:30px;height:30px;"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+    </div>
 
     <!-- Secret Crush Modal -->
     <div id="crushModal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 10000; flex-direction: column; justify-content: center; align-items: center; background: rgba(0,0,0,0.8); backdrop-filter: blur(10px);">
