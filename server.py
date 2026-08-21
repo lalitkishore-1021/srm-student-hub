@@ -1373,7 +1373,51 @@ def like_spotted(post_id):
     return jsonify({'success': True})
 
 @app.route('/ping')
-def ping(): return 'pong', 200
+def ping():
+    return jsonify({"status": "ok"})
+
+@app.route('/api/admin/stats', methods=['GET'])
+def admin_stats():
+    secret_key = request.args.get('key')
+    if secret_key != 'lalitadmin123':
+        return jsonify({"error": "Unauthorized. Invalid Admin Key."}), 403
+        
+    conn = get_db()
+    cur = conn.cursor()
+    
+    # Get total registered students
+    cur.execute("SELECT COUNT(*) FROM students")
+    total_users = cur.fetchone()[0] if not DATABASE_URL else cur.fetchone()[0]
+    
+    # Get active users today (synced_at contains today's date in ISO format)
+    today_prefix = datetime.utcnow().isoformat()[:10]
+    if DATABASE_URL:
+        cur.execute("SELECT COUNT(*) FROM students WHERE synced_at LIKE %s", (f"{today_prefix}%",))
+    else:
+        cur.execute("SELECT COUNT(*) FROM students WHERE synced_at LIKE ?", (f"{today_prefix}%",))
+    active_today = cur.fetchone()[0]
+
+    # Get latest 10 logged in users (just names and times)
+    if DATABASE_URL:
+        cur.execute("SELECT name, register_no, synced_at FROM students ORDER BY synced_at DESC LIMIT 10")
+    else:
+        cur.execute("SELECT name, register_no, synced_at FROM students ORDER BY synced_at DESC LIMIT 10")
+    
+    recent_users = []
+    for row in cur.fetchall():
+        recent_users.append({
+            "name": row[0],
+            "register_no": row[1],
+            "last_login": row[2]
+        })
+        
+    return jsonify({
+        "status": "success",
+        "admin": "Lalit",
+        "total_registered_users": total_users,
+        "active_users_today": active_today,
+        "recent_logins": recent_users
+    })
 
 @app.route('/')
 def serve_index(): return send_from_directory('.', 'index.html')
