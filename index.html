@@ -58,32 +58,32 @@
 
     <style>
         :root {
-            --primary: #ffaa00;
-            --primary-glow: rgba(255, 170, 0, 0.4);
-            --bg-start: #0f0f11;
-            --bg-end: #050505;
-            --card-bg: rgba(20, 20, 22, 0.65);
-            --nav-bg: rgba(10, 10, 12, 0.85);
+            --primary: #f59e0b;
+            --primary-glow: rgba(245, 158, 11, 0.25);
+            --bg-start: #0a0a0c;
+            --bg-end: #000000;
+            --card-bg: rgba(28, 28, 32, 0.65);
+            --nav-bg: rgba(18, 18, 22, 0.85);
             --text-main: #ffffff;
-            --text-sub: #909090;
+            --text-sub: #a1a1aa;
             --glass: rgba(255, 255, 255, 0.03);
-            --glass-border: rgba(255, 255, 255, 0.08);
-            --shadow: rgba(0, 0, 0, 0.8);
-            --splash-bg: #050505;
-            --danger: #ff4d4d;
-            --success: #00e676;
+            --glass-border: rgba(255, 255, 255, 0.06);
+            --shadow: rgba(0, 0, 0, 0.4);
+            --splash-bg: #000000;
+            --danger: #ef4444;
+            --success: #10b981;
         }
 
         body.light-mode {
-            --bg-start: #ffffff;
-            --bg-end: #e0e5ec;
-            --card-bg: rgba(255, 255, 255, 0.8);
-            --text-main: #121212;
-            --text-sub: #555555;
+            --bg-start: #f8fafc;
+            --bg-end: #e2e8f0;
+            --card-bg: rgba(255, 255, 255, 0.85);
+            --text-main: #0f172a;
+            --text-sub: #64748b;
             --glass: rgba(255, 255, 255, 0.6);
-            --glass-border: rgba(255, 255, 255, 0.8);
-            --shadow: rgba(0, 0, 0, 0.1);
-            --splash-bg: #f4f7f6;
+            --glass-border: rgba(0, 0, 0, 0.08);
+            --shadow: rgba(0, 0, 0, 0.08);
+            --splash-bg: #ffffff;
             --nav-bg: rgba(255, 255, 255, 0.9);
         }
 
@@ -95,9 +95,8 @@
 
         body {
             font-family: 'Open Sans', sans-serif;
-            background: radial-gradient(ellipse at 20% 20%, rgba(255, 170, 0, 0.15) 0%, transparent 50%),
-                        radial-gradient(ellipse at 80% 80%, rgba(138, 43, 226, 0.10) 0%, transparent 50%),
-                        #0a0a0a;
+            background: linear-gradient(180deg, var(--bg-start) 0%, var(--bg-end) 75%, rgba(138, 43, 226, 0.12) 100%);
+            background-attachment: fixed;
             color: var(--text-main);
             margin: 0;
             padding: 0;
@@ -245,7 +244,7 @@
             align-items: center;
             z-index: 1000;
             padding-bottom: 0;
-            box-shadow: 0 10px 30px var(--shadow), inset 0 0 15px rgba(255, 170, 0, 0.05);
+            box-shadow: 0 10px 30px var(--shadow);
             box-sizing: border-box;
             overflow: hidden;
         }
@@ -255,7 +254,7 @@
             height: 4px;
             border-radius: 4px;
             background: var(--primary);
-            box-shadow: 0 0 12px var(--primary-glow), 0 0 24px var(--primary-glow);
+            box-shadow: 0 0 12px var(--primary-glow);
             transition: left 0.35s cubic-bezier(0.4, 0, 0.2, 1), width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
             pointer-events: none;
             z-index: 2;
@@ -309,7 +308,7 @@
                 justify-content: center;
                 border-top: 1px solid var(--glass-border);
                 border: 1px solid var(--glass-border);
-                box-shadow: 0 15px 35px var(--shadow), inset 0 0 20px rgba(255, 170, 0, 0.1);
+                box-shadow: 0 15px 35px var(--shadow);
                 gap: 20px;
             }
 
@@ -664,14 +663,14 @@
 
         .stats-bar {
             display: flex;
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 25px;
+            background: var(--card-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
             padding: 15px 0;
             margin-bottom: 30px;
-            backdrop-filter: blur(35px) saturate(200%);
-            -webkit-backdrop-filter: blur(35px) saturate(200%);
-            box-shadow: inset 5px 5px 12px rgba(255,255,255,0.05), inset -5px -5px 12px rgba(0,0,0,0.3), 0 10px 30px rgba(0,0,0,0.3);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            box-shadow: 0 8px 32px var(--shadow);
         }
 
         .stat-box {
@@ -729,28 +728,28 @@
         }
 
         .action-card {
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: var(--card-bg);
+            border: 1px solid var(--glass-border);
             padding: 20px;
             border-radius: 20px;
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 12px;
             cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.34,1.56,0.64,1);
+            transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
             text-decoration: none;
             color: inherit;
-            backdrop-filter: blur(35px) saturate(200%);
-            -webkit-backdrop-filter: blur(35px) saturate(200%);
-            box-shadow: inset 5px 5px 12px rgba(255,255,255,0.05), inset -5px -5px 12px rgba(0,0,0,0.3), 0 10px 30px rgba(0,0,0,0.3);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            box-shadow: 0 4px 16px var(--shadow);
         }
 
         @media (hover: hover) {
             .action-card:hover {
-                border-color: rgba(245, 158, 11, 0.4);
-                background: rgba(245, 158, 11, 0.05);
-                transform: translateY(-4px) scale(1.02);
-                box-shadow: inset 5px 5px 15px rgba(245, 158, 11, 0.1), inset -5px -5px 15px rgba(0,0,0,0.4), 0 15px 35px var(--primary-glow);
+                border-color: rgba(245, 158, 11, 0.3);
+                background: rgba(255, 255, 255, 0.05);
+                transform: translateY(-4px);
+                box-shadow: 0 12px 24px rgba(0,0,0,0.5), 0 0 15px var(--primary-glow);
             }
         }
         
@@ -1078,13 +1077,15 @@
         }
 
         .dashboard-overview {
-            background: linear-gradient(135deg, rgba(255, 170, 0, 0.2) 0%, rgba(0, 0, 0, 0.4) 100%);
-            border: 1px solid var(--primary);
-            box-shadow: 0 10px 30px rgba(255, 170, 0, 0.15);
+            background: var(--card-bg);
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 4px 12px var(--shadow);
             border-radius: 20px;
             padding: 24px;
             margin-bottom: 24px;
             text-align: center;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
         }
 
         .overview-title {
@@ -1111,7 +1112,7 @@
         }
         .ptr-spinner {
             background: var(--card-bg);
-            border: 2px solid var(--primary);
+            border: 1px solid var(--glass-border);
             box-shadow: 0 5px 15px var(--shadow);
             border-radius: 50%;
             width: 45px;
@@ -1135,13 +1136,13 @@
             font-weight: 900;
             margin: 0 0 20px 0;
             color: var(--text-main);
-            text-shadow: 0 0 20px rgba(255, 170, 0, 0.5);
+            text-shadow: 0 4px 12px var(--shadow);
         }
 
         .overview-stats {
             display: flex;
             justify-content: space-between;
-            background: rgba(0, 0, 0, 0.3);
+            background: rgba(0, 0, 0, 0.2);
             padding: 15px;
             border-radius: 12px;
             border: 1px solid var(--glass-border);
@@ -1224,15 +1225,15 @@
         }
 
         .tab-btn {
-            background: var(--glass);
+            background: var(--card-bg);
             border: 1px solid var(--glass-border);
-            color: var(--text-main);
+            color: var(--text-sub);
             padding: 12px 25px;
             border-radius: 30px;
             cursor: pointer;
             white-space: nowrap;
-            transition: 0.3s;
-            font-weight: bold;
+            transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+            font-weight: 700;
             font-family: 'Montserrat', sans-serif;
             text-transform: uppercase;
             font-size: 0.85rem;
@@ -1240,42 +1241,41 @@
 
         .tab-btn.active,
         .tab-btn:hover {
-            background: var(--primary);
+            background: var(--text-main);
             color: #000;
-            border-color: var(--primary);
-            box-shadow: 0 0 15px rgba(255, 170, 0, 0.4);
+            border-color: var(--text-main);
+            box-shadow: 0 4px 12px rgba(255, 255, 255, 0.1);
         }
 
         .meal-card {
             display: flex;
             gap: 20px;
-            background: var(--glass);
+            background: var(--card-bg);
             padding: 25px;
-            border-radius: 16px;
+            border-radius: 20px;
             border: 1px solid var(--glass-border);
             margin-bottom: 20px;
-            transition: transform 0.3s, border-color 0.3s;
+            transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
             align-items: flex-start;
             text-align: left;
         }
 
         .meal-card:hover {
-            transform: translateY(-5px);
-            border-color: var(--primary);
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+            transform: translateY(-4px);
+            border-color: rgba(245, 158, 11, 0.3);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.4);
         }
 
         .meal-icon-box {
-            background: linear-gradient(135deg, rgba(255, 170, 0, 0.2) 0%, rgba(0, 0, 0, 0.2) 100%);
-            border: 1px solid var(--primary);
+            background: rgba(245, 158, 11, 0.1);
+            border: 1px solid rgba(245, 158, 11, 0.2);
             padding: 15px;
-            border-radius: 50%;
+            border-radius: 16px;
             display: flex;
             justify-content: center;
             align-items: center;
             color: var(--primary);
             flex-shrink: 0;
-            box-shadow: inset 0 0 10px rgba(255, 170, 0, 0.1);
         }
 
         .meal-icon-box svg {
@@ -1290,12 +1290,12 @@
         }
 
         .meal-content h3 {
-            margin: 0 0 10px 0;
+            margin: 0 0 8px 0;
             color: var(--text-main);
             font-size: 1.1rem;
             font-family: 'Montserrat', sans-serif;
             text-transform: uppercase;
-            letter-spacing: 1px;
+            letter-spacing: 0.5px;
         }
 
         .meal-content p {
@@ -1307,33 +1307,38 @@
 
         .special-badge {
             display: inline-block;
-            background: linear-gradient(135deg, #ff4444 0%, #cc0000 100%);
-            color: white;
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--danger);
+            border: 1px solid rgba(239, 68, 68, 0.2);
             padding: 4px 12px;
             border-radius: 20px;
-            font-size: 0.85rem;
-            font-weight: bold;
+            font-size: 0.8rem;
+            font-weight: 700;
             margin-top: 10px;
             letter-spacing: 1px;
-            box-shadow: 0 4px 10px rgba(255, 68, 68, 0.3);
             text-transform: uppercase;
             font-family: 'Montserrat', sans-serif;
         }
 
         details {
-            background: var(--glass);
+            background: var(--card-bg);
             border: 1px solid var(--glass-border);
-            border-radius: 8px;
+            border-radius: 12px;
             margin-bottom: 10px;
+            overflow: hidden;
+            transition: all 0.3s;
         }
 
         summary {
             padding: 15px;
             cursor: pointer;
             font-weight: bold;
-            color: var(--primary);
+            color: var(--text-main);
             list-style: none;
             outline: none;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
         }
 
         summary::-webkit-details-marker {
@@ -1345,6 +1350,7 @@
             border-top: 1px solid var(--glass-border);
             color: var(--text-sub);
             text-align: left;
+            background: rgba(0, 0, 0, 0.2);
         }
 
         .details-content ul {
@@ -1382,14 +1388,14 @@
         }
 
         .view-counter-box {
-            background: var(--glass);
+            background: var(--card-bg);
             border: 1px solid var(--glass-border);
-            padding: 15px 30px;
+            padding: 12px 24px;
             border-radius: 50px;
             display: flex;
             align-items: center;
-            gap: 15px;
-            box-shadow: 0 0 20px var(--shadow);
+            gap: 12px;
+            box-shadow: 0 4px 12px var(--shadow);
             transition: all 0.5s ease;
         }
 
@@ -1405,7 +1411,7 @@
         .developer-credit {
             color: var(--text-sub);
             font-size: 0.85rem;
-            letter-spacing: 2px;
+            letter-spacing: 1px;
             transition: color 0.5s ease;
         }
 
@@ -1420,32 +1426,32 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0, 0, 0, 0.98);
+            background-color: rgba(0, 0, 0, 0.95);
             z-index: 3000;
             justify-content: center;
             align-items: center;
-            backdrop-filter: blur(10px);
+            backdrop-filter: blur(15px);
         }
 
         .lightbox img {
             max-width: 85%;
             max-height: 85%;
-            border-radius: 10px;
-            border: 1px solid #333;
+            border-radius: 12px;
+            border: 1px solid var(--glass-border);
         }
 
         .close-btn {
             position: absolute;
             top: 30px;
             right: 40px;
-            color: #fff;
-            font-size: 50px;
+            color: var(--text-sub);
+            font-size: 40px;
             cursor: pointer;
             transition: color 0.3s;
         }
 
         .close-btn:hover {
-            color: var(--primary);
+            color: var(--text-main);
         }
 
         .video-container {
@@ -1485,38 +1491,46 @@
             color: var(--text-sub);
             padding: 10px 20px;
             border-radius: 20px;
-            font-weight: bold;
+            font-weight: 700;
             cursor: pointer;
             white-space: nowrap;
-            transition: 0.3s;
+            transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
         }
 
         .day-btn.active {
-            background: var(--primary);
+            background: var(--text-main);
             color: #000;
-            border-color: var(--primary);
-            box-shadow: 0 0 10px rgba(255, 170, 0, 0.4);
+            border-color: var(--text-main);
+            box-shadow: 0 4px 12px rgba(255, 255, 255, 0.1);
         }
 
         .tt-card {
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            background: var(--card-bg);
             border-radius: 20px;
-            padding: 15px;
+            padding: 20px;
             margin-bottom: 15px;
-            color: #fff;
-            box-shadow: 0 5px 15px rgba(30, 60, 114, 0.3);
+            color: var(--text-main);
             text-align: left;
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            border: 1px solid var(--glass-border);
             position: relative;
             overflow: hidden;
+            box-shadow: 0 4px 12px var(--shadow);
             transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
         }
         .tt-card:active { transform: scale(0.98); }
 
-        .tt-lab-card {
-            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
-            box-shadow: 0 5px 15px rgba(106, 17, 203, 0.4);
-            border-color: rgba(191, 90, 242, 0.5);
+        .tt-card::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: #3b82f6; /* Subtle blue indicator */
+        }
+
+        .tt-lab-card::before {
+            background: #8b5cf6; /* Subtle purple indicator */
         }
 
         .tt-time {
@@ -1564,15 +1578,17 @@
         }
 
         .sync-modal-content {
-            background: var(--bg-start);
-            border: 1px solid var(--primary);
-            border-radius: 20px;
+            background: var(--card-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
             padding: 30px;
             max-width: 400px;
             width: 90%;
             text-align: center;
             position: relative;
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            box-shadow: 0 24px 60px rgba(0, 0, 0, 0.7);
         }
 
         .sync-modal-content h3 {
@@ -2785,38 +2801,6 @@
                 <div class="icon-btn" style="width:32px;height:32px;"><svg viewBox="0 0 24 24"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2zm-2 1H8v-6c0-2.48 1.51-4.5 4-4.5s4 2.02 4 4.5v6z"/></svg></div>
                 <span>Notifications</span>
             </button>
-            <button id="themeToggle" class="fab-item" onclick="toggleTheme(event)" title="Toggle Theme">
-                <div class="icon-btn" style="width:32px;height:32px;"><svg viewBox="0 0 24 24"><path d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9c0-.46-.04-.92-.1-1.36-.98 1.37-2.58 2.26-4.4 2.26-3.03 0-5.5-2.47-5.5-5.5 0-1.82.89-3.42 2.26-4.4C12.92 3.04 12.46 3 12 3zm0 16c-3.86 0-7-3.14-7-7s3.14-7 7-7c.39 0 .76.04 1.12.1-1.3 1.25-2.12 3.03-2.12 5 0 3.86 3.14 7 7 7 1.97 0 3.75-.82 5-2.12.06.36.1.73.1 1.12 0 3.86-3.14 7-7 7z"/></svg></div>
-                <span>Toggle Theme</span>
-            </button>
-            <a href="https://www.instagram.com/lalit._.kishore" target="_blank" class="fab-item" title="Instagram">
-                <div class="icon-btn" style="width:32px;height:32px;"><svg viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.85s-.011 3.585-.069 4.85c-.148 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07s-3.584-.012-4.85-.07c-3.26-.148-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.85s.012-3.584.07-4.85c.148-3.204 1.671-4.771 4.919-4.919 1.266-.057 1.645-.069 4.85-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg></div>
-                <span>Instagram</span>
-            </a>
-            <a href="https://www.linkedin.com/in/balagalalitkishore" target="_blank" class="fab-item" title="LinkedIn">
-                <div class="icon-btn" style="width:32px;height:32px;"><svg viewBox="0 0 24 24"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg></div>
-                <span>LinkedIn</span>
-            </a>
-            <a href="https://github.com/lalitkishore-1021" target="_blank" class="fab-item" title="GitHub">
-                <div class="icon-btn" style="width:32px;height:32px;"><svg viewBox="0 0 24 24"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg></div>
-                <span>GitHub</span>
-            </a>
-            <button id="logoutBtn" class="fab-item text-danger" onclick="logout()" title="Logout" style="display: none;">
-                <div class="icon-btn" style="width:32px;height:32px;border-color: rgba(255, 68, 68, 0.4);"><svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg></div>
-                <span>Logout</span>
-            </button>
-        </div>
-    </div>
-
-    <div id="main-content">
-        <!-- Main Application Content -->
-        
-        <div id="sync-reminder-banner" style="display: none; background: rgba(255, 170, 0, 0.15); border: 1px solid rgba(255, 170, 0, 0.3); color: #ffaa00; padding: 10px 15px; margin: 15px; border-radius: 12px; font-size: 0.85rem; text-align: center;">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" style="vertical-align: middle; margin-right: 5px;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
-            Data out of date? <b>Pull down</b> on this screen to sync.
-            <button onclick="this.parentElement.style.display='none'" style="background:transparent; border:none; color:inherit; float:right; cursor:pointer; font-size:1.1rem; line-height:1; margin-top:-2px;">&times;</button>
-        </div>
-
         <div id="share-template">
             <div class="st-watermark">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
@@ -2830,28 +2814,6 @@
         </div>
         <div class="st-footer">Made with SRM Student Hub</div>
     </div>
-
-
-    <header class="site-header" style="display: none;">
-            <svg id="logoInstallTrigger" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" class="main-logo"
-                title="Click to Install App">
-                <defs>
-                    <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                        <stop offset="0%" stop-color="#ffaa00" />
-                        <stop offset="100%" stop-color="#ffdd00" />
-                    </linearGradient>
-                </defs>
-                <path d="M 30 20 L 10 50 L 30 80" fill="none" stroke="url(#logoGradient)" stroke-width="8"
-                    stroke-linecap="round" stroke-linejoin="round" />
-                <path d="M 70 20 L 90 50 L 70 80" fill="none" stroke="url(#logoGradient)" stroke-width="8"
-                    stroke-linecap="round" stroke-linejoin="round" />
-                <path d="M 35 65 L 45 65 L 45 50 L 55 50 L 55 35 L 65 35" fill="none" stroke="#ffffff" stroke-width="8"
-                    stroke-linecap="round" stroke-linejoin="round" />
-            </svg>
-            <h1>SRM Student Hub</h1>
-            <p class="subtitle">Your all-in-one portal for Step Class, Marks, and more.</p>
-            <h2 id="welcomeName" style="color: var(--primary); font-size: 1.2rem; margin-top: 5px; font-weight: bold;"></h2>
-        </header>
 
 
         <div id="home-view" class="app-view active">
@@ -4751,7 +4713,12 @@
                         <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(0,0,0,0.3); border-radius: 12px; padding: 15px; border: 1px solid ${isGood ? 'rgba(0,204,102,0.3)' : 'rgba(255,68,68,0.3)'}; min-width: 80px; text-align: center;">
                             <div style="font-size: 2rem; font-weight: 900; color: ${barColor}; line-height: 1;">${marginValue}</div>
                             <div style="font-size: 0.65rem; color: ${barColor}; font-weight: 800; text-transform: uppercase; margin-top: 4px; margin-bottom: 10px; letter-spacing: 0.5px; white-space: nowrap;">${marginLabel}</div>
-                            <div style="font-size: 1.3rem; font-family: 'Montserrat', sans-serif; font-weight: 900; color: ${barColor};">${percentage}%</div>
+                            <div style="font-size: 1.3rem; font-family: 'Montserrat', sans-serif; font-weight: 900; color: ${barColor}; display: flex; align-items: center; justify-content: center; gap: 5px;">
+                                ${percentage}%
+                                ${isGood ? 
+                                `<svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline><polyline points="16 7 22 7 22 13"></polyline></svg>` 
+                                : `<svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><polyline points="22 17 13.5 8.5 8.5 13.5 2 7"></polyline><polyline points="16 17 22 17 22 11"></polyline></svg>`}
+                            </div>
                         </div>
                     </div>
                 `;
@@ -4990,7 +4957,14 @@
                             </div>
                             ${subjectMax > 0 ? `
                             <div style="text-align: right;">
-                                <h2 style="margin: 0; font-size: 1.6rem; color: var(--text-main); font-family: 'Montserrat', sans-serif;">${subjectPercent}%</h2>
+                                <h2 style="margin: 0; font-size: 1.6rem; color: var(--text-main); font-family: 'Montserrat', sans-serif; display: flex; align-items: center; justify-content: flex-end; gap: 5px;">
+                                    ${subjectPercent}%
+                                    ${subjectPercent >= 75 ? 
+                                    `<svg viewBox="0 0 24 24" width="18" height="18" stroke="var(--success)" stroke-width="2" fill="none"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline><polyline points="16 7 22 7 22 13"></polyline></svg>` : 
+                                    (subjectPercent >= 50 ? 
+                                    `<svg viewBox="0 0 24 24" width="18" height="18" stroke="var(--primary)" stroke-width="2" fill="none"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>` :
+                                    `<svg viewBox="0 0 24 24" width="18" height="18" stroke="var(--danger)" stroke-width="2" fill="none"><polyline points="22 17 13.5 8.5 8.5 13.5 2 7"></polyline><polyline points="16 17 22 17 22 11"></polyline></svg>`)}
+                                </h2>
                                 <p style="margin: 2px 0 0 0; font-size: 0.8rem; color: var(--text-sub);">${subjectObtained.toFixed(1)} / ${subjectMax}</p>
                             </div>` : ''}
                         </div>
