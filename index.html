@@ -2755,13 +2755,16 @@
             </div>
 
             <div id="login-loader-container" style="display: none; flex-direction: column; align-items: center; justify-content: center; margin-top: 20px;">
-                <div class="login-loading-bar" id="login-top-bar" style="display: block;"></div>
-                <div class="upload-spinner" style="width: 32px; height: 32px; border-color: rgba(245,158,11,0.2); border-top-color: #f59e0b; border-width: 3px; margin-bottom: 16px;"></div>
-                <h3 id="sync-status" style="margin: 0 0 10px 0; font-size: 1.2rem; color: #f59e0b;"> Scraping your data... <span id="sync-timer" style="background: rgba(245,158,11,0.2); padding: 2px 8px; border-radius: 6px;">0s</span></h3>
-                <div style="width: 100%; height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; overflow: hidden; margin-bottom: 20px;">
-                    <div id="login-progress-bar" style="width: 0%; height: 100%; background: #ea580c; transition: width 1s linear;"></div>
+                <h3 id="sync-status" style="margin: 0 0 15px 0; font-size: 1.1rem; color: var(--primary); font-family: 'Montserrat', sans-serif;"> Scraping your data...</h3>
+                
+                <!-- 3D Pill Loader -->
+                <div style="width: 100%; max-width: 280px; height: 36px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; position: relative; overflow: visible; margin-bottom: 25px; box-shadow: inset 0 3px 10px rgba(0,0,0,0.5);">
+                    <div id="login-progress-bar" style="width: 0%; height: 100%; background: linear-gradient(90deg, #8a2be2, #ffaa00); border-radius: 18px; transition: width 1s linear; box-shadow: inset 0 2px 5px rgba(255,255,255,0.3);">
+                    </div>
+                    <div id="login-progress-thumb" style="position: absolute; left: 0%; top: 50%; transform: translate(-50%, -50%); width: 55px; height: 32px; background: linear-gradient(135deg, #ffaa00, #ff8c00); border-radius: 16px; display: flex; justify-content: center; align-items: center; color: #fff; font-weight: 800; font-size: 0.8rem; box-shadow: 0 4px 10px rgba(0,0,0,0.6), inset 0 2px 3px rgba(255,255,255,0.4); transition: left 1s linear;">0%</div>
                 </div>
-                <div id="login-tip" style="color: var(--text-sub); font-size: 0.9rem; font-style: italic; min-height: 40px; padding: 0 10px;"> Did you know? The library has a massive collection of e-books available for free.</div>
+
+                <div id="login-tip" style="color: var(--text-sub); font-size: 0.9rem; font-style: italic; min-height: 40px; padding: 0 10px; text-align: center; transition: opacity 0.3s;"> Did you know? The library has a massive collection of e-books available for free.</div>
             </div>
         </div>
     </div>
@@ -4054,6 +4057,7 @@
             "2026-08-07": { type: "Event", title: "Enrolment Day Ends with B.Tech - I" },
             "2026-08-15": { type: "Holiday", title: "Independence Day - Holiday" },
             "2026-08-17": { type: "Event", title: "Commencement of Classes for B.Tech - I" },
+            "2026-08-24": { type: "Holiday", title: "Chancellor's Birthday - Holiday" },
             "2026-08-26": { type: "Holiday", title: "Milad - un - Nabi - Holiday" },
             "2026-09-04": { type: "Holiday", title: "Krishna Jayanthi - Holiday" },
             "2026-09-14": { type: "Holiday", title: "Vinayakar Chathurthi - Holiday" },
@@ -4068,7 +4072,7 @@
 
         // Auto-generate accurate Day Orders for 2026 Odd Semester
         const endDate = new Date(2026, 11, 4); // Dec 4th, 2026
-        const holidays = ["2026-08-15", "2026-08-26", "2026-09-04", "2026-09-14", "2026-10-02", "2026-10-19", "2026-10-20", "2026-11-08", "2026-12-25"];
+        const holidays = ["2026-08-15", "2026-08-24", "2026-08-26", "2026-09-04", "2026-09-14", "2026-10-02", "2026-10-19", "2026-10-20", "2026-11-08", "2026-12-25"];
 
         let dOrder = 1;
         // Strictly deterministic integer loop completely avoiding Javascript DST / Timezone manipulation infinite loops!
@@ -4424,11 +4428,17 @@
 
             let timerInterval = setInterval(() => {
                 secondsPassed++;
-                statusText.innerHTML = ` Syncing securely... <span style="font-family: inherit; font-size: 1.1rem; color: #fff; background: rgba(255,170,0,0.2); padding: 2px 8px; border-radius: 6px;">${secondsPassed}s</span>`;
+                statusText.innerHTML = ` Scraping your data... <span style="font-family: inherit; font-size: 1.1rem; color: #fff; background: rgba(255,170,0,0.2); padding: 2px 8px; border-radius: 6px;">${secondsPassed}s</span>`;
                 
                 let prog = Math.min((secondsPassed / 50) * 100, 95);
                 let pb = document.getElementById('login-progress-bar');
+                let thumb = document.getElementById('login-progress-thumb');
+                
                 if (pb) pb.style.width = prog + '%';
+                if (thumb) {
+                    thumb.style.left = prog + '%';
+                    thumb.innerText = Math.round(prog) + '%';
+                }
 
                 if (secondsPassed % 5 === 0) {
                     tipIndex = (tipIndex + 1) % tips.length;
@@ -4519,6 +4529,11 @@
                 try { renderTimetable(ttDict); } catch (e) { console.error("Timetable Render Error:", e); }
 
                 document.getElementById('login-progress-bar').style.width = '100%';
+                let thumbFinal = document.getElementById('login-progress-thumb');
+                if (thumbFinal) {
+                    thumbFinal.style.left = '100%';
+                    thumbFinal.innerText = '100%';
+                }
 
                 setTimeout(() => {
                     const loginView = document.getElementById('login-view');
@@ -4874,11 +4889,9 @@
                 const regex = /([A-Za-z0-9-]+)\/([0-9.]+)\s*\|\s*([0-9.]+)/g;
                 let match;
                 while ((match = regex.exec(perfString)) !== null) {
-                    subjectMax += parseFloat(match[2]); 
-                    subjectObtained += parseFloat(match[3]);
+                    subjectMax += parseFloat(match[2] || 0); 
+                    subjectObtained += parseFloat(match[3] || 0);
                 }
-                
-                if (subjectMax === 0) return;
                 
                 let credits = item.credits !== undefined ? parseFloat(item.credits) : 3;
                 let courseId = course.replace(/[^a-zA-Z0-9]/g, '') + index;
@@ -5833,7 +5846,7 @@
                     if (logoutBtn) logoutBtn.style.display = 'flex';
 
                     loadSavedData();
-                    showTab('dashboard');
+                    switchView('home-view');
                     
                     backgroundSync();
                     
