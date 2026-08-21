@@ -4521,13 +4521,26 @@
                 document.getElementById('login-progress-bar').style.width = '100%';
 
                 setTimeout(() => {
-                    document.getElementById('login-view').style.display = 'none';
+                    const loginView = document.getElementById('login-view');
+                    if (loginView) loginView.style.display = 'none';
+                    
                     let mc = document.getElementById('main-content');
-                    mc.style.display = 'block';
-                    mc.classList.add('content-visible');
-                    document.getElementById('navButtons').style.display = 'flex';
-                    document.querySelector('.site-header').style.display = 'flex';
-                    document.querySelector('.app-nav').style.display = 'flex';
+                    if (mc) {
+                        mc.style.display = 'block';
+                        mc.classList.add('content-visible');
+                    }
+                    
+                    const navButtons = document.getElementById('navButtons');
+                    if (navButtons) navButtons.style.display = 'flex';
+                    
+                    const header = document.querySelector('.site-header');
+                    if (header) header.style.display = 'flex';
+                    
+                    const appNav = document.querySelector('.app-nav');
+                    if (appNav) appNav.style.display = 'flex';
+                    
+                    const fab = document.getElementById('ai-fab');
+                    if (fab) fab.style.display = 'flex';
                 }, 1500);
 
             } catch (e) {
@@ -5760,6 +5773,8 @@
                     if (header) header.style.display = 'flex';
                     if (appNav) appNav.style.display = 'flex';
                     if (loginView) loginView.style.display = 'none';
+                    const fab = document.getElementById('ai-fab');
+                    if (fab) fab.style.display = 'flex';
 
                     try {
                         const profile = JSON.parse(storedProfile);
@@ -5813,6 +5828,8 @@
                     if (header) header.style.display = 'none';
                     if (appNav) appNav.style.display = 'none';
                     if (loginView) loginView.style.display = 'flex';
+                    const fab = document.getElementById('ai-fab');
+                    if (fab) fab.style.display = 'none';
                 }
 
                 if (typeof checkAndScheduleNotifications === 'function') {
