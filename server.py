@@ -294,9 +294,9 @@ def start_session():
     
     def worker_wrapper(reg_no, pwd, batch, sid):
         out_queue = queue.Queue()
-        # We start the scraper normally
-        scrape_academia_worker(reg_no, pwd, batch, out_queue)
         try:
+            # We start the scraper normally
+            scrape_academia_worker(reg_no, pwd, batch, out_queue)
             # We wait for the scraper to finish without holding the HTTP response
             result = out_queue.get(timeout=10)
             if result.get('success'):
@@ -308,7 +308,7 @@ def start_session():
                 save_student_to_db(net_id, name, register_no, result.get('data', []), result.get('marks', []))
             sync_jobs[sid] = {'status': 'completed', 'result': result, 'timestamp': time.time()}
         except queue.Empty:
-            sync_jobs[sid] = {'status': 'failed', 'result': {'success': False, 'error': 'Background task crashed.'}, 'timestamp': time.time()}
+            sync_jobs[sid] = {'status': 'failed', 'result': {'success': False, 'error': 'Background task crashed or timed out.'}, 'timestamp': time.time()}
         except Exception as e:
             sync_jobs[sid] = {'status': 'failed', 'result': {'success': False, 'error': f'Background task exception: {str(e)}'}, 'timestamp': time.time()}
 
