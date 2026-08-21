@@ -116,20 +116,33 @@ def adapt_attendance(attendance_data):
         })
     return adapted
 
-def adapt_marks(marks_data, courses_data):
+def adapt_marks(marks_data, courses_data, timetable_courses=None):
     if not marks_data:
         return []
+    
+    if timetable_courses is None:
+        timetable_courses = []
     
     adapted = []
     for key, m in marks_data.items():
         actual_title = key
+        
+        # Try finding in attendance courses
         for c_key, c_val in courses_data.items():
-            # c_key is like "21MAB201TRegularTheory", key is "21MAB201TTHEORY"
-            # So let's match the base course code
-            base_code = c_key.replace('RegularTheory', '').replace('RegularPractical', '')
-            if base_code in key:
+            base_c_key = ''.join(e for e in c_key.upper() if e.isalnum())
+            base_m_key = ''.join(e for e in key.upper() if e.isalnum())
+            if base_c_key.startswith(base_m_key[:8]) or base_m_key.startswith(base_c_key[:8]):
                 actual_title = c_val.get('course_title', '')
                 break
+                
+        # If still just the course code (meaning attendance was empty), try timetable courses
+        if actual_title == key:
+            base_m_key = ''.join(e for e in key.upper() if e.isalnum())
+            for t_course in timetable_courses:
+                t_code = ''.join(e for e in str(t_course.get('course_code', '')).upper() if e.isalnum())
+                if t_code and (t_code.startswith(base_m_key[:8]) or base_m_key.startswith(t_code[:8])):
+                    actual_title = t_course.get('course_title', actual_title)
+                    break
         
         tests = m.get("tests", [])
         if tests:
@@ -188,7 +201,7 @@ def run_fast_scraper(email, password, out_queue):
         
         # Adapt to frontend format
         attList = adapt_attendance(attendance_data)
-        marksList = adapt_marks(attendance_data.get('marks', {}), attendance_data.get('courses', {}))
+        marksList = adapt_marks(attendance_data.get('marks', {}), attendance_data.get('courses', {}), courses_list)
         
         profile = {
             "name": student_info.get("name", "Student"),
