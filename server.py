@@ -18,7 +18,7 @@ import time
 # --- ANTI-SCRAPING PROTECTIONS ---
 API_SECRET_KEY = "srm-hub-protected-x9f2"
 ip_rate_limits = defaultdict(list)
-MAX_LOGIN_ATTEMPTS = 5
+MAX_LOGIN_ATTEMPTS = 30
 RATE_LIMIT_WINDOW = 60 # seconds
 
 def is_rate_limited(ip):
