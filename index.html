@@ -4871,8 +4871,9 @@
                     }
 
                     html += `
-                        <div class="image-card morph-card" oncontextmenu="handleLongPress(event, '${name}', 'attendance')" onmousedown="startLongPress(event, '${name}', 'attendance')" onmouseup="cancelLongPress()" onmouseleave="cancelLongPress()" ontouchstart="startLongPress(event, '${name}', 'attendance')" ontouchend="cancelLongPress()" ontouchcancel="cancelLongPress()" style="display: flex; align-items: center; justify-content: space-between; padding: 20px; margin-bottom: 15px; transition: all 0.3s; ${cardStyleModifier}">
-                            <div style="flex: 1; padding-right: 15px;">
+                        <div class="image-card morph-card" oncontextmenu="handleLongPress(event, '${name}', 'attendance')" onmousedown="startLongPress(event, '${name}', 'attendance')" onmouseup="cancelLongPress()" onmouseleave="cancelLongPress()" ontouchstart="startLongPress(event, '${name}', 'attendance')" ontouchend="cancelLongPress()" ontouchcancel="cancelLongPress()" style="display: flex; flex-direction: column; padding: 20px; margin-bottom: 15px; transition: all 0.3s; ${cardStyleModifier}">
+                            <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+                                <div style="flex: 1; padding-right: 15px;">
                                 <h3 style="margin: 0 0 10px 0; color: #fff; font-family: 'Montserrat', sans-serif; font-size: 1rem; line-height: 1.3;">${name}</h3>
                                 <div style="display: flex; gap: 15px; font-size: 0.85rem; font-weight: 600; margin-top: 10px;">
                                     <span style="color: var(--success);">Present: ${attended}</span>
@@ -4889,6 +4890,16 @@
                                 <div style="font-size: 1.3rem; font-family: 'Montserrat', sans-serif; font-weight: 900; color: ${barColor}; display: flex; align-items: center; justify-content: center; gap: 5px;">
                                     ${percentage}%
                                 </div>
+                            </div>
+                            </div>
+                            
+                            <div style="width: 100%; display: flex; justify-content: space-between; margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.05);">
+                                <button onclick="event.stopPropagation(); updateSimulation('${safeId}', 0, 1);" class="btn-primary" style="background: rgba(255,68,68,0.1); color: #ff4444; border: 1px solid rgba(255,68,68,0.3); padding: 8px 20px; font-size: 0.85rem; border-radius: 8px; font-weight: 700;">- BUNK</button>
+                                <div style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                                    <span style="font-size: 0.7rem; color: var(--text-sub); text-transform: uppercase;">Simulated</span>
+                                    <span style="font-size: 0.9rem; font-weight: bold; color: #fff;">${sim.bunked} B / ${sim.attended} A</span>
+                                </div>
+                                <button onclick="event.stopPropagation(); updateSimulation('${safeId}', 1, 0);" class="btn-primary" style="background: rgba(0,204,102,0.1); color: #00cc66; border: 1px solid rgba(0,204,102,0.3); padding: 8px 20px; font-size: 0.85rem; border-radius: 8px; font-weight: 700;">+ ATTEND</button>
                             </div>
                         </div>
                     `;

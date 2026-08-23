@@ -203,13 +203,23 @@ def run_fast_scraper(email, password, out_queue):
         attList = adapt_attendance(attendance_data)
         marksList = adapt_marks(attendance_data.get('marks', {}), attendance_data.get('courses', {}), courses_list)
         
+        advisors = attendance_data.get('advisors', {}) if attendance_data else {}
+        fa = advisors.get('faculty_advisor', {})
+        aa = advisors.get('academic_advisor', {})
+        
         profile = {
             "name": student_info.get("name", "Student"),
             "reg_no": student_info.get("registration_number", ""),
             "program": student_info.get("program", ""),
             "department": student_info.get("department", ""),
             "semester": student_info.get("semester", ""),
-            "batch": student_info.get("batch", "")
+            "batch": student_info.get("batch", ""),
+            "fa_name": fa.get("name", ""),
+            "fa_email": fa.get("email", ""),
+            "fa_phone": fa.get("phone", ""),
+            "aa_name": aa.get("name", ""),
+            "aa_email": aa.get("email", ""),
+            "aa_phone": aa.get("phone", "")
         }
         
         print(f"[{email}] Scraping complete!")
