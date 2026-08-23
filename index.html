@@ -5884,11 +5884,11 @@
                     document.body.classList.add('light-mode');
                 }
                 // Invalidate old version profiles to force login
-                if (localStorage.getItem('appVersion') !== 'v5') {
+                if (localStorage.getItem('appVersion') !== 'v6') {
                     localStorage.removeItem('squadProfile');
                     localStorage.removeItem('syncRegNo');
                     localStorage.removeItem('syncPwd');
-                    localStorage.setItem('appVersion', 'v5');
+                    localStorage.setItem('appVersion', 'v6');
                 }
 
                 const mainContent = document.getElementById('main-content');
@@ -6944,7 +6944,7 @@
             return new Promise((resolve, reject) => {
                 const tx = db.transaction('downloads', 'readwrite');
                 tx.objectStore('downloads').put({
-                    id: track.id,
+                    id: String(track.id),
                     title: track.title,
                     artist: track.artist,
                     cover_data: track.cover_data || '',
@@ -6999,7 +6999,7 @@
         async function updateDownloadBtnState(trackId) {
             const btn = document.getElementById('fs-download-btn');
             if (!btn) return;
-            const downloaded = await isTrackDownloaded(Number(trackId));
+            const downloaded = await isTrackDownloaded(String(trackId));
             if (downloaded) {
                 btn.innerHTML = '<svg viewBox="0 0 24 24" width="24" height="24" fill="#1DB954"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>';
                 btn.title = 'Saved to App';
@@ -8449,7 +8449,7 @@
             if (btn) btn.innerHTML = '<div class="css-loader" style="width:20px;height:20px;border-width:2px;border-top-color:#1DB954;"></div>';
             try {
                 // Check if already downloaded
-                const existing = await getOfflineTrack(Number(track.id));
+                const existing = await getOfflineTrack(String(track.id));
                 let audioData;
                 if (existing && existing.audio_data) {
                     audioData = existing.audio_data;
@@ -8470,7 +8470,7 @@
                     if (document.getElementById('downloads-list')) loadDownloadsList();
                 }
             } catch (e) {
-                alert("Could not download track.");
+                alert("Could not download track: " + e.message);
                 updateDownloadBtnState(track.id);
             }
         }
