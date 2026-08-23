@@ -5327,11 +5327,7 @@
             let dayOrderDate = (new Date(todayLocal - tzoffset)).toISOString().slice(0, 10);
             let isHoliday = srmPlanner[dayOrderDate] && srmPlanner[dayOrderDate].type === "Holiday";
             
-            if (isSemesterVacation(dayOrderDate)) {
-                grid.innerHTML = `<div class="image-card" style="text-align:center; padding: 20px;"><h4 style="color:var(--accent); margin:0;"> Semester Holidays!</h4><p style="color:var(--text-sub); font-size:0.9rem;">Enjoy your vacation!</p></div>`;
-            } else if (isHoliday) {
-                grid.innerHTML = `<div class="image-card" style="text-align:center; padding: 20px;"><h4 style="color:var(--accent); margin:0;">Today Holiday</h4><p style="color:var(--text-sub); font-size:0.9rem;">${srmPlanner[dayOrderDate].title}</p></div>`;
-            } else if (classesForDay.length === 0) {
+            if (classesForDay.length === 0) {
                 grid.innerHTML = `<div class="image-card" style="text-align:center; padding: 30px;"><h3 style="color:var(--text-sub); margin:0;">No classes scheduled for Day ${dayNumber}</h3></div>`;
             } else {
                 // Remove duplicates and fallback "Period" classes if real times exist
@@ -5884,11 +5880,11 @@
                     document.body.classList.add('light-mode');
                 }
                 // Invalidate old version profiles to force login
-                if (localStorage.getItem('appVersion') !== 'v6') {
+                if (localStorage.getItem('appVersion') !== 'v8') {
                     localStorage.removeItem('squadProfile');
                     localStorage.removeItem('syncRegNo');
                     localStorage.removeItem('syncPwd');
-                    localStorage.setItem('appVersion', 'v6');
+                    localStorage.setItem('appVersion', 'v8');
                 }
 
                 const mainContent = document.getElementById('main-content');
