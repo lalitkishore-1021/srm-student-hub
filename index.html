@@ -4898,6 +4898,7 @@
                                 <div style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
                                     <span style="font-size: 0.7rem; color: var(--text-sub); text-transform: uppercase;">Simulated</span>
                                     <span style="font-size: 0.9rem; font-weight: bold; color: #fff;">${sim.bunked} B / ${sim.attended} A</span>
+                                    <span onclick="event.stopPropagation(); delete simulationState['${safeId}']; renderAttendance(attendanceData);" style="font-size: 0.7rem; color: #aaa; text-decoration: underline; margin-top: 5px; cursor: pointer;">RESET</span>
                                 </div>
                                 <button onclick="event.stopPropagation(); updateSimulation('${safeId}', 1, 0);" class="btn-primary" style="background: rgba(0,204,102,0.1); color: #00cc66; border: 1px solid rgba(0,204,102,0.3); padding: 8px 20px; font-size: 0.85rem; border-radius: 8px; font-weight: 700;">+ ATTEND</button>
                             </div>
@@ -5883,11 +5884,11 @@
                     document.body.classList.add('light-mode');
                 }
                 // Invalidate old version profiles to force login
-                if (localStorage.getItem('appVersion') !== 'v4') {
+                if (localStorage.getItem('appVersion') !== 'v5') {
                     localStorage.removeItem('squadProfile');
                     localStorage.removeItem('syncRegNo');
                     localStorage.removeItem('syncPwd');
-                    localStorage.setItem('appVersion', 'v4');
+                    localStorage.setItem('appVersion', 'v5');
                 }
 
                 const mainContent = document.getElementById('main-content');
