@@ -11,6 +11,24 @@ import uuid
 import urllib.parse
 from datetime import datetime
 from flask import Flask, request, jsonify, send_from_directory, Response
+
+from collections import defaultdict
+import time
+
+# --- ANTI-SCRAPING PROTECTIONS ---
+API_SECRET_KEY = "srm-hub-protected-x9f2"
+ip_rate_limits = defaultdict(list)
+MAX_LOGIN_ATTEMPTS = 5
+RATE_LIMIT_WINDOW = 60 # seconds
+
+def is_rate_limited(ip):
+    now = time.time()
+    # clean old timestamps
+    ip_rate_limits[ip] = [t for t in ip_rate_limits[ip] if now - t < RATE_LIMIT_WINDOW]
+    if len(ip_rate_limits[ip]) >= MAX_LOGIN_ATTEMPTS:
+        return True
+    ip_rate_limits[ip].append(now)
+    return False
 from functools import lru_cache
 import base64
 from flask_cors import CORS
@@ -289,6 +307,19 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
 @app.route('/api/start_session', methods=['POST'])
 def start_session():
     data = request.json
+
+    # 1. API Key Check
+    client_key = request.headers.get('X-App-Key')
+    if client_key != API_SECRET_KEY:
+        return jsonify({'success': False, 'error': 'Unauthorized: Invalid API Key'}), 403
+
+    # 2. Rate Limiting Check
+    client_ip = request.headers.get('X-Forwarded-For', request.remote_addr)
+    if client_ip:
+        client_ip = client_ip.split(',')[0].strip()
+    if is_rate_limited(client_ip):
+        return jsonify({'success': False, 'error': 'Too many requests. Please try again later.'}), 429
+
     sync_id = str(uuid.uuid4())
     sync_jobs[sync_id] = {'status': 'processing', 'timestamp': time.time()}
     

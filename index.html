@@ -4533,7 +4533,7 @@
             try {
                 const initRes = await fetch(`${BACKEND_URL}/api/start_session`, {
                     method: "POST",
-                    headers: { "Content-Type": "application/json" },
+                    headers: { "Content-Type": "application/json", "X-App-Key": "srm-hub-protected-x9f2" },
                     body: JSON.stringify({ regNo: regNo, pwd: pwd, batch: currentBatch })
                 });
 
@@ -4654,7 +4654,7 @@
             try {
                 const initRes = await fetch(`${BACKEND_URL}/api/start_session`, {
                     method: "POST",
-                    headers: { "Content-Type": "application/json" },
+                    headers: { "Content-Type": "application/json", "X-App-Key": "srm-hub-protected-x9f2" },
                     body: JSON.stringify({ regNo, pwd, batch })
                 });
 
@@ -6299,7 +6299,7 @@
             try {
                 const res = await fetch(`${BACKEND_URL}/api/projects/delete/${id}`, {
                     method: 'DELETE',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json', 'X-App-Key': 'srm-hub-protected-x9f2' },
                     body: JSON.stringify({ net_id: getCurrentNetId() })
                 });
                 const data = await res.json();
@@ -6434,7 +6434,7 @@
             try {
                 const res = await fetch(`${BACKEND_URL}/api/marketplace/submit`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json', 'X-App-Key': 'srm-hub-protected-x9f2' },
                     body: JSON.stringify({
                         title, category, phone_no,
                         description: document.getElementById('market-desc').value,
@@ -6466,7 +6466,7 @@
             try {
                 const res = await fetch(`${BACKEND_URL}/api/marketplace/delete/${id}`, {
                     method: 'DELETE',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json', 'X-App-Key': 'srm-hub-protected-x9f2' },
                     body: JSON.stringify({ net_id: netId })
                 });
                 const result = await res.json();
@@ -6612,7 +6612,7 @@
             try {
                 const res = await fetch(`${BACKEND_URL}/api/cabs/submit`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json', 'X-App-Key': 'srm-hub-protected-x9f2' },
                     body: JSON.stringify({
                         destination, travel_date, travel_time, spots, phone_no,
                         creator_name: profile.name || 'Student',
@@ -6695,7 +6695,7 @@
             try {
                 const res = await fetch(`${BACKEND_URL}/api/events/submit`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json', 'X-App-Key': 'srm-hub-protected-x9f2' },
                     body: JSON.stringify({
                         club_name, event_title, event_date, registration_link, image_url,
                         created_by: profile.name || 'Student',
@@ -6726,7 +6726,7 @@
             try {
                 const res = await fetch(`${BACKEND_URL}/api/projects/submit`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json', 'X-App-Key': 'srm-hub-protected-x9f2' },
                     body: JSON.stringify({
                         title, description: document.getElementById('ph-desc').value,
                         tech_stack: document.getElementById('ph-tech').value,
@@ -6755,7 +6755,7 @@
             try {
                 const res = await fetch(`${BACKEND_URL}/api/cabs/delete/${id}`, {
                     method: 'DELETE',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json', 'X-App-Key': 'srm-hub-protected-x9f2' },
                     body: JSON.stringify({ net_id: netId })
                 });
                 const result = await res.json();
@@ -6854,7 +6854,7 @@
             try {
                 const res = await fetch(`${BACKEND_URL}/api/lostfound/submit`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json', 'X-App-Key': 'srm-hub-protected-x9f2' },
                     body: JSON.stringify({
                         title, category,
                         description: document.getElementById('lf-desc').value,
@@ -6884,7 +6884,7 @@
             try {
                 const res = await fetch(`${BACKEND_URL}/api/lostfound/delete/${id}`, {
                     method: 'DELETE',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json', 'X-App-Key': 'srm-hub-protected-x9f2' },
                     body: JSON.stringify({ net_id: netId })
                 });
                 const result = await res.json();
@@ -7291,7 +7291,7 @@
                     try {
                         await fetch(`${BACKEND_URL}/api/music/reorder`, {
                             method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
+                            headers: { 'Content-Type': 'application/json', 'X-App-Key': 'srm-hub-protected-x9f2' },
                             body: JSON.stringify({ order: newOrder })
                         });
                         const oldPlaylist = [...currentPlaylist];
@@ -8371,7 +8371,7 @@
         async function deleteMusicTrack(id) {
             if (!confirm("Delete this track?")) return;
             try {
-                const res = await fetch(`${BACKEND_URL}/api/music/delete/${id}`, { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ net_id: getCurrentNetId() }) });
+                const res = await fetch(`${BACKEND_URL}/api/music/delete/${id}`, { method: 'DELETE', headers: { 'Content-Type': 'application/json', 'X-App-Key': 'srm-hub-protected-x9f2' }, body: JSON.stringify({ net_id: getCurrentNetId() }) });
                 const data = await res.json();
                 if (data.success) { loadMusicList(); } 
                 else { alert("Error: " + (data.error || "Could not delete")); }
@@ -8661,7 +8661,7 @@
             
             try {
                 const res = await fetch(`${BACKEND_URL}/api/crush/submit`, {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    method: 'POST', headers: { 'Content-Type': 'application/json', 'X-App-Key': 'srm-hub-protected-x9f2' },
                     body: JSON.stringify({ net_id: getCurrentNetId(), crush_ra: ra })
                 });
                 const data = await res.json();
@@ -8707,7 +8707,7 @@
             
             try {
                 const res = await fetch(`${BACKEND_URL}/api/ai/predict`, {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    method: 'POST', headers: { 'Content-Type': 'application/json', 'X-App-Key': 'srm-hub-protected-x9f2' },
                     body: JSON.stringify({ cgpa, skills, projects })
                 });
                 const data = await res.json();
@@ -8777,7 +8777,7 @@
                 const attData = localStorage.getItem('squadAttendance') || "[]";
                 const ttData = localStorage.getItem('squadTimetable') || "{}";
                 const res = await fetch(`${BACKEND_URL}/api/ai/chat`, {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    method: 'POST', headers: { 'Content-Type': 'application/json', 'X-App-Key': 'srm-hub-protected-x9f2' },
                     body: JSON.stringify({ prompt: msg, attendance: attData, timetable: ttData, file_base64: reqFileB64, mime_type: reqMimeType })
                 });
                 const data = await res.json();
@@ -8985,7 +8985,7 @@
                 const attData = localStorage.getItem('squadAttendance') || "[]";
                 const ttData = localStorage.getItem('squadTimetable') || "{}";
                 const res = await fetch(`${BACKEND_URL}/api/ai/chat`, {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    method: 'POST', headers: { 'Content-Type': 'application/json', 'X-App-Key': 'srm-hub-protected-x9f2' },
                     body: JSON.stringify({ prompt: "The user sent an audio message. Respond briefly to it as if in a live voice conversation. Maximum 2-3 sentences. No markdown.", attendance: attData, timetable: ttData, file_base64: base64Data, mime_type: mimeType })
                 });
                 const data = await res.json();
@@ -9082,7 +9082,7 @@
                 const attData = localStorage.getItem('squadAttendance') || "[]";
                 const ttData = localStorage.getItem('squadTimetable') || "{}";
                 const res = await fetch(`${BACKEND_URL}/api/ai/chat`, {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    method: 'POST', headers: { 'Content-Type': 'application/json', 'X-App-Key': 'srm-hub-protected-x9f2' },
                     body: JSON.stringify({ prompt: msg + " (Reply briefly as if in a live voice conversation. Maximum 2-3 sentences. No markdown.)", attendance: attData, timetable: ttData })
                 });
                 const data = await res.json();
@@ -9206,7 +9206,7 @@
             input.value = '';
             try {
                 const res = await fetch(`${BACKEND_URL}/api/spotted`, {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    method: 'POST', headers: { 'Content-Type': 'application/json', 'X-App-Key': 'srm-hub-protected-x9f2' },
                     body: JSON.stringify({ message: msg, net_id: getCurrentNetId() })
                 });
                 const data = await res.json();
