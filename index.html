@@ -3892,8 +3892,8 @@
             </div>
             <div id="fs-cover-container" class="fs-cover-container">
                 <img id="fs-cover" class="fs-cover" src="" alt="Cover">
-            <video id="fs-video" class="fs-cover" loop muted playsinline style="display: none; box-shadow: 0 20px 45px rgba(0,0,0,0.55);"></video>
-        </div>
+                <video id="fs-video" class="fs-cover" loop muted playsinline style="display: none; box-shadow: 0 20px 45px rgba(0,0,0,0.55);"></video>
+            </div>
         <div class="fs-glass-panel">
             <div class="fs-info">
                 <h2 id="fs-title" class="fs-title">No track</h2>
@@ -3932,6 +3932,7 @@
                     </div>
                 </div>
             </div>
+        </div>
         </div>
         
         <!-- Spotify-style bottom sheet lyrics -->
@@ -5840,6 +5841,54 @@
             }, 50);
         }
         
+
+function checkAndShowHolidayBanner(viewId) {
+            let todayLocal = new Date();
+            let tzoffset = todayLocal.getTimezoneOffset() * 60000;
+            let dateStr = (new Date(todayLocal - tzoffset)).toISOString().slice(0, 10);
+            let plan = srmPlanner[dateStr];
+            let isHoliday = plan && plan.type === "Holiday";
+            
+            let banner = document.getElementById(viewId);
+            if (banner) {
+                if (isSemesterVacation(dateStr)) {
+                    banner.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg><div><strong> Semester Holidays!</strong><br><small>Enjoy your vacation!</small></div>`;
+                    banner.style.display = 'flex';
+                } else if (isHoliday) {
+                    banner.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg><div><strong> Today is a Holiday!</strong><br><small>${plan.title}</small></div>`;
+                    banner.style.display = 'flex';
+                } else if (todayLocal.getDay() === 0 || todayLocal.getDay() === 6) {
+                    banner.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg><div><strong> Weekend!</strong><br><small>No classes today.</small></div>`;
+                    banner.style.display = 'flex';
+                } else {
+                    banner.style.display = 'none';
+                }
+            }
+        }
+        
+        function showHolidaySlideUp() {
+            // Deprecated - using inline banners now
+        }
+
+        function isClassActive(timeStr) {
+            if (!timeStr) return false;
+            try {
+                let parts = timeStr.split(/[-]|to/i).map(s => s.trim());
+                if (parts.length < 2) return false;
+                let [startStr, endStr] = parts;
+                let parseT = (t) => {
+                    let [h, m] = t.trim().split(':').map(Number);
+                    if (h >= 1 && h <= 7) h += 12; // PM adjustment
+                    return h * 60 + m;
+                };
+                let startMins = parseT(startStr);
+                let endMins = parseT(endStr);
+                let now = new Date();
+                let currentMins = now.getHours() * 60 + now.getMinutes();
+                return currentMins >= startMins && currentMins <= endMins;
+            } catch (e) { return false; }
+        }
+
         // Execute initialization
         initApp();
 
@@ -9983,52 +10032,6 @@ function predictDateRangeUI() {
 }
 
 
-function checkAndShowHolidayBanner(viewId) {
-            let todayLocal = new Date();
-            let tzoffset = todayLocal.getTimezoneOffset() * 60000;
-            let dateStr = (new Date(todayLocal - tzoffset)).toISOString().slice(0, 10);
-            let plan = srmPlanner[dateStr];
-            let isHoliday = plan && plan.type === "Holiday";
-            
-            let banner = document.getElementById(viewId);
-            if (banner) {
-                if (isSemesterVacation(dateStr)) {
-                    banner.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg><div><strong> Semester Holidays!</strong><br><small>Enjoy your vacation!</small></div>`;
-                    banner.style.display = 'flex';
-                } else if (isHoliday) {
-                    banner.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg><div><strong> Today is a Holiday!</strong><br><small>${plan.title}</small></div>`;
-                    banner.style.display = 'flex';
-                } else if (todayLocal.getDay() === 0 || todayLocal.getDay() === 6) {
-                    banner.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg><div><strong> Weekend!</strong><br><small>No classes today.</small></div>`;
-                    banner.style.display = 'flex';
-                } else {
-                    banner.style.display = 'none';
-                }
-            }
-        }
-        
-        function showHolidaySlideUp() {
-            // Deprecated - using inline banners now
-        }
-
-        function isClassActive(timeStr) {
-            if (!timeStr) return false;
-            try {
-                let parts = timeStr.split(/[-]|to/i).map(s => s.trim());
-                if (parts.length < 2) return false;
-                let [startStr, endStr] = parts;
-                let parseT = (t) => {
-                    let [h, m] = t.trim().split(':').map(Number);
-                    if (h >= 1 && h <= 7) h += 12; // PM adjustment
-                    return h * 60 + m;
-                };
-                let startMins = parseT(startStr);
-                let endMins = parseT(endStr);
-                let now = new Date();
-                let currentMins = now.getHours() * 60 + now.getMinutes();
-                return currentMins >= startMins && currentMins <= endMins;
-            } catch (e) { return false; }
-        }
 
         
 
