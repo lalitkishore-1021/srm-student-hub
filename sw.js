@@ -1,5 +1,5 @@
 // Change this version number every time you want to force phones to update!
-const CACHE_NAME = 'srm-hub-v28-fix-login'; 
+const CACHE_NAME = 'srm-hub-v29-fix-crash'; 
 
 const ASSETS_TO_CACHE = [
     '/',
