@@ -4777,7 +4777,24 @@
             attendanceData = attData || [];
             let html = '';
 
-            if (attendanceData.length === 0) {
+
+            let workingAttData = attendanceData;
+            if (workingAttData.length === 0) {
+                try {
+                    let marksFallback = JSON.parse(localStorage.getItem('squadMarks') || '[]');
+                    if (marksFallback && marksFallback.length > 0) {
+                        workingAttData = marksFallback.map(m => ({
+                            courseTitle: m.courseTitle || m.name || "na",
+                            courseCode: m.courseCode || m.code || "na",
+                            conducted: 0,
+                            attended: 0,
+                            absent: 0
+                        }));
+                    }
+                } catch(e) {}
+            }
+
+            if (workingAttData.length === 0) {
                 html = `
                     <div style="padding: 30px; text-align: center; background: rgba(255, 71, 87, 0.1); border: 1px solid rgba(255, 71, 87, 0.3); border-radius: 15px; margin-top: 20px;">
                         <h3 style="color: #ff4757; margin-bottom: 10px; font-size: 1.2rem;">Attendance Data Not Available</h3>
@@ -5016,7 +5033,7 @@
 
             // Top Summary Card (Academia X Green style)
             let html = `
-                <div class="glass-card fade-in-up" style="background: linear-gradient(135deg, #278E38, #1E6B2A); border:none; border-radius: 24px; padding: 25px; margin-bottom: 25px; box-shadow: 0 15px 35px rgba(39, 142, 56, 0.2); position: relative; overflow: hidden;">
+                <div class="glass-card fade-in-up" style="background: var(--glass); border: 1px solid var(--glass-border); border-radius: 24px; padding: 25px; margin-bottom: 25px; box-shadow: 0 15px 35px var(--shadow); position: relative; overflow: hidden;">
                     <!-- Background decor -->
                     <div style="position:absolute; top:-20px; right:-20px; width:100px; height:100px; background:rgba(255,255,255,0.05); border-radius:50%;"></div>
                     
@@ -8751,7 +8768,7 @@ function checkAndShowHolidayBanner(viewId) {
                     };
                 <\/script>
                 <!-- CGPA Calculator Modal -->
-    <div id="cgpa-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:var(--bg-black); z-index:9999; flex-direction:column; overflow-y:auto; padding-bottom:50px;">
+    <div id="cgpa-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:var(--bg-start); z-index:9999; flex-direction:column; overflow-y:auto; padding-bottom:50px;">
         <div style="padding: 20px; display:flex; align-items:center; gap:15px; position:sticky; top:0; background:rgba(0,0,0,0.8); backdrop-filter:blur(10px); z-index:10;">
             <button onclick="closeCgpaCalculator()" style="background:none; border:none; color:var(--text-main); font-size:18px; cursor:pointer;"><i class="fas fa-arrow-left"></i></button>
             <h2 style="margin:0; font-size:18px; color:var(--text-main); font-weight:700; flex:1;">CGPA Calculator</h2>
@@ -8774,7 +8791,7 @@ function checkAndShowHolidayBanner(viewId) {
     </div>
 
     <!-- Grade Calculator Modal -->
-    <div id="grade-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:var(--bg-black); z-index:9999; flex-direction:column; overflow-y:auto; padding-bottom:50px;">
+    <div id="grade-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:var(--bg-start); z-index:9999; flex-direction:column; overflow-y:auto; padding-bottom:50px;">
         <div style="padding: 20px; display:flex; align-items:center; gap:15px; position:sticky; top:0; background:rgba(0,0,0,0.8); backdrop-filter:blur(10px); z-index:10;">
             <button onclick="closeGradeCalculator()" style="background:none; border:none; color:var(--text-main); font-size:18px; cursor:pointer;"><i class="fas fa-arrow-left"></i></button>
             <h2 style="margin:0; font-size:18px; color:var(--text-main); font-weight:700; flex:1;">Grade Calculator</h2>
@@ -8799,7 +8816,7 @@ function checkAndShowHolidayBanner(viewId) {
     </div>
 
     <!-- Attendance Predictor Modal -->
-    <div id="att-predict-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:var(--bg-black); z-index:9999; flex-direction:column; overflow-y:auto; padding-bottom:50px;">
+    <div id="att-predict-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:var(--bg-start); z-index:9999; flex-direction:column; overflow-y:auto; padding-bottom:50px;">
         <div style="padding: 20px; display:flex; align-items:center; gap:15px; position:sticky; top:0; background:rgba(0,0,0,0.8); backdrop-filter:blur(10px); z-index:10;">
             <button onclick="closeAttendancePredictor()" style="background:none; border:none; color:var(--text-main); font-size:18px; cursor:pointer;"><i class="fas fa-arrow-left"></i></button>
             <h2 style="margin:0; font-size:18px; color:var(--text-main); font-weight:700; flex:1;">Predict Attendance</h2>
@@ -10038,7 +10055,7 @@ function predictDateRangeUI() {
 
 </script>
 <!-- CGPA Calculator Modal -->
-    <div id="cgpa-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:var(--bg-black); z-index:9999; flex-direction:column; overflow-y:auto; padding-bottom:50px;">
+    <div id="cgpa-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:var(--bg-start); z-index:9999; flex-direction:column; overflow-y:auto; padding-bottom:50px;">
         <div style="padding: 20px; display:flex; align-items:center; gap:15px; position:sticky; top:0; background:rgba(0,0,0,0.8); backdrop-filter:blur(10px); z-index:10;">
             <button onclick="closeCgpaCalculator()" style="background:none; border:none; color:var(--text-main); font-size:18px; cursor:pointer;"><i class="fas fa-arrow-left"></i></button>
             <h2 style="margin:0; font-size:18px; color:var(--text-main); font-weight:700; flex:1;">CGPA Calculator</h2>
@@ -10061,7 +10078,7 @@ function predictDateRangeUI() {
     </div>
 
     <!-- Grade Calculator Modal -->
-    <div id="grade-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:var(--bg-black); z-index:9999; flex-direction:column; overflow-y:auto; padding-bottom:50px;">
+    <div id="grade-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:var(--bg-start); z-index:9999; flex-direction:column; overflow-y:auto; padding-bottom:50px;">
         <div style="padding: 20px; display:flex; align-items:center; gap:15px; position:sticky; top:0; background:rgba(0,0,0,0.8); backdrop-filter:blur(10px); z-index:10;">
             <button onclick="closeGradeCalculator()" style="background:none; border:none; color:var(--text-main); font-size:18px; cursor:pointer;"><i class="fas fa-arrow-left"></i></button>
             <h2 style="margin:0; font-size:18px; color:var(--text-main); font-weight:700; flex:1;">Grade Calculator</h2>
@@ -10086,7 +10103,7 @@ function predictDateRangeUI() {
     </div>
 
     <!-- Attendance Predictor Modal -->
-    <div id="att-predict-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:var(--bg-black); z-index:9999; flex-direction:column; overflow-y:auto; padding-bottom:50px;">
+    <div id="att-predict-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:var(--bg-start); z-index:9999; flex-direction:column; overflow-y:auto; padding-bottom:50px;">
         <div style="padding: 20px; display:flex; align-items:center; gap:15px; position:sticky; top:0; background:rgba(0,0,0,0.8); backdrop-filter:blur(10px); z-index:10;">
             <button onclick="closeAttendancePredictor()" style="background:none; border:none; color:var(--text-main); font-size:18px; cursor:pointer;"><i class="fas fa-arrow-left"></i></button>
             <h2 style="margin:0; font-size:18px; color:var(--text-main); font-weight:700; flex:1;">Predict Attendance</h2>
