@@ -6916,7 +6916,7 @@
         // --- IndexedDB for offline music ---
         function openMusicDB() {
             return new Promise((resolve, reject) => {
-                const req = indexedDB.open('srmMusicDB', 1);
+                const req = indexedDB.open('srmMusicDB', 3);
                 req.onupgradeneeded = (e) => {
                     const db = e.target.result;
                     if (!db.objectStoreNames.contains('downloads')) {
