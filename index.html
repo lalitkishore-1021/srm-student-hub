@@ -2183,6 +2183,18 @@
         .orb-2 { width: 450px; height: 450px; background: radial-gradient(circle, rgba(138,43,226,0.25), transparent 70%); bottom: 10%; right: 5%; animation: floatOrb 15s ease-in-out infinite reverse; }
         @keyframes floatOrb { 0%, 100% { transform: translate(0,0) scale(1); } 50% { transform: translate(80px, -120px) scale(1.15); } }
         
+        
+        @keyframes loginCardEnter {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
         .login-card-enhanced {
             max-width: 480px; width: 90vw; margin: auto; border-radius: 35px;
             background: rgba(255, 255, 255, 0.03);
