@@ -4443,7 +4443,7 @@
                 toast = document.createElement('div');
                 toast.id = 'sync-toast';
                 toast.innerHTML = `<div class="css-loader" style="width:15px;height:15px;margin:0 10px 0 0;border-width:2px;"></div> Syncing data in background...`;
-                toast.style.cssText = `position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,0.8); color:#fff; padding:10px 20px; border-radius:20px; font-size:0.9rem; z-index:9999; display:flex; align-items:center; border:1px solid var(--primary); font-family:'Montserrat', sans-serif;`;
+                toast.style.cssText = `position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,0.8); color:#fff; padding:10px 20px; border-radius:20px; font-size:0.9rem; z-index:99999; display:flex; align-items:center; border:1px solid var(--primary); font-family:'Montserrat', sans-serif;`;
                 document.body.appendChild(toast);
             }
         }
@@ -4808,7 +4808,7 @@
             let totalConducted = 0;
             let totalAbsent = 0;
 
-            attendanceData.forEach(sub => {
+            workingAttData.forEach(sub => {
                 let cond = parseInt(sub.conducted) || 0;
                 let abs = parseInt(sub.absent) || 0;
                 totalConducted += cond;
@@ -4860,7 +4860,7 @@
             `;
 
             // Build Course Cards
-            attendanceData.forEach((sub, index) => {
+            workingAttData.forEach((sub, index) => {
                 let name = sub.courseTitle || sub.name || "Unknown Subject";
                 if (name.toLowerCase() === "na") name = (sub.id || sub.courseCode || "Unknown Course");
                 let pctStr = String(sub.attended || "0");
@@ -7562,7 +7562,7 @@ function checkAndShowHolidayBanner(viewId) {
                   </button>
                 </div>
               </div>`;
-            modal.style.cssText = 'position:fixed;inset:0;z-index:9999;display:flex;align-items:flex-end;';
+            modal.style.cssText = 'position:fixed;inset:0;z-index:99999;display:flex;align-items:flex-end;';
             document.body.appendChild(modal);
         }
 
@@ -8766,86 +8766,8 @@ function checkAndShowHolidayBanner(viewId) {
                     window.onload = function() {
                         setTimeout(() => { window.print(); window.close(); }, 500);
                     };
-                <\/script>
-                <!-- CGPA Calculator Modal -->
-    <div id="cgpa-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:var(--bg-start); z-index:9999; flex-direction:column; overflow-y:auto; padding-bottom:50px;">
-        <div style="padding: 20px; display:flex; align-items:center; gap:15px; position:sticky; top:0; background:rgba(0,0,0,0.8); backdrop-filter:blur(10px); z-index:10;">
-            <button onclick="closeCgpaCalculator()" style="background:none; border:none; color:var(--text-main); font-size:18px; cursor:pointer;"><i class="fas fa-arrow-left"></i></button>
-            <h2 style="margin:0; font-size:18px; color:var(--text-main); font-weight:700; flex:1;">CGPA Calculator</h2>
-            <div style="display:flex; background:rgba(255,255,255,0.1); border-radius:20px; padding:3px;">
-                <button onclick="switchCalculatorTab('cgpa')" style="background:var(--text-main); color:var(--bg-black); border:none; border-radius:15px; padding:6px 15px; font-weight:700; font-size:12px; cursor:pointer;">CGPA</button>
-                <button onclick="switchCalculatorTab('grade')" style="background:none; color:var(--text-sub); border:none; border-radius:15px; padding:6px 15px; font-weight:700; font-size:12px; cursor:pointer;">Grade</button>
-            </div>
-        </div>
-        
-        <div style="text-align:center; padding: 20px;">
-            <div style="color:var(--text-sub); font-weight:700; font-size:12px; margin-bottom:10px;">Your CGPA</div>
-            <div id="cgpa-display" style="color:var(--text-main); font-size:48px; font-weight:900;">0.00</div>
-        </div>
-        
-        <div id="cgpa-course-list" style="padding: 0 20px;"></div>
-        
-        <div style="padding: 20px;">
-            <button onclick="addCgpaCourse()" style="width:100%; background:var(--text-main); color:var(--bg-black); border:none; border-radius:12px; padding:15px; font-weight:700; font-size:14px; cursor:pointer;">Add Course</button>
-        </div>
-    </div>
-
-    <!-- Grade Calculator Modal -->
-    <div id="grade-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:var(--bg-start); z-index:9999; flex-direction:column; overflow-y:auto; padding-bottom:50px;">
-        <div style="padding: 20px; display:flex; align-items:center; gap:15px; position:sticky; top:0; background:rgba(0,0,0,0.8); backdrop-filter:blur(10px); z-index:10;">
-            <button onclick="closeGradeCalculator()" style="background:none; border:none; color:var(--text-main); font-size:18px; cursor:pointer;"><i class="fas fa-arrow-left"></i></button>
-            <h2 style="margin:0; font-size:18px; color:var(--text-main); font-weight:700; flex:1;">Grade Calculator</h2>
-            <div style="display:flex; background:rgba(255,255,255,0.1); border-radius:20px; padding:3px;">
-                <button onclick="switchCalculatorTab('cgpa')" style="background:none; color:var(--text-sub); border:none; border-radius:15px; padding:6px 15px; font-weight:700; font-size:12px; cursor:pointer;">CGPA</button>
-                <button onclick="switchCalculatorTab('grade')" style="background:var(--text-main); color:var(--bg-black); border:none; border-radius:15px; padding:6px 15px; font-weight:700; font-size:12px; cursor:pointer;">Grade</button>
-            </div>
-        </div>
-        
-        <div style="padding: 0 20px 20px 20px;">
-            <div style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:12px; display:flex; gap:10px; align-items:center;">
-                <i class="fas fa-info-circle" style="color:var(--text-sub);"></i>
-                <div style="color:var(--text-sub); font-size:12px;">Internal: 60 marks (60%) | Final: 75 marks (40%)</div>
-            </div>
-        </div>
-        
-        <div id="grade-course-list" style="padding: 0 20px;"></div>
-        
-        <div style="padding: 20px;">
-            <button onclick="addGradeCourse()" style="width:100%; background:var(--text-main); color:var(--bg-black); border:none; border-radius:12px; padding:15px; font-weight:700; font-size:14px; cursor:pointer;">Add Course</button>
-        </div>
-    </div>
-
-    <!-- Attendance Predictor Modal -->
-    <div id="att-predict-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:var(--bg-start); z-index:9999; flex-direction:column; overflow-y:auto; padding-bottom:50px;">
-        <div style="padding: 20px; display:flex; align-items:center; gap:15px; position:sticky; top:0; background:rgba(0,0,0,0.8); backdrop-filter:blur(10px); z-index:10;">
-            <button onclick="closeAttendancePredictor()" style="background:none; border:none; color:var(--text-main); font-size:18px; cursor:pointer;"><i class="fas fa-arrow-left"></i></button>
-            <h2 style="margin:0; font-size:18px; color:var(--text-main); font-weight:700; flex:1;">Predict Attendance</h2>
-        </div>
-        
-        <div style="padding: 20px;">
-            <div style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:16px; padding:20px; margin-bottom:20px;">
-                <div style="color:var(--text-main); font-weight:700; font-size:16px; margin-bottom:5px;">Select Date Range</div>
-                <div style="color:var(--text-sub); font-size:12px; margin-bottom:15px;">Simulate absence based on your timetable classes.</div>
-                
-                <div style="display:flex; gap:10px; margin-bottom:20px;">
-                    <div style="flex:1;">
-                        <label style="color:var(--text-sub); font-size:10px; font-weight:700; text-transform:uppercase; margin-bottom:5px; display:block;">From</label>
-                        <input type="date" id="att-predict-start" style="width:100%; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.1); color:#fff; padding:12px; border-radius:8px;">
-                    </div>
-                    <div style="flex:1;">
-                        <label style="color:var(--text-sub); font-size:10px; font-weight:700; text-transform:uppercase; margin-bottom:5px; display:block;">To</label>
-                        <input type="date" id="att-predict-end" style="width:100%; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.1); color:#fff; padding:12px; border-radius:8px;">
-                    </div>
-                </div>
-                
-                <button onclick="predictDateRangeUI()" style="width:100%; background:var(--accent); color:#fff; border:none; border-radius:12px; padding:15px; font-weight:700; font-size:14px; cursor:pointer;">Predict</button>
-            </div>
-            
-            <div id="att-predict-results"></div>
-        </div>
-    </div>
-
-</body></html>
+                                <\/script>
+                </body></html>
             `);
             printWindow.document.close();
         }
@@ -10055,12 +9977,12 @@ function predictDateRangeUI() {
 
 </script>
 <!-- CGPA Calculator Modal -->
-    <div id="cgpa-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:var(--bg-start); z-index:9999; flex-direction:column; overflow-y:auto; padding-bottom:50px;">
+    <div id="cgpa-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:var(--bg-start); z-index:99999; flex-direction:column; overflow-y:auto; padding-bottom:50px;">
         <div style="padding: 20px; display:flex; align-items:center; gap:15px; position:sticky; top:0; background:rgba(0,0,0,0.8); backdrop-filter:blur(10px); z-index:10;">
             <button onclick="closeCgpaCalculator()" style="background:none; border:none; color:var(--text-main); font-size:18px; cursor:pointer;"><i class="fas fa-arrow-left"></i></button>
             <h2 style="margin:0; font-size:18px; color:var(--text-main); font-weight:700; flex:1;">CGPA Calculator</h2>
             <div style="display:flex; background:rgba(255,255,255,0.1); border-radius:20px; padding:3px;">
-                <button onclick="switchCalculatorTab('cgpa')" style="background:var(--text-main); color:var(--bg-black); border:none; border-radius:15px; padding:6px 15px; font-weight:700; font-size:12px; cursor:pointer;">CGPA</button>
+                <button onclick="switchCalculatorTab('cgpa')" style="background:var(--text-main); color:#000; border:none; border-radius:15px; padding:6px 15px; font-weight:700; font-size:12px; cursor:pointer;">CGPA</button>
                 <button onclick="switchCalculatorTab('grade')" style="background:none; color:var(--text-sub); border:none; border-radius:15px; padding:6px 15px; font-weight:700; font-size:12px; cursor:pointer;">Grade</button>
             </div>
         </div>
@@ -10073,18 +9995,18 @@ function predictDateRangeUI() {
         <div id="cgpa-course-list" style="padding: 0 20px;"></div>
         
         <div style="padding: 20px;">
-            <button onclick="addCgpaCourse()" style="width:100%; background:var(--text-main); color:var(--bg-black); border:none; border-radius:12px; padding:15px; font-weight:700; font-size:14px; cursor:pointer;">Add Course</button>
+            <button onclick="addCgpaCourse()" style="width:100%; background:var(--text-main); color:#000; border:none; border-radius:12px; padding:15px; font-weight:700; font-size:14px; cursor:pointer;">Add Course</button>
         </div>
     </div>
 
     <!-- Grade Calculator Modal -->
-    <div id="grade-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:var(--bg-start); z-index:9999; flex-direction:column; overflow-y:auto; padding-bottom:50px;">
+    <div id="grade-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:var(--bg-start); z-index:99999; flex-direction:column; overflow-y:auto; padding-bottom:50px;">
         <div style="padding: 20px; display:flex; align-items:center; gap:15px; position:sticky; top:0; background:rgba(0,0,0,0.8); backdrop-filter:blur(10px); z-index:10;">
             <button onclick="closeGradeCalculator()" style="background:none; border:none; color:var(--text-main); font-size:18px; cursor:pointer;"><i class="fas fa-arrow-left"></i></button>
             <h2 style="margin:0; font-size:18px; color:var(--text-main); font-weight:700; flex:1;">Grade Calculator</h2>
             <div style="display:flex; background:rgba(255,255,255,0.1); border-radius:20px; padding:3px;">
                 <button onclick="switchCalculatorTab('cgpa')" style="background:none; color:var(--text-sub); border:none; border-radius:15px; padding:6px 15px; font-weight:700; font-size:12px; cursor:pointer;">CGPA</button>
-                <button onclick="switchCalculatorTab('grade')" style="background:var(--text-main); color:var(--bg-black); border:none; border-radius:15px; padding:6px 15px; font-weight:700; font-size:12px; cursor:pointer;">Grade</button>
+                <button onclick="switchCalculatorTab('grade')" style="background:var(--text-main); color:#000; border:none; border-radius:15px; padding:6px 15px; font-weight:700; font-size:12px; cursor:pointer;">Grade</button>
             </div>
         </div>
         
@@ -10098,12 +10020,12 @@ function predictDateRangeUI() {
         <div id="grade-course-list" style="padding: 0 20px;"></div>
         
         <div style="padding: 20px;">
-            <button onclick="addGradeCourse()" style="width:100%; background:var(--text-main); color:var(--bg-black); border:none; border-radius:12px; padding:15px; font-weight:700; font-size:14px; cursor:pointer;">Add Course</button>
+            <button onclick="addGradeCourse()" style="width:100%; background:var(--text-main); color:#000; border:none; border-radius:12px; padding:15px; font-weight:700; font-size:14px; cursor:pointer;">Add Course</button>
         </div>
     </div>
 
     <!-- Attendance Predictor Modal -->
-    <div id="att-predict-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:var(--bg-start); z-index:9999; flex-direction:column; overflow-y:auto; padding-bottom:50px;">
+    <div id="att-predict-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:var(--bg-start); z-index:99999; flex-direction:column; overflow-y:auto; padding-bottom:50px;">
         <div style="padding: 20px; display:flex; align-items:center; gap:15px; position:sticky; top:0; background:rgba(0,0,0,0.8); backdrop-filter:blur(10px); z-index:10;">
             <button onclick="closeAttendancePredictor()" style="background:none; border:none; color:var(--text-main); font-size:18px; cursor:pointer;"><i class="fas fa-arrow-left"></i></button>
             <h2 style="margin:0; font-size:18px; color:var(--text-main); font-weight:700; flex:1;">Predict Attendance</h2>
