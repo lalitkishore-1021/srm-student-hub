@@ -5879,13 +5879,6 @@
                 if (localStorage.getItem('srmTheme') === 'light') {
                     document.body.classList.add('light-mode');
                 }
-                // Invalidate old version profiles to force login
-                if (localStorage.getItem('appVersion') !== 'v8') {
-                    localStorage.removeItem('squadProfile');
-                    localStorage.removeItem('syncRegNo');
-                    localStorage.removeItem('syncPwd');
-                    localStorage.setItem('appVersion', 'v8');
-                }
 
                 const mainContent = document.getElementById('main-content');
                 const navBtn = document.getElementById('navButtons');

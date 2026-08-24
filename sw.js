@@ -1,5 +1,5 @@
 // Change this version number every time you want to force phones to update!
-const CACHE_NAME = 'srm-hub-v22-holiday-fix'; 
+const CACHE_NAME = 'srm-hub-v23-logout-fix'; 
 
 const ASSETS_TO_CACHE = [
     '/',
