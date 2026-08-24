@@ -88,7 +88,7 @@ def init_db():
             poster_name TEXT, net_id TEXT, created_at TEXT)''')
         cur.execute('''CREATE TABLE IF NOT EXISTS music_hub (
             id SERIAL PRIMARY KEY, title TEXT NOT NULL, artist TEXT, audio_data TEXT NOT NULL, cover_data TEXT,
-            uploaded_by TEXT, net_id TEXT, created_at TEXT, order_index INTEGER DEFAULT 0, video_data TEXT)''')
+            uploaded_by TEXT, net_id TEXT, created_at TEXT, order_index INTEGER DEFAULT 0)''')
         cur.execute('''CREATE TABLE IF NOT EXISTS class_chats (
             id SERIAL PRIMARY KEY, section TEXT NOT NULL, sender_name TEXT, sender_net_id TEXT, message TEXT, image_url TEXT, deleted_for_all INTEGER DEFAULT 0, deleted_by TEXT, created_at TEXT)''')
         cur.execute('''CREATE TABLE IF NOT EXISTS spotted_feed (
@@ -99,11 +99,7 @@ def init_db():
             conn.commit()
         except Exception:
             conn.rollback()
-        try:
-            cur.execute("ALTER TABLE music_hub ADD COLUMN video_data TEXT")
-            conn.commit()
-        except Exception:
-            conn.rollback()
+
         try:
             cur.execute("ALTER TABLE music_hub ADD COLUMN lyrics TEXT")
             conn.commit()
@@ -167,7 +163,7 @@ def init_db():
             poster_name TEXT, net_id TEXT, created_at TEXT)''')
         cur.execute('''CREATE TABLE IF NOT EXISTS music_hub (
             id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT NOT NULL, artist TEXT, audio_data TEXT NOT NULL, cover_data TEXT,
-            uploaded_by TEXT, net_id TEXT, created_at TEXT, order_index INTEGER DEFAULT 0, video_data TEXT)''')
+            uploaded_by TEXT, net_id TEXT, created_at TEXT, order_index INTEGER DEFAULT 0)''')
         cur.execute('''CREATE TABLE IF NOT EXISTS class_chats (
             id INTEGER PRIMARY KEY AUTOINCREMENT, section TEXT NOT NULL, sender_name TEXT, sender_net_id TEXT, message TEXT, image_url TEXT, deleted_for_all INTEGER DEFAULT 0, deleted_by TEXT, created_at TEXT, audio_url TEXT)''')
         cur.execute('''CREATE TABLE IF NOT EXISTS spotted_feed (
@@ -178,11 +174,7 @@ def init_db():
             conn.commit()
         except Exception:
             conn.rollback()
-        try:
-            cur.execute("ALTER TABLE music_hub ADD COLUMN video_data TEXT")
-            conn.commit()
-        except Exception:
-            conn.rollback()
+
         try:
             cur.execute("ALTER TABLE music_hub ADD COLUMN lyrics TEXT")
             conn.commit()
@@ -902,32 +894,61 @@ def get_music():
     conn = get_db()
     if DATABASE_URL:
         cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-        cur.execute("SELECT id, title, artist, cover_data, uploaded_by, net_id, created_at, lyrics, CASE WHEN video_data IS NOT NULL AND video_data != '' THEN 1 ELSE 0 END as has_video FROM music_hub ORDER BY order_index ASC, created_at DESC")
+        cur.execute("SELECT id, title, artist, cover_data, uploaded_by, net_id, created_at, lyrics, 0 as has_video FROM music_hub ORDER BY order_index ASC, created_at DESC")
     else:
         cur = conn.cursor()
-        cur.execute("SELECT id, title, artist, cover_data, uploaded_by, net_id, created_at, lyrics, CASE WHEN video_data IS NOT NULL AND video_data != '' THEN 1 ELSE 0 END as has_video FROM music_hub ORDER BY order_index ASC, created_at DESC")
+        cur.execute("SELECT id, title, artist, cover_data, uploaded_by, net_id, created_at, lyrics, 0 as has_video FROM music_hub ORDER BY order_index ASC, created_at DESC")
     
     rows = cur.fetchall()
-    items = [dict(row) for row in rows]
+    items = []
+    for r in rows:
+        row = dict(r)
+        c_data = row.get('cover_data')
+        if c_data:
+            if str(c_data).startswith('http'):
+                row['cover_url'] = c_data
+            else:
+                row['cover_url'] = f"/api/music/cover/{row['id']}"
+        else:
+            row['cover_url'] = None
+        row.pop('cover_data', None)
+        items.append(row)
+
     cur.close()
     conn.close()
     return jsonify(items)
 
-@app.route('/api/music/video/<int:track_id>', methods=['GET'])
-def get_music_video(track_id):
+import base64
+from flask import Response
+
+@app.route('/api/music/cover/<int:track_id>', methods=['GET'])
+def get_music_cover(track_id):
     conn = get_db()
     cur = conn.cursor()
     if DATABASE_URL:
-        cur.execute("SELECT video_data FROM music_hub WHERE id = %s", (track_id,))
+        cur.execute("SELECT cover_data FROM music_hub WHERE id = %s", (track_id,))
     else:
-        cur.execute("SELECT video_data FROM music_hub WHERE id = ?", (track_id,))
+        cur.execute("SELECT cover_data FROM music_hub WHERE id = ?", (track_id,))
     
     row = cur.fetchone()
     cur.close()
     conn.close()
     
     if row and row[0]:
-        return jsonify({'video_data': row[0]})
+        c_data = row[0]
+        if c_data.startswith('data:image'):
+            try:
+                header, encoded = c_data.split(',', 1)
+                mime_type = header.split(':')[1].split(';')[0]
+                decoded = base64.b64decode(encoded)
+                return Response(decoded, mimetype=mime_type, headers={'Cache-Control': 'public, max-age=31536000'})
+            except Exception:
+                pass
+    return Response(status=404)
+
+
+@app.route('/api/music/video/<int:track_id>', methods=['GET'])
+def get_music_video(track_id):
     return jsonify({'video_data': None})
 
 @app.route('/api/music/video/upload', methods=['POST'])

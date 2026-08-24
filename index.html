@@ -6856,7 +6856,7 @@ function checkAndShowHolidayBanner(viewId) {
                     id: String(track.id),
                     title: track.title,
                     artist: track.artist,
-                    cover_data: track.cover_data || '',
+                    cover_data: track.cover_url || '',
                     audio_data: audioData,
                     has_video: track.has_video ? 1 : 0,
                     downloaded_at: Date.now()
@@ -6940,7 +6940,7 @@ function checkAndShowHolidayBanner(viewId) {
                 html += `
                 <div class="music-track-card fade-in-up" data-id="${t.id}" style="display:flex; align-items:center; gap:14px; padding:14px 18px; background:rgba(255,255,255,0.05); border-radius:14px; margin-bottom:10px; cursor:grab; border:1px solid rgba(255,255,255,0.06); transition:all 0.2s;" onclick="playOfflineTrack('${t.id}')" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='rgba(255,255,255,0.05)'">
                     <div style="color: rgba(255,255,255,0.2); margin-right: 5px; font-size: 1.2rem;">⋮⋮</div>
-                    <img src="${t.cover_data || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMzMzIi8+PC9zdmc+'}" style="width:50px; height:50px; border-radius:10px; object-fit:cover; flex-shrink:0;">
+                    <img src="${t.cover_url || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMzMzIi8+PC9zdmc+'}" style="width:50px; height:50px; border-radius:10px; object-fit:cover; flex-shrink:0;">
                     <div style="flex:1; min-width:0;">
                         <div style="color:#fff; font-weight:600; font-size:0.95rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${t.title}</div>
                         <div style="color:var(--text-sub); font-size:0.8rem;">${t.artist}</div>
@@ -7091,7 +7091,7 @@ function checkAndShowHolidayBanner(viewId) {
             recent.forEach((p, arrayIndex) => {
                 // Find original index in playlistData
                 const index = playlistData.indexOf(p);
-                const cover = p.has_cover ? `${BACKEND_URL}/api/music/cover/${p.id}.jpg` : (p.cover_data || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMzMzIi8+PC9zdmc+');
+                const cover = p.has_cover ? `${BACKEND_URL}/api/music/cover/${p.id}.jpg` : (p.cover_url || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMzMzIi8+PC9zdmc+');
                 html += `
                     <div style="flex: 0 0 130px; scroll-snap-align: start; cursor: pointer; position: relative;" onclick="playMusicTrack(${index})">
                         <div style="width: 130px; height: 130px; border-radius: 14px; overflow: hidden; position: relative; margin-bottom: 10px; background: #222; box-shadow: 0 4px 15px rgba(0,0,0,0.4);">
@@ -7123,7 +7123,7 @@ function checkAndShowHolidayBanner(viewId) {
             `;
             
             trending.forEach((p, index) => {
-                const cover = p.has_cover ? `${BACKEND_URL}/api/music/cover/${p.id}.jpg` : (p.cover_data || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMzMzIi8+PC9zdmc+');
+                const cover = p.has_cover ? `${BACKEND_URL}/api/music/cover/${p.id}.jpg` : (p.cover_url || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMzMzIi8+PC9zdmc+');
                 const num = (index + 1).toString().padStart(2, '0');
                 html += `
                     <div style="display: flex; align-items: center; padding: 10px 15px; background: rgba(255,255,255,0.02); border-radius: 14px; cursor: pointer; border: 1px solid rgba(255,255,255,0.04); transition: background 0.2s;" onclick="playMusicTrack(${index})">
@@ -7186,11 +7186,9 @@ function checkAndShowHolidayBanner(viewId) {
                         const track = currentPlaylist[idx];
                         document.getElementById('player-title').innerText = track.title;
                         document.getElementById('player-artist').innerText = track.artist;
-                        document.getElementById('player-cover').src = track.cover_data || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMzMzIi8+PC9zdmc+';
+                        document.getElementById('player-cover').src = track.cover_url || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMzMzIi8+PC9zdmc+';
                         document.getElementById('music-player-bar').classList.add('active');
-                        fetch(`${BACKEND_URL}/api/music/audio/${track.id}`).then(r=>r.json()).then(d=>{
-                            if(d.audio_data) audioPlayer.src = d.audio_data;
-                        });
+
                     }
                 }
             } catch (e) {
@@ -7432,17 +7430,7 @@ function checkAndShowHolidayBanner(viewId) {
             }
         });
 
-        async function preloadNextMusicTrack(index) {
-            if (index < 0 || index >= currentPlaylist.length) return;
-            const track = currentPlaylist[index];
-            try {
-                const res = await fetch(`${BACKEND_URL}/api/music/audio/${track.id}`);
-                const data = await res.json();
-                if (data.audio_data) {
-                    nextTrackCache = { index: index, audio_data: data.audio_data };
-                }
-            } catch(e) {}
-        }
+
         
         let bgFadeTimeout = null;
 
@@ -7472,7 +7460,7 @@ function checkAndShowHolidayBanner(viewId) {
                 bgVideoPlayer.src = '';
                 const img = document.createElement('img');
                 img.className = 'bg-cover-fallback';
-                img.src = track.cover_data || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMzMzIi8+PC9zdmc+';
+                img.src = track.cover_url || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMzMzIi8+PC9zdmc+';
                 img.onerror = () => { img.src = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMzMzIi8+PC9zdmc+'; };
                 const oldFallback = musicVideoBg.querySelector('.bg-cover-fallback');
                 if (oldFallback) oldFallback.remove();
@@ -7545,7 +7533,7 @@ function checkAndShowHolidayBanner(viewId) {
               <div class="share-modal-backdrop" onclick="this.parentElement.remove()"></div>
               <div class="share-modal-card">
                 <div class="share-modal-header">
-                  <img src="${track.cover_data || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMzMzIi8+PC9zdmc+'}"
+                  <img src="${track.cover_url || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMzMzIi8+PC9zdmc+'}"
                        class="share-modal-thumb">
                   <div>
                     <div class="share-modal-title">${escHtml(track.title)}</div>
@@ -7593,7 +7581,7 @@ function checkAndShowHolidayBanner(viewId) {
             document.getElementById('music-player-bar').classList.add('active');
             document.getElementById('player-title').innerText = track.title;
             document.getElementById('player-artist').innerText = track.artist;
-            const coverSrc = track.cover_data || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMzMzIi8+PC9zdmc+';
+            const coverSrc = track.cover_url || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMzMzIi8+PC9zdmc+';
             document.getElementById('fs-bg-blur').src = coverSrc;
             
             // Auto open fullscreen player
@@ -7676,7 +7664,7 @@ function checkAndShowHolidayBanner(viewId) {
                                 title: track.title,
                                 artist: track.artist,
                                 album: 'SRM Music Lounge',
-                                artwork: [ { src: track.cover_data || 'https://via.placeholder.com/512', sizes: '512x512', type: 'image/png' } ]
+                                artwork: [ { src: track.cover_url || 'https://via.placeholder.com/512', sizes: '512x512', type: 'image/png' } ]
                             });
                             navigator.mediaSession.setActionHandler('play', toggleMusicPlay);
                             navigator.mediaSession.setActionHandler('pause', toggleMusicPlay);
@@ -7693,7 +7681,7 @@ function checkAndShowHolidayBanner(viewId) {
                     
                     let nextIdx = index + 1;
                     if (nextIdx >= currentPlaylist.length && currentPlaylist.length > 0) nextIdx = 0;
-                    if (nextIdx !== index) preloadNextMusicTrack(nextIdx);
+
                 };
                 
                 if (isStreamUrl) {
@@ -8105,7 +8093,7 @@ function checkAndShowHolidayBanner(viewId) {
             document.getElementById('fs-title').innerText = track.title;
             document.getElementById('fs-artist').innerText = track.artist;
             
-            const coverSrc = track.cover_data || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMzMzIi8+PC9zdmc+';
+            const coverSrc = track.cover_url || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMzMzIi8+PC9zdmc+';
             const fsCover = document.getElementById('fs-cover');
             fsCover.src = coverSrc;
             
@@ -9285,7 +9273,7 @@ function checkAndShowHolidayBanner(viewId) {
 
             loadClassChat();
             if(chatInterval) clearInterval(chatInterval);
-            chatInterval = setInterval(loadClassChat, 3000);
+            chatInterval = setInterval(loadClassChat, 10000);
         }
         
         async function loadClassChat() {
