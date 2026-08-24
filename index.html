@@ -3399,43 +3399,8 @@
             <div class="view-header">
                 <h2 class="gallery-title">Attendance</h2>
             </div>
-            <div class="image-card"
-                style="max-width: 600px; margin: 0 auto 20px; cursor: default; transform: none; padding: 25px;">
-                <h4
-                    style="text-align: left; color: var(--primary); margin-bottom: 15px; font-family: 'Montserrat', sans-serif; text-transform: uppercase;">
-                    Manual Entry</h4>
-                <div class="form-row">
-                    <input type="text" id="att-sub-name" placeholder="Subject Name">
-                    <input type="number" id="att-attended" placeholder="Att" min="0">
-                    <input type="number" id="att-total" placeholder="Tot" min="1">
-                    <button class="action-btn" onclick="addAttendance()"
-                        style="background: var(--glass); color: var(--primary);">Add</button>
-                </div>
-            </div>
-            <div id="overall-attendance" class="result-box"
-                style="margin-bottom: 20px; max-width: 600px; margin: 0 auto 20px auto;">Overall: 0%</div>
-
-            <!-- Date Range Predictor -->
-            <div class="image-card" style="max-width: 600px; margin: 0 auto 20px auto; padding: 25px; text-align: left;">
-                <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 15px;">
-                    <div style="width: 45px; height: 45px; border-radius: 50%; background: rgba(255,170,0,0.1); display: flex; justify-content: center; align-items: center; border: 1px solid rgba(255,170,0,0.2);">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-                    </div>
-                    <div>
-                        <h3 style="margin: 0; font-size: 1.1rem; color: var(--text-main); font-family: 'Montserrat', sans-serif; text-transform: uppercase;">Smart Leave Predictor</h3>
-                        <p style="margin: 5px 0 0 0; font-size: 0.8rem; color: var(--text-sub);">Simulate absence based on your timetable.</p>
-                    </div>
-                </div>
-                <div style="display: flex; gap: 10px; margin-bottom: 15px; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 12px; border: 1px solid var(--glass-border);">
-                    <input type="date" id="predict-start-date" style="flex: 1; padding: 10px; background: transparent; border: none; color: var(--text-main); outline: none; font-family: inherit;">
-                    <span style="color: var(--text-sub); align-self: center;">to</span>
-                    <input type="date" id="predict-end-date" style="flex: 1; padding: 10px; background: transparent; border: none; color: var(--text-main); outline: none; font-family: inherit;">
-                </div>
-                <div style="display: flex; gap: 10px;">
-                    <button class="action-btn" onclick="predictDateRange()" style="flex: 2; background: linear-gradient(135deg, rgba(255,170,0,0.2), rgba(255,170,0,0.1)); border: 1px solid rgba(255,170,0,0.3); color: var(--primary); text-transform: uppercase; font-weight: bold; letter-spacing: 1px;">Simulate</button>
-                    <button class="action-btn" onclick="resetAllPredictions()" style="flex: 1; background: rgba(255,255,255,0.05); color: var(--text-sub); text-transform: uppercase; font-weight: bold; border: 1px solid var(--glass-border);">Reset</button>
-                </div>
-            </div>
+            
+            
 
             <div id="attendance-list" style="max-width: 600px; margin: 0 auto;"></div>
         </div>
@@ -5087,176 +5052,181 @@
             list.style.display = 'block';
             list.innerHTML = '';
 
-            let grandTotalObtained = 0; let grandTotalMax = 0; let subjectsHTML = '';
+            let grandTotalObtained = 0; 
+            let grandTotalMax = 0; 
+            let totalTests = 0;
+            let totalCourses = marksData.length;
+            let weightedGradePoints = 0;
+            let totalCredits = 0;
+
+            let parsedCourses = [];
 
             marksData.forEach(item => {
-                const course = item.courseTitle || item.CourseTitle || item.name || "Subject";
+                const courseTitle = item.courseTitle || item.CourseTitle || item.name || "Subject";
+                const courseCode = item.courseCode || item.code || "THEORY";
                 let perfString = item['Test Performance'] || item.performance || item.marks || "";
 
                 if (!perfString && typeof item === 'object') {
                     perfString = Object.values(item).filter(v => typeof v === 'string').join(' | ');
                 }
 
-                let subjectMax = 0; let subjectObtained = 0; let testsHtml = '';
-                const regex = /([A-Za-z0-9-]+)\/([0-9.]+)\s*\|\s*([0-9.]+)/g;
+                let courseMax = 0; 
+                let courseObtained = 0; 
+                let tests = [];
+                
+                const regex = /([A-Za-z0-9-\s]+)\/([0-9.]+)\s*\|\s*([0-9.]+)/g;
                 let match;
 
                 while ((match = regex.exec(perfString)) !== null) {
-                    const testName = match[1]; const max = parseFloat(match[2]); const obtained = parseFloat(match[3]);
-                    subjectMax += max; subjectObtained += obtained;
-                    const percent = max > 0 ? Math.round((obtained / max) * 100) : 0;
+                    const testName = match[1].trim(); 
+                    const max = parseFloat(match[2]); 
+                    const obtained = parseFloat(match[3]);
+                    courseMax += max; 
+                    courseObtained += obtained;
+                    tests.push({ testName, max, obtained, percent: max > 0 ? (obtained / max) * 100 : 0 });
+                    totalTests++;
+                }
 
-                    let badgeColor = "var(--success)"; let badgeBorder = "rgba(0, 204, 102, 0.4)";
-                    if (percent < 50) { badgeColor = "var(--danger)"; badgeBorder = "rgba(255, 68, 68, 0.4)"; }
-                    else if (percent < 75) { badgeColor = "var(--primary)"; badgeBorder = "rgba(255, 170, 0, 0.4)"; }
+                grandTotalMax += courseMax; 
+                grandTotalObtained += courseObtained;
 
-                    testsHtml += `
-                        <div class="test-row">
-                            <div class="test-info">
-                                <h4>${testName}</h4><p>${obtained} / ${max} marks</p>
+                let gradePoint = 0;
+                let courseCredits = 3; // Default 3 credits if not found
+                if (courseMax > 0) {
+                    let marksCut = courseMax - courseObtained;
+                    if (marksCut < 10) gradePoint = 10.0;
+                    else if (marksCut < 20) gradePoint = 9.0;
+                    else if (marksCut < 30) gradePoint = 8.0;
+                    else if (marksCut < 40) gradePoint = 7.0;
+                    else if (marksCut < 45) gradePoint = 6.0;
+                    else if (marksCut < 50) gradePoint = 5.0;
+                    else gradePoint = 0.0;
+                    
+                    weightedGradePoints += gradePoint * courseCredits;
+                    totalCredits += courseCredits;
+                }
+                
+                let coursePercent = courseMax > 0 ? (courseObtained / courseMax) * 100 : 0;
+
+                parsedCourses.push({
+                    title: courseTitle,
+                    code: courseCode,
+                    max: courseMax,
+                    obtained: courseObtained,
+                    percent: coursePercent,
+                    tests: tests,
+                    perfString: tests.length === 0 ? perfString : ''
+                });
+            });
+
+            let overallPercent = grandTotalMax > 0 ? (grandTotalObtained / grandTotalMax) * 100 : 0;
+            let estCGPA = totalCredits > 0 ? (weightedGradePoints / totalCredits) : 0;
+            
+            let overallGrade = 'F';
+            if (overallPercent >= 90) overallGrade = 'O';
+            else if (overallPercent >= 80) overallGrade = 'A+';
+            else if (overallPercent >= 70) overallGrade = 'A';
+            else if (overallPercent >= 60) overallGrade = 'B+';
+            else if (overallPercent >= 55) overallGrade = 'B';
+            else if (overallPercent >= 50) overallGrade = 'C';
+
+            // Top Summary Card (Academia X Green style)
+            let html = `
+                <div class="glass-card fade-in-up" style="background: linear-gradient(135deg, #278E38, #1E6B2A); border:none; border-radius: 24px; padding: 25px; margin-bottom: 25px; box-shadow: 0 15px 35px rgba(39, 142, 56, 0.2); position: relative; overflow: hidden;">
+                    <!-- Background decor -->
+                    <div style="position:absolute; top:-20px; right:-20px; width:100px; height:100px; background:rgba(255,255,255,0.05); border-radius:50%;"></div>
+                    
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px; position:relative; z-index:1;">
+                        <div style="color: rgba(255,255,255,0.7); font-size: 11px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase;">Academic Performance</div>
+                        <div style="background: rgba(255,255,255,0.2); width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                            <i class="fas fa-chart-bar" style="color: #fff; font-size: 12px;"></i>
+                        </div>
+                    </div>
+                    
+                    <div style="display: flex; align-items: baseline; margin-bottom: 25px; position:relative; z-index:1;">
+                        <span style="font-size: 48px; font-weight: 900; color: #fff; letter-spacing: -1.5px;">${overallPercent.toFixed(1)}</span>
+                        <span style="font-size: 22px; font-weight: 700; color: rgba(255,255,255,0.6); margin-left: 4px;">%</span>
+                    </div>
+                    
+                    <div style="display: flex; justify-content: space-between; background: rgba(0,0,0,0.15); border-radius: 16px; padding: 15px; margin-bottom: 15px; position:relative; z-index:1;">
+                        <div style="text-align: center; flex: 1;">
+                            <div style="color: #fff; font-size: 18px; font-weight: 800;">${estCGPA.toFixed(2)}</div>
+                            <div style="color: rgba(255,255,255,0.5); font-size: 9px; font-weight: 700; letter-spacing: 0.5px; margin-top: 4px; text-transform: uppercase;">Est. CGPA</div>
+                        </div>
+                        <div style="width: 1px; background: rgba(255,255,255,0.1); margin: 0 10px;"></div>
+                        <div style="text-align: center; flex: 1;">
+                            <div style="color: #fff; font-size: 18px; font-weight: 800;">${grandTotalObtained.toFixed(1)}<span style="font-size: 10px; color:rgba(255,255,255,0.6);">/${grandTotalMax}</span></div>
+                            <div style="color: rgba(255,255,255,0.5); font-size: 9px; font-weight: 700; letter-spacing: 0.5px; margin-top: 4px; text-transform: uppercase;">Score</div>
+                        </div>
+                        <div style="width: 1px; background: rgba(255,255,255,0.1); margin: 0 10px;"></div>
+                        <div style="text-align: center; flex: 1;">
+                            <div style="color: #fff; font-size: 18px; font-weight: 800;">${overallGrade}</div>
+                            <div style="color: rgba(255,255,255,0.5); font-size: 9px; font-weight: 700; letter-spacing: 0.5px; margin-top: 4px; text-transform: uppercase;">Grade</div>
+                        </div>
+                    </div>
+                    
+                    <button onclick="openCgpaCalculator()" style="width: 100%; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.1); border-radius: 14px; padding: 14px; color: #fff; font-weight: 700; font-size: 14px; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; transition: all 0.2s; position:relative; z-index:1;">
+                        <i class="fas fa-calculator"></i> Open CGPA Calculator
+                    </button>
+                </div>
+            `;
+
+            parsedCourses.forEach((c, i) => {
+                let shortName = c.title.length > 30 ? c.title.substring(0, 30) + '...' : c.title;
+                let testRows = '';
+                
+                c.tests.forEach(t => {
+                    testRows += `
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                            <div>
+                                <div style="color: var(--text-main); font-size: 13px; font-weight: 600;">${t.testName}</div>
+                                <div style="color: var(--text-sub); font-size: 10px;">${t.obtained} / ${t.max} marks</div>
                             </div>
-                            <div class="test-badge" style="color: ${badgeColor}; border-color: ${badgeBorder};">${percent}%</div>
+                            <div style="color: var(--text-main); font-size: 13px; font-weight: 700; background: rgba(255,255,255,0.05); padding: 4px 8px; border-radius: 6px;">${t.percent.toFixed(0)}%</div>
                         </div>
                     `;
-                }
-
-                if (testsHtml === '') {
-                    testsHtml = `<p style="color: var(--text-sub); margin-top: 15px;">${perfString}</p>`;
-                }
-
-                grandTotalMax += subjectMax; grandTotalObtained += subjectObtained;
-                let subjectPercentValue = subjectMax > 0 ? (subjectObtained / subjectMax) * 100 : 0;
-                let subjectPercent = subjectPercentValue.toFixed(1);
+                });
                 
-                let estGPA = 0; let grade = "F";
-                if (subjectPercentValue >= 90) { estGPA = 10; grade = "O"; }
-                else if (subjectPercentValue >= 80) { estGPA = 9; grade = "A+"; }
-                else if (subjectPercentValue >= 70) { estGPA = 8; grade = "A"; }
-                else if (subjectPercentValue >= 60) { estGPA = 7; grade = "B+"; }
-                else if (subjectPercentValue >= 50) { estGPA = 6; grade = "B"; }
-                else if (subjectPercentValue >= 45) { estGPA = 5; grade = "C"; }
+                if (c.perfString && !testRows) {
+                    testRows = `<div style="color: var(--text-sub); font-size: 12px; padding: 8px 0;">${c.perfString}</div>`;
+                }
+                if (!testRows) {
+                    testRows = `<div style="color: var(--text-sub); font-size: 12px; padding: 8px 0; text-align: center;">No tests conducted yet</div>`;
+                }
 
-                let courseId = course.replace(/[^a-zA-Z0-9]/g, '');
-
-                subjectsHTML += `
-                    <div class="image-card fade-in-up" style="margin-bottom: 20px; text-align: left; padding: 25px;">
-                        <h3 style="margin: 0 0 15px 0; font-size: 1.1rem; color: var(--text-main); font-family: 'Montserrat', sans-serif; text-transform: uppercase;">${course}</h3>
-                        ${subjectMax > 0 ? `
-                        <div style="display: flex; justify-content: space-between; gap: 10px; margin-bottom: 20px;">
-                            <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 15px; flex: 1; text-align: center;">
-                                <div style="font-size: 1.3rem; font-weight: 800; color: var(--primary);">${subjectObtained.toFixed(1)} <span style="font-size:0.7rem; color:#888;">/ ${subjectMax}</span></div>
-                                <div style="font-size: 0.65rem; color: #aaa; text-transform: uppercase; margin-top: 5px; font-weight: bold;">Score</div>
-                            </div>
-                            <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 15px; flex: 1; text-align: center;">
-                                <div style="font-size: 1.3rem; font-weight: 800; color: var(--success);">${estGPA}</div>
-                                <div style="font-size: 0.65rem; color: #aaa; text-transform: uppercase; margin-top: 5px; font-weight: bold;">Est. CGPA</div>
-                            </div>
-                            <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 15px; flex: 1; text-align: center;">
-                                <div style="font-size: 1.3rem; font-weight: 800; color: #fff;">${grade}</div>
-                                <div style="font-size: 0.65rem; color: #aaa; text-transform: uppercase; margin-top: 5px; font-weight: bold;">Grade</div>
+                html += `
+                    <div class="glass-card fade-in-up" style="animation-delay: ${i * 0.05}s; background: var(--bg-card); border: 1px solid rgba(255,255,255,0.05); border-radius: 20px; margin-bottom: 15px; overflow: hidden; position: relative;">
+                        <!-- Left indicator accent -->
+                        <div style="position: absolute; left: 0; top: 25px; bottom: 25px; width: 3px; background: rgba(255,170,170,0.8); border-radius: 0 4px 4px 0;"></div>
+                        
+                        <div style="padding: 20px 20px 10px 20px;">
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start; padding-left: 5px;">
+                                <div style="flex: 1; padding-right: 15px;">
+                                    <div style="color: var(--text-main); font-weight: 700; font-size: 15px; margin-bottom: 4px; line-height: 1.3;">${shortName}</div>
+                                    <div style="color: var(--text-sub); font-size: 10px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase;">${c.code}</div>
+                                </div>
+                                <div style="text-align: right;">
+                                    <div style="color: var(--text-main); font-weight: 800; font-size: 18px;">${c.percent.toFixed(0)}%</div>
+                                    <div style="color: var(--text-sub); font-size: 10px; font-weight: 700; margin-top: 2px;">${c.obtained.toFixed(1)} / ${c.max}</div>
+                                </div>
                             </div>
                         </div>
-                        <div class="progress-container">
-                            <div class="progress-fill" style="background: var(--primary); width: ${subjectPercent}%;"></div>
-                        </div>
-
-                        <div class="overview-title" style="margin: 20px 0 15px 0;"> Detailed Performance</div>
-                        ` : ''}
-                        <div class="test-list">
-                            ${testsHtml}
-                        </div>
+                        
+                        <details style="padding: 0 20px 15px 25px;">
+                            <summary style="color: var(--text-sub); font-size: 11px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; cursor: pointer; display: flex; align-items: center; gap: 8px; user-select: none; list-style: none;">
+                                <i class="fas fa-chart-line"></i> Detailed Performance
+                            </summary>
+                            <div style="margin-top: 10px; padding-top: 5px; border-top: 1px solid rgba(255,255,255,0.05);">
+                                ${testRows}
+                            </div>
+                        </details>
                     </div>
                 `;
             });
 
-            const overallPercent = grandTotalMax > 0 ? ((grandTotalObtained / grandTotalMax) * 100).toFixed(1) : "0.0";
-            const estCGPA = grandTotalMax > 0 ? ((grandTotalObtained / grandTotalMax) * 10).toFixed(2) : "0.00";
-            let grade = "C";
-            if (overallPercent >= 90) grade = "O"; else if (overallPercent >= 80) grade = "A+";
-            else if (overallPercent >= 70) grade = "A"; else if (overallPercent >= 60) grade = "B+";
-            else if (overallPercent >= 50) grade = "B";
-
-            let percentileHTML = '';
-            if (estCGPA >= 9.5) percentileHTML = `<div style="margin-top: 15px;"><span style="background: rgba(255,170,0,0.2); color: var(--primary); padding: 5px 10px; border-radius: 8px; font-size: 0.8rem; font-weight: 900; letter-spacing: 1px; display: inline-block;"> TOP 2% OF BATCH</span></div>`;
-            else if (estCGPA >= 9.0) percentileHTML = `<div style="margin-top: 15px;"><span style="background: rgba(255,255,255,0.1); color: #fff; padding: 5px 10px; border-radius: 8px; font-size: 0.8rem; font-weight: 900; letter-spacing: 1px; display: inline-block;"> TOP 10% OF BATCH</span></div>`;
-
-            list.innerHTML = `
-                <div class="dashboard-overview image-card fade-in-up" style="padding: 30px 20px; position: relative; overflow: hidden; border-radius: 24px;">
-                    <div style="position: absolute; top: 20px; right: 20px; width: 40px; height: 40px; background: rgba(255,255,255,0.1); border-radius: 50%; display: flex; justify-content: center; align-items: center;">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
-                    </div>
-                    <div class="overview-title" style="color: rgba(255,255,255,0.8); text-transform: uppercase; letter-spacing: 2px; font-size: 0.8rem; text-align: left; margin-bottom: 5px;">Academic Performance</div>
-                    <h1 class="overview-percent" style="color: #fff; text-align: left; font-size: 4rem; margin-bottom: 30px;">${overallPercent}<span style="font-size: 1.5rem;">%</span></h1>
-                    <div class="overview-stats" style="background: rgba(0,0,0,0.15); border-radius: 16px; padding: 15px; margin-bottom: 15px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;">
-                        <div class="stat-item" style="border: none;">
-                            <h4 style="color: #fff; font-size: 1.2rem;">${estCGPA}</h4>
-                            <p style="color: rgba(255,255,255,0.7); font-size: 0.7rem; text-transform: uppercase;">Est. CGPA</p>
-                        </div>
-                        <div class="stat-item" style="border-left: 1px solid rgba(255,255,255,0.1); border-right: 1px solid rgba(255,255,255,0.1);">
-                            <h4 style="color: #fff; font-size: 1.2rem;">${grandTotalObtained.toFixed(1)}<span style="font-size: 0.8rem; color: rgba(255,255,255,0.5)">/${grandTotalMax}</span></h4>
-                            <p style="color: rgba(255,255,255,0.7); font-size: 0.7rem; text-transform: uppercase;">Score</p>
-                        </div>
-                        <div class="stat-item" style="border: none;">
-                            <h4 style="color: #fff; font-size: 1.2rem;">${grade}</h4>
-                            <p style="color: rgba(255,255,255,0.7); font-size: 0.7rem; text-transform: uppercase;">Grade</p>
-                        </div>
-                    </div>
-                    
-                    <button class="action-btn" onclick="openCGPACalculator()" style="width: 100%; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; margin-top: 10px; display: flex; justify-content: center; align-items: center; gap: 10px;">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
-                        Open CGPA Calculator
-                    </button>
-                </div>
-            ` + subjectsHTML;
+            list.innerHTML = html;
         }
 
-        // ================= TIMETABLE RENDERER =================
-        function checkAndShowHolidayBanner(viewId) {
-            let todayLocal = new Date();
-            let tzoffset = todayLocal.getTimezoneOffset() * 60000;
-            let dateStr = (new Date(todayLocal - tzoffset)).toISOString().slice(0, 10);
-            let plan = srmPlanner[dateStr];
-            let isHoliday = plan && plan.type === "Holiday";
-            
-            let banner = document.getElementById(viewId);
-            if (banner) {
-                if (isSemesterVacation(dateStr)) {
-                    banner.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg><div><strong> Semester Holidays!</strong><br><small>Enjoy your vacation!</small></div>`;
-                    banner.style.display = 'flex';
-                } else if (isHoliday) {
-                    banner.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg><div><strong> Today is a Holiday!</strong><br><small>${plan.title}</small></div>`;
-                    banner.style.display = 'flex';
-                } else if (todayLocal.getDay() === 0 || todayLocal.getDay() === 6) {
-                    banner.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg><div><strong> Weekend!</strong><br><small>No classes today.</small></div>`;
-                    banner.style.display = 'flex';
-                } else {
-                    banner.style.display = 'none';
-                }
-            }
-        }
-        
-        function showHolidaySlideUp() {
-            // Deprecated - using inline banners now
-        }
-
-        function isClassActive(timeStr) {
-            if (!timeStr) return false;
-            try {
-                let parts = timeStr.split(/[-]|to/i).map(s => s.trim());
-                if (parts.length < 2) return false;
-                let [startStr, endStr] = parts;
-                let parseT = (t) => {
-                    let [h, m] = t.trim().split(':').map(Number);
-                    if (h >= 1 && h <= 7) h += 12; // PM adjustment
-                    return h * 60 + m;
-                };
-                let startMins = parseT(startStr);
-                let endMins = parseT(endStr);
-                let now = new Date();
-                let currentMins = now.getHours() * 60 + now.getMinutes();
-                return currentMins >= startMins && currentMins <= endMins;
-            } catch (e) { return false; }
-        }
 
         function renderTimetable(ttData) {
             timetableData = ttData || {};
@@ -8847,7 +8817,85 @@
                         setTimeout(() => { window.print(); window.close(); }, 500);
                     };
                 <\/script>
-                </body></html>
+                <!-- CGPA Calculator Modal -->
+    <div id="cgpa-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:var(--bg-black); z-index:9999; flex-direction:column; overflow-y:auto; padding-bottom:50px;">
+        <div style="padding: 20px; display:flex; align-items:center; gap:15px; position:sticky; top:0; background:rgba(0,0,0,0.8); backdrop-filter:blur(10px); z-index:10;">
+            <button onclick="closeCgpaCalculator()" style="background:none; border:none; color:var(--text-main); font-size:18px; cursor:pointer;"><i class="fas fa-arrow-left"></i></button>
+            <h2 style="margin:0; font-size:18px; color:var(--text-main); font-weight:700; flex:1;">CGPA Calculator</h2>
+            <div style="display:flex; background:rgba(255,255,255,0.1); border-radius:20px; padding:3px;">
+                <button onclick="switchCalculatorTab('cgpa')" style="background:var(--text-main); color:var(--bg-black); border:none; border-radius:15px; padding:6px 15px; font-weight:700; font-size:12px; cursor:pointer;">CGPA</button>
+                <button onclick="switchCalculatorTab('grade')" style="background:none; color:var(--text-sub); border:none; border-radius:15px; padding:6px 15px; font-weight:700; font-size:12px; cursor:pointer;">Grade</button>
+            </div>
+        </div>
+        
+        <div style="text-align:center; padding: 20px;">
+            <div style="color:var(--text-sub); font-weight:700; font-size:12px; margin-bottom:10px;">Your CGPA</div>
+            <div id="cgpa-display" style="color:var(--text-main); font-size:48px; font-weight:900;">0.00</div>
+        </div>
+        
+        <div id="cgpa-course-list" style="padding: 0 20px;"></div>
+        
+        <div style="padding: 20px;">
+            <button onclick="addCgpaCourse()" style="width:100%; background:var(--text-main); color:var(--bg-black); border:none; border-radius:12px; padding:15px; font-weight:700; font-size:14px; cursor:pointer;">Add Course</button>
+        </div>
+    </div>
+
+    <!-- Grade Calculator Modal -->
+    <div id="grade-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:var(--bg-black); z-index:9999; flex-direction:column; overflow-y:auto; padding-bottom:50px;">
+        <div style="padding: 20px; display:flex; align-items:center; gap:15px; position:sticky; top:0; background:rgba(0,0,0,0.8); backdrop-filter:blur(10px); z-index:10;">
+            <button onclick="closeGradeCalculator()" style="background:none; border:none; color:var(--text-main); font-size:18px; cursor:pointer;"><i class="fas fa-arrow-left"></i></button>
+            <h2 style="margin:0; font-size:18px; color:var(--text-main); font-weight:700; flex:1;">Grade Calculator</h2>
+            <div style="display:flex; background:rgba(255,255,255,0.1); border-radius:20px; padding:3px;">
+                <button onclick="switchCalculatorTab('cgpa')" style="background:none; color:var(--text-sub); border:none; border-radius:15px; padding:6px 15px; font-weight:700; font-size:12px; cursor:pointer;">CGPA</button>
+                <button onclick="switchCalculatorTab('grade')" style="background:var(--text-main); color:var(--bg-black); border:none; border-radius:15px; padding:6px 15px; font-weight:700; font-size:12px; cursor:pointer;">Grade</button>
+            </div>
+        </div>
+        
+        <div style="padding: 0 20px 20px 20px;">
+            <div style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:12px; display:flex; gap:10px; align-items:center;">
+                <i class="fas fa-info-circle" style="color:var(--text-sub);"></i>
+                <div style="color:var(--text-sub); font-size:12px;">Internal: 60 marks (60%) | Final: 75 marks (40%)</div>
+            </div>
+        </div>
+        
+        <div id="grade-course-list" style="padding: 0 20px;"></div>
+        
+        <div style="padding: 20px;">
+            <button onclick="addGradeCourse()" style="width:100%; background:var(--text-main); color:var(--bg-black); border:none; border-radius:12px; padding:15px; font-weight:700; font-size:14px; cursor:pointer;">Add Course</button>
+        </div>
+    </div>
+
+    <!-- Attendance Predictor Modal -->
+    <div id="att-predict-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:var(--bg-black); z-index:9999; flex-direction:column; overflow-y:auto; padding-bottom:50px;">
+        <div style="padding: 20px; display:flex; align-items:center; gap:15px; position:sticky; top:0; background:rgba(0,0,0,0.8); backdrop-filter:blur(10px); z-index:10;">
+            <button onclick="closeAttendancePredictor()" style="background:none; border:none; color:var(--text-main); font-size:18px; cursor:pointer;"><i class="fas fa-arrow-left"></i></button>
+            <h2 style="margin:0; font-size:18px; color:var(--text-main); font-weight:700; flex:1;">Predict Attendance</h2>
+        </div>
+        
+        <div style="padding: 20px;">
+            <div style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:16px; padding:20px; margin-bottom:20px;">
+                <div style="color:var(--text-main); font-weight:700; font-size:16px; margin-bottom:5px;">Select Date Range</div>
+                <div style="color:var(--text-sub); font-size:12px; margin-bottom:15px;">Simulate absence based on your timetable classes.</div>
+                
+                <div style="display:flex; gap:10px; margin-bottom:20px;">
+                    <div style="flex:1;">
+                        <label style="color:var(--text-sub); font-size:10px; font-weight:700; text-transform:uppercase; margin-bottom:5px; display:block;">From</label>
+                        <input type="date" id="att-predict-start" style="width:100%; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.1); color:#fff; padding:12px; border-radius:8px;">
+                    </div>
+                    <div style="flex:1;">
+                        <label style="color:var(--text-sub); font-size:10px; font-weight:700; text-transform:uppercase; margin-bottom:5px; display:block;">To</label>
+                        <input type="date" id="att-predict-end" style="width:100%; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.1); color:#fff; padding:12px; border-radius:8px;">
+                    </div>
+                </div>
+                
+                <button onclick="predictDateRangeUI()" style="width:100%; background:var(--accent); color:#fff; border:none; border-radius:12px; padding:15px; font-weight:700; font-size:14px; cursor:pointer;">Predict</button>
+            </div>
+            
+            <div id="att-predict-results"></div>
+        </div>
+    </div>
+
+</body></html>
             `);
             printWindow.document.close();
         }
@@ -9721,6 +9769,412 @@
                 alert("Downloading the Real APK...\n\nNote: If the download fails, it means the 'srm-hub.apk' file has not been uploaded to the server yet. Once downloaded, you may need to allow 'Install from Unknown Sources' in your Android settings.");
             }, 1000);
         }
-    </script>
+    
+const gradeThresholds = {
+    'O': 91, 'A+': 81, 'A': 71, 'B+': 61, 'B': 56, 'C': 50
+};
+const gradePoints = {
+    'O': 10, 'A+': 9, 'A': 8, 'B+': 7, 'B': 6, 'C': 5, 'W': 0, 'F': 0
+};
+
+// State variables for calculators
+let cgpaCourses = [];
+let gradeCalcCourses = [];
+
+function initCalculators() {
+    cgpaCourses = [];
+    gradeCalcCourses = [];
+    
+    // Parse from marksData if available
+    let marksData = [];
+    try {
+        marksData = JSON.parse(localStorage.getItem('squadMarks')) || [];
+    } catch (e) {}
+
+    marksData.forEach(item => {
+        const title = item.courseTitle || item.CourseTitle || item.name || "Subject";
+        const code = item.courseCode || item.code || "THEORY";
+        let perfString = item['Test Performance'] || item.performance || item.marks || "";
+        
+        let courseMax = 0; let courseObtained = 0;
+        const regex = /([A-Za-z0-9-\s]+)\/([0-9.]+)\s*\|\s*([0-9.]+)/g;
+        let match;
+        while ((match = regex.exec(perfString)) !== null) {
+            courseMax += parseFloat(match[2]);
+            courseObtained += parseFloat(match[3]);
+        }
+        
+        // Calculate current grade for CGPA calc
+        let grade = 'O';
+        if (courseMax > 0) {
+            let marksCut = courseMax - courseObtained;
+            if (marksCut < 10) grade = 'O';
+            else if (marksCut < 20) grade = 'A+';
+            else if (marksCut < 30) grade = 'A';
+            else if (marksCut < 40) grade = 'B+';
+            else if (marksCut < 45) grade = 'B';
+            else if (marksCut < 50) grade = 'C';
+            else grade = 'F';
+        }
+        
+        cgpaCourses.push({ title: title, credits: 3, grade: grade }); // Default 3 credits
+        
+        if (courseMax <= 60 && code.toUpperCase().includes('THEORY')) {
+            gradeCalcCourses.push({
+                title: title,
+                internal: courseObtained,
+                target: 'O'
+            });
+        }
+    });
+    
+    if (gradeCalcCourses.length === 0) {
+        // Fallback dummy
+        gradeCalcCourses.push({ title: 'Theory Subject', internal: 45, target: 'O' });
+    }
+}
+
+// ----------------------------------------------------
+// CGPA CALCULATOR
+// ----------------------------------------------------
+function openCgpaCalculator() {
+    initCalculators();
+    document.getElementById('cgpa-modal').style.display = 'flex';
+    renderCgpaCalculator();
+}
+
+function closeCgpaCalculator() {
+    document.getElementById('cgpa-modal').style.display = 'none';
+}
+
+function renderCgpaCalculator() {
+    const list = document.getElementById('cgpa-course-list');
+    let totalCredits = 0;
+    let totalPoints = 0;
+    
+    let html = '';
+    cgpaCourses.forEach((c, i) => {
+        let cred = parseFloat(c.credits) || 0;
+        let pt = gradePoints[c.grade] || 0;
+        totalCredits += cred;
+        totalPoints += (cred * pt);
+        
+        html += `
+            <div class="glass-card" style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 16px; margin-bottom: 12px; position:relative;">
+                <button onclick="removeCgpaCourse(${i})" style="position:absolute; top:15px; right:15px; background:none; border:none; color:var(--text-sub); cursor:pointer;"><i class="fas fa-trash"></i></button>
+                <div style="color: var(--text-main); font-weight: 700; font-size: 14px; margin-bottom: 15px; padding-right:20px;">${c.title}</div>
+                <div style="display:flex; gap:15px;">
+                    <div style="flex:1;">
+                        <label style="color:var(--text-sub); font-size:10px; font-weight:700; text-transform:uppercase; margin-bottom:5px; display:block;">Credits</label>
+                        <input type="number" value="${c.credits}" onchange="updateCgpaCourse(${i}, 'credits', this.value)" style="width:100%; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.1); color:#fff; padding:10px; border-radius:8px;">
+                    </div>
+                    <div style="flex:1;">
+                        <label style="color:var(--text-sub); font-size:10px; font-weight:700; text-transform:uppercase; margin-bottom:5px; display:block;">Grade</label>
+                        <select onchange="updateCgpaCourse(${i}, 'grade', this.value)" style="width:100%; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.1); color:#fff; padding:10px; border-radius:8px;">
+                            <option value="O" ${c.grade==='O'?'selected':''}>O</option>
+                            <option value="A+" ${c.grade==='A+'?'selected':''}>A+</option>
+                            <option value="A" ${c.grade==='A'?'selected':''}>A</option>
+                            <option value="B+" ${c.grade==='B+'?'selected':''}>B+</option>
+                            <option value="B" ${c.grade==='B'?'selected':''}>B</option>
+                            <option value="C" ${c.grade==='C'?'selected':''}>C</option>
+                            <option value="F" ${c.grade==='F'?'selected':''}>F</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    list.innerHTML = html;
+    
+    let cgpa = totalCredits > 0 ? (totalPoints / totalCredits) : 0;
+    document.getElementById('cgpa-display').innerText = cgpa.toFixed(2);
+}
+
+function updateCgpaCourse(index, field, value) {
+    cgpaCourses[index][field] = value;
+    renderCgpaCalculator();
+}
+function removeCgpaCourse(index) {
+    cgpaCourses.splice(index, 1);
+    renderCgpaCalculator();
+}
+function addCgpaCourse() {
+    cgpaCourses.push({ title: 'New Course', credits: 3, grade: 'O' });
+    renderCgpaCalculator();
+}
+
+// ----------------------------------------------------
+// GRADE CALCULATOR
+// ----------------------------------------------------
+function openGradeCalculator() {
+    initCalculators();
+    document.getElementById('grade-modal').style.display = 'flex';
+    renderGradeCalculator();
+}
+function closeGradeCalculator() {
+    document.getElementById('grade-modal').style.display = 'none';
+}
+
+function renderGradeCalculator() {
+    const list = document.getElementById('grade-course-list');
+    let html = '';
+    
+    gradeCalcCourses.forEach((c, i) => {
+        let reqTotal = gradeThresholds[c.target] || 91;
+        let reqExternal = (reqTotal - parseFloat(c.internal)) * (75.0 / 40.0);
+        let isImpossible = reqExternal > 75;
+        
+        let warningHtml = '';
+        if (isImpossible) {
+            warningHtml = `
+                <div style="margin-top:15px; padding:12px; background:rgba(255, 152, 0, 0.1); border:1px solid rgba(255, 152, 0, 0.3); border-radius:8px; display:flex; gap:10px;">
+                    <i class="fas fa-exclamation-triangle" style="color:#ff9800; margin-top:2px;"></i>
+                    <div style="flex:1;">
+                        <div style="color:#ff9800; font-weight:700; font-size:12px; margin-bottom:4px;">Mathematically Impossible</div>
+                        <div style="color:var(--text-sub); font-size:10px; font-style:italic;">Only relative grading can save you</div>
+                        <div style="display:flex; justify-content:space-between; margin-top:8px; padding-top:8px; border-top:1px solid rgba(255,152,0,0.2);">
+                            <span style="color:var(--text-sub); font-size:11px;">Current Total:</span>
+                            <span style="color:var(--text-main); font-weight:700; font-size:11px;">${parseFloat(c.internal).toFixed(2)}</span>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; margin-top:4px;">
+                            <span style="color:var(--text-sub); font-size:11px;">Marks Needed:</span>
+                            <span style="color:var(--text-main); font-weight:700; font-size:11px;">${reqExternal.toFixed(2)} over 75</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        } else {
+            warningHtml = `
+                <div style="margin-top:15px; padding:12px; background:rgba(76, 175, 80, 0.1); border:1px solid rgba(76, 175, 80, 0.3); border-radius:8px; display:flex; gap:10px;">
+                    <i class="fas fa-check-circle" style="color:#4CAF50; margin-top:2px;"></i>
+                    <div style="flex:1;">
+                        <div style="color:#4CAF50; font-weight:700; font-size:12px; margin-bottom:4px;">Target Achievable</div>
+                        <div style="display:flex; justify-content:space-between; margin-top:8px; padding-top:8px; border-top:1px solid rgba(76, 175, 80, 0.2);">
+                            <span style="color:var(--text-sub); font-size:11px;">Marks Needed:</span>
+                            <span style="color:var(--text-main); font-weight:700; font-size:11px;">${reqExternal.toFixed(2)} over 75</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        html += `
+            <div class="glass-card" style="background: rgba(255,255,255,0.05); padding: 20px; border-radius: 16px; margin-bottom: 15px; position:relative;">
+                <button onclick="removeGradeCourse(${i})" style="position:absolute; top:15px; right:15px; background:none; border:none; color:var(--text-sub); cursor:pointer;"><i class="fas fa-trash"></i></button>
+                <div style="color: var(--text-main); font-weight: 700; font-size: 14px; margin-bottom: 15px; padding-right:20px;">${c.title}</div>
+                
+                <label style="color:var(--text-sub); font-size:10px; font-weight:700; text-transform:uppercase; margin-bottom:5px; display:block;">Internal Marks (out of 60)</label>
+                <input type="number" value="${c.internal}" onchange="updateGradeCourse(${i}, 'internal', this.value)" style="width:100%; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.1); color:#fff; padding:12px; border-radius:8px; margin-bottom:15px; font-weight:700;">
+                
+                <label style="color:var(--text-sub); font-size:10px; font-weight:700; text-transform:uppercase; margin-bottom:5px; display:block;">Target Grade: ${c.target}</label>
+                <input type="range" min="0" max="5" value="${['O','A+','A','B+','B','C'].indexOf(c.target)}" oninput="updateGradeCourse(${i}, 'target', ['O','A+','A','B+','B','C'][this.value])" style="width:100%; margin-bottom:5px;">
+                <div style="display:flex; justify-content:space-between; color:var(--text-sub); font-size:10px; font-weight:700;">
+                    <span>O</span><span>A+</span><span>A</span><span>B+</span><span>B</span><span>C</span>
+                </div>
+                
+                ${warningHtml}
+            </div>
+        `;
+    });
+    list.innerHTML = html;
+}
+
+function updateGradeCourse(index, field, value) {
+    gradeCalcCourses[index][field] = value;
+    renderGradeCalculator();
+}
+function removeGradeCourse(index) {
+    gradeCalcCourses.splice(index, 1);
+    renderGradeCalculator();
+}
+function addGradeCourse() {
+    gradeCalcCourses.push({ title: 'New Course', internal: 0, target: 'O' });
+    renderGradeCalculator();
+}
+
+function switchCalculatorTab(tab) {
+    if (tab === 'cgpa') {
+        closeGradeCalculator();
+        openCgpaCalculator();
+    } else {
+        closeCgpaCalculator();
+        openGradeCalculator();
+    }
+}
+
+function openAttendancePredictor() {
+    document.getElementById('att-predict-modal').style.display = 'flex';
+}
+function closeAttendancePredictor() {
+    document.getElementById('att-predict-modal').style.display = 'none';
+}
+
+function predictDateRangeUI() {
+    const startInput = document.getElementById('att-predict-start').value;
+    const endInput = document.getElementById('att-predict-end').value;
+    const resultsContainer = document.getElementById('att-predict-results');
+
+    if (!startInput || !endInput) {
+        alert("Please select both start and end dates.");
+        return;
+    }
+
+    const start = new Date(startInput);
+    const end = new Date(endInput);
+    if (end < start) {
+        alert("End date cannot be before start date.");
+        return;
+    }
+
+    const missedClasses = {};
+    let currentDate = new Date(start);
+
+    while (currentDate <= end) {
+        const isoDate = currentDate.toISOString().slice(0,10);
+        if (srmPlanner[isoDate]) {
+            const dayType = srmPlanner[isoDate].type;
+            if (dayType === "Day Order") {
+                const doNum = srmPlanner[isoDate].value;
+                const classes = timetableData[doNum.toString()] || [];
+                classes.forEach(c => {
+                    let cname = c.subject.toString().replace(/[^a-zA-Z0-9]/g, '');
+                    missedClasses[cname] = (missedClasses[cname] || 0) + 1;
+                });
+            }
+        } else {
+            const dayIdx = currentDate.getDay();
+            if (dayIdx >= 1 && dayIdx <= 5) {
+                const classes = timetableData[dayIdx.toString()] || [];
+                classes.forEach(c => {
+                    let cname = c.subject.toString().replace(/[^a-zA-Z0-9]/g, '');
+                    missedClasses[cname] = (missedClasses[cname] || 0) + 1;
+                });
+            }
+        }
+        currentDate.setDate(currentDate.getDate() + 1);
+    }
+
+    let html = '<h3 style="color:var(--text-main); font-size:16px; margin-bottom:15px;">Predicted Attendance</h3>';
+    
+    let anyMissed = false;
+    attendanceData.forEach(sub => {
+        let name = sub.courseTitle || sub.name || "Unknown Subject";
+        let safeId = (sub.id || sub.courseCode || name).toString().replace(/[^a-zA-Z0-9]/g, '');
+        let bunked = missedClasses[safeId] || 0;
+        
+        let pct = parseFloat(sub.attended) || 0;
+        let cond = parseInt(sub.conducted) || 0;
+        let abs = parseInt(sub.absent) || 0;
+        let pres = cond - abs;
+        
+        if (bunked > 0) {
+            anyMissed = true;
+            let newTotal = cond + bunked;
+            let newPct = (pres / newTotal) * 100;
+            
+            let color = newPct >= 75 ? 'var(--success)' : 'var(--danger)';
+            
+            html += `
+                <div class="glass-card" style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 12px; margin-bottom: 10px;">
+                    <div style="color: var(--text-main); font-weight: 700; font-size: 14px; margin-bottom: 10px;">${name}</div>
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <div style="color:var(--text-sub); font-size:12px;">Missed: ${bunked} classes</div>
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <span style="color:var(--text-main); font-size:14px; text-decoration:line-through; opacity:0.5;">${pct.toFixed(1)}%</span>
+                            <i class="fas fa-arrow-right" style="color:var(--text-sub); font-size:10px;"></i>
+                            <span style="color:${color}; font-weight:800; font-size:16px;">${newPct.toFixed(1)}%</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+    });
+    
+    if (!anyMissed) {
+        html += `<div style="color:var(--text-sub); font-size:14px; text-align:center; padding:20px;">No classes will be missed in this range based on your timetable!</div>`;
+    }
+    
+    resultsContainer.innerHTML = html;
+}
+
+</script>
+<!-- CGPA Calculator Modal -->
+    <div id="cgpa-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:var(--bg-black); z-index:9999; flex-direction:column; overflow-y:auto; padding-bottom:50px;">
+        <div style="padding: 20px; display:flex; align-items:center; gap:15px; position:sticky; top:0; background:rgba(0,0,0,0.8); backdrop-filter:blur(10px); z-index:10;">
+            <button onclick="closeCgpaCalculator()" style="background:none; border:none; color:var(--text-main); font-size:18px; cursor:pointer;"><i class="fas fa-arrow-left"></i></button>
+            <h2 style="margin:0; font-size:18px; color:var(--text-main); font-weight:700; flex:1;">CGPA Calculator</h2>
+            <div style="display:flex; background:rgba(255,255,255,0.1); border-radius:20px; padding:3px;">
+                <button onclick="switchCalculatorTab('cgpa')" style="background:var(--text-main); color:var(--bg-black); border:none; border-radius:15px; padding:6px 15px; font-weight:700; font-size:12px; cursor:pointer;">CGPA</button>
+                <button onclick="switchCalculatorTab('grade')" style="background:none; color:var(--text-sub); border:none; border-radius:15px; padding:6px 15px; font-weight:700; font-size:12px; cursor:pointer;">Grade</button>
+            </div>
+        </div>
+        
+        <div style="text-align:center; padding: 20px;">
+            <div style="color:var(--text-sub); font-weight:700; font-size:12px; margin-bottom:10px;">Your CGPA</div>
+            <div id="cgpa-display" style="color:var(--text-main); font-size:48px; font-weight:900;">0.00</div>
+        </div>
+        
+        <div id="cgpa-course-list" style="padding: 0 20px;"></div>
+        
+        <div style="padding: 20px;">
+            <button onclick="addCgpaCourse()" style="width:100%; background:var(--text-main); color:var(--bg-black); border:none; border-radius:12px; padding:15px; font-weight:700; font-size:14px; cursor:pointer;">Add Course</button>
+        </div>
+    </div>
+
+    <!-- Grade Calculator Modal -->
+    <div id="grade-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:var(--bg-black); z-index:9999; flex-direction:column; overflow-y:auto; padding-bottom:50px;">
+        <div style="padding: 20px; display:flex; align-items:center; gap:15px; position:sticky; top:0; background:rgba(0,0,0,0.8); backdrop-filter:blur(10px); z-index:10;">
+            <button onclick="closeGradeCalculator()" style="background:none; border:none; color:var(--text-main); font-size:18px; cursor:pointer;"><i class="fas fa-arrow-left"></i></button>
+            <h2 style="margin:0; font-size:18px; color:var(--text-main); font-weight:700; flex:1;">Grade Calculator</h2>
+            <div style="display:flex; background:rgba(255,255,255,0.1); border-radius:20px; padding:3px;">
+                <button onclick="switchCalculatorTab('cgpa')" style="background:none; color:var(--text-sub); border:none; border-radius:15px; padding:6px 15px; font-weight:700; font-size:12px; cursor:pointer;">CGPA</button>
+                <button onclick="switchCalculatorTab('grade')" style="background:var(--text-main); color:var(--bg-black); border:none; border-radius:15px; padding:6px 15px; font-weight:700; font-size:12px; cursor:pointer;">Grade</button>
+            </div>
+        </div>
+        
+        <div style="padding: 0 20px 20px 20px;">
+            <div style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:12px; display:flex; gap:10px; align-items:center;">
+                <i class="fas fa-info-circle" style="color:var(--text-sub);"></i>
+                <div style="color:var(--text-sub); font-size:12px;">Internal: 60 marks (60%) | Final: 75 marks (40%)</div>
+            </div>
+        </div>
+        
+        <div id="grade-course-list" style="padding: 0 20px;"></div>
+        
+        <div style="padding: 20px;">
+            <button onclick="addGradeCourse()" style="width:100%; background:var(--text-main); color:var(--bg-black); border:none; border-radius:12px; padding:15px; font-weight:700; font-size:14px; cursor:pointer;">Add Course</button>
+        </div>
+    </div>
+
+    <!-- Attendance Predictor Modal -->
+    <div id="att-predict-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:var(--bg-black); z-index:9999; flex-direction:column; overflow-y:auto; padding-bottom:50px;">
+        <div style="padding: 20px; display:flex; align-items:center; gap:15px; position:sticky; top:0; background:rgba(0,0,0,0.8); backdrop-filter:blur(10px); z-index:10;">
+            <button onclick="closeAttendancePredictor()" style="background:none; border:none; color:var(--text-main); font-size:18px; cursor:pointer;"><i class="fas fa-arrow-left"></i></button>
+            <h2 style="margin:0; font-size:18px; color:var(--text-main); font-weight:700; flex:1;">Predict Attendance</h2>
+        </div>
+        
+        <div style="padding: 20px;">
+            <div style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:16px; padding:20px; margin-bottom:20px;">
+                <div style="color:var(--text-main); font-weight:700; font-size:16px; margin-bottom:5px;">Select Date Range</div>
+                <div style="color:var(--text-sub); font-size:12px; margin-bottom:15px;">Simulate absence based on your timetable classes.</div>
+                
+                <div style="display:flex; gap:10px; margin-bottom:20px;">
+                    <div style="flex:1;">
+                        <label style="color:var(--text-sub); font-size:10px; font-weight:700; text-transform:uppercase; margin-bottom:5px; display:block;">From</label>
+                        <input type="date" id="att-predict-start" style="width:100%; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.1); color:#fff; padding:12px; border-radius:8px;">
+                    </div>
+                    <div style="flex:1;">
+                        <label style="color:var(--text-sub); font-size:10px; font-weight:700; text-transform:uppercase; margin-bottom:5px; display:block;">To</label>
+                        <input type="date" id="att-predict-end" style="width:100%; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.1); color:#fff; padding:12px; border-radius:8px;">
+                    </div>
+                </div>
+                
+                <button onclick="predictDateRangeUI()" style="width:100%; background:var(--accent); color:#fff; border:none; border-radius:12px; padding:15px; font-weight:700; font-size:14px; cursor:pointer;">Predict</button>
+            </div>
+            
+            <div id="att-predict-results"></div>
+        </div>
+    </div>
+
 </body>
 </html>
