@@ -193,6 +193,8 @@ def run_fast_scraper(email, password, out_queue):
                 attendance_data = {}
         
         student_info = attendance_data.get('student_info', {}) if attendance_data else {}
+        if not student_info and timetable_data:
+            student_info = timetable_data.get('student_info', {})
         student_batch = student_info.get('batch', '1')
         
         # Build Day 1-5 Timetable exactly as requested by user
@@ -203,7 +205,7 @@ def run_fast_scraper(email, password, out_queue):
         attList = adapt_attendance(attendance_data)
         marksList = adapt_marks(attendance_data.get('marks', {}), attendance_data.get('courses', {}), courses_list)
         
-        advisors = attendance_data.get('advisors', {}) if attendance_data else {}
+        advisors = timetable_data.get('advisors', {}) if timetable_data else {}
         fa = advisors.get('faculty_advisor', {})
         aa = advisors.get('academic_advisor', {})
         
