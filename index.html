@@ -10019,6 +10019,10 @@ function predictDateRangeUI() {
                     document.getElementById('sp-sync-captcha-img').src = 'data:image/jpeg;base64,' + data.captcha_b64;
                     document.getElementById('sp-sync-pwd').value = '';
                     document.getElementById('sp-sync-captcha-input').value = '';
+                    
+                    const savedReg = localStorage.getItem('syncRegNo') || '';
+                    document.getElementById('sp-sync-netid').value = savedReg.split('@')[0];
+                    
                     document.getElementById('sp-sync-modal').style.display = 'flex';
                 } else {
                     alert("Failed to load Student Portal. Please try again later.");
@@ -10061,8 +10065,11 @@ function predictDateRangeUI() {
                 return;
             }
 
-            const regNo = localStorage.getItem('syncRegNo');
-            const netId = regNo.split('@')[0];
+            const netId = document.getElementById('sp-sync-netid').value.trim();
+            if (!netId) {
+                alert("Please enter your NetID.");
+                return;
+            }
             
             const submitBtn = document.getElementById('sp-sync-submit-btn');
             submitBtn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Syncing...';
