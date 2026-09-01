@@ -296,7 +296,28 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
     from fast_scraper_adapter import run_fast_scraper
     run_fast_scraper(reg_no, pwd, out_queue)
 
+
+from sp_scraper import sync_sp_portal
+
+@app.route('/api/sp_sync', methods=['POST'])
+def api_sp_sync():
+    data = request.json
+    net_id = data.get('net_id')
+    password = data.get('password')
+    
+    # 1. API Key Check
+    client_key = request.headers.get('X-App-Key')
+    if client_key != API_SECRET_KEY:
+        return jsonify({'success': False, 'error': 'Unauthorized: Invalid API Key'}), 403
+
+    if not net_id or not password:
+        return jsonify({'success': False, 'error': 'Missing credentials'}), 400
+        
+    res = sync_sp_portal(net_id, password)
+    return jsonify(res)
+
 @app.route('/api/start_session', methods=['POST'])
+
 def start_session():
     data = request.json
 

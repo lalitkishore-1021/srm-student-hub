@@ -3410,9 +3410,14 @@
         <div id="attendance-view" class="app-view">
             <div class="view-header">
                 <h2 class="gallery-title">Attendance</h2>
+
             </div>
             
-            
+            <div style="text-align: center; margin-bottom: 15px;">
+                <button onclick="syncStudentPortal('attendance')" id="sp-sync-btn-att" class="btn btn-custom" style="background: rgba(255,170,0,0.1); border: 1px solid rgba(255,170,0,0.5); color: #ffaa00; padding: 6px 12px; border-radius: 12px; font-size: 0.85rem;">
+                    <i class="fa fa-refresh mr-1"></i> Sync from Student Portal (Alternative)
+                </button>
+            </div>
 
             <div id="attendance-list" style="max-width: 600px; margin: 0 auto;"></div>
         </div>
@@ -3421,6 +3426,14 @@
             <div class="view-header">
                 <h2 class="gallery-title">Marks Tracker</h2>
             </div>
+            </div>
+            
+            <div style="text-align: center; margin-bottom: 15px;">
+                <button onclick="syncStudentPortal('marks')" id="sp-sync-btn-marks" class="btn btn-custom" style="background: rgba(255,170,0,0.1); border: 1px solid rgba(255,170,0,0.5); color: #ffaa00; padding: 6px 12px; border-radius: 12px; font-size: 0.85rem;">
+                    <i class="fa fa-refresh mr-1"></i> Sync from Student Portal (Alternative)
+                </button>
+            </div>
+
             <div id="marks-no-data" class="image-card"
                 style="max-width: 600px; margin: 0 auto; padding: 40px; cursor: default; transform: none;">
                 <div class="meal-icon-box"
