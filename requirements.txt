@@ -1,1 +1,9 @@
-Flask==3.0.0\nflask-cors==4.0.0\nplaywright==1.49.0\ngunicorn==21.2.0\npsycopg2-binary==2.9.10\nrequests==2.31.0\nflask-limiter==3.8.0\nbeautifulsoup4==4.12.3\nFlask-Compress==1.14\n
+Flask==3.0.0
+flask-cors==4.0.0
+playwright==1.49.0
+gunicorn==21.2.0
+psycopg2-binary==2.9.10
+requests==2.31.0
+flask-limiter==3.8.0
+beautifulsoup4==4.12.3
+Flask-Compress==1.14

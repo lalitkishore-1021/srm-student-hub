@@ -10,7 +10,8 @@ import requests
 import uuid
 import urllib.parse
 from datetime import datetime
-from flask import Flask, request, jsonify, send_from_directory, Response
+from flask import Flask
+from flask_compress import Compress, request, jsonify, send_from_directory, Response
 
 from collections import defaultdict
 import time
@@ -36,6 +37,7 @@ from playwright.sync_api import sync_playwright
 
 app = Flask(__name__, static_folder='.')
 CORS(app)
+Compress(app)
 
 sync_jobs = {}
 
