@@ -9986,65 +9986,113 @@ function predictDateRangeUI() {
 
 
         // ================= SP PORTAL SYNC =================
+        let currentSpType = 'attendance';
+        let currentSpJsessionid = '';
+
         async function syncStudentPortal(type) {
-            const btn = document.getElementById(type === 'attendance' ? 'sp-sync-btn-att' : 'sp-sync-btn-marks');
-            const originalHTML = btn.innerHTML;
-            btn.innerHTML = '<i class="fa fa-spinner fa-spin mr-1"></i> Syncing... (Takes ~10s)';
-            btn.disabled = true;
+            currentSpType = type;
+            const regNo = localStorage.getItem('syncRegNo');
+            if (!regNo) {
+                alert("Please logout and login to the app first.");
+                return;
+            }
+            
+            // Show edge loader
+            document.getElementById('edge-loader').style.display = 'block';
+            
+            // Disable sync buttons
+            const btnA = document.getElementById('sp-sync-btn-att');
+            const btnM = document.getElementById('sp-sync-btn-marks');
+            if(btnA) { btnA.innerHTML = '<i class="fa fa-spinner fa-spin mr-1"></i> Loading...'; btnA.disabled = true; }
+            if(btnM) { btnM.innerHTML = '<i class="fa fa-spinner fa-spin mr-1"></i> Loading...'; btnM.disabled = true; }
 
             try {
-                const regNo = localStorage.getItem('syncRegNo');
-                if (!regNo) {
-                    alert("Please logout and login to the app first.");
-                    btn.innerHTML = originalHTML;
-                    btn.disabled = false;
-                    return;
-                }
+                // Fetch captcha from backend
+                const res = await fetch(`${BACKEND_URL}/api/sp_get_captcha`, {
+                    method: 'GET',
+                    headers: { 'X-App-Key': 'srm-hub-protected-x9f2' }
+                });
+                const data = await res.json();
                 
-                // Usually NetID doesn't have domain
-                const netId = regNo.split('@')[0];
-                
-                const spPassword = prompt(`Enter your SRM Email / Student Portal Password for NetID '${netId}':\n(This is different from your Academia password)`);
-                if (!spPassword) {
-                    btn.innerHTML = originalHTML;
-                    btn.disabled = false;
-                    return;
+                if (data.success) {
+                    currentSpJsessionid = data.jsessionid;
+                    document.getElementById('sp-sync-captcha-img').src = 'data:image/jpeg;base64,' + data.captcha_b64;
+                    document.getElementById('sp-sync-pwd').value = '';
+                    document.getElementById('sp-sync-captcha-input').value = '';
+                    document.getElementById('sp-sync-modal').style.display = 'flex';
+                } else {
+                    alert("Failed to load Student Portal. Please try again later.");
                 }
+            } catch (e) {
+                alert("Network error fetching CAPTCHA.");
+            }
+            
+            document.getElementById('edge-loader').style.display = 'none';
+            if(btnA) { btnA.innerHTML = '<i class="fa fa-refresh mr-1"></i> Sync from Student Portal (Alternative)'; btnA.disabled = false; }
+            if(btnM) { btnM.innerHTML = '<i class="fa fa-refresh mr-1"></i> Sync from Student Portal (Alternative)'; btnM.disabled = false; }
+        }
 
+        function closeSpSyncModal() {
+            document.getElementById('sp-sync-modal').style.display = 'none';
+        }
+
+        async function submitSpSync() {
+            const pwd = document.getElementById('sp-sync-pwd').value;
+            const captcha = document.getElementById('sp-sync-captcha-input').value;
+            if (!pwd || !captcha) {
+                alert("Please enter both password and CAPTCHA.");
+                return;
+            }
+
+            const regNo = localStorage.getItem('syncRegNo');
+            const netId = regNo.split('@')[0];
+            
+            const submitBtn = document.getElementById('sp-sync-submit-btn');
+            submitBtn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Syncing...';
+            submitBtn.disabled = true;
+            document.getElementById('edge-loader').style.display = 'block';
+
+            try {
                 const res = await fetch(`${BACKEND_URL}/api/sp_sync`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-App-Key': 'srm-hub-protected-x9f2' },
-                    body: JSON.stringify({ net_id: netId, password: spPassword })
+                    body: JSON.stringify({ 
+                        net_id: netId, 
+                        password: pwd, 
+                        captcha: captcha,
+                        jsessionid: currentSpJsessionid
+                    })
                 });
 
                 const data = await res.json();
                 if (data.success) {
-                    // Merge and save
                     if (data.attendance && data.attendance.length > 0) {
                         workingAttData = data.attendance;
                         localStorage.setItem('attData', JSON.stringify(workingAttData));
-                        if (document.getElementById('attendance-view').classList.contains('active')) {
-                            renderAttendance();
-                        }
+                        if (document.getElementById('attendance-view').classList.contains('active')) renderAttendance();
                     }
                     if (data.marks && data.marks.length > 0) {
                         marksData = data.marks;
                         localStorage.setItem('marksData', JSON.stringify(marksData));
-                        if (document.getElementById('marks-view').classList.contains('active')) {
-                            renderMarks();
-                        }
+                        if (document.getElementById('marks-view').classList.contains('active')) renderMarks();
                     }
+                    closeSpSyncModal();
                     alert("Successfully updated data from Student Portal!");
                 } else {
-                    alert(data.error || "Failed to sync. Please check credentials or try again.");
+                    alert(data.error || "Invalid Credentials or CAPTCHA.");
+                    // Refresh captcha automatically
+                    document.getElementById('sp-sync-captcha-input').value = '';
+                    syncStudentPortal(currentSpType); 
                 }
             } catch(e) {
-                alert("Network error while syncing. Try again later.");
+                alert("Network error while syncing.");
             }
             
-            btn.innerHTML = originalHTML;
-            btn.disabled = false;
+            submitBtn.innerHTML = 'Sync';
+            submitBtn.disabled = false;
+            document.getElementById('edge-loader').style.display = 'none';
         }
+        
 </script>
 
     <!-- SP Sync Modal -->
