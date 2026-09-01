@@ -10032,6 +10032,23 @@ function predictDateRangeUI() {
             if(btnM) { btnM.innerHTML = '<i class="fa fa-refresh mr-1"></i> Sync from Student Portal (Alternative)'; btnM.disabled = false; }
         }
 
+        
+        function toggleSpPwd() {
+            const pwdInput = document.getElementById('sp-sync-pwd');
+            const eyeIcon = document.getElementById('sp-sync-eye');
+            if (pwdInput.type === 'password') {
+                pwdInput.type = 'text';
+                eyeIcon.classList.remove('fa-eye');
+                eyeIcon.classList.add('fa-eye-slash');
+                eyeIcon.style.color = '#ffaa00';
+            } else {
+                pwdInput.type = 'password';
+                eyeIcon.classList.remove('fa-eye-slash');
+                eyeIcon.classList.add('fa-eye');
+                eyeIcon.style.color = '#aaa';
+            }
+        }
+
         function closeSpSyncModal() {
             document.getElementById('sp-sync-modal').style.display = 'none';
         }
@@ -10101,13 +10118,18 @@ function predictDateRangeUI() {
             <h3 style="margin-top:0; color: #ffaa00; font-weight: 800; font-size: 1.2rem;">Student Portal Sync</h3>
             <p style="font-size: 0.9rem; color: #aaa; margin-bottom: 20px;">Please enter your SRM Email Password and solve the CAPTCHA.</p>
             
-            <input type="password" id="sp-sync-pwd" placeholder="Password (SRM Email)" class="custom-input" style="width: 100%; margin-bottom: 15px; padding: 12px; border-radius: 8px; background: rgba(0,0,0,0.5); border: 1px solid #333; color: #fff; box-sizing: border-box;">
+            
+            <div style="position: relative; width: 100%; margin-bottom: 15px;">
+                <input type="password" id="sp-sync-pwd" placeholder="Password (SRM Email)" class="custom-input" style="width: 100%; padding: 12px; border-radius: 8px; background: rgba(0,0,0,0.5); border: 1px solid #333; color: #fff; box-sizing: border-box; padding-right: 40px;">
+                <i class="fa fa-eye" id="sp-sync-eye" onclick="toggleSpPwd()" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: #aaa; cursor: pointer;"></i>
+            </div>
+
             
             <div style="margin-bottom: 15px; display: flex; justify-content: center; background: #fff; border-radius: 8px; padding: 5px;">
                 <img id="sp-sync-captcha-img" src="" alt="Loading CAPTCHA..." style="height: 40px; object-fit: contain;">
             </div>
             
-            <input type="text" id="sp-sync-captcha-input" placeholder="Enter CAPTCHA" class="custom-input" style="width: 100%; margin-bottom: 20px; text-transform: uppercase; padding: 12px; border-radius: 8px; background: rgba(0,0,0,0.5); border: 1px solid #333; color: #fff; box-sizing: border-box;">
+            <input type="text" id="sp-sync-captcha-input" placeholder="Enter CAPTCHA" class="custom-input" style="width: 100%; margin-bottom: 20px; padding: 12px; border-radius: 8px; background: rgba(0,0,0,0.5); border: 1px solid #333; color: #fff; box-sizing: border-box;">
             
             <div style="display: flex; gap: 10px;">
                 <button onclick="closeSpSyncModal()" class="btn" style="flex: 1; padding: 10px; background: #333; color: #fff; border: none; border-radius: 8px; cursor: pointer;">Cancel</button>
