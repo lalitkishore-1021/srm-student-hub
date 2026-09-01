@@ -1,13 +1,30 @@
 import time
-import queue
-import re
+import requests
+import base64
 from playwright.sync_api import sync_playwright
-import ddddocr
 
-# Initialize ddddocr once
-ocr = ddddocr.DdddOcr(show_ad=False)
+import urllib3
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-def sync_sp_portal(net_id, password):
+def get_sp_captcha():
+    session = requests.Session()
+    session.verify = False
+    try:
+        session.get("https://sp.srmist.edu.in/srmiststudentportal/students/loginManager/youLogin.jsp", verify=False, timeout=10)
+        r_cap = session.get("https://sp.srmist.edu.in/srmiststudentportal/SCaptchaServlet", verify=False, timeout=10)
+        
+        b64_img = base64.b64encode(r_cap.content).decode('utf-8')
+        jsessionid = session.cookies.get('JSESSIONID', '')
+        
+        return {
+            'success': True,
+            'captcha_b64': b64_img,
+            'jsessionid': jsessionid
+        }
+    except Exception as e:
+        return {'success': False, 'error': str(e)}
+
+def sync_sp_portal(net_id, password, captcha_text, jsessionid):
     result_data = {
         'attendance': [],
         'marks': [],
@@ -19,65 +36,46 @@ def sync_sp_portal(net_id, password):
         with sync_playwright() as p:
             browser = p.chromium.launch(headless=True, args=['--no-sandbox', '--disable-setuid-sandbox'])
             context = browser.new_context(ignore_https_errors=True, viewport={'width': 1280, 'height': 800})
+            
+            context.add_cookies([{
+                'name': 'JSESSIONID',
+                'value': jsessionid,
+                'domain': 'sp.srmist.edu.in',
+                'path': '/'
+            }])
+            
             page = context.new_page()
             
             # --- 1. Login ---
             page.goto("https://sp.srmist.edu.in/srmiststudentportal/students/loginManager/youLogin.jsp")
+            page.wait_for_selector("input#username", timeout=10000)
             
-            # Max 3 retries for Captcha
-            logged_in = False
-            for attempt in range(3):
-                # Wait for Captcha image
-                page.wait_for_selector("img#secure_captcha", timeout=10000)
-                
-                # Take screenshot of the captcha element
-                captcha_element = page.locator("img#secure_captcha")
-                # Add a small delay to ensure the image is fully loaded before screenshotting
-                page.wait_for_timeout(500) 
-                captcha_bytes = captcha_element.screenshot()
-                
-                # Solve using ddddocr
-                captcha_text = ocr.classification(captcha_bytes)
-                print(f"[SP] Attempt {attempt+1}: Solved Captcha as -> {captcha_text}")
-                
-                # Fill form
-                page.fill("input#username", net_id)
-                page.fill("input#password", password)
-                page.fill("input#captcha", captcha_text)
-                
-                # Submit
-                page.click("button#btnLogin")
-                
-                # Wait for navigation or error
+            page.fill("input#username", net_id)
+            page.fill("input#password", password)
+            page.fill("input#captcha", captcha_text)
+            page.click("button#btnLogin")
+            
+            try:
+                page.wait_for_url("**/HRDSystem.jsp*", timeout=8000)
+                print("[SP] Login successful!")
+            except Exception:
+                err = "Invalid NetID, Password, or CAPTCHA."
                 try:
-                    # If invalid captcha or password, an alert or error div might show
-                    # Or it navigates to HRDSystem.jsp
-                    page.wait_for_url("**/HRDSystem.jsp*", timeout=8000)
-                    logged_in = True
-                    print("[SP] Login successful!")
-                    break
-                except Exception:
-                    # Check for invalid captcha alert/text and retry
-                    print(f"[SP] Login failed on attempt {attempt+1}. Retrying...")
-                    # Reload page to get fresh captcha
-                    page.goto("https://sp.srmist.edu.in/srmiststudentportal/students/loginManager/youLogin.jsp")
-                    
-            if not logged_in:
-                result_data['error'] = 'Invalid NetID, Password, or failed to solve CAPTCHA.'
+                    alert = page.locator(".alert").first.inner_text(timeout=2000)
+                    if alert: err = alert.strip()
+                except:
+                    pass
+                result_data['error'] = err
                 browser.close()
                 return result_data
                 
-            page.wait_for_timeout(2000) # Let dashboard fully load
+            page.wait_for_timeout(2000)
 
             # --- 2. Extract Attendance ---
             try:
-                # Click on 'Attendance Details' in the sidebar menu
                 page.click("text='Attendance Details'")
-                page.wait_for_timeout(2000) # wait for content to load via ajax/iframe
+                page.wait_for_timeout(2000)
                 
-                # Extract attendance table
-                # We'll just grab the outerHTML of the table that appears and parse it later or here
-                # Assuming there's a table with 'Course Code' etc.
                 att_tables = page.query_selector_all("table")
                 for table in att_tables:
                     html = table.inner_html()
@@ -91,7 +89,6 @@ def sync_sp_portal(net_id, password):
                                 category = cols[2].inner_text().strip()
                                 max_hours = cols[4].inner_text().strip()
                                 att_hours = cols[5].inner_text().strip()
-                                # Calculate percentage
                                 try:
                                     percent = round((float(att_hours) / float(max_hours)) * 100, 2)
                                 except:
@@ -125,7 +122,7 @@ def sync_sp_portal(net_id, password):
                             if len(cols) >= 3:
                                 code = cols[0].inner_text().strip()
                                 title = cols[1].inner_text().strip()
-                                marks_raw = cols[2].inner_text().strip() # e.g. "4.10 / 5.00"
+                                marks_raw = cols[2].inner_text().strip()
                                 
                                 result_data['marks'].append({
                                     'course_code': code,
@@ -143,9 +140,3 @@ def sync_sp_portal(net_id, password):
     except Exception as e:
         result_data['error'] = f"System Error: {str(e)}"
         return result_data
-
-if __name__ == "__main__":
-    # Test script if executed directly
-    print("Testing SP scraper...")
-    # res = sync_sp_portal("xx1234", "yourpassword")
-    # print(res)
