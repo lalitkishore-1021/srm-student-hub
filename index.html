@@ -9993,13 +9993,8 @@ function predictDateRangeUI() {
 
             try {
                 const regNo = localStorage.getItem('syncRegNo');
-                const pwd = localStorage.getItem('syncPwd'); // It's base64 in existing app
-                // Need to decode pwd because the existing app stores it as btoa()
-                let decodedPwd = '';
-                try { decodedPwd = atob(pwd); } catch(e) { decodedPwd = pwd; }
-
-                if (!regNo || !decodedPwd) {
-                    alert("Please logout and login again first.");
+                if (!regNo) {
+                    alert("Please logout and login to the app first.");
                     btn.innerHTML = originalHTML;
                     btn.disabled = false;
                     return;
@@ -10007,11 +10002,18 @@ function predictDateRangeUI() {
                 
                 // Usually NetID doesn't have domain
                 const netId = regNo.split('@')[0];
+                
+                const spPassword = prompt(`Enter your SRM Email / Student Portal Password for NetID '${netId}':\n(This is different from your Academia password)`);
+                if (!spPassword) {
+                    btn.innerHTML = originalHTML;
+                    btn.disabled = false;
+                    return;
+                }
 
                 const res = await fetch(`${BACKEND_URL}/api/sp_sync`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-App-Key': 'srm-hub-protected-x9f2' },
-                    body: JSON.stringify({ net_id: netId, password: decodedPwd })
+                    body: JSON.stringify({ net_id: netId, password: spPassword })
                 });
 
                 const data = await res.json();
