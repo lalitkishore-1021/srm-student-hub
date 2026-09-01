@@ -10,8 +10,8 @@ import requests
 import uuid
 import urllib.parse
 from datetime import datetime
-from flask import Flask
-from flask_compress import Compress, request, jsonify, send_from_directory, Response
+from flask import Flask, request, jsonify, send_from_directory, Response
+from flask_compress import Compress
 
 from collections import defaultdict
 import time
