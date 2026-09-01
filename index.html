@@ -9976,6 +9976,65 @@ function predictDateRangeUI() {
         
 
 
+
+        // ================= SP PORTAL SYNC =================
+        async function syncStudentPortal(type) {
+            const btn = document.getElementById(type === 'attendance' ? 'sp-sync-btn-att' : 'sp-sync-btn-marks');
+            const originalHTML = btn.innerHTML;
+            btn.innerHTML = '<i class="fa fa-spinner fa-spin mr-1"></i> Syncing... (Takes ~10s)';
+            btn.disabled = true;
+
+            try {
+                const regNo = localStorage.getItem('regNo');
+                const pwd = localStorage.getItem('pwd'); // It's base64 in existing app
+                // Need to decode pwd because the existing app stores it as btoa()
+                let decodedPwd = '';
+                try { decodedPwd = atob(pwd); } catch(e) { decodedPwd = pwd; }
+
+                if (!regNo || !decodedPwd) {
+                    alert("Please logout and login again first.");
+                    btn.innerHTML = originalHTML;
+                    btn.disabled = false;
+                    return;
+                }
+                
+                // Usually NetID doesn't have domain
+                const netId = regNo.split('@')[0];
+
+                const res = await fetch(`${BACKEND_URL}/api/sp_sync`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-App-Key': 'srm-hub-protected-x9f2' },
+                    body: JSON.stringify({ net_id: netId, password: decodedPwd })
+                });
+
+                const data = await res.json();
+                if (data.success) {
+                    // Merge and save
+                    if (data.attendance && data.attendance.length > 0) {
+                        workingAttData = data.attendance;
+                        localStorage.setItem('attData', JSON.stringify(workingAttData));
+                        if (document.getElementById('attendance-view').classList.contains('active')) {
+                            renderAttendance();
+                        }
+                    }
+                    if (data.marks && data.marks.length > 0) {
+                        marksData = data.marks;
+                        localStorage.setItem('marksData', JSON.stringify(marksData));
+                        if (document.getElementById('marks-view').classList.contains('active')) {
+                            renderMarks();
+                        }
+                    }
+                    alert("Successfully updated data from Student Portal!");
+                } else {
+                    alert(data.error || "Failed to sync. Please check credentials or try again.");
+                }
+            } catch(e) {
+                alert("Network error while syncing. Try again later.");
+            }
+            
+            btn.innerHTML = originalHTML;
+            btn.disabled = false;
+        }
 </script>
 <!-- CGPA Calculator Modal -->
     <div id="cgpa-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:var(--bg-start); z-index:99999; flex-direction:column; overflow-y:auto; padding-bottom:50px;">
