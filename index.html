@@ -4255,14 +4255,21 @@
         }
 
         function updateHomeState() {
+            const footerEl = document.querySelector('.footer');
+            const aiFabEl = document.getElementById('ai-hub-fab');
+            
             if (isLoggedIn) {
                 document.getElementById('unauth-hero').style.display = 'none';
                 document.getElementById('auth-dashboard').style.display = 'block';
                 document.getElementById('advisors-section').style.display = 'block';
+                if (footerEl) footerEl.style.display = 'block';
+                if (aiFabEl) aiFabEl.style.display = 'flex';
             } else {
                 document.getElementById('unauth-hero').style.display = 'block';
                 document.getElementById('auth-dashboard').style.display = 'none';
                 document.getElementById('advisors-section').style.display = 'none';
+                if (footerEl) footerEl.style.display = 'none';
+                if (aiFabEl) aiFabEl.style.display = 'none';
             }
             
             // Show holiday banner on home page
@@ -9985,8 +9992,8 @@ function predictDateRangeUI() {
             btn.disabled = true;
 
             try {
-                const regNo = localStorage.getItem('regNo');
-                const pwd = localStorage.getItem('pwd'); // It's base64 in existing app
+                const regNo = localStorage.getItem('syncRegNo');
+                const pwd = localStorage.getItem('syncPwd'); // It's base64 in existing app
                 // Need to decode pwd because the existing app stores it as btoa()
                 let decodedPwd = '';
                 try { decodedPwd = atob(pwd); } catch(e) { decodedPwd = pwd; }
