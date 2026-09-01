@@ -4241,6 +4241,13 @@
         });
 
         window.addEventListener('popstate', (e) => {
+            // Close fullscreen modals on back button
+            const modals = ['cgpa-modal', 'grade-modal', 'att-predict-modal', 'sp-sync-modal'];
+            modals.forEach(m => {
+                const el = document.getElementById(m);
+                if (el && el.style.display !== 'none') el.style.display = 'none';
+            });
+            
             if (e.state && e.state.viewId) switchView(e.state.viewId, false);
             else switchView('home-view', false);
         });
@@ -9719,6 +9726,7 @@ function initCalculators() {
 // CGPA CALCULATOR
 // ----------------------------------------------------
 function openCgpaCalculator() {
+    history.pushState({ modal: 'cgpa' }, '', '#cgpa');
     initCalculators();
     document.getElementById('cgpa-modal').style.display = 'flex';
     renderCgpaCalculator();
@@ -9726,6 +9734,7 @@ function openCgpaCalculator() {
 
 function closeCgpaCalculator() {
     document.getElementById('cgpa-modal').style.display = 'none';
+    if(window.location.hash === '#cgpa') history.back();
 }
 
 function renderCgpaCalculator() {
@@ -9788,12 +9797,14 @@ function addCgpaCourse() {
 // GRADE CALCULATOR
 // ----------------------------------------------------
 function openGradeCalculator() {
+    history.pushState({ modal: 'grade' }, '', '#grade');
     initCalculators();
     document.getElementById('grade-modal').style.display = 'flex';
     renderGradeCalculator();
 }
 function closeGradeCalculator() {
     document.getElementById('grade-modal').style.display = 'none';
+    if(window.location.hash === '#grade') history.back();
 }
 
 function renderGradeCalculator() {
