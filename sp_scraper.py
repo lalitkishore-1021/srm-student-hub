@@ -1,10 +1,10 @@
 import time
-from curl_cffi import requests
-import base64
+import requests
+import urllib3
 import re
 import json
+import base64
 from bs4 import BeautifulSoup
-import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 BASE_URL = "https://sp.srmist.edu.in/srmiststudentportal"
@@ -155,17 +155,10 @@ def sync_sp_portal(net_id, password, captcha_text, jsessionid,
             "Sec-Fetch-Dest": "document",
             "Sec-Fetch-Mode": "navigate",
             "Sec-Fetch-Site": "same-origin",
-            "Sec-Fetch-User": "?1",
-            "Expect": "",
+            "Sec-Fetch-User": "?1"
         }
 
-        if "JSESSIONID" not in session.cookies:
-            session.cookies.set("JSESSIONID", jsessionid, domain="sp.srmist.edu.in", path="/srmiststudentportal")
-
-        import urllib.parse
-        encoded_data = urllib.parse.urlencode(form_data)
-
-        r_login = session.post(LOGIN_SERVLET, data=encoded_data, timeout=15,
+        r_login = session.post(LOGIN_SERVLET, data=form_data, timeout=15,
                                allow_redirects=True, headers=post_headers)
 
         if "HRDSystem" not in r_login.url and "HRDSystem" not in r_login.text:

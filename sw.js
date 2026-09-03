@@ -1,5 +1,5 @@
 // Change this version number every time you want to force phones to update!
-const CACHE_NAME = 'srm-hub-v32-fix-modals'; 
+const CACHE_NAME = 'srm-hub-v33-keepalive-fix'; 
 
 const ASSETS_TO_CACHE = [
     '/',
