@@ -1,311 +1,194 @@
 import time
-import requests
-import urllib3
-import re
-import json
 import base64
 import threading
-from bs4 import BeautifulSoup
+import uuid
+import re
+from playwright.sync_api import sync_playwright
+import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 BASE_URL = "https://sp.srmist.edu.in/srmiststudentportal"
 LOGIN_PAGE = BASE_URL + "/students/loginManager/youLogin.jsp"
-LOGIN_SERVLET = BASE_URL + "/LoginServlet"
 
-HEADERS = {
-    "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
-    "Connection": "keep-alive",
-    "Upgrade-Insecure-Requests": "1"
-}
-
-def _extract(html, key):
-    for pattern in [
-        key + r"\s*=\s*'([^']+)'",
-        key + r'\s*=\s*"([^"]+)"',
-        key + r"\s*:\s*'([^']+)'",
-        key + r'\s*:\s*"([^"]+)"',
-    ]:
-        m = re.search(pattern, html)
-        if m:
-            return m.group(1)
-    return None
-
+# ACTIVE_SESSIONS will store dictionaries containing Events and shared data
 ACTIVE_SESSIONS = {}
 
-def keep_alive_task(jsessionid, session, stop_event):
-    while not stop_event.is_set():
-        try:
-            session.get("https://sp.srmist.edu.in/srmiststudentportal/resources/Image/srmist.jpg", timeout=3)
-        except Exception:
-            pass
-        for _ in range(6):
-            if stop_event.is_set():
-                break
-            time.sleep(0.5)
+def sp_worker(session_id, stop_event, data_dict):
+    try:
+        with sync_playwright() as p:
+            browser = p.chromium.launch(headless=True, args=['--no-sandbox', '--disable-dev-shm-usage'])
+            context = browser.new_context(
+                user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                viewport={"width": 1920, "height": 1080}
+            )
+            page = context.new_page()
+            
+            # 1. Go to login page
+            page.goto(LOGIN_PAGE, wait_until="networkidle")
+            
+            # 2. Extract CAPTCHA image
+            cap_elem = page.locator("#secure_captcha")
+            cap_elem.wait_for(state="visible", timeout=10000)
+            
+            # Wait for data-src to populate
+            page.wait_for_function("document.getElementById('secure_captcha').getAttribute('data-src') !== null")
+            data_src = cap_elem.get_attribute("data-src")
+            
+            # Fetch the actual image using Playwright's API context
+            img_resp = context.request.get(f"https://sp.srmist.edu.in{data_src}")
+            img_bytes = img_resp.body()
+            captcha_b64 = base64.b64encode(img_bytes).decode('utf-8')
+            
+            # Get the session ID
+            jsessionid = ""
+            for c in context.cookies():
+                if c['name'] == 'JSESSIONID':
+                    jsessionid = c['value']
+            
+            # Pass CAPTCHA back to main thread
+            data_dict['captcha_b64'] = captcha_b64
+            data_dict['jsessionid'] = jsessionid
+            data_dict['ready_event'].set()
+            
+            # 3. Wait for user to submit credentials (up to 120 seconds)
+            submitted = data_dict['submit_event'].wait(timeout=120)
+            if not submitted:
+                browser.close()
+                return
+                
+            # 4. Fill form
+            page.fill("input[name='username']", data_dict['username'])
+            page.fill("input[name='password']", data_dict['password'])
+            page.fill("input[name='captcha']", data_dict['captcha'])
+            
+            # Click login and wait for navigation
+            with page.expect_navigation(timeout=30000):
+                page.click("button.srm-login-btn")
+                
+            # Check if login failed
+            if "youLogin.jsp" in page.url or "Invalid captcha" in page.content():
+                data_dict['result'] = {"success": False, "error": "Invalid credentials or CAPTCHA."}
+                data_dict['done_event'].set()
+                browser.close()
+                return
+                
+            # 5. Success! Navigate to attendance
+            print(f"[SP] Login successful! Fetching attendance and marks...")
+            page.goto("https://sp.srmist.edu.in/srmiststudentportal/students/template/StudentMain.jsp", wait_until="networkidle")
+            
+            attendance_data = []
+            marks_data = []
+            
+            try:
+                page.wait_for_selector("#divFilterStudentAttendance table", timeout=10000)
+                rows = page.locator("#divFilterStudentAttendance table tbody tr").all()
+                for row in rows:
+                    cols = row.locator("td").all_inner_texts()
+                    if len(cols) >= 8:
+                        att_pct = cols[7].replace("%", "").strip()
+                        attendance_data.append({
+                            "courseCode": cols[0].strip(),
+                            "courseTitle": cols[1].strip(),
+                            "category": cols[2].strip(),
+                            "facultyName": cols[3].strip(),
+                            "maxHours": cols[5].strip(),
+                            "attendedHours": cols[6].strip(),
+                            "attendancePercentage": att_pct,
+                            "color": "green" if float(att_pct) >= 75 else "red"
+                        })
+            except Exception as e:
+                print(f"[SP] Attendance scrape error: {e}")
+                
+            try:
+                # Click marks tab
+                page.click("a#studentMarkTab")
+                page.wait_for_selector("#markTab table", timeout=10000)
+                rows = page.locator("#markTab table tbody tr").all()
+                for row in rows:
+                    cols = row.locator("td").all_inner_texts()
+                    if len(cols) >= 5:
+                        marks_data.append({
+                            "courseCode": cols[0].strip(),
+                            "courseTitle": cols[1].strip(),
+                            "testName": cols[2].strip(),
+                            "maxMarks": cols[3].strip(),
+                            "scoredMarks": cols[4].strip()
+                        })
+            except Exception as e:
+                print(f"[SP] Marks scrape error: {e}")
+
+            data_dict['result'] = {
+                "success": True,
+                "attendance": attendance_data,
+                "marks": marks_data
+            }
+            data_dict['done_event'].set()
+            browser.close()
+            
+    except Exception as e:
+        print(f"[SP] Playwright worker error: {e}")
+        data_dict['result'] = {"success": False, "error": str(e)}
+        if 'ready_event' in data_dict:
+            data_dict['ready_event'].set()
+        if 'done_event' in data_dict:
+            data_dict['done_event'].set()
 
 def get_sp_captcha():
-    """
-    Fetches the captcha from the new student portal and returns it as base64,
-    along with hidden fields and tokens needed for the login POST.
-    """
-    try:
-        # Cleanup old sessions
-        now = time.time()
-        for k in list(ACTIVE_SESSIONS.keys()):
-            if now - ACTIVE_SESSIONS[k]['time'] > 300:
-                if 'stop_event' in ACTIVE_SESSIONS[k]:
-                    ACTIVE_SESSIONS[k]['stop_event'].set()
-                del ACTIVE_SESSIONS[k]
-                
-        session = requests.Session()
-        session.verify = False
-        session.headers.update(HEADERS)
+    # Cleanup old sessions
+    now = time.time()
+    for k in list(ACTIVE_SESSIONS.keys()):
+        if now - ACTIVE_SESSIONS[k]['time'] > 300:
+            if 'submit_event' in ACTIVE_SESSIONS[k]['data']:
+                ACTIVE_SESSIONS[k]['data']['submit_event'].set()
+            del ACTIVE_SESSIONS[k]
+
+    session_id = str(uuid.uuid4())
+    data_dict = {
+        'ready_event': threading.Event(),
+        'submit_event': threading.Event(),
+        'done_event': threading.Event(),
+        'result': None
+    }
+    
+    t = threading.Thread(target=sp_worker, args=(session_id, None, data_dict), daemon=True)
+    t.start()
+    
+    # Wait for CAPTCHA
+    if not data_dict['ready_event'].wait(timeout=20):
+        return {"success": False, "error": "Timeout fetching CAPTCHA."}
         
-        r_page = session.get(LOGIN_PAGE, timeout=10)
-        jsessionid = session.cookies.get("JSESSIONID", "")
+    if data_dict.get('result') and not data_dict['result'].get('success'):
+        return data_dict['result']
         
-        stop_event = threading.Event()
-        t = threading.Thread(target=keep_alive_task, args=(jsessionid, session, stop_event), daemon=True)
-        t.start()
+    ACTIVE_SESSIONS[session_id] = {'time': time.time(), 'data': data_dict}
+    
+    return {
+        "success": True,
+        "captcha_b64": data_dict['captcha_b64'],
+        "jsessionid": session_id,  # We use the UUID as the reference now!
+        "captcha_field": "",
+        "domain_field": "",
+        "delimiter": "",
+        "ph_name": ""
+    }
+
+def sync_sp_portal(net_id, password, captcha_text, jsessionid, *args, **kwargs):
+    session_info = ACTIVE_SESSIONS.get(jsessionid)
+    if not session_info:
+        return {"success": False, "error": "Session expired or invalid. Please refresh the page."}
         
-        ACTIVE_SESSIONS[jsessionid] = {'session': session, 'time': now, 'stop_event': stop_event}
+    data_dict = session_info['data']
+    data_dict['username'] = net_id
+    data_dict['password'] = password
+    data_dict['captcha'] = captcha_text
+    
+    # Signal worker to proceed
+    data_dict['submit_event'].set()
+    
+    # Wait for completion
+    if not data_dict['done_event'].wait(timeout=60):
+        del ACTIVE_SESSIONS[jsessionid]
+        return {"success": False, "error": "Timeout during login and scraping."}
         
-        config = {}
-        for key in ["captchaFieldName", "domainFieldName", "randomDelimiter", "nonce"]:
-            config[key] = _extract(r_page.text, key)
-            
-        soup = BeautifulSoup(r_page.text, "html.parser")
-        cap_img = soup.find(id="secure_captcha")
-        cap_url = "https://sp.srmist.edu.in" + cap_img.get("data-src") if cap_img else ""
-        
-        ph_input = soup.find("input", id=re.compile(r"^ph_"))
-        ph_name = ph_input.get("name") if ph_input else ""
-        
-        cap_headers = session.headers.copy()
-        if config.get("nonce"):
-            cap_headers['X-Domain-Proof'] = base64.b64encode(f"{config['nonce']}:sp.srmist.edu.in".encode()).decode()
-        cap_headers['Accept'] = 'image/png, image/jpeg, image/svg+xml, image/*'
-        cap_headers['Referer'] = LOGIN_PAGE
-        
-        r_cap = session.get(cap_url, headers=cap_headers, timeout=10)
-        b64_img = base64.b64encode(r_cap.content).decode("utf-8")
-        
-        # Clean up old sessions
-        now = time.time()
-        for k in list(ACTIVE_SESSIONS.keys()):
-            if now - ACTIVE_SESSIONS[k]['time'] > 300:
-                del ACTIVE_SESSIONS[k]
-                
-        ACTIVE_SESSIONS[jsessionid] = {'session': session, 'time': now}
-        
-        return {
-            "success": True,
-            "captcha_b64": b64_img,
-            "jsessionid": jsessionid,
-            "captcha_field": config.get("captchaFieldName", ""),
-            "domain_field": config.get("domainFieldName", ""),
-            "delimiter": config.get("randomDelimiter", ""),
-            "ph_name": ph_name
-        }
-    except Exception as e:
-        return {"success": False, "error": str(e)}
-
-def sync_sp_portal(net_id, password, captcha_text, jsessionid,
-                   captcha_field="", domain_field="", delimiter="", ph_name=""):
-    result_data = {"attendance": [], "marks": [], "success": False, "error": None}
-    try:
-        session_data = ACTIVE_SESSIONS.get(jsessionid)
-        session_hit = False
-        if session_data:
-            session_hit = True
-            session = session_data['session']
-            if 'stop_event' in session_data:
-                session_data['stop_event'].set()
-                # Wait for the background thread to release the socket back to the urllib3 pool
-                time.sleep(0.6)
-            del ACTIVE_SESSIONS[jsessionid]
-        else:
-            session = requests.Session()
-            session.verify = False
-            session.headers.update(HEADERS)
-            session.cookies.set("JSESSIONID", jsessionid, domain="sp.srmist.edu.in", path="/srmiststudentportal")
-
-        time_elapsed_sec = 18
-        interact_count = 12
-        trap_payload = f"{time_elapsed_sec}{delimiter}{interact_count}"
-        
-        cptoken_val = base64.b64encode(trap_payload.encode("utf-8")).decode("utf-8")
-        dtoken_val = base64.b64encode("ni.ude.tsimrs.ps".encode("utf-8")).decode("utf-8")
-        
-        fp = {
-            "startTime": int(time.time()*1000) - 18000,
-            "currentDomain": "sp.srmist.edu.in",
-            "timezoneOffset": 0,
-            "screenWidth": 1920,
-            "screenHeight": 1080,
-            "colorDepth": 24,
-            "devicePixelRatio": 1,
-            "platform": "Linux x86_64",
-            "userAgent": HEADERS["User-Agent"],
-            "language": "en-US",
-            "hardwareConcurrency": 16,
-            "deviceMemory": 16,
-            "touchSupport": False,
-            "webdriver": False,
-            "mouseClicks": 2,
-            "mouseMovements": 6,
-            "keystrokeCount": 4,
-            "typingSpeedMs": 14500,
-            "canvasHash": "8a32b9c7",
-            "submitTime": int(time.time()*1000),
-            "timeOnPageMs": 18000
-        }
-        telemetry_val = base64.b64encode(json.dumps(fp).encode('utf-8')).decode('utf-8')
-
-        # Real browser submits fields in this exact sequence with duplicated domain field
-        form_data = [
-            ("username", net_id),
-            ("password", password),
-        ]
-        if ph_name:
-            form_data.append((ph_name, ""))
-        form_data.append(("captcha", captcha_text))
-        form_data.append(("fpPayload", ""))
-        form_data.append(("fpToken", ""))
-        form_data.append(("telemetryPayload", telemetry_val))
-        if domain_field:
-            form_data.append((domain_field, dtoken_val))
-        if captcha_field:
-            form_data.append((captcha_field, cptoken_val))
-
-        post_headers = {
-            "Referer": LOGIN_PAGE,
-            "Origin": "https://sp.srmist.edu.in",
-            "Content-Type": "application/x-www-form-urlencoded",
-            "Sec-Fetch-Dest": "document",
-            "Sec-Fetch-Mode": "navigate",
-            "Sec-Fetch-Site": "same-origin",
-            "Sec-Fetch-User": "?1"
-        }
-
-        r_login = session.post(LOGIN_SERVLET, data=form_data, timeout=15,
-                               allow_redirects=True, headers=post_headers)
-        print("REQUEST HEADERS SENT:")
-        for k,v in r_login.request.headers.items():
-            print(f"{k}: {v}")
-
-
-        result_data["debug_info"] = {
-            "session_hit": session_hit,
-            "cookies": dict(session.cookies),
-            "sent_headers": dict(r_login.request.headers) if hasattr(r_login, 'request') else {},
-            "resp_url": r_login.url,
-            "resp_status": r_login.status_code
-        }
-
-        if "HRDSystem" not in r_login.url and "HRDSystem" not in r_login.text:
-            if "Invalid captcha" in r_login.text or "Invalid Captcha" in r_login.text:
-                result_data["error"] = "Invalid CAPTCHA. Please refresh and try again."
-            elif "Invalid credentials" in r_login.text:
-                # Debug output for invalid credentials
-                debug_text = r_login.text[:500].replace('\n', ' ').replace('\r', '')
-                result_data["error"] = f"Invalid credentials. Status: {r_login.status_code}. Debug: {debug_text}"
-            else:
-                result_data["error"] = f"Login failed. Status: {r_login.status_code}. Please check your NetID, Password, and CAPTCHA."
-            return result_data
-
-        print("[SP] Login successful! Fetching attendance and marks...")
-        HRD_URL = BASE_URL + "/students/template/HRDSystem.jsp"
-        ATT_REPORT_URL = BASE_URL + "/students/report/studentAttendanceDetails.jsp"
-        MARKS_REPORT_URL = BASE_URL + "/students/report/studentInternalMarkDetails.jsp"
-
-        soup_main = BeautifulSoup(r_login.text, "html.parser")
-        salt = soup_main.find("input", id="csrfPreventionSalt")
-        salt_val = salt.get("value", "") if salt else ""
-        details = soup_main.find("input", id="hdnFormDetails")
-        details_val = details.get("value", "1") if details else "1"
-
-        ajax_headers = {
-            "Referer": HRD_URL,
-            "Origin": "https://sp.srmist.edu.in",
-            "Content-Type": "application/x-www-form-urlencoded",
-            "X-Requested-With": "XMLHttpRequest"
-        }
-
-        # 1. Fetch Attendance
-        try:
-            r_att = session.post(ATT_REPORT_URL, data={
-                "iden": "9",
-                "filter": "",
-                "hdnFormDetails": details_val,
-                "csrfPreventionSalt": salt_val
-            }, headers=ajax_headers, timeout=15)
-
-            if r_att.status_code == 200:
-                soup_att = BeautifulSoup(r_att.text, "html.parser")
-                tables = soup_att.find_all("table")
-                if tables:
-                    for row in tables[0].find_all("tr")[1:]:
-                        cols = [td.get_text(" ", strip=True) for td in row.find_all(["th", "td"])]
-                        if len(cols) >= 6:
-                            code = cols[0]
-                            desc = cols[1]
-                            max_h = cols[2]
-                            att_h = cols[3]
-                            abs_h = cols[4]
-                            pct = cols[5]
-                            cat = "Integrated" if code.endswith("J") else ("Practical" if code.endswith("P") else "Theory")
-                            result_data["attendance"].append({
-                                "courseTitle": desc,
-                                "course_title": desc,
-                                "courseCode": code,
-                                "course_code": code,
-                                "category": cat,
-                                "conducted": max_h,
-                                "total": max_h,
-                                "max_hours": max_h,
-                                "attended": pct,
-                                "attended_hours": att_h,
-                                "absent": abs_h,
-                                "absent_hours": abs_h,
-                                "percentage": pct
-                            })
-        except Exception as e:
-            print("[SP] Attendance error: " + str(e))
-
-        # 2. Fetch Internal Marks
-        try:
-            r_marks = session.post(MARKS_REPORT_URL, data={
-                "iden": "13",
-                "filter": "",
-                "hdnFormDetails": details_val,
-                "csrfPreventionSalt": salt_val
-            }, headers=ajax_headers, timeout=15)
-
-            if r_marks.status_code == 200:
-                soup_marks = BeautifulSoup(r_marks.text, "html.parser")
-                m_tables = soup_marks.find_all("table")
-                if m_tables:
-                    for row in m_tables[0].find_all("tr")[1:]:
-                        cols = [td.get_text(" ", strip=True) for td in row.find_all(["th", "td"])]
-                        if len(cols) >= 3:
-                            code = cols[0]
-                            desc = cols[1]
-                            mark_str = cols[2]
-                            result_data["marks"].append({
-                                "courseTitle": desc,
-                                "course_title": desc,
-                                "courseCode": code,
-                                "course_code": code,
-                                "marks": mark_str,
-                                "performance": [{"test_name": "Internal", "marks": mark_str}]
-                            })
-        except Exception as e:
-            print("[SP] Marks error: " + str(e))
-
-        result_data["success"] = True
-        return result_data
-    except Exception as e:
-        result_data["error"] = "System Error: " + str(e)
-        return result_data
+    del ACTIVE_SESSIONS[jsessionid]
+    return data_dict.get('result', {"success": False, "error": "Unknown error occurred."})
