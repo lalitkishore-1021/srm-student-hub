@@ -34,10 +34,15 @@ def _extract(html, key):
 ACTIVE_SESSIONS = {}
 
 def get_sp_captcha():
-    session = requests.Session()
-    session.verify = False
-    session.headers.update(HEADERS)
+    """
+    Fetches the captcha from the new student portal and returns it as base64,
+    along with hidden fields and tokens needed for the login POST.
+    """
     try:
+        session = requests.Session(impersonate="chrome120")
+        session.verify = False
+        session.headers.update(HEADERS)
+        
         r_page = session.get(LOGIN_PAGE, timeout=10)
         jsessionid = session.cookies.get("JSESSIONID", "")
         
@@ -90,7 +95,7 @@ def sync_sp_portal(net_id, password, captcha_text, jsessionid,
             session = session_data['session']
             del ACTIVE_SESSIONS[jsessionid]
         else:
-            session = requests.Session()
+            session = requests.Session(impersonate="chrome120")
             session.verify = False
             session.headers.update(HEADERS)
             # Only set if new session, and only set once!
@@ -160,7 +165,10 @@ def sync_sp_portal(net_id, password, captcha_text, jsessionid,
         if "JSESSIONID" not in session.cookies:
             session.cookies.set("JSESSIONID", jsessionid, domain="sp.srmist.edu.in", path="/srmiststudentportal")
 
-        r_login = session.post(LOGIN_SERVLET, data=form_data, timeout=15,
+        import urllib.parse
+        encoded_data = urllib.parse.urlencode(form_data)
+
+        r_login = session.post(LOGIN_SERVLET, data=encoded_data, timeout=15,
                                allow_redirects=True, headers=post_headers)
 
         if "HRDSystem" not in r_login.url and "HRDSystem" not in r_login.text:
