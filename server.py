@@ -312,6 +312,17 @@ def api_sp_get_captcha():
     res = get_sp_captcha()
     return jsonify(res)
 
+@app.route('/api/test_ip_hop')
+def api_test_ip_hop():
+    import requests, time
+    s = requests.Session()
+    r1 = s.get("https://httpbin.org/ip")
+    ip1 = r1.json()["origin"]
+    time.sleep(10)
+    r2 = s.get("https://httpbin.org/ip")
+    ip2 = r2.json()["origin"]
+    return jsonify({"ip1": ip1, "ip2": ip2})
+
 @app.route('/api/sp_sync', methods=['POST'])
 def api_sp_sync():
     data = request.json
