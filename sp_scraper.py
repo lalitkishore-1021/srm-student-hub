@@ -127,8 +127,6 @@ def sync_sp_portal(net_id, password, captcha_text, jsessionid,
             session = requests.Session()
             session.verify = False
             session.headers.update(HEADERS)
-            # Only set if new session, and only set once!
-            session.cookies.set("JSESSIONID", jsessionid, domain="sp.srmist.edu.in", path="/srmiststudentportal")
 
         time_elapsed_sec = 18
         interact_count = 12
@@ -140,7 +138,7 @@ def sync_sp_portal(net_id, password, captcha_text, jsessionid,
         fp = {
             "startTime": int(time.time()*1000) - 18000,
             "currentDomain": "sp.srmist.edu.in",
-            "timezoneOffset": -330,
+            "timezoneOffset": 0,
             "screenWidth": 1920,
             "screenHeight": 1080,
             "colorDepth": 24,
@@ -190,6 +188,10 @@ def sync_sp_portal(net_id, password, captcha_text, jsessionid,
 
         r_login = session.post(LOGIN_SERVLET, data=form_data, timeout=15,
                                allow_redirects=True, headers=post_headers)
+        print("REQUEST HEADERS SENT:")
+        for k,v in r_login.request.headers.items():
+            print(f"{k}: {v}")
+
 
         if "HRDSystem" not in r_login.url and "HRDSystem" not in r_login.text:
             if "Invalid captcha" in r_login.text or "Invalid Captcha" in r_login.text:
