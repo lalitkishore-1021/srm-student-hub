@@ -63,7 +63,7 @@ def sp_worker(session_id, stop_event, data_dict):
             
             # Click login and wait for navigation
             with page.expect_navigation(timeout=30000):
-                page.click("button.srm-login-btn")
+                page.click("button#btnLogin")
                 
             # Check if login failed
             if "youLogin.jsp" in page.url or "Invalid captcha" in page.content():
