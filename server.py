@@ -312,6 +312,15 @@ def api_sp_get_captcha():
     res = get_sp_captcha()
     return jsonify(res)
 
+@app.route('/api/test_curl')
+def test_curl():
+    from curl_cffi import requests
+    import urllib.parse
+    form_data = [("username", "test"), ("password", "test")]
+    encoded_data = urllib.parse.urlencode(form_data)
+    r = requests.post("https://httpbin.org/post", data=encoded_data, headers={"Content-Type": "application/x-www-form-urlencoded", "Expect": ""})
+    return jsonify(r.json())
+
 @app.route('/api/sp_keepalive', methods=['POST'])
 def api_sp_keepalive():
     data = request.json
