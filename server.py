@@ -312,6 +312,24 @@ def api_sp_get_captcha():
     res = get_sp_captcha()
     return jsonify(res)
 
+@app.route('/api/sp_keepalive', methods=['POST'])
+def api_sp_keepalive():
+    data = request.json
+    jsessionid = data.get('jsessionid')
+    if not jsessionid:
+        return jsonify({"success": False})
+    
+    from sp_scraper import ACTIVE_SESSIONS
+    session_data = ACTIVE_SESSIONS.get(jsessionid)
+    if session_data:
+        session = session_data['session']
+        try:
+            session.get("https://sp.srmist.edu.in/srmiststudentportal/resources/Image/srmist.jpg", timeout=3)
+            return jsonify({"success": True})
+        except Exception:
+            return jsonify({"success": False})
+    return jsonify({"success": False})
+
 @app.route('/api/sp_sync', methods=['POST'])
 def api_sp_sync():
     data = request.json

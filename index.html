@@ -10024,6 +10024,7 @@ function predictDateRangeUI() {
         let spDomainField = '';
         let spDelimiter = '';
         let spPhName = '';
+        let spKeepAliveTimer = null;
 
         async function syncStudentPortal(type) {
             currentSpType = type;
@@ -10043,6 +10044,10 @@ function predictDateRangeUI() {
             if(btnM) { btnM.innerHTML = '<i class="fa fa-spinner fa-spin mr-1"></i> Loading...'; btnM.disabled = true; }
 
             try {
+                if (spKeepAliveTimer) {
+                    clearInterval(spKeepAliveTimer);
+                    spKeepAliveTimer = null;
+                }
                 // Fetch captcha from backend
                 const res = await fetch(`${BACKEND_URL}/api/sp_get_captcha`, {
                     method: 'GET',
@@ -10064,6 +10069,15 @@ function predictDateRangeUI() {
                     document.getElementById('sp-sync-netid').value = savedReg.split('@')[0];
                     
                     document.getElementById('sp-sync-modal').style.display = 'flex';
+                    
+                    // KEEP-ALIVE PING EVERY 3 SECONDS to keep Render NAT TCP socket open
+                    spKeepAliveTimer = setInterval(() => {
+                        fetch(`${BACKEND_URL}/api/sp_keepalive`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ jsessionid: currentSpJsessionid })
+                        }).catch(e => console.log('keepalive err'));
+                    }, 3000);
                 } else {
                     alert("Failed to load Student Portal. Please try again later.");
                 }
@@ -10094,6 +10108,7 @@ function predictDateRangeUI() {
         }
 
         function closeSpSyncModal() {
+            if (spKeepAliveTimer) clearInterval(spKeepAliveTimer);
             document.getElementById('sp-sync-modal').style.display = 'none';
         }
 
@@ -10105,6 +10120,7 @@ function predictDateRangeUI() {
                 return;
             }
 
+            if (spKeepAliveTimer) clearInterval(spKeepAliveTimer);
             const netId = document.getElementById('sp-sync-netid').value.trim();
             if (!netId) {
                 alert("Please enter your NetID.");
