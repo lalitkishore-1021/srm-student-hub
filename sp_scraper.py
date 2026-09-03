@@ -1,4 +1,4 @@
-﻿import time
+import time
 import requests
 import base64
 import re
@@ -146,53 +146,92 @@ def sync_sp_portal(net_id, password, captcha_text, jsessionid,
                 result_data["error"] = "Login failed. Please check your NetID, Password, and CAPTCHA."
             return result_data
 
-        print("[SP] Login successful!")
+        print("[SP] Login successful! Fetching attendance and marks...")
+        HRD_URL = BASE_URL + "/students/template/HRDSystem.jsp"
+        ATT_REPORT_URL = BASE_URL + "/students/report/studentAttendanceDetails.jsp"
+        MARKS_REPORT_URL = BASE_URL + "/students/report/studentInternalMarkDetails.jsp"
 
+        soup_main = BeautifulSoup(r_login.text, "html.parser")
+        salt = soup_main.find("input", id="csrfPreventionSalt")
+        salt_val = salt.get("value", "") if salt else ""
+        details = soup_main.find("input", id="hdnFormDetails")
+        details_val = details.get("value", "1") if details else "1"
+
+        ajax_headers = {
+            "Referer": HRD_URL,
+            "Origin": "https://sp.srmist.edu.in",
+            "Content-Type": "application/x-www-form-urlencoded",
+            "X-Requested-With": "XMLHttpRequest"
+        }
+
+        # 1. Fetch Attendance
         try:
-            r_att = session.get(BASE_URL + "/students/template/Aborview.jsp", timeout=15)
+            r_att = session.post(ATT_REPORT_URL, data={
+                "iden": "9",
+                "filter": "",
+                "hdnFormDetails": details_val,
+                "csrfPreventionSalt": salt_val
+            }, headers=ajax_headers, timeout=15)
+
             if r_att.status_code == 200:
-                soup = BeautifulSoup(r_att.text, "html.parser")
-                for table in soup.find_all("table"):
-                    t_html = str(table)
-                    if any(kw in t_html for kw in ["Total Class", "Attended", "Percentage", "Max Hours"]):
-                        for row in table.find_all("tr")[1:]:
-                            cols = row.find_all("td")
-                            if len(cols) >= 6:
-                                max_h = cols[4].get_text(strip=True)
-                                att_h = cols[5].get_text(strip=True)
-                                try:
-                                    pct = round(float(att_h) / float(max_h) * 100, 2)
-                                except Exception:
-                                    pct = 0.0
-                                result_data["attendance"].append({
-                                    "course_code": cols[0].get_text(strip=True),
-                                    "course_title": cols[1].get_text(strip=True),
-                                    "category": cols[2].get_text(strip=True),
-                                    "max_hours": max_h,
-                                    "attended_hours": att_h,
-                                    "absent_hours": str(int(float(max_h) - float(att_h))) if max_h.replace(".", "", 1).isdigit() and att_h.replace(".", "", 1).isdigit() else "0",
-                                    "percentage": str(pct),
-                                })
-                        break
+                soup_att = BeautifulSoup(r_att.text, "html.parser")
+                tables = soup_att.find_all("table")
+                if tables:
+                    for row in tables[0].find_all("tr")[1:]:
+                        cols = [td.get_text(" ", strip=True) for td in row.find_all(["th", "td"])]
+                        if len(cols) >= 6:
+                            code = cols[0]
+                            desc = cols[1]
+                            max_h = cols[2]
+                            att_h = cols[3]
+                            abs_h = cols[4]
+                            pct = cols[5]
+                            cat = "Integrated" if code.endswith("J") else ("Practical" if code.endswith("P") else "Theory")
+                            result_data["attendance"].append({
+                                "courseTitle": desc,
+                                "course_title": desc,
+                                "courseCode": code,
+                                "course_code": code,
+                                "category": cat,
+                                "conducted": max_h,
+                                "total": max_h,
+                                "max_hours": max_h,
+                                "attended": pct,
+                                "attended_hours": att_h,
+                                "absent": abs_h,
+                                "absent_hours": abs_h,
+                                "percentage": pct
+                            })
         except Exception as e:
             print("[SP] Attendance error: " + str(e))
 
+        # 2. Fetch Internal Marks
         try:
-            r_marks = session.get(BASE_URL + "/students/template/MarksView.jsp", timeout=15)
+            r_marks = session.post(MARKS_REPORT_URL, data={
+                "iden": "13",
+                "filter": "",
+                "hdnFormDetails": details_val,
+                "csrfPreventionSalt": salt_val
+            }, headers=ajax_headers, timeout=15)
+
             if r_marks.status_code == 200:
-                soup = BeautifulSoup(r_marks.text, "html.parser")
-                for table in soup.find_all("table"):
-                    t_html = str(table)
-                    if any(kw in t_html for kw in ["Mark", "Description", "Max. Mark"]):
-                        for row in table.find_all("tr")[1:]:
-                            cols = row.find_all("td")
-                            if len(cols) >= 3:
-                                result_data["marks"].append({
-                                    "course_code": cols[0].get_text(strip=True),
-                                    "course_title": cols[1].get_text(strip=True),
-                                    "performance": [{"test_name": "Total Internal", "marks": cols[2].get_text(strip=True)}],
-                                })
-                        break
+                soup_marks = BeautifulSoup(r_marks.text, "html.parser")
+                m_tables = soup_marks.find_all("table")
+                if m_tables:
+                    for row in m_tables[0].find_all("tr")[1:]:
+                        cols = [td.get_text(" ", strip=True) for td in row.find_all(["th", "td"])]
+                        if len(cols) >= 3:
+                            code = cols[0]
+                            desc = cols[1]
+                            mark_str = cols[2]
+                            result_data["marks"].append({
+                                "courseTitle": desc,
+                                "course_title": desc,
+                                "courseCode": code,
+                                "course_code": code,
+                                "marks": mark_str,
+                                "performance": [{"test_name": "Internal", "marks": mark_str}]
+                            })
         except Exception as e:
             print("[SP] Marks error: " + str(e))
 
