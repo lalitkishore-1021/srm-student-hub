@@ -93,9 +93,8 @@ def sync_sp_portal(net_id, password, captcha_text, jsessionid,
             session = requests.Session()
             session.verify = False
             session.headers.update(HEADERS)
-            
-        session.cookies.set("JSESSIONID", jsessionid, domain="sp.srmist.edu.in", path="/srmiststudentportal")
-        session.cookies.set("JSESSIONID", jsessionid, domain="sp.srmist.edu.in")
+            # Only set if new session, and only set once!
+            session.cookies.set("JSESSIONID", jsessionid, domain="sp.srmist.edu.in", path="/srmiststudentportal")
 
         time_elapsed_sec = 18
         interact_count = 12
@@ -155,7 +154,11 @@ def sync_sp_portal(net_id, password, captcha_text, jsessionid,
             "Sec-Fetch-Mode": "navigate",
             "Sec-Fetch-Site": "same-origin",
             "Sec-Fetch-User": "?1",
+            "Expect": "",
         }
+
+        if "JSESSIONID" not in session.cookies:
+            session.cookies.set("JSESSIONID", jsessionid, domain="sp.srmist.edu.in", path="/srmiststudentportal")
 
         r_login = session.post(LOGIN_SERVLET, data=form_data, timeout=15,
                                allow_redirects=True, headers=post_headers)
