@@ -78,7 +78,8 @@ def sync_sp_portal(net_id, password, captcha_text, jsessionid,
         session = requests.Session()
         session.verify = False
         session.headers.update(HEADERS)
-        session.cookies.set("JSESSIONID", jsessionid, domain="sp.srmist.edu.in", path="/")
+        session.cookies.set("JSESSIONID", jsessionid, domain="sp.srmist.edu.in", path="/srmiststudentportal")
+        session.cookies.set("JSESSIONID", jsessionid, domain="sp.srmist.edu.in")
 
         time_elapsed_sec = 18
         interact_count = 12
@@ -102,9 +103,9 @@ def sync_sp_portal(net_id, password, captcha_text, jsessionid,
             "deviceMemory": 16,
             "touchSupport": False,
             "webdriver": False,
-            "mouseClicks": 5,
-            "mouseMovements": 24,
-            "keystrokeCount": 20,
+            "mouseClicks": 2,
+            "mouseMovements": 6,
+            "keystrokeCount": 4,
             "typingSpeedMs": 14500,
             "canvasHash": "8a32b9c7",
             "submitTime": int(time.time()*1000),
@@ -112,26 +113,32 @@ def sync_sp_portal(net_id, password, captcha_text, jsessionid,
         }
         telemetry_val = base64.b64encode(json.dumps(fp).encode('utf-8')).decode('utf-8')
 
-        form_data = {
-            "username": net_id,
-            "password": password,
-            "captcha": captcha_text,
-            "fpPayload": "",
-            "fpToken": "",
-            "telemetryPayload": telemetry_val
-        }
-        
+        # Real browser submits fields in this exact sequence with duplicated domain field
+        form_data = [
+            ("username", net_id),
+            ("password", password),
+        ]
         if ph_name:
-            form_data[ph_name] = ""
-        if captcha_field:
-            form_data[captcha_field] = cptoken_val
+            form_data.append((ph_name, ""))
+        form_data.append(("captcha", captcha_text))
+        form_data.append(("fpPayload", ""))
+        form_data.append(("fpToken", ""))
+        form_data.append(("telemetryPayload", telemetry_val))
         if domain_field:
-            form_data[domain_field] = dtoken_val
+            form_data.append((domain_field, dtoken_val))
+        if captcha_field:
+            form_data.append((captcha_field, cptoken_val))
+        if domain_field:
+            form_data.append((domain_field, dtoken_val))
 
         post_headers = {
             "Referer": LOGIN_PAGE,
             "Origin": "https://sp.srmist.edu.in",
             "Content-Type": "application/x-www-form-urlencoded",
+            "Sec-Fetch-Dest": "document",
+            "Sec-Fetch-Mode": "navigate",
+            "Sec-Fetch-Site": "same-origin",
+            "Sec-Fetch-User": "?1",
         }
 
         r_login = session.post(LOGIN_SERVLET, data=form_data, timeout=15,
