@@ -39,7 +39,7 @@ def sync_sp_portal(net_id, password, captcha_text, jsessionid):
         session.cookies.set('JSESSIONID', jsessionid, domain='sp.srmist.edu.in', path='/')
         
         # --- 1. Login via POST (same session, no new page load) ---
-        login_url = "https://sp.srmist.edu.in/srmiststudentportal/students/loginManager/youLogin.jsp"
+        login_url = "https://sp.srmist.edu.in/srmiststudentportal/LoginServlet"
         form_data = {
             'username': net_id,
             'password': password,
