@@ -164,7 +164,9 @@ def sync_sp_portal(net_id, password, captcha_text, jsessionid,
             if "Invalid captcha" in r_login.text or "Invalid Captcha" in r_login.text:
                 result_data["error"] = "Invalid CAPTCHA. Please refresh and try again."
             elif "Invalid credentials" in r_login.text:
-                result_data["error"] = f"Invalid credentials. Status: {r_login.status_code}. Please check your NetID and password."
+                # Debug output for invalid credentials
+                debug_text = r_login.text[:500].replace('\n', ' ').replace('\r', '')
+                result_data["error"] = f"Invalid credentials. Status: {r_login.status_code}. Debug: {debug_text}"
             else:
                 result_data["error"] = f"Login failed. Status: {r_login.status_code}. Please check your NetID, Password, and CAPTCHA."
             return result_data
