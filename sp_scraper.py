@@ -127,6 +127,7 @@ def sync_sp_portal(net_id, password, captcha_text, jsessionid,
             session = requests.Session()
             session.verify = False
             session.headers.update(HEADERS)
+            session.cookies.set("JSESSIONID", jsessionid, domain="sp.srmist.edu.in", path="/srmiststudentportal")
 
         time_elapsed_sec = 18
         interact_count = 12
