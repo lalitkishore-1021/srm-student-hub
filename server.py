@@ -312,33 +312,6 @@ def api_sp_get_captcha():
     res = get_sp_captcha()
     return jsonify(res)
 
-@app.route('/api/test_curl')
-def test_curl():
-    from curl_cffi import requests
-    import urllib.parse
-    form_data = [("username", "test"), ("password", "test")]
-    encoded_data = urllib.parse.urlencode(form_data)
-    r = requests.post("https://httpbin.org/post", data=encoded_data, headers={"Content-Type": "application/x-www-form-urlencoded", "Expect": ""})
-    return jsonify(r.json())
-
-@app.route('/api/sp_keepalive', methods=['POST'])
-def api_sp_keepalive():
-    data = request.json
-    jsessionid = data.get('jsessionid')
-    if not jsessionid:
-        return jsonify({"success": False})
-    
-    from sp_scraper import ACTIVE_SESSIONS
-    session_data = ACTIVE_SESSIONS.get(jsessionid)
-    if session_data:
-        session = session_data['session']
-        try:
-            session.get("https://sp.srmist.edu.in/srmiststudentportal/resources/Image/srmist.jpg", timeout=3)
-            return jsonify({"success": True})
-        except Exception:
-            return jsonify({"success": False})
-    return jsonify({"success": False})
-
 @app.route('/api/sp_sync', methods=['POST'])
 def api_sp_sync():
     data = request.json

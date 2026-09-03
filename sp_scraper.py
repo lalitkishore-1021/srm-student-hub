@@ -4,6 +4,7 @@ import urllib3
 import re
 import json
 import base64
+import threading
 from bs4 import BeautifulSoup
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
@@ -32,18 +33,43 @@ def _extract(html, key):
 
 ACTIVE_SESSIONS = {}
 
+def keep_alive_task(jsessionid, session, stop_event):
+    while not stop_event.is_set():
+        try:
+            session.get("https://sp.srmist.edu.in/srmiststudentportal/resources/Image/srmist.jpg", timeout=3)
+        except Exception:
+            pass
+        for _ in range(6):
+            if stop_event.is_set():
+                break
+            time.sleep(0.5)
+
 def get_sp_captcha():
     """
     Fetches the captcha from the new student portal and returns it as base64,
     along with hidden fields and tokens needed for the login POST.
     """
     try:
+        # Cleanup old sessions
+        now = time.time()
+        for k in list(ACTIVE_SESSIONS.keys()):
+            if now - ACTIVE_SESSIONS[k]['time'] > 300:
+                if 'stop_event' in ACTIVE_SESSIONS[k]:
+                    ACTIVE_SESSIONS[k]['stop_event'].set()
+                del ACTIVE_SESSIONS[k]
+                
         session = requests.Session()
         session.verify = False
         session.headers.update(HEADERS)
         
         r_page = session.get(LOGIN_PAGE, timeout=10)
         jsessionid = session.cookies.get("JSESSIONID", "")
+        
+        stop_event = threading.Event()
+        t = threading.Thread(target=keep_alive_task, args=(jsessionid, session, stop_event), daemon=True)
+        t.start()
+        
+        ACTIVE_SESSIONS[jsessionid] = {'session': session, 'time': now, 'stop_event': stop_event}
         
         config = {}
         for key in ["captchaFieldName", "domainFieldName", "randomDelimiter", "nonce"]:
@@ -92,6 +118,8 @@ def sync_sp_portal(net_id, password, captcha_text, jsessionid,
         session_data = ACTIVE_SESSIONS.get(jsessionid)
         if session_data:
             session = session_data['session']
+            if 'stop_event' in session_data:
+                session_data['stop_event'].set()
             del ACTIVE_SESSIONS[jsessionid]
         else:
             session = requests.Session()
