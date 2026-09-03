@@ -120,6 +120,8 @@ def sync_sp_portal(net_id, password, captcha_text, jsessionid,
             session = session_data['session']
             if 'stop_event' in session_data:
                 session_data['stop_event'].set()
+                # Wait for the background thread to release the socket back to the urllib3 pool
+                time.sleep(0.6)
             del ACTIVE_SESSIONS[jsessionid]
         else:
             session = requests.Session()
