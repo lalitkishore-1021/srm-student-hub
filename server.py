@@ -322,6 +322,7 @@ def api_sp_sync():
     captcha_field = data.get('captcha_field', '')
     domain_field = data.get('domain_field', '')
     delimiter = data.get('delimiter', '')
+    ph_name = data.get('ph_name', '')
     
     # 1. API Key Check
     client_key = request.headers.get('X-App-Key')
@@ -338,7 +339,8 @@ def api_sp_sync():
         jsessionid=jsessionid,
         captcha_field=captcha_field,
         domain_field=domain_field,
-        delimiter=delimiter
+        delimiter=delimiter,
+        ph_name=ph_name
     )
     return jsonify(res)
 

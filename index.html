@@ -10018,6 +10018,7 @@ function predictDateRangeUI() {
         let spCaptchaField = '';
         let spDomainField = '';
         let spDelimiter = '';
+        let spPhName = '';
 
         async function syncStudentPortal(type) {
             currentSpType = type;
@@ -10049,6 +10050,7 @@ function predictDateRangeUI() {
                     spCaptchaField = data.captcha_field;
                     spDomainField = data.domain_field;
                     spDelimiter = data.delimiter;
+                    spPhName = data.ph_name;
                     document.getElementById('sp-sync-captcha-img').src = 'data:image/jpeg;base64,' + data.captcha_b64;
                     document.getElementById('sp-sync-pwd').value = '';
                     document.getElementById('sp-sync-captcha-input').value = '';
@@ -10120,7 +10122,8 @@ function predictDateRangeUI() {
                         jsessionid: currentSpJsessionid,
                         captcha_field: spCaptchaField,
                         domain_field: spDomainField,
-                        delimiter: spDelimiter
+                        delimiter: spDelimiter,
+                        ph_name: spPhName
                     })
                 });
 

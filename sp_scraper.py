@@ -2,22 +2,21 @@
 import requests
 import base64
 import re
+import json
 from bs4 import BeautifulSoup
-
 import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 BASE_URL = "https://sp.srmist.edu.in/srmiststudentportal"
 LOGIN_PAGE = BASE_URL + "/students/loginManager/youLogin.jsp"
-CAPTCHA_URL = BASE_URL + "/SCaptchaServlet"
 LOGIN_SERVLET = BASE_URL + "/LoginServlet"
 
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36",
-    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
     "Accept-Language": "en-US,en;q=0.5",
-    "Accept-Encoding": "gzip, deflate, br",
     "Connection": "keep-alive",
+    "Upgrade-Insecure-Requests": "1"
 }
 
 def _extract(html, key):
@@ -32,28 +31,33 @@ def _extract(html, key):
             return m.group(1)
     return None
 
-def _parse_secure_config(html_text):
-    config = {}
-    for key in ["captchaFieldName", "domainFieldName", "randomDelimiter"]:
-        val = _extract(html_text, key)
-        if val:
-            config[key] = val
-    return config
-
 def get_sp_captcha():
-    """
-    Use requests to load login page and CAPTCHA.
-    Returns base64 CAPTCHA image + JSESSIONID + form field metadata.
-    """
     session = requests.Session()
     session.verify = False
     session.headers.update(HEADERS)
     try:
         r_page = session.get(LOGIN_PAGE, timeout=10)
         jsessionid = session.cookies.get("JSESSIONID", "")
-        r_cap = session.get(CAPTCHA_URL + "?ts=" + str(int(time.time()*1000)), timeout=10)
+        
+        config = {}
+        for key in ["captchaFieldName", "domainFieldName", "randomDelimiter", "nonce"]:
+            config[key] = _extract(r_page.text, key)
+            
+        soup = BeautifulSoup(r_page.text, "html.parser")
+        cap_img = soup.find(id="secure_captcha")
+        cap_url = "https://sp.srmist.edu.in" + cap_img.get("data-src") if cap_img else ""
+        
+        ph_input = soup.find("input", id=re.compile(r"^ph_"))
+        ph_name = ph_input.get("name") if ph_input else ""
+        
+        cap_headers = session.headers.copy()
+        if config.get("nonce"):
+            cap_headers['X-Domain-Proof'] = base64.b64encode(f"{config['nonce']}:sp.srmist.edu.in".encode()).decode()
+        cap_headers['Accept'] = 'image/png, image/jpeg, image/svg+xml, image/*'
+        cap_headers['Referer'] = LOGIN_PAGE
+        
+        r_cap = session.get(cap_url, headers=cap_headers, timeout=10)
         b64_img = base64.b64encode(r_cap.content).decode("utf-8")
-        config = _parse_secure_config(r_page.text)
         
         return {
             "success": True,
@@ -62,18 +66,13 @@ def get_sp_captcha():
             "captcha_field": config.get("captchaFieldName", ""),
             "domain_field": config.get("domainFieldName", ""),
             "delimiter": config.get("randomDelimiter", ""),
+            "ph_name": ph_name
         }
     except Exception as e:
         return {"success": False, "error": str(e)}
 
 def sync_sp_portal(net_id, password, captcha_text, jsessionid,
-                   captcha_field="", domain_field="", delimiter=""):
-    """
-    Login using the pure requests method replicating guardlogin.js exactly.
-    - Submits actual captcha_text in 'captcha' input
-    - Submits trap_payload in dynamic captchaFieldName
-    - Submits domain base64 in dynamic domainFieldName
-    """
+                   captcha_field="", domain_field="", delimiter="", ph_name=""):
     result_data = {"attendance": [], "marks": [], "success": False, "error": None}
     try:
         session = requests.Session()
@@ -81,22 +80,49 @@ def sync_sp_portal(net_id, password, captcha_text, jsessionid,
         session.headers.update(HEADERS)
         session.cookies.set("JSESSIONID", jsessionid, domain="sp.srmist.edu.in", path="/")
 
-        # Replicate guardlogin.js payload
-        time_elapsed_sec = 8
+        time_elapsed_sec = 18
         interact_count = 12
         trap_payload = f"{time_elapsed_sec}{delimiter}{interact_count}"
         
         cptoken_val = base64.b64encode(trap_payload.encode("utf-8")).decode("utf-8")
-        dtoken_val = base64.b64encode("sp.srmist.edu.in"[::-1].encode("utf-8")).decode("utf-8")
+        dtoken_val = base64.b64encode("ni.ude.tsimrs.ps".encode("utf-8")).decode("utf-8")
+        
+        fp = {
+            "startTime": int(time.time()*1000) - 18000,
+            "currentDomain": "sp.srmist.edu.in",
+            "timezoneOffset": -330,
+            "screenWidth": 1920,
+            "screenHeight": 1080,
+            "colorDepth": 24,
+            "devicePixelRatio": 1,
+            "platform": "Win32",
+            "userAgent": HEADERS["User-Agent"],
+            "language": "en-US",
+            "hardwareConcurrency": 16,
+            "deviceMemory": 16,
+            "touchSupport": False,
+            "webdriver": False,
+            "mouseClicks": 5,
+            "mouseMovements": 24,
+            "keystrokeCount": 20,
+            "typingSpeedMs": 14500,
+            "canvasHash": "8a32b9c7",
+            "submitTime": int(time.time()*1000),
+            "timeOnPageMs": 18000
+        }
+        telemetry_val = base64.b64encode(json.dumps(fp).encode('utf-8')).decode('utf-8')
 
         form_data = {
             "username": net_id,
             "password": password,
-            "captcha": captcha_text,  # Typed captcha goes here
+            "captcha": captcha_text,
             "fpPayload": "",
-            "fpToken": ""
+            "fpToken": "",
+            "telemetryPayload": telemetry_val
         }
         
+        if ph_name:
+            form_data[ph_name] = ""
         if captcha_field:
             form_data[captcha_field] = cptoken_val
         if domain_field:
