@@ -31,6 +31,8 @@ def _extract(html, key):
             return m.group(1)
     return None
 
+ACTIVE_SESSIONS = {}
+
 def get_sp_captcha():
     session = requests.Session()
     session.verify = False
@@ -59,6 +61,14 @@ def get_sp_captcha():
         r_cap = session.get(cap_url, headers=cap_headers, timeout=10)
         b64_img = base64.b64encode(r_cap.content).decode("utf-8")
         
+        # Clean up old sessions
+        now = time.time()
+        for k in list(ACTIVE_SESSIONS.keys()):
+            if now - ACTIVE_SESSIONS[k]['time'] > 300:
+                del ACTIVE_SESSIONS[k]
+                
+        ACTIVE_SESSIONS[jsessionid] = {'session': session, 'time': now}
+        
         return {
             "success": True,
             "captcha_b64": b64_img,
@@ -75,9 +85,15 @@ def sync_sp_portal(net_id, password, captcha_text, jsessionid,
                    captcha_field="", domain_field="", delimiter="", ph_name=""):
     result_data = {"attendance": [], "marks": [], "success": False, "error": None}
     try:
-        session = requests.Session()
-        session.verify = False
-        session.headers.update(HEADERS)
+        session_data = ACTIVE_SESSIONS.get(jsessionid)
+        if session_data:
+            session = session_data['session']
+            del ACTIVE_SESSIONS[jsessionid]
+        else:
+            session = requests.Session()
+            session.verify = False
+            session.headers.update(HEADERS)
+            
         session.cookies.set("JSESSIONID", jsessionid, domain="sp.srmist.edu.in", path="/srmiststudentportal")
         session.cookies.set("JSESSIONID", jsessionid, domain="sp.srmist.edu.in")
 
@@ -148,9 +164,9 @@ def sync_sp_portal(net_id, password, captcha_text, jsessionid,
             if "Invalid captcha" in r_login.text or "Invalid Captcha" in r_login.text:
                 result_data["error"] = "Invalid CAPTCHA. Please refresh and try again."
             elif "Invalid credentials" in r_login.text:
-                result_data["error"] = "Invalid credentials. Please check your NetID and password."
+                result_data["error"] = f"Invalid credentials. Status: {r_login.status_code}. Please check your NetID and password."
             else:
-                result_data["error"] = "Login failed. Please check your NetID, Password, and CAPTCHA."
+                result_data["error"] = f"Login failed. Status: {r_login.status_code}. Please check your NetID, Password, and CAPTCHA."
             return result_data
 
         print("[SP] Login successful! Fetching attendance and marks...")
