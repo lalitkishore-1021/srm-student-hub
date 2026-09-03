@@ -12,9 +12,8 @@ LOGIN_PAGE = BASE_URL + "/students/loginManager/youLogin.jsp"
 LOGIN_SERVLET = BASE_URL + "/LoginServlet"
 
 HEADERS = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36",
-    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
-    "Accept-Language": "en-US,en;q=0.5",
+    "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
     "Connection": "keep-alive",
     "Upgrade-Insecure-Requests": "1"
 }
@@ -39,7 +38,7 @@ def get_sp_captcha():
     along with hidden fields and tokens needed for the login POST.
     """
     try:
-        session = requests.Session(impersonate="chrome120")
+        session = requests.Session()
         session.verify = False
         session.headers.update(HEADERS)
         
@@ -95,7 +94,7 @@ def sync_sp_portal(net_id, password, captcha_text, jsessionid,
             session = session_data['session']
             del ACTIVE_SESSIONS[jsessionid]
         else:
-            session = requests.Session(impersonate="chrome120")
+            session = requests.Session()
             session.verify = False
             session.headers.update(HEADERS)
             # Only set if new session, and only set once!
@@ -116,7 +115,7 @@ def sync_sp_portal(net_id, password, captcha_text, jsessionid,
             "screenHeight": 1080,
             "colorDepth": 24,
             "devicePixelRatio": 1,
-            "platform": "Win32",
+            "platform": "Linux x86_64",
             "userAgent": HEADERS["User-Agent"],
             "language": "en-US",
             "hardwareConcurrency": 16,
