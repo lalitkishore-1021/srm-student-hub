@@ -7,3 +7,4 @@ requests==2.31.0
 flask-limiter==3.8.0
 beautifulsoup4==4.12.3
 Flask-Compress==1.14
+curl_cffi==0.7.1

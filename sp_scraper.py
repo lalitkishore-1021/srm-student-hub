@@ -1,5 +1,5 @@
 import time
-import requests
+from curl_cffi import requests
 import base64
 import re
 import json
