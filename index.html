@@ -10015,6 +10015,9 @@ function predictDateRangeUI() {
         // ================= SP PORTAL SYNC =================
         let currentSpType = 'attendance';
         let currentSpJsessionid = '';
+        let spCaptchaField = '';
+        let spDomainField = '';
+        let spDelimiter = '';
 
         async function syncStudentPortal(type) {
             currentSpType = type;
@@ -10043,6 +10046,9 @@ function predictDateRangeUI() {
                 
                 if (data.success) {
                     currentSpJsessionid = data.jsessionid;
+                    spCaptchaField = data.captcha_field;
+                    spDomainField = data.domain_field;
+                    spDelimiter = data.delimiter;
                     document.getElementById('sp-sync-captcha-img').src = 'data:image/jpeg;base64,' + data.captcha_b64;
                     document.getElementById('sp-sync-pwd').value = '';
                     document.getElementById('sp-sync-captcha-input').value = '';
@@ -10111,7 +10117,10 @@ function predictDateRangeUI() {
                         net_id: netId, 
                         password: pwd, 
                         captcha: captcha,
-                        jsessionid: currentSpJsessionid
+                        jsessionid: currentSpJsessionid,
+                        captcha_field: spCaptchaField,
+                        domain_field: spDomainField,
+                        delimiter: spDelimiter
                     })
                 });
 

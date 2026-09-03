@@ -319,6 +319,9 @@ def api_sp_sync():
     password = data.get('password')
     captcha = data.get('captcha')
     jsessionid = data.get('jsessionid')
+    captcha_field = data.get('captcha_field', '')
+    domain_field = data.get('domain_field', '')
+    delimiter = data.get('delimiter', '')
     
     # 1. API Key Check
     client_key = request.headers.get('X-App-Key')
@@ -328,7 +331,15 @@ def api_sp_sync():
     if not net_id or not password or not captcha or not jsessionid:
         return jsonify({'success': False, 'error': 'Missing credentials or captcha'}), 400
         
-    res = sync_sp_portal(net_id, password, captcha, jsessionid)
+    res = sync_sp_portal(
+        net_id=net_id, 
+        password=password, 
+        captcha_text=captcha, 
+        jsessionid=jsessionid,
+        captcha_field=captcha_field,
+        domain_field=domain_field,
+        delimiter=delimiter
+    )
     return jsonify(res)
 
 @app.route('/api/start_session', methods=['POST'])
