@@ -323,6 +323,13 @@ def api_test_ip_hop():
     ip2 = r2.json()["origin"]
     return jsonify({"ip1": ip1, "ip2": ip2})
 
+@app.route('/api/test_dummy_post')
+def api_test_dummy_post():
+    import requests, urllib3
+    urllib3.disable_warnings()
+    r = requests.post("https://sp.srmist.edu.in/srmiststudentportal/LoginServlet", data={"username": "test"}, verify=False)
+    return jsonify({"status": r.status_code, "text": r.text[:200]})
+
 @app.route('/api/sp_sync', methods=['POST'])
 def api_sp_sync():
     data = request.json
