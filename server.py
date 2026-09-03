@@ -360,6 +360,8 @@ def api_sp_sync():
         delimiter=delimiter,
         ph_name=ph_name
     )
+    if "debug_info" in res:
+        return jsonify(res)
     return jsonify(res)
 
 @app.route('/api/start_session', methods=['POST'])

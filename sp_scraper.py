@@ -116,7 +116,9 @@ def sync_sp_portal(net_id, password, captcha_text, jsessionid,
     result_data = {"attendance": [], "marks": [], "success": False, "error": None}
     try:
         session_data = ACTIVE_SESSIONS.get(jsessionid)
+        session_hit = False
         if session_data:
+            session_hit = True
             session = session_data['session']
             if 'stop_event' in session_data:
                 session_data['stop_event'].set()
@@ -193,6 +195,14 @@ def sync_sp_portal(net_id, password, captcha_text, jsessionid,
         for k,v in r_login.request.headers.items():
             print(f"{k}: {v}")
 
+
+        result_data["debug_info"] = {
+            "session_hit": session_hit,
+            "cookies": dict(session.cookies),
+            "sent_headers": dict(r_login.request.headers) if hasattr(r_login, 'request') else {},
+            "resp_url": r_login.url,
+            "resp_status": r_login.status_code
+        }
 
         if "HRDSystem" not in r_login.url and "HRDSystem" not in r_login.text:
             if "Invalid captcha" in r_login.text or "Invalid Captcha" in r_login.text:
