@@ -8,4 +8,4 @@ flask-limiter==3.8.0
 beautifulsoup4==4.12.3
 Flask-Compress==1.14
 curl_cffi==0.7.1
-playwright-stealth==1.0.6
+playwright-stealth==2.0.3
