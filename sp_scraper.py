@@ -29,14 +29,10 @@ def sp_worker(session_id, data_dict):
             )
             page = context.new_page()
             
-            # Add stealth scripts to bypass secure2.js telemetry
-            page.add_init_script("""
-                Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
-                window.navigator.chrome = { runtime: {} };
-                Object.defineProperty(navigator, 'plugins', { get: () => [1, 2, 3] });
-            """)
-
+            from playwright_stealth import stealth
+            
             # 1. Navigate to login
+            stealth(page)
             page.goto(LOGIN_PAGE, wait_until="networkidle")
             time.sleep(1)  # Let guardlogin.js fully initialize
 
