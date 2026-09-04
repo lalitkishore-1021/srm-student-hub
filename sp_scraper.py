@@ -29,10 +29,10 @@ def sp_worker(session_id, data_dict):
             )
             page = context.new_page()
             
-            from playwright_stealth import stealth
+            from playwright_stealth import Stealth
             
             # 1. Navigate to login
-            stealth(page)
+            Stealth().apply_stealth_sync(page)
             page.goto(LOGIN_PAGE, wait_until="networkidle")
             time.sleep(1)  # Let guardlogin.js fully initialize
 
