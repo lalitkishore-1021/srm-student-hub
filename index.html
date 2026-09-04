@@ -549,7 +549,31 @@
             transition: background 1s ease;
         }
 
-        /* F1 Ferrari & Spider-Man Themes */
+        /* F1 Ferrari, Spider-Man & Iron Man Themes */
+        .id-card[data-theme="ironman"]::after {
+            background: linear-gradient(135deg, #ffaa00 0%, #ff0000 100%);
+        }
+        .id-theme-img-ironman {
+            width: 90px;
+            height: auto;
+            max-height: 90px;
+            object-fit: contain;
+            filter: drop-shadow(0 10px 20px rgba(0,0,0,0.85)) drop-shadow(0 0 15px rgba(255,170,0,0.5));
+            animation: ironmanHover 4s ease-in-out infinite alternate;
+        }
+        .anim-ironman-entry {
+            animation: ironmanFlyIn 1.2s cubic-bezier(0.16, 1, 0.3, 1) 0.15s 1 forwards;
+        }
+        @keyframes ironmanHover {
+            0% { transform: translateY(0) scale(1); filter: drop-shadow(0 10px 15px rgba(255,0,0,0.4)); }
+            100% { transform: translateY(-10px) scale(1.05); filter: drop-shadow(0 15px 25px rgba(255,170,0,0.6)); }
+        }
+        @keyframes ironmanFlyIn {
+            0% { transform: translateY(-100px) scale(0.5); opacity: 0; }
+            50% { transform: translateY(5px) scale(1.1); opacity: 1; }
+            100% { transform: translateY(0) scale(1); opacity: 1; }
+        }
+
         .id-card[data-theme="f1"]::after, .id-card[data-theme="0"]::after { 
             background: radial-gradient(circle at 75% 50%, #e10600 0%, #800000 50%, #150000 100%); 
         }
@@ -3418,11 +3442,7 @@
 
             </div>
             
-            <div style="text-align: center; margin-bottom: 15px;">
-                <button onclick="syncStudentPortal('attendance')" id="sp-sync-btn-att" class="btn btn-custom" style="background: rgba(255,170,0,0.1); border: 1px solid rgba(255,170,0,0.5); color: #ffaa00; padding: 6px 12px; border-radius: 12px; font-size: 0.85rem;">
-                    <i class="fa fa-refresh mr-1"></i> Sync from Student Portal (Alternative)
-                </button>
-            </div>
+            
 
             <div id="attendance-list" style="max-width: 600px; margin: 0 auto;"></div>
         </div>
@@ -3432,11 +3452,7 @@
                 <h2 class="gallery-title">Marks Tracker</h2>
             </div>
             
-            <div style="text-align: center; margin-bottom: 15px;">
-                <button onclick="syncStudentPortal('marks')" id="sp-sync-btn-marks" class="btn btn-custom" style="background: rgba(255,170,0,0.1); border: 1px solid rgba(255,170,0,0.5); color: #ffaa00; padding: 6px 12px; border-radius: 12px; font-size: 0.85rem;">
-                    <i class="fa fa-refresh mr-1"></i> Sync from Student Portal (Alternative)
-                </button>
-            </div>
+            
 
             <div id="marks-no-data" class="image-card"
                 style="max-width: 600px; margin: 0 auto; padding: 40px; cursor: default; transform: none;">
@@ -4193,7 +4209,7 @@
             
             const aiFab = document.getElementById('ai-fab');
             if (aiFab) {
-                if (viewId === 'home-view') {
+                if (viewId === 'home-view' && typeof isLoggedIn !== 'undefined' && isLoggedIn) {
                     aiFab.classList.remove('hidden-fab');
                 } else {
                     aiFab.classList.add('hidden-fab');
@@ -7424,10 +7440,16 @@ function checkAndShowHolidayBanner(viewId) {
             const themeArt = document.getElementById('id-theme-art');
             if (!idCard) return;
             
-            // Alternate daily between F1 Ferrari and Spider-Man
-            const isF1Day = (new Date().getDate() % 2 === 0);
+            // Alternate daily between F1, Spider-Man, and Iron Man
+            const dayNum = new Date().getDate();
             
-            if (isF1Day) {
+            if (dayNum % 3 === 0) {
+                idCard.dataset.theme = 'ironman';
+                if (themeArt) {
+                    themeArt.className = 'id-theme-art anim-ironman-entry';
+                    themeArt.innerHTML = '<img class="id-theme-img-ironman" src="images/themes/ironman.png" alt="Iron Man">';
+                }
+            } else if (dayNum % 3 === 1) {
                 idCard.dataset.theme = 'f1';
                 if (themeArt) {
                     themeArt.className = 'id-theme-art anim-f1-entry';
@@ -8488,7 +8510,7 @@ function checkAndShowHolidayBanner(viewId) {
             display: none !important;
         }
     </style>
-    <div id="ai-fab" onclick="document.getElementById('chatModal').style.display='flex'">
+    <div id="ai-fab" onclick="document.getElementById('chatModal').style.display='flex'; this.classList.add('hidden-fab');">
         <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" style="width:30px;height:30px;"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
     </div>
 
@@ -8527,7 +8549,7 @@ function checkAndShowHolidayBanner(viewId) {
                 <div style="display: flex; gap: 15px; align-items: center;">
                     <button onclick="startLiveAI()" style="background: linear-gradient(135deg, #ff4757, #ffaa00); border: none; color: #fff; border-radius: 20px; padding: 5px 15px; cursor: pointer; font-size: 0.8rem; font-weight: bold; box-shadow: 0 4px 15px rgba(255, 71, 87, 0.4); animation: pulseBg 2s infinite;">Live Mode </button>
                     <button onclick="downloadChatPDF()" style="background: rgba(255,170,0,0.2); border: 1px solid #ffaa00; color: #ffaa00; border-radius: 8px; padding: 5px 10px; cursor: pointer; font-size: 0.8rem; font-weight: bold;">Export PDF</button>
-                    <button onclick="document.getElementById('chatModal').style.display='none'" style="background: none; border: none; color: #fff; font-size: 1.5rem; cursor: pointer; padding: 0;">&times;</button>
+                    <button onclick="document.getElementById('chatModal').style.display='none'; if(typeof isLoggedIn !== 'undefined' && isLoggedIn && document.getElementById('home-view').classList.contains('active')) document.getElementById('ai-fab').classList.remove('hidden-fab');" style="background: none; border: none; color: #fff; font-size: 1.5rem; cursor: pointer; padding: 0;">&times;</button>
                 </div>
             </div>
             <div id="chat-history" style="flex: 1; overflow-y: auto; padding: 10px; display: flex; flex-direction: column; gap: 10px;">
@@ -8551,7 +8573,7 @@ function checkAndShowHolidayBanner(viewId) {
 
     <!-- Gemini Live Style Modal -->
     <div id="liveAiModal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 20000; flex-direction: column; justify-content: center; align-items: center; background: radial-gradient(circle at center, #111, #000); overflow: hidden;">
-        <button onclick="stopLiveAI()" style="position: absolute; top: 30px; right: 30px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 50%; width: 50px; height: 50px; color: #fff; font-size: 1.5rem; cursor: pointer; z-index: 10; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(10px);">&times;</button>
+        <button onclick="stopLiveAI(); if(typeof isLoggedIn !== 'undefined' && isLoggedIn && document.getElementById('home-view').classList.contains('active')) document.getElementById('ai-fab').classList.remove('hidden-fab');" style="position: absolute; top: 30px; right: 30px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 50%; width: 50px; height: 50px; color: #fff; font-size: 1.5rem; cursor: pointer; z-index: 10; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(10px);">&times;</button>
         <h2 style="position: absolute; top: 30px; left: 30px; color: #fff; font-family: 'Montserrat', sans-serif; font-size: 1.2rem; font-weight: 300; letter-spacing: 2px;">HUB LIVE <span style="font-weight:bold; color: #ffaa00;">PRO</span></h2>
         
         <div id="live-orb" style="width: 220px; height: 220px; border-radius: 50%; background: linear-gradient(135deg, #8a2be2, #00cec9, #ffaa00); box-shadow: 0 0 60px rgba(138,43,226,0.5), inset 0 0 40px rgba(255,255,255,0.6); position: relative; transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); cursor: pointer; display: flex; align-items: center; justify-content: center;" onmousedown="startLiveRecord(event)" onmouseup="stopLiveRecord(event)" ontouchstart="startLiveRecord(event)" ontouchend="stopLiveRecord(event)">
