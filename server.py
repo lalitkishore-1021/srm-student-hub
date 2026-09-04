@@ -300,69 +300,7 @@ def scrape_academia_worker(reg_no, pwd, batch, out_queue):
 
 
 
-from sp_scraper import sync_sp_portal, get_sp_captcha
 
-@app.route('/api/sp_get_captcha', methods=['GET'])
-def api_sp_get_captcha():
-    # 1. API Key Check
-    client_key = request.headers.get('X-App-Key')
-    if client_key != API_SECRET_KEY:
-        return jsonify({'success': False, 'error': 'Unauthorized: Invalid API Key'}), 403
-
-    res = get_sp_captcha()
-    return jsonify(res)
-
-@app.route('/api/test_ip_hop')
-def api_test_ip_hop():
-    import requests, time
-    s = requests.Session()
-    r1 = s.get("https://httpbin.org/ip")
-    ip1 = r1.json()["origin"]
-    time.sleep(10)
-    r2 = s.get("https://httpbin.org/ip")
-    ip2 = r2.json()["origin"]
-    return jsonify({"ip1": ip1, "ip2": ip2})
-
-@app.route('/api/test_dummy_post')
-def api_test_dummy_post():
-    import requests, urllib3
-    urllib3.disable_warnings()
-    r = requests.post("https://sp.srmist.edu.in/srmiststudentportal/LoginServlet", data={"username": "test"}, verify=False)
-    return jsonify({"status": r.status_code, "text": r.text[:200]})
-
-@app.route('/api/sp_sync', methods=['POST'])
-def api_sp_sync():
-    data = request.json
-    net_id = data.get('net_id')
-    password = data.get('password')
-    captcha = data.get('captcha')
-    jsessionid = data.get('jsessionid')
-    captcha_field = data.get('captcha_field', '')
-    domain_field = data.get('domain_field', '')
-    delimiter = data.get('delimiter', '')
-    ph_name = data.get('ph_name', '')
-    
-    # 1. API Key Check
-    client_key = request.headers.get('X-App-Key')
-    if client_key != API_SECRET_KEY:
-        return jsonify({'success': False, 'error': 'Unauthorized: Invalid API Key'}), 403
-
-    if not net_id or not password or not captcha or not jsessionid:
-        return jsonify({'success': False, 'error': 'Missing credentials or captcha'}), 400
-        
-    res = sync_sp_portal(
-        net_id=net_id, 
-        password=password, 
-        captcha_text=captcha, 
-        jsessionid=jsessionid,
-        captcha_field=captcha_field,
-        domain_field=domain_field,
-        delimiter=delimiter,
-        ph_name=ph_name
-    )
-    if "debug_info" in res:
-        return jsonify(res)
-    return jsonify(res)
 
 @app.route('/api/start_session', methods=['POST'])
 
