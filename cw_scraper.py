@@ -37,8 +37,13 @@ def scrape_campusweb(netid, pwd):
         marks_json = marks_resp.json()
         
         marks_data = []
+        marked_courses = set()
+        
         if marks_json.get('status') == 'success':
             for item in marks_json.get('testPerformances', []):
+                ccode = item.get('courseCode', '')
+                marked_courses.add(ccode)
+                
                 tests = item.get('tests', {})
                 internal = tests.get('Internal Marks')
                 if internal:
@@ -50,8 +55,17 @@ def scrape_campusweb(netid, pwd):
                     
                 marks_data.append({
                     "courseTitle": item.get('courseName', ''),
-                    "courseCode": item.get('courseCode', ''),
+                    "courseCode": ccode,
                     "marks": perfString
+                })
+        
+        # Merge missing courses from attendance into marks_data so they show up
+        for att in att_data:
+            if att["courseCode"] not in marked_courses:
+                marks_data.append({
+                    "courseTitle": att["courseTitle"],
+                    "courseCode": att["courseCode"],
+                    "marks": "No tests conducted yet"
                 })
                 
         return {"success": True, "attendance": att_data, "marks": marks_data}

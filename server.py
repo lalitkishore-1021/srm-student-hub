@@ -347,6 +347,20 @@ def start_session():
             scrape_academia_worker(reg_no, pwd, batch, out_queue)
             # We wait for the scraper to finish without holding the HTTP response
             result = out_queue.get(timeout=10)
+            
+            # --- CAMPUSWEB PARALLEL SYNC ---
+            try:
+                import cw_scraper
+                cw_res = cw_scraper.scrape_campusweb(reg_no, pwd)
+                if cw_res.get('success'):
+                    if cw_res.get('attendance') and len(cw_res.get('attendance')) > 0:
+                        result['data'] = cw_res.get('attendance')
+                    if cw_res.get('marks') and len(cw_res.get('marks')) > 0:
+                        result['marks'] = cw_res.get('marks')
+            except Exception as e:
+                print(f"CampusWeb fallback failed: {e}")
+            # -------------------------------
+            
             if result.get('success'):
                 profile = result.get('profile', {})
                 raw_reg = reg_no or ''
