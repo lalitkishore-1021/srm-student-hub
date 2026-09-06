@@ -10231,13 +10231,13 @@ function predictDateRangeUI() {
                 if (data.success) {
                     if (data.attendance && data.attendance.length > 0) {
                         workingAttData = data.attendance;
-                        localStorage.setItem('attData', JSON.stringify(workingAttData));
-                        if (document.getElementById('attendance-view').classList.contains('active')) renderAttendance(workingAttData);
+                        localStorage.setItem('squadAttendance', JSON.stringify(workingAttData));
+                        renderAttendance(workingAttData);
                     }
                     if (data.marks && data.marks.length > 0) {
                         marksData = data.marks;
-                        localStorage.setItem('marksData', JSON.stringify(marksData));
-                        if (document.getElementById('marks-view').classList.contains('active')) renderMarks();
+                        localStorage.setItem('squadMarks', JSON.stringify(marksData));
+                        renderMarks(marksData);
                     }
                     closeCwSyncModal();
                     alert("Successfully updated data successfully!");
