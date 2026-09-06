@@ -4903,6 +4903,16 @@
             let totalPresent = totalConducted - totalAbsent;
             let overallPct = totalConducted > 0 ? ((totalPresent / totalConducted) * 100).toFixed(1) : "0.0";
             
+            // --- UPDATE HOME DASHBOARD STATS ---
+            try {
+                const homeAttVal = document.getElementById('home-att-val');
+                if (homeAttVal) homeAttVal.innerText = overallPct + '%';
+                const homeCourseVal = document.getElementById('home-course-val');
+                if (homeCourseVal) homeCourseVal.innerText = workingAttData.length || '-';
+            } catch(e) {}
+            // -----------------------------------
+            
+            
             // Build Top Summary Card (Premium Blue)
             html += `
                 <div class="glass-card fade-in-up" style="background: linear-gradient(135deg, var(--accent), var(--accent-hover)); border:none; border-radius: 24px; padding: 25px; margin-bottom: 25px; box-shadow: 0 15px 35px rgba(44, 95, 158, 0.2); position: relative; overflow: hidden;">
@@ -4987,6 +4997,24 @@
                                 <div style="color: var(--text-main); font-size: 14px; font-weight: 800;">${cond}</div>
                                 <div style="color: var(--text-sub); font-size: 9px; font-weight: 700; letter-spacing: 0.5px; margin-top: 4px; text-transform: uppercase;">Total</div>
                             </div>
+                            ${(() => {
+                                let m = Math.floor((pres - 0.75 * cond) / 0.75);
+                                if (cond === 0) return '';
+                                if (m >= 0) {
+                                    return `
+                                    <div style="text-align: center;">
+                                        <div style="color: #2ecc71; font-size: 14px; font-weight: 800;">+${m}</div>
+                                        <div style="color: var(--text-sub); font-size: 9px; font-weight: 700; letter-spacing: 0.5px; margin-top: 4px; text-transform: uppercase;">Margin</div>
+                                    </div>`;
+                                } else {
+                                    let req = Math.ceil(3 * cond - 4 * pres);
+                                    return `
+                                    <div style="text-align: center;">
+                                        <div style="color: #e74c3c; font-size: 14px; font-weight: 800;">-${req}</div>
+                                        <div style="color: var(--text-sub); font-size: 9px; font-weight: 700; letter-spacing: 0.5px; margin-top: 4px; text-transform: uppercase;">Needed</div>
+                                    </div>`;
+                                }
+                            })()}
                         </div>
                 `;
 
@@ -9901,8 +9929,8 @@ function renderGradeCalculator() {
     
     gradeCalcCourses.forEach((c, i) => {
         let reqTotal = gradeThresholds[c.target] || 91;
-        let reqExternal = (reqTotal - parseFloat(c.internal)) * (75.0 / 40.0);
-        let isImpossible = reqExternal > 75;
+        let reqExternal = (reqTotal - parseFloat(c.internal)) * (100.0 / 40.0);
+        let isImpossible = reqExternal > 100;
         
         let warningHtml = '';
         if (isImpossible) {
@@ -9918,7 +9946,7 @@ function renderGradeCalculator() {
                         </div>
                         <div style="display:flex; justify-content:space-between; margin-top:4px;">
                             <span style="color:var(--text-sub); font-size:11px;">Marks Needed:</span>
-                            <span style="color:var(--text-main); font-weight:700; font-size:11px;">${reqExternal.toFixed(2)} over 75</span>
+                            <span style="color:var(--text-main); font-weight:700; font-size:11px;">${reqExternal.toFixed(2)} over 100</span>
                         </div>
                     </div>
                 </div>
@@ -9931,7 +9959,7 @@ function renderGradeCalculator() {
                         <div style="color:#4CAF50; font-weight:700; font-size:12px; margin-bottom:4px;">Target Achievable</div>
                         <div style="display:flex; justify-content:space-between; margin-top:8px; padding-top:8px; border-top:1px solid rgba(76, 175, 80, 0.2);">
                             <span style="color:var(--text-sub); font-size:11px;">Marks Needed:</span>
-                            <span style="color:var(--text-main); font-weight:700; font-size:11px;">${reqExternal.toFixed(2)} over 75</span>
+                            <span style="color:var(--text-main); font-weight:700; font-size:11px;">${reqExternal.toFixed(2)} over 100</span>
                         </div>
                     </div>
                 </div>
@@ -10021,7 +10049,7 @@ function predictDateRangeUI() {
                 const doNum = srmPlanner[isoDate].value;
                 const classes = timetableData[doNum.toString()] || [];
                 classes.forEach(c => {
-                    let cname = c.subject.toString().replace(/[^a-zA-Z0-9]/g, '');
+                    let cname = (c.code || c.subject).toString().replace(/[^a-zA-Z0-9]/g, '');
                     missedClasses[cname] = (missedClasses[cname] || 0) + 1;
                 });
             }
@@ -10030,7 +10058,7 @@ function predictDateRangeUI() {
             if (dayIdx >= 1 && dayIdx <= 5) {
                 const classes = timetableData[dayIdx.toString()] || [];
                 classes.forEach(c => {
-                    let cname = c.subject.toString().replace(/[^a-zA-Z0-9]/g, '');
+                    let cname = (c.code || c.subject).toString().replace(/[^a-zA-Z0-9]/g, '');
                     missedClasses[cname] = (missedClasses[cname] || 0) + 1;
                 });
             }
@@ -10128,7 +10156,7 @@ function predictDateRangeUI() {
         <div style="padding: 0 20px 20px 20px;">
             <div style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:12px; display:flex; gap:10px; align-items:center;">
                 <i class="fas fa-info-circle" style="color:var(--text-sub);"></i>
-                <div style="color:var(--text-sub); font-size:12px;">Internal: 60 marks (60%) | Final: 75 marks (40%)</div>
+                <div style="color:var(--text-sub); font-size:12px;">Internal: 60 marks (60%) | Final: 100 marks (40%)</div>
             </div>
         </div>
         
