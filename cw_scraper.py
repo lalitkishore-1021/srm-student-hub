@@ -2,6 +2,10 @@ import requests
 
 def scrape_campusweb(netid, pwd):
     try:
+        # CampusWeb API requires strictly the NetID prefix, not the full email.
+        if '@' in netid:
+            netid = netid.split('@')[0]
+            
         # Fetch Attendance
         att_resp = requests.post(
             'https://campusapi.fly.dev/api/student-portal/attendance',
@@ -18,7 +22,7 @@ def scrape_campusweb(netid, pwd):
             att_data.append({
                 "courseTitle": item.get('subjectdesc', ''),
                 "courseCode": item.get('subjectcode', ''),
-                "category": "THEORY", # Default since API doesn't provide category explicitly
+                "category": "THEORY",
                 "conducted": float(item.get('total', 0)),
                 "absent": float(item.get('absent', 0)),
                 "attended": float(item.get('presentpercentage', 0))
