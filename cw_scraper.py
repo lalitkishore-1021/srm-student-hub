@@ -29,31 +29,32 @@ def scrape_campusweb(netid, pwd):
             cards = page.locator('div.rounded-xl, div[class*="theme_box_bg"], main > div > div > div, div.flex.flex-col.gap-4 > div').all_inner_texts()
             
             for card in cards:
+                if "Margin" not in card and "%" not in card:
+                    continue
+                    
                 lines = [line.strip() for line in card.split('\\n') if line.strip()]
-                if len(lines) >= 4 and any("Margin" in l for l in lines):
+                if len(lines) >= 2:
                     title = lines[0]
                     course_code = lines[1]
+                    
+                    full_text = " ".join(lines)
                     
                     present = "0"
                     absent = "0"
                     total = "0"
                     percent = "0"
                     
-                    for i, l in enumerate(lines):
-                        if l == "P" and i+1 < len(lines):
-                            present = lines[i+1].strip()
-                        elif l == "A" and i+1 < len(lines):
-                            absent = lines[i+1].strip()
-                        elif l == "T" and i+1 < len(lines):
-                            total = lines[i+1].strip()
-                        elif l.startswith("P "):
-                            present = l.replace("P", "").strip()
-                        elif l.startswith("A "):
-                            absent = l.replace("A", "").strip()
-                        elif l.startswith("T "):
-                            total = l.replace("T", "").strip()
-                        elif "%" in l:
-                            percent = l.replace("%", "").strip()
+                    p_match = re.search(r'\\bP\\s*(\\d+(?:\\.\\d+)?)', full_text)
+                    if p_match: present = p_match.group(1)
+                        
+                    a_match = re.search(r'\\bA\\s*(\\d+(?:\\.\\d+)?)', full_text)
+                    if a_match: absent = a_match.group(1)
+                        
+                    t_match = re.search(r'\\bT\\s*(\\d+(?:\\.\\d+)?)', full_text)
+                    if t_match: total = t_match.group(1)
+                        
+                    pct_match = re.search(r'(\\d+(?:\\.\\d+)?)\\s*%', full_text)
+                    if pct_match: percent = pct_match.group(1)
                             
                     att_data.append({
                         "courseTitle": title,
@@ -72,26 +73,29 @@ def scrape_campusweb(netid, pwd):
             m_cards = page.locator('div.rounded-xl, div[class*="theme_box_bg"], main > div > div > div, div.flex.flex-col.gap-4 > div').all_inner_texts()
             
             for card in m_cards:
+                if "No Record Found" in card:
+                    continue
+                    
                 lines = [line.strip() for line in card.split('\\n') if line.strip()]
                 if len(lines) >= 2:
                     title = lines[0]
                     course_code = lines[1]
-                    if "No Record Found" in card:
-                        continue
                     
-                    internal = "0 / 0"
-                    for i, l in enumerate(lines):
-                        if l == "Internal Marks" and i + 1 < len(lines):
-                            internal = lines[i+1]
-                            break
-                            
-                    parts = internal.split("/")
-                    if len(parts) == 2:
-                        obtained = parts[0].strip()
-                        max_marks = parts[1].strip()
-                        perfString = f"Internal/{max_marks} | {obtained}"
+                    full_text = " ".join(lines)
+                    
+                    internal_match = re.search(r'Internal\\s*Marks\\s*(\\d+(?:\\.\\d+)?\\s*/\\s*\\d+(?:\\.\\d+)?)', full_text, re.IGNORECASE)
+                    
+                    if internal_match:
+                        internal = internal_match.group(1)
+                        parts = internal.split("/")
+                        if len(parts) == 2:
+                            obtained = parts[0].strip()
+                            max_marks = parts[1].strip()
+                            perfString = f"Internal/{max_marks} | {obtained}"
+                        else:
+                            perfString = f"Internal/100 | {internal}"
                     else:
-                        perfString = f"Internal/100 | {internal}"
+                        perfString = "Internal/100 | 0"
                     
                     marks_data.append({
                         "courseTitle": title,
@@ -103,5 +107,6 @@ def scrape_campusweb(netid, pwd):
             return {"success": True, "attendance": att_data, "marks": marks_data}
             
         except Exception as e:
-            browser.close()
+            try: browser.close()
+            except: pass
             return {"success": False, "error": str(e)}
