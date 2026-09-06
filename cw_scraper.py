@@ -39,12 +39,18 @@ def scrape_campusweb(netid, pwd):
                     total = "0"
                     percent = "0"
                     
-                    for l in lines:
-                        if l.startswith("P ") or l.startswith("P\\n"):
+                    for i, l in enumerate(lines):
+                        if l == "P" and i+1 < len(lines):
+                            present = lines[i+1].strip()
+                        elif l == "A" and i+1 < len(lines):
+                            absent = lines[i+1].strip()
+                        elif l == "T" and i+1 < len(lines):
+                            total = lines[i+1].strip()
+                        elif l.startswith("P "):
                             present = l.replace("P", "").strip()
-                        elif l.startswith("A ") or l.startswith("A\\n"):
+                        elif l.startswith("A "):
                             absent = l.replace("A", "").strip()
-                        elif l.startswith("T ") or l.startswith("T\\n"):
+                        elif l.startswith("T "):
                             total = l.replace("T", "").strip()
                         elif "%" in l:
                             percent = l.replace("%", "").strip()
