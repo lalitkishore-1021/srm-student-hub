@@ -57,6 +57,23 @@ if DATABASE_URL:
 
 DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'hub.db')
 
+
+@app.post("/api/campusweb_sync")
+def campusweb_sync():
+    data = request.json
+    net_id = data.get('net_id')
+    password = data.get('password')
+    if not net_id or not password:
+        return jsonify({"success": False, "error": "Missing credentials"}), 400
+        
+    try:
+        import cw_scraper
+        res = cw_scraper.scrape_campusweb(net_id, password)
+        return jsonify(res)
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)})
+
+
 def get_db():
     if DATABASE_URL:
         return psycopg2.connect(DATABASE_URL)
