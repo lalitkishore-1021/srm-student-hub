@@ -5366,7 +5366,7 @@
                     let activeClass = isActive ? 'active-highlight' : '';
                     let badge = isActive ? '<span class="active-badge">HAPPENING NOW</span>' : '';
                     
-                    let isLab = (cls.type && (cls.type.toLowerCase().includes('practical') || cls.type.toLowerCase().includes('lab')));
+                    let isLab = (cls.type && (cls.type.toLowerCase().includes('practical') || cls.type.toLowerCase().includes('lab'))) || (cls.slot && (cls.slot.startsWith('P') || cls.slot.startsWith('L'))) || (cls.subject && (cls.subject.toLowerCase().includes('practical') || cls.subject.toLowerCase().includes('lab')));
                     let labClass = isLab ? 'tt-lab-card' : '';
 
                     grid.innerHTML += `
