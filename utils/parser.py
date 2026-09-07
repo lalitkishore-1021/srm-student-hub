@@ -268,15 +268,18 @@ def parse_timetable(html_content: str) -> Dict[str, Any]:
                     data['student_info']['semester'] = value
     
     # Find and parse course data using regex from the decoded HTML
-    # Pattern to match course rows: </tr><td>NUMBER</td><td>CODE</td>...
-    course_pattern = r'<td>(\d+)</td><td>([^<]+)</td><td>([^<]+)</td><td>(\d+)</td><td>([^<]+)</td><td>([^<]+)</td><td>([^<]+)</td><td>([^<]+)</td><td[^>]*>([^<]+)</td><td>([^<]*)</td><td>([^<]+)</td>'
+    course_pattern = r'<td>\s*(\d+)\s*</td>\s*<td>(.*?)</td>\s*<td>(.*?)</td>\s*<td>(.*?)</td>\s*<td>(.*?)</td>\s*<td>(.*?)</td>\s*<td>(.*?)</td>\s*<td>(.*?)</td>\s*<td[^>]*>(.*?)</td>\s*<td>(.*?)</td>\s*<td>(.*?)</td>'
     
-    courses_found = re.findall(course_pattern, html_decoded)
+    courses_found = re.findall(course_pattern, html_decoded, re.DOTALL)
     unique_courses=[]
+    
+    import re as regex_mod
+    def clean_html(text):
+        return regex_mod.sub(r'<[^>]+>', ' ', text).strip()
     
     for course_data in courses_found:
         try:
-            s_no, course_code, course_title, credit, regn_type, category, course_type, faculty_name, slot, room_no, academic_year = course_data
+            s_no, course_code, course_title, credit, regn_type, category, course_type, faculty_name, slot, room_no, academic_year = map(clean_html, course_data)
             
             credit_val = int(credit) if credit.isdigit() else 0
             
