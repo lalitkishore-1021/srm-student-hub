@@ -6,14 +6,21 @@ def scrape_campusweb(netid, pwd):
         if '@' in netid:
             netid = netid.split('@')[0]
             
-        # Fetch Attendance
-        att_resp = requests.post(
-            'https://campusapi.fly.dev/api/student-portal/attendance',
-            json={'net_id': netid, 'password': pwd},
-            timeout=30
-        )
-        att_json = att_resp.json()
+        import concurrent.futures
         
+        def fetch_att():
+            return requests.post('https://campusapi.fly.dev/api/student-portal/attendance', json={'net_id': netid, 'password': pwd}, timeout=45).json()
+            
+        def fetch_marks():
+            return requests.post('https://campusapi.fly.dev/api/student-portal/marks', json={'net_id': netid, 'password': pwd}, timeout=45).json()
+            
+        with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+            future_att = executor.submit(fetch_att)
+            future_marks = executor.submit(fetch_marks)
+            
+            att_json = future_att.result()
+            marks_json = future_marks.result()
+            
         if att_json.get('status') != 'success':
             return {"success": False, "error": att_json.get('message', 'Invalid Credentials or Academia Down')}
             
@@ -27,14 +34,6 @@ def scrape_campusweb(netid, pwd):
                 "absent": float(item.get('absent', 0)),
                 "attended": float(item.get('presentpercentage', 0))
             })
-            
-        # Fetch Marks
-        marks_resp = requests.post(
-            'https://campusapi.fly.dev/api/student-portal/marks',
-            json={'net_id': netid, 'password': pwd},
-            timeout=30
-        )
-        marks_json = marks_resp.json()
         
         marks_data = []
         marked_courses = set()
