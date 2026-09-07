@@ -2912,7 +2912,15 @@
     </div>
 
     <div id="main-content">
-
+        <div style="padding: 20px 20px 0 20px; display: flex; align-items: center; gap: 12px; cursor: pointer; user-select: none;" onclick="document.querySelector('.nav-item').click();">
+            <div style="width: 32px; height: 32px; border-radius: 8px; background: linear-gradient(135deg, rgba(255,170,0,0.2), rgba(138,43,226,0.2)); border: 1px solid rgba(255,170,0,0.4); display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(255,170,0,0.2);">
+                <svg viewBox="0 0 100 100" style="width: 20px; height: 20px;" fill="none" stroke="url(#logo-grad-main)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round">
+                    <defs><linearGradient id="logo-grad-main" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#ffaa00"/><stop offset="100%" stop-color="#8a2be2"/></linearGradient></defs>
+                    <path d="M 30 20 L 10 50 L 30 80 M 70 20 L 90 50 L 70 80 M 35 65 L 45 65 L 45 50 L 55 50 L 55 35 L 65 35" />
+                </svg>
+            </div>
+            <h1 style="font-family: 'Montserrat', sans-serif; font-size: 1.25rem; font-weight: 900; margin: 0; background: linear-gradient(90deg, #ffffff, #aaaaaa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; letter-spacing: 0.5px;">SRM <span style="color: #ffaa00; -webkit-text-fill-color: initial;">HUB</span></h1>
+        </div>
 
         <div id="share-template">
             <div class="st-watermark">
@@ -4986,15 +4994,15 @@
 
                         <div style="display: flex; justify-content: space-between; background: rgba(255,255,255,0.03); border-radius: 12px; padding: 12px 15px; margin-bottom: ${cond > 0 ? '20px' : '0'};">
                             <div style="text-align: center;">
-                                <div style="color: var(--accent); font-size: 14px; font-weight: 800;">${pres}</div>
+                                <div style="color: var(--accent); font-size: 14px; font-weight: 800; text-shadow: 0 0 10px rgba(0, 206, 201, 0.5);">${pres}</div>
                                 <div style="color: var(--text-sub); font-size: 9px; font-weight: 700; letter-spacing: 0.5px; margin-top: 4px; text-transform: uppercase;">Present</div>
                             </div>
                             <div style="text-align: center;">
-                                <div style="color: var(--danger); font-size: 14px; font-weight: 800;">${abs}</div>
+                                <div style="color: var(--danger); font-size: 14px; font-weight: 800; text-shadow: 0 0 10px rgba(255, 71, 87, 0.5);">${abs}</div>
                                 <div style="color: var(--text-sub); font-size: 9px; font-weight: 700; letter-spacing: 0.5px; margin-top: 4px; text-transform: uppercase;">Absent</div>
                             </div>
                             <div style="text-align: center;">
-                                <div style="color: var(--text-main); font-size: 14px; font-weight: 800;">${cond}</div>
+                                <div style="color: var(--text-main); font-size: 14px; font-weight: 800; text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);">${cond}</div>
                                 <div style="color: var(--text-sub); font-size: 9px; font-weight: 700; letter-spacing: 0.5px; margin-top: 4px; text-transform: uppercase;">Total</div>
                             </div>
                             ${(() => {
@@ -5003,14 +5011,14 @@
                                 if (m >= 0) {
                                     return `
                                     <div style="text-align: center;">
-                                        <div style="color: #2ecc71; font-size: 14px; font-weight: 800;">+${m}</div>
+                                        <div style="color: #2ecc71; font-size: 14px; font-weight: 800; text-shadow: 0 0 10px rgba(46, 204, 113, 0.5);">+${m}</div>
                                         <div style="color: var(--text-sub); font-size: 9px; font-weight: 700; letter-spacing: 0.5px; margin-top: 4px; text-transform: uppercase;">Margin</div>
                                     </div>`;
                                 } else {
                                     let req = Math.ceil(3 * cond - 4 * pres);
                                     return `
                                     <div style="text-align: center;">
-                                        <div style="color: #e74c3c; font-size: 14px; font-weight: 800;">-${req}</div>
+                                        <div style="color: #e74c3c; font-size: 14px; font-weight: 800; text-shadow: 0 0 10px rgba(231, 76, 60, 0.5);">-${req}</div>
                                         <div style="color: var(--text-sub); font-size: 9px; font-weight: 700; letter-spacing: 0.5px; margin-top: 4px; text-transform: uppercase;">Needed</div>
                                     </div>`;
                                 }
@@ -5107,13 +5115,13 @@
                 let gradePoint = 0;
                 let courseCredits = 3; // Default 3 credits if not found
                 if (courseMax > 0) {
-                    let marksCut = courseMax - courseObtained;
-                    if (marksCut < 10) gradePoint = 10.0;
-                    else if (marksCut < 20) gradePoint = 9.0;
-                    else if (marksCut < 30) gradePoint = 8.0;
-                    else if (marksCut < 40) gradePoint = 7.0;
-                    else if (marksCut < 45) gradePoint = 6.0;
-                    else if (marksCut < 50) gradePoint = 5.0;
+                    let percent = (courseObtained / courseMax) * 100;
+                    if (percent >= 90) gradePoint = 10.0;
+                    else if (percent >= 80) gradePoint = 9.0;
+                    else if (percent >= 70) gradePoint = 8.0;
+                    else if (percent >= 60) gradePoint = 7.0;
+                    else if (percent >= 55) gradePoint = 6.0;
+                    else if (percent >= 50) gradePoint = 5.0;
                     else gradePoint = 0.0;
                     
                     weightedGradePoints += gradePoint * courseCredits;
