@@ -246,8 +246,15 @@ def save_student_to_db(net_id, name, register_no, att_data, marks_data):
         total_att = 0; total_cls = 0
         for sub in (att_data or []):
             try:
-                att_val = float(sub.get('attended', 0) or 0)
-                tot_val = float(sub.get('total', 0) or 0)
+                # Handle cw_scraper format (conducted, absent, attended = pct)
+                if 'conducted' in sub:
+                    tot_val = float(sub.get('conducted', 0) or 0)
+                    abs_val = float(sub.get('absent', 0) or 0)
+                    att_val = tot_val - abs_val
+                else:
+                    att_val = float(sub.get('attended', 0) or 0)
+                    tot_val = float(sub.get('total', 0) or 0)
+                
                 total_att += int(att_val)
                 total_cls += int(tot_val)
             except: continue
