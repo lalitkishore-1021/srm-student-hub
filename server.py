@@ -260,34 +260,40 @@ def save_student_to_db(net_id, name, register_no, att_data, marks_data):
             except: continue
         overall_att = round((total_att / total_cls) * 100, 1) if total_cls > 0 else 0.0
 
-        # Calculate Est CGPA (Mimicking Frontend Logic)
-        grand_total_obtained = 0
-        grand_total_max = 0
+        # Calculate Est CGPA (Mimicking Frontend Logic EXACTLY)
+        total_grade_points = 0
+        total_credits = 0
         for sub in (marks_data or []):
             try:
                 perf_string = sub.get('Test Performance') or sub.get('performance') or sub.get('marks') or ""
-                # Logic: extract max and obtained using regex matching `/([0-9.]+)\s*\|\s*([0-9.]+)/` (like frontend)
-                # But it's easier: split by '|', if it has '/', left is obtained, right is max?
-                # The frontend regex: `([A-Za-z0-9-]+)\/([0-9.]+)\s*\|\s*([0-9.]+)` 
-                # This seems like it was matching something else, let's look at the regex:
-                # regex = /([A-Za-z0-9-]+)\/([0-9.]+)\s*\|\s*([0-9.]+)/g
-                # match[1] = testName, match[2] = max, match[3] = obtained? 
-                
-                # Let's write a simple python regex that extracts all numbers around '/' and '|'
-                # The frontend is matching: "CT 1/50.0 | 45.0" or similar?
-                # Wait, let's just use Python re module
                 
                 matches = re.findall(r'([A-Za-z0-9-]+)/([0-9.]+)\s*\|\s*([0-9.]+)', perf_string)
+                
+                course_max = 0
+                course_obtained = 0
                 for test_name, max_str, obtained_str in matches:
                     try:
-                        grand_total_max += float(max_str)
-                        grand_total_obtained += float(obtained_str)
+                        course_max += float(max_str)
+                        course_obtained += float(obtained_str)
                     except ValueError:
                         pass
+                
+                if course_max > 0:
+                    percent = (course_obtained / course_max) * 100
+                    gp = 0
+                    if percent >= 90: gp = 10
+                    elif percent >= 80: gp = 9
+                    elif percent >= 70: gp = 8
+                    elif percent >= 60: gp = 7
+                    elif percent >= 50: gp = 6
+                    elif percent >= 40: gp = 5
+                    
+                    total_grade_points += (gp * 3)
+                    total_credits += 3
             except Exception as e:
                 continue
                 
-        cgpa = round((grand_total_obtained / grand_total_max) * 10, 2) if grand_total_max > 0 else 0.0
+        cgpa = round((total_grade_points / total_credits), 2) if total_credits > 0 else 0.0
 
         conn = get_db()
         cur = conn.cursor()
@@ -372,7 +378,7 @@ def start_session():
                 profile = result.get('profile', {})
                 raw_reg = reg_no or ''
                 net_id = raw_reg.split('@')[0]
-                register_no = net_id.upper()
+                register_no = profile.get('reg_no', net_id.upper())
                 name = profile.get('name', 'Student')
                 save_student_to_db(net_id, name, register_no, result.get('data', []), result.get('marks', []))
             sync_jobs[sid] = {'status': 'completed', 'result': result, 'timestamp': time.time()}
