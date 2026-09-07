@@ -398,7 +398,7 @@
         }
 
         #main-content {
-            padding: calc(80px + env(safe-area-inset-top)) 20px calc(140px + env(safe-area-inset-bottom));
+            padding: calc(20px + env(safe-area-inset-top)) 20px calc(140px + env(safe-area-inset-bottom));
             text-align: center;
             opacity: 0;
             transform: scale(0.95);
@@ -606,7 +606,32 @@
             background: radial-gradient(circle at 75% 50%, #e22127 0%, #082366 55%, #03081a 100%); 
         }
 
-        /* Dynamic Theme Cutout Image & One-Time Entry Animations */
+        
+        /* --- NEW THEMES: Naruto, Groot, Optimus --- */
+        .id-card[data-theme="naruto"]::after { background: radial-gradient(circle at top right, rgba(255, 140, 0, 0.4), transparent 60%); }
+        .id-card[data-theme="groot"]::after { background: radial-gradient(circle at top right, rgba(34, 139, 34, 0.4), transparent 60%); }
+        .id-card[data-theme="optimus"]::after { background: radial-gradient(circle at top right, rgba(0, 102, 255, 0.4), transparent 60%); }
+
+        .id-theme-img-naruto { position: absolute; bottom: -10px; right: 10px; width: 110px; filter: drop-shadow(0 15px 15px rgba(0,0,0,0.6)); animation: narutoHover 3s ease-in-out infinite alternate; }
+        .anim-naruto-entry { animation: narutoPoof 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        @keyframes narutoHover { from { transform: translateY(0); } to { transform: translateY(-6px); } }
+        @keyframes narutoPoof { 0% { transform: scale(0); opacity: 0; filter: blur(10px); } 70% { transform: scale(1.1); opacity: 1; filter: blur(0); } 100% { transform: scale(1); } }
+
+        .id-theme-img-groot { position: absolute; bottom: -15px; right: 20px; width: 100px; filter: drop-shadow(0 15px 15px rgba(0,0,0,0.6)); animation: grootSway 4s ease-in-out infinite alternate; transform-origin: bottom center; }
+        .anim-groot-entry { animation: grootGrow 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        @keyframes grootSway { from { transform: rotate(-3deg); } to { transform: rotate(3deg); } }
+        @keyframes grootGrow { 0% { transform: scaleY(0.2) translateY(50px); opacity: 0; } 100% { transform: scaleY(1) translateY(0); opacity: 1; } }
+
+        .id-theme-img-optimus-truck { position: absolute; bottom: -20px; right: 20px; width: 130px; filter: drop-shadow(0 15px 15px rgba(0,0,0,0.6)); opacity: 1; }
+        .id-theme-img-optimus-robot { position: absolute; bottom: -15px; right: 15px; width: 130px; filter: drop-shadow(0 15px 15px rgba(0,0,0,0.6)); opacity: 0; }
+        .anim-optimus-entry .id-theme-img-optimus-truck { animation: truckDriveIn 1.5s ease-out forwards, hideTruck 0.1s 1.5s forwards; }
+        .anim-optimus-entry .id-theme-img-optimus-robot { animation: showRobot 0.5s 1.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards, optimusHover 4s ease-in-out 2s infinite alternate; }
+        @keyframes truckDriveIn { 0% { transform: translateX(150px) scale(0.8); opacity: 0; } 30% { opacity: 1; } 100% { transform: translateX(0) scale(1); opacity: 1; } }
+        @keyframes hideTruck { to { opacity: 0; visibility: hidden; } }
+        @keyframes showRobot { 0% { opacity: 0; transform: scale(0.5) translateY(20px); filter: brightness(2) drop-shadow(0 0 20px #0066ff); } 100% { opacity: 1; transform: scale(1) translateY(0); filter: brightness(1) drop-shadow(0 15px 15px rgba(0,0,0,0.6)); } }
+        @keyframes optimusHover { 0% { transform: translateY(0); } 100% { transform: translateY(-8px); } }
+        /* ------------------------------------------- */
+/* Dynamic Theme Cutout Image & One-Time Entry Animations */
         .id-theme-art {
             position: absolute;
             right: 15px;
@@ -2912,14 +2937,9 @@
     </div>
 
     <div id="main-content">
-        <div style="padding: 20px 20px 0 20px; display: flex; align-items: center; gap: 12px; cursor: pointer; user-select: none;" onclick="document.querySelector('.nav-item').click();">
-            <div style="width: 32px; height: 32px; border-radius: 8px; background: linear-gradient(135deg, rgba(255,170,0,0.2), rgba(138,43,226,0.2)); border: 1px solid rgba(255,170,0,0.4); display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(255,170,0,0.2);">
-                <svg viewBox="0 0 100 100" style="width: 20px; height: 20px;" fill="none" stroke="url(#logo-grad-main)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round">
-                    <defs><linearGradient id="logo-grad-main" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#ffaa00"/><stop offset="100%" stop-color="#8a2be2"/></linearGradient></defs>
-                    <path d="M 30 20 L 10 50 L 30 80 M 70 20 L 90 50 L 70 80 M 35 65 L 45 65 L 45 50 L 55 50 L 55 35 L 65 35" />
-                </svg>
-            </div>
-            <h1 style="font-family: 'Montserrat', sans-serif; font-size: 1.25rem; font-weight: 900; margin: 0; background: linear-gradient(90deg, #ffffff, #aaaaaa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; letter-spacing: 0.5px;">SRM <span style="color: #ffaa00; -webkit-text-fill-color: initial;">HUB</span></h1>
+        <div style="display: flex; align-items: center; gap: 12px; cursor: pointer; user-select: none; margin-bottom: 20px;" onclick="document.querySelector('.nav-item').click();">
+            <img src="images/app-icon.svg" style="width: 38px; height: 38px; border-radius: 10px; box-shadow: 0 4px 12px rgba(255,170,0,0.25);">
+            <h1 style="font-family: 'Montserrat', sans-serif; font-size: 1.35rem; font-weight: 900; margin: 0; background: linear-gradient(90deg, #ffffff, #aaaaaa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; letter-spacing: 0.5px;">SRM <span style="color: #ffaa00; -webkit-text-fill-color: initial;">HUB</span></h1>
         </div>
 
         <div id="share-template">
@@ -4994,15 +5014,15 @@
 
                         <div style="display: flex; justify-content: space-between; background: rgba(255,255,255,0.03); border-radius: 12px; padding: 12px 15px; margin-bottom: ${cond > 0 ? '20px' : '0'};">
                             <div style="text-align: center;">
-                                <div style="color: var(--accent); font-size: 14px; font-weight: 800; text-shadow: 0 0 10px rgba(0, 206, 201, 0.5);">${pres}</div>
+                                <div style="color: var(--accent); font-size: 14px; font-weight: 800; text-shadow: 0 0 12px rgba(0, 206, 201, 0.8);">${pres}</div>
                                 <div style="color: var(--text-sub); font-size: 9px; font-weight: 700; letter-spacing: 0.5px; margin-top: 4px; text-transform: uppercase;">Present</div>
                             </div>
                             <div style="text-align: center;">
-                                <div style="color: var(--danger); font-size: 14px; font-weight: 800; text-shadow: 0 0 10px rgba(255, 71, 87, 0.5);">${abs}</div>
+                                <div style="color: var(--danger); font-size: 14px; font-weight: 800; text-shadow: 0 0 12px rgba(255, 71, 87, 0.8);">${abs}</div>
                                 <div style="color: var(--text-sub); font-size: 9px; font-weight: 700; letter-spacing: 0.5px; margin-top: 4px; text-transform: uppercase;">Absent</div>
                             </div>
                             <div style="text-align: center;">
-                                <div style="color: var(--text-main); font-size: 14px; font-weight: 800; text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);">${cond}</div>
+                                <div style="color: var(--text-main); font-size: 14px; font-weight: 800; text-shadow: 0 0 10px rgba(255, 255, 255, 0.6);">${cond}</div>
                                 <div style="color: var(--text-sub); font-size: 9px; font-weight: 700; letter-spacing: 0.5px; margin-top: 4px; text-transform: uppercase;">Total</div>
                             </div>
                             ${(() => {
@@ -5011,14 +5031,14 @@
                                 if (m >= 0) {
                                     return `
                                     <div style="text-align: center;">
-                                        <div style="color: #2ecc71; font-size: 14px; font-weight: 800; text-shadow: 0 0 10px rgba(46, 204, 113, 0.5);">+${m}</div>
+                                        <div style="color: #2ecc71; font-size: 14px; font-weight: 800; text-shadow: 0 0 12px rgba(46, 204, 113, 0.8);">+${m}</div>
                                         <div style="color: var(--text-sub); font-size: 9px; font-weight: 700; letter-spacing: 0.5px; margin-top: 4px; text-transform: uppercase;">Margin</div>
                                     </div>`;
                                 } else {
                                     let req = Math.ceil(3 * cond - 4 * pres);
                                     return `
                                     <div style="text-align: center;">
-                                        <div style="color: #e74c3c; font-size: 14px; font-weight: 800; text-shadow: 0 0 10px rgba(231, 76, 60, 0.5);">-${req}</div>
+                                        <div style="color: #e74c3c; font-size: 14px; font-weight: 800; text-shadow: 0 0 12px rgba(231, 76, 60, 0.8);">-${req}</div>
                                         <div style="color: var(--text-sub); font-size: 9px; font-weight: 700; letter-spacing: 0.5px; margin-top: 4px; text-transform: uppercase;">Needed</div>
                                     </div>`;
                                 }
@@ -6252,8 +6272,10 @@ function checkAndShowHolidayBanner(viewId) {
 
                 // Get current user details from localStorage to highlight them
                 const profile = JSON.parse(localStorage.getItem('squadProfile') || '{}');
-                const myRegRaw = profile.regNo || profile.reg_no || localStorage.getItem("syncRegNo") || '';
-                const myNetId = myRegRaw.split('@')[0].toUpperCase();
+                const myRegRaw = profile.regNo || profile.reg_no || '';
+                const myLoginId = localStorage.getItem("syncRegNo") || '';
+                const myNetId1 = myRegRaw.toUpperCase();
+                const myNetId2 = myLoginId.split('@')[0].toUpperCase();
 
                 const rankEmojis = ['', '', ''];
                 list.innerHTML = data.map((s, i) => {
@@ -6264,8 +6286,12 @@ function checkAndShowHolidayBanner(viewId) {
                     const medal = rankEmojis[i] || `#${i + 1}`;
                     
                     // Check if this row is the current user
-                    const sReg = (s.register_no || s.net_id || '').toUpperCase().split('@')[0];
-                    const isMe = sReg && myNetId && sReg === myNetId;
+                    const sReg = (s.register_no || '').toUpperCase();
+                    const sNet = (s.net_id || '').toUpperCase().split('@')[0];
+                    const isMe = (myNetId1 && sReg && sReg.includes(myNetId1)) || 
+                                 (myNetId2 && sNet && sNet === myNetId2) ||
+                                 (myNetId1 && sNet && sNet === myNetId1.split('@')[0]) ||
+                                 (myNetId2 && sReg && sReg === myNetId2);
                     const bgStyle = isMe ? 'var(--glass)' : (i === 0 ? 'rgba(255,170,0,0.08)' : 'var(--glass)');
                     const borderStyle = isMe ? '2px solid var(--primary)' : (i === 0 ? '1px solid rgba(255,170,0,0.3)' : '1px solid var(--glass-border)');
                     const shadowStyle = isMe ? 'box-shadow: 0 0 15px rgba(255,170,0,0.3);' : '';
@@ -7517,7 +7543,7 @@ function checkAndShowHolidayBanner(viewId) {
             // Cycle theme on each app load (0 = Iron Man, 1 = F1, 2 = Spider-Man, 3 = Batman)
             if (window.currentSessionThemeIdx === undefined) {
                 let themeIdx = parseInt(localStorage.getItem('themeIdx') || '0');
-                themeIdx = (themeIdx + 1) % 4;
+                themeIdx = (themeIdx + 1) % 7;
                 localStorage.setItem('themeIdx', themeIdx.toString());
                 window.currentSessionThemeIdx = themeIdx;
             }
