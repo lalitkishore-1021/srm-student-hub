@@ -5812,14 +5812,21 @@
                 if (!lastAuto || new Date(parseInt(lastAuto)) < lastMilestone) {
                     if (typeof backgroundSync === 'function') {
                         const now = new Date();
-                    const hour = now.getHours();
-                    if (hour === 8 || hour === 17 || hour === 0) {
-                        const windowKey = `${now.getFullYear()}-${now.getMonth()}-${now.getDate()}-${hour}`;
-                        if (localStorage.getItem('lastAutoSyncWindow') !== windowKey) {
-                            localStorage.setItem('lastAutoSyncWindow', windowKey);
-                            backgroundSync();
+                        const h = now.getHours();
+                        const m = now.getMinutes();
+                        const time = h + m / 60.0;
+                        let currentWindow = null;
+                        if (time >= 6 && time <= 12.5) currentWindow = 'morning';
+                        else if (time >= 15 && time <= 18) currentWindow = 'afternoon';
+                        else if (time >= 20 && time <= 23.834) currentWindow = 'evening';
+                        
+                        if (currentWindow) {
+                            const windowKey = `${now.getFullYear()}-${now.getMonth()}-${now.getDate()}-${currentWindow}`;
+                            if (localStorage.getItem('lastAutoSyncWindow') !== windowKey) {
+                                localStorage.setItem('lastAutoSyncWindow', windowKey);
+                                backgroundSync();
+                            }
                         }
-                    }
                         localStorage.setItem('lastAutoSyncTime', now.getTime().toString());
                     }
                 }
@@ -5948,9 +5955,16 @@
                     switchView('home-view');
                     
                     const now = new Date();
-                    const hour = now.getHours();
-                    if (hour === 8 || hour === 17 || hour === 0) {
-                        const windowKey = `${now.getFullYear()}-${now.getMonth()}-${now.getDate()}-${hour}`;
+                    const h = now.getHours();
+                    const m = now.getMinutes();
+                    const time = h + m / 60.0;
+                    let currentWindow = null;
+                    if (time >= 6 && time <= 12.5) currentWindow = 'morning';
+                    else if (time >= 15 && time <= 18) currentWindow = 'afternoon';
+                    else if (time >= 20 && time <= 23.834) currentWindow = 'evening';
+                    
+                    if (currentWindow) {
+                        const windowKey = `${now.getFullYear()}-${now.getMonth()}-${now.getDate()}-${currentWindow}`;
                         if (localStorage.getItem('lastAutoSyncWindow') !== windowKey) {
                             localStorage.setItem('lastAutoSyncWindow', windowKey);
                             backgroundSync();
