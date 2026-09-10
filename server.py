@@ -17,7 +17,7 @@ from collections import defaultdict
 import time
 
 # --- ANTI-SCRAPING PROTECTIONS ---
-API_SECRET_KEY = "srm-hub-protected-x9f2"
+API_SECRET_KEY = os.environ.get("API_SECRET_KEY", "srm-hub-protected-x9f2")
 ip_rate_limits = defaultdict(list)
 MAX_LOGIN_ATTEMPTS = 30
 RATE_LIMIT_WINDOW = 60 # seconds
@@ -65,6 +65,10 @@ def campusweb_sync():
     password = data.get('password')
     if not net_id or not password:
         return jsonify({"success": False, "error": "Missing credentials"}), 400
+        
+    client_ip = request.headers.get('X-Forwarded-For', request.remote_addr)
+    if is_rate_limited(client_ip, net_id):
+        return jsonify({"success": False, "error": "Too many sync attempts. Please wait a minute."}), 429
         
     try:
         import cw_scraper
@@ -566,7 +570,7 @@ def get_marketplace():
     
     cur.close()
     conn.close()
-    return jsonify(projects)
+    return jsonify(strip_base64_images(projects, 'marketplace'))
 
 @app.route('/api/marketplace/submit', methods=['POST'])
 def submit_marketplace():
@@ -815,7 +819,7 @@ def get_events():
     
     cur.close()
     conn.close()
-    return jsonify(events)
+    return jsonify(strip_base64_images(events, 'club_events'))
 
 @app.route('/api/events/submit', methods=['POST'])
 def submit_event():
@@ -869,7 +873,7 @@ def get_lostfound():
         items = [dict(row) for row in rows]
     cur.close()
     conn.close()
-    return jsonify(items)
+    return jsonify(strip_base64_images(items, 'lost_found'))
 
 @app.route('/api/lostfound/submit', methods=['POST'])
 def submit_lostfound():
@@ -1338,17 +1342,40 @@ def ai_predict():
 @app.route('/api/chat/<section>', methods=['GET'])
 def get_chat(section):
     conn = get_db()
+    
+    # ETag Optimization to save bandwidth
     if DATABASE_URL:
         cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-        cur.execute("SELECT * FROM class_chats WHERE section = %s ORDER BY created_at ASC", (section,))
+        cur.execute("SELECT MAX(id), COUNT(*) FROM class_chats WHERE section = %s", (section,))
+        row = cur.fetchone()
+        max_id = row['max'] if row and row['max'] else 0
+        count = row['count'] if row and row['count'] else 0
     else:
         cur = conn.cursor()
-        cur.execute("SELECT * FROM class_chats WHERE section = ? ORDER BY created_at ASC", (section,))
+        cur.execute("SELECT MAX(id), COUNT(*) FROM class_chats WHERE section = ?", (section,))
+        row = cur.fetchone()
+        max_id = row[0] if row and row[0] else 0
+        count = row[1] if row and row[1] else 0
+        
+    etag = f'"{max_id}-{count}"'
+    if request.headers.get('If-None-Match') == etag:
+        cur.close()
+        conn.close()
+        return '', 304
+
+    # Fetch max 100 recent messages to further save bandwidth
+    if DATABASE_URL:
+        cur.execute("SELECT * FROM (SELECT * FROM class_chats WHERE section = %s ORDER BY created_at DESC LIMIT 100) sub ORDER BY created_at ASC", (section,))
+    else:
+        cur.execute("SELECT * FROM (SELECT * FROM class_chats WHERE section = ? ORDER BY created_at DESC LIMIT 100) sub ORDER BY created_at ASC", (section,))
     rows = cur.fetchall()
     items = [dict(row) for row in rows]
     cur.close()
     conn.close()
-    return jsonify(items)
+    
+    response = jsonify(items)
+    response.set_etag(etag)
+    return response
 
 @app.route('/api/chat/<section>', methods=['POST'])
 def post_chat(section):
@@ -1483,7 +1510,7 @@ def ping():
 @app.route('/api/admin/stats', methods=['GET'])
 def admin_stats():
     secret_key = request.args.get('key')
-    if secret_key != 'lalitadmin123':
+    if secret_key != os.environ.get('ADMIN_SECRET_KEY', 'lalitadmin123'):
         return jsonify({"error": "Unauthorized. Invalid Admin Key."}), 403
         
     conn = get_db()
@@ -1526,7 +1553,13 @@ def admin_stats():
 @app.route('/')
 def serve_index(): return send_from_directory('.', 'index.html')
 @app.route('/<path:path>')
-def serve_static(path): return send_from_directory('.', path)
+def serve_static(path):
+    safe_paths = ['index.html', 'manifest.json', 'sw.js']
+    safe_folders = ['images', 'css', 'js', 'fonts', 'themes']
+    is_safe = path in safe_paths or any(path.startswith(f"{f}/") for f in safe_folders)
+    if not is_safe:
+        return "Access Denied", 403
+    return send_from_directory('.', path)
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
