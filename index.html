@@ -4598,7 +4598,7 @@
                 secondsPassed++;
                 statusText.innerHTML = ` Scraping your data... <span style="font-family: inherit; font-size: 1.1rem; color: #fff; background: rgba(255,170,0,0.2); padding: 2px 8px; border-radius: 6px;">${secondsPassed}s</span>`;
                 
-                let prog = Math.min((secondsPassed / 50) * 100, 95);
+                let prog = Math.min((secondsPassed / 12) * 100, 95);
                 let pb = document.getElementById('login-progress-bar');
                 let thumb = document.getElementById('login-progress-thumb');
                 
