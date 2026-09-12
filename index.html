@@ -2852,6 +2852,7 @@
                 </div>
 
                 <div id="login-tip" style="color: var(--text-sub); font-size: 0.9rem; font-style: italic; min-height: 40px; padding: 0 10px; text-align: center; transition: opacity 0.3s;"> Did you know? The library has a massive collection of e-books available for free.</div>
+                <button id="login-back-btn" class="action-btn" style="display: none; margin-top: 20px; background: rgba(255,255,255,0.1); color: #fff;" onclick="history.back()">&#8592; Try Again</button>
             </div>
         </div>
     </div>
@@ -4328,11 +4329,19 @@
 
         window.addEventListener('popstate', (e) => {
             // Close fullscreen modals on back button
-            const modals = ['cgpa-modal', 'grade-modal', 'att-predict-modal', ];
+            const modals = ['cgpa-modal', 'grade-modal', 'att-predict-modal'];
             modals.forEach(m => {
                 const el = document.getElementById(m);
                 if (el && el.style.display !== 'none') el.style.display = 'none';
             });
+            
+            if (e.state && e.state.viewId === 'login-view' && !e.state.loader) {
+                document.getElementById('login-loader-container').style.display = 'none';
+                document.getElementById('login-form-container').style.display = 'block';
+                let backBtn = document.getElementById('login-back-btn');
+                if (backBtn) backBtn.style.display = 'none';
+                window.abortLoginSync = true;
+            }
             
             if (e.state && e.state.viewId) switchView(e.state.viewId, false);
             else switchView('home-view', false);
@@ -4580,6 +4589,11 @@
 
             document.getElementById('login-form-container').style.display = 'none';
             document.getElementById('login-loader-container').style.display = 'flex';
+            
+            history.pushState({ viewId: 'login-view', loader: true }, '', '#login-loading');
+            window.abortLoginSync = false;
+            let backBtn = document.getElementById('login-back-btn');
+            if (backBtn) backBtn.style.display = 'none';
 
             let secondsPassed = 0;
             statusText.innerHTML = ` Connecting to Academia... <span style="font-family: inherit; font-size: 1.1rem; color: #fff; background: rgba(255,170,0,0.2); padding: 2px 8px; border-radius: 6px;">0s</span>`;
@@ -4641,7 +4655,15 @@
 
                 // Polling loop
                 while (true) {
+                    if (window.abortLoginSync) {
+                        result = { success: false, error: "Sync cancelled." };
+                        break;
+                    }
                     await new Promise(r => setTimeout(r, 3000)); // wait 3 seconds
+                    if (window.abortLoginSync) {
+                        result = { success: false, error: "Sync cancelled." };
+                        break;
+                    }
                     try {
                         const statusRes = await fetch(`${BACKEND_URL}/api/sync_status/${syncId}`);
                         const statusData = await statusRes.json();
@@ -4663,8 +4685,11 @@
                 clearInterval(timerInterval);
 
                 if (!result || !result.success) {
+                    if (window.abortLoginSync) return; // Silent exit if user pressed back
                     statusText.innerText = ` ${result ? result.error : 'Unknown error'} (Failed after ${secondsPassed}s)`;
                     statusText.style.color = "var(--danger)";
+                    let backBtn = document.getElementById('login-back-btn');
+                    if (backBtn) backBtn.style.display = 'block';
                     return;
                 }
 
