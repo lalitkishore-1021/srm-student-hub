@@ -358,25 +358,34 @@ def start_session():
     sync_jobs[sync_id] = {'status': 'processing', 'timestamp': time.time()}
     
     def worker_wrapper(reg_no, pwd, batch, sid):
-        out_queue = queue.Queue()
+        import concurrent.futures
         try:
-            # We start the scraper normally
-            scrape_academia_worker(reg_no, pwd, batch, out_queue)
-            # We wait for the scraper to finish without holding the HTTP response
-            result = out_queue.get(timeout=10)
-            
-            # --- CAMPUSWEB PARALLEL SYNC ---
-            try:
+            with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
                 import cw_scraper
-                cw_res = cw_scraper.scrape_campusweb(reg_no, pwd)
-                if cw_res.get('success'):
-                    if cw_res.get('attendance') and len(cw_res.get('attendance')) > 0:
-                        result['data'] = cw_res.get('attendance')
-                    if cw_res.get('marks') and len(cw_res.get('marks')) > 0:
-                        result['marks'] = cw_res.get('marks')
-            except Exception as e:
-                print(f"CampusWeb fallback failed: {e}")
-            # -------------------------------
+                
+                # Helper to run academia and return its queue result
+                def run_academia():
+                    out_queue = queue.Queue()
+                    scrape_academia_worker(reg_no, pwd, batch, out_queue)
+                    return out_queue.get(timeout=30)
+                
+                # Submit both tasks concurrently
+                future_ac = executor.submit(run_academia)
+                future_cw = executor.submit(cw_scraper.scrape_campusweb, reg_no, pwd)
+                
+                # Wait for academia (primary data)
+                result = future_ac.result()
+                
+                # Merge CampusWeb (secondary data)
+                try:
+                    cw_res = future_cw.result(timeout=15)
+                    if cw_res and cw_res.get('success'):
+                        if cw_res.get('attendance') and len(cw_res.get('attendance')) > 0:
+                            result['data'] = cw_res.get('attendance')
+                        if cw_res.get('marks') and len(cw_res.get('marks')) > 0:
+                            result['marks'] = cw_res.get('marks')
+                except Exception as e:
+                    print(f"CampusWeb fallback failed: {e}")
             
             if result.get('success'):
                 profile = result.get('profile', {})
