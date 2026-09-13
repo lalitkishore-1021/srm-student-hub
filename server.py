@@ -1618,7 +1618,7 @@ def admin_stats():
 def serve_index(): return send_from_directory('.', 'index.html')
 @app.route('/<path:path>')
 def serve_static(path):
-    safe_paths = ['index.html', 'manifest.json', 'sw.js']
+    safe_paths = ['index.html', 'manifest.json', 'sw.js', 'robots.txt', 'sitemap.xml']
     safe_folders = ['images', 'css', 'js', 'fonts', 'themes']
     is_safe = path in safe_paths or any(path.startswith(f"{f}/") for f in safe_folders)
     if not is_safe:
