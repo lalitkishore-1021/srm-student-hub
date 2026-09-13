@@ -117,6 +117,17 @@ def init_db():
         cur.execute('''CREATE TABLE IF NOT EXISTS spotted_feed (
             id SERIAL PRIMARY KEY, message TEXT NOT NULL, likes INTEGER DEFAULT 0, net_id TEXT, created_at TEXT)''')
         conn.commit()
+        for table, col, ctype in [
+            ('students', 'created_at', 'TEXT'),
+            ('students', 'last_opened_at', 'TEXT'),
+            ('music_hub', 'play_count', 'INTEGER DEFAULT 0')
+        ]:
+            try:
+                cur.execute(f"ALTER TABLE {table} ADD COLUMN {col} {ctype}")
+                conn.commit()
+            except Exception:
+                conn.rollback()
+
         try:
             cur.execute("ALTER TABLE music_hub ADD COLUMN order_index INTEGER DEFAULT 0")
             conn.commit()
@@ -192,6 +203,17 @@ def init_db():
         cur.execute('''CREATE TABLE IF NOT EXISTS spotted_feed (
             id INTEGER PRIMARY KEY AUTOINCREMENT, message TEXT NOT NULL, likes INTEGER DEFAULT 0, net_id TEXT, created_at TEXT)''')
         
+        for table, col, ctype in [
+            ('students', 'created_at', 'TEXT'),
+            ('students', 'last_opened_at', 'TEXT'),
+            ('music_hub', 'play_count', 'INTEGER DEFAULT 0')
+        ]:
+            try:
+                cur.execute(f"ALTER TABLE {table} ADD COLUMN {col} {ctype}")
+                conn.commit()
+            except Exception:
+                conn.rollback()
+
         try:
             cur.execute("ALTER TABLE music_hub ADD COLUMN order_index INTEGER DEFAULT 0")
             conn.commit()
@@ -303,22 +325,22 @@ def save_student_to_db(net_id, name, register_no, att_data, marks_data):
         cur = conn.cursor()
         if DATABASE_URL:
             cur.execute('''
-                INSERT INTO students (net_id, name, register_no, overall_attendance, est_cgpa, synced_at)
-                VALUES (%s, %s, %s, %s, %s, %s)
+                INSERT INTO students (net_id, name, register_no, overall_attendance, est_cgpa, synced_at, created_at, last_opened_at)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
                 ON CONFLICT(net_id) DO UPDATE SET
                     name=EXCLUDED.name, register_no=EXCLUDED.register_no,
                     overall_attendance=EXCLUDED.overall_attendance, est_cgpa=EXCLUDED.est_cgpa,
                     synced_at=EXCLUDED.synced_at
-            ''', (net_id.lower(), name, register_no.upper(), overall_att, cgpa, datetime.utcnow().isoformat()))
+            ''', (net_id.lower(), name, register_no.upper(), overall_att, cgpa, datetime.utcnow().isoformat(), datetime.utcnow().isoformat(), datetime.utcnow().isoformat()))
         else:
             cur.execute('''
-                INSERT INTO students (net_id, name, register_no, overall_attendance, est_cgpa, synced_at)
-                VALUES (?, ?, ?, ?, ?, ?)
+                INSERT INTO students (net_id, name, register_no, overall_attendance, est_cgpa, synced_at, created_at, last_opened_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT(net_id) DO UPDATE SET
                     name=excluded.name, register_no=excluded.register_no,
                     overall_attendance=excluded.overall_attendance, est_cgpa=excluded.est_cgpa,
                     synced_at=excluded.synced_at
-            ''', (net_id.lower(), name, register_no.upper(), overall_att, cgpa, datetime.utcnow().isoformat()))
+            ''', (net_id.lower(), name, register_no.upper(), overall_att, cgpa, datetime.utcnow().isoformat(), datetime.utcnow().isoformat(), datetime.utcnow().isoformat()))
         conn.commit()
         cur.close()
         conn.close()
@@ -1537,19 +1559,52 @@ def admin_stats():
         cur.execute("SELECT COUNT(*) FROM students WHERE synced_at LIKE ?", (f"{today_prefix}%",))
     active_today = cur.fetchone()[0]
 
-    # Get latest 10 logged in users (just names and times)
-    if DATABASE_URL:
-        cur.execute("SELECT name, register_no, synced_at FROM students ORDER BY synced_at DESC LIMIT 10")
-    else:
-        cur.execute("SELECT name, register_no, synced_at FROM students ORDER BY synced_at DESC LIMIT 10")
+    def fetch_users(order_by):
+        try:
+            if DATABASE_URL:
+                cur.execute(f"SELECT name, register_no, {order_by} FROM students ORDER BY {order_by} DESC NULLS LAST LIMIT 10")
+            else:
+                cur.execute(f"SELECT name, register_no, {order_by} FROM students ORDER BY {order_by} DESC LIMIT 10")
+            return [{"name": r[0], "register_no": r[1], "timestamp": r[2]} for r in cur.fetchall()]
+        except:
+            return []
+
+    recent_new_users = fetch_users('created_at')
+    recent_synced_users = fetch_users('synced_at')
+    recent_opened_users = fetch_users('last_opened_at')
     
-    recent_users = []
-    for row in cur.fetchall():
-        recent_users.append({
-            "name": row[0],
-            "register_no": row[1],
-            "last_login": row[2]
-        })
+    # Music stats
+    try:
+        cur.execute("SELECT id, title, artist, COALESCE(play_count, 0) as pc FROM music_hub ORDER BY pc DESC LIMIT 20")
+        music_stats = [{"id": r[0], "title": r[1], "artist": r[2], "plays": r[3]} for r in cur.fetchall()]
+    except:
+        music_stats = []
+        
+    def get_count(table):
+        try:
+            cur.execute(f"SELECT COUNT(*) FROM {table}")
+            return cur.fetchone()[0]
+        except:
+            return 0
+
+    cur.close()
+    conn.close()
+
+    return jsonify({
+        "status": "success",
+        "admin": "Lalit",
+        "total_users": total_users,
+        "active_today": active_today,
+        "recent_new_users": recent_new_users,
+        "recent_synced_users": recent_synced_users,
+        "recent_opened_users": recent_opened_users,
+        "music_plays": music_stats,
+        "total_chat_messages": get_count('class_chats'),
+        "total_marketplace_items": get_count('marketplace'),
+        "total_events": get_count('club_events'),
+        "total_lost_and_found": get_count('lost_found')
+    })
+    })
         
     return jsonify({
         "status": "success",

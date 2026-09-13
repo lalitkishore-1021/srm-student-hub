@@ -4305,6 +4305,18 @@
         }
 
         window.addEventListener('load', () => {
+            // Track site open
+            try {
+                const netId = getCurrentNetId();
+                if (netId) {
+                    fetch(`${BACKEND_URL}/api/track_open`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ net_id: netId })
+                    }).catch(e=>console.log(e));
+                }
+            } catch (e) {}
+            
             // Fix: Wait for DOM, but don't force a hash reload that ruins click events.
             const hash = window.location.hash.replace('#', '');
             if (hash && document.getElementById(hash)) {
@@ -7788,6 +7800,9 @@ function checkAndShowHolidayBanner(viewId) {
 
         async function playMusicTrack(index) {
             if (index < 0 || index >= currentPlaylist.length) return;
+            try {
+                fetch(`${BACKEND_URL}/api/music/play/${currentPlaylist[index].id}`, { method: 'POST', body: '{}', headers: {'Content-Type':'application/json'} }).catch(e=>console.log(e));
+            } catch(e) {}
             isLoadingTrack = true;
             currentTrackIndex = index;
             const track = currentPlaylist[index];
