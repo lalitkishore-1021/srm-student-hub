@@ -1568,7 +1568,14 @@ def serve_static(path):
     is_safe = path in safe_paths or any(path.startswith(f"{f}/") for f in safe_folders)
     if not is_safe:
         return "Access Denied", 403
-    return send_from_directory('.', path)
+        
+    response = send_from_directory('.', path)
+    # Aggressively cache static assets to save bandwidth
+    if path.startswith('images/') or path.endswith('.js') or path.endswith('.css'):
+        response.headers['Cache-Control'] = 'public, max-age=31536000, immutable'
+    elif path == 'index.html':
+        response.headers['Cache-Control'] = 'public, max-age=3600' # cache HTML for 1 hour
+    return response
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
