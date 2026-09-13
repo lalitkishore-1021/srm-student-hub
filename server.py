@@ -1604,15 +1604,6 @@ def admin_stats():
         "total_events": get_count('club_events'),
         "total_lost_and_found": get_count('lost_found')
     })
-    })
-        
-    return jsonify({
-        "status": "success",
-        "admin": "Lalit",
-        "total_registered_users": total_users,
-        "active_users_today": active_today,
-        "recent_logins": recent_users
-    })
 
 @app.route('/')
 def serve_index(): return send_from_directory('.', 'index.html')
