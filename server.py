@@ -1562,10 +1562,10 @@ def admin_stats():
     def fetch_users(order_by):
         try:
             if DATABASE_URL:
-                cur.execute(f"SELECT name, register_no, {order_by} FROM students ORDER BY {order_by} DESC NULLS LAST LIMIT 10")
+                cur.execute(f"SELECT name, register_no, net_id, {order_by} FROM students WHERE {order_by} IS NOT NULL ORDER BY {order_by} DESC LIMIT 10")
             else:
-                cur.execute(f"SELECT name, register_no, {order_by} FROM students ORDER BY {order_by} DESC LIMIT 10")
-            return [{"name": r[0], "register_no": r[1], "timestamp": r[2]} for r in cur.fetchall()]
+                cur.execute(f"SELECT name, register_no, net_id, {order_by} FROM students WHERE {order_by} IS NOT NULL ORDER BY {order_by} DESC LIMIT 10")
+            return [{"name": r[0], "register_no": r[1] or r[2].upper(), "net_id": r[2], "timestamp": r[3] or "Never"} for r in cur.fetchall()]
         except:
             return []
 
