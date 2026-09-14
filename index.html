@@ -3923,8 +3923,11 @@
     </style>
     <!-- MUSIC PLAYER BAR -->
     <div id="music-player-bar" class="music-player-bar" onclick="openFullscreenPlayer(event)">
-        <!-- Active track glowing border indicator at the bottom -->
-        <div style="position: absolute; bottom: 0; left: 20%; height: 2px; width: 40%; background: #1DB954; box-shadow: 0 0 10px #1DB954; border-radius: 2px;"></div>
+        <!-- Interactive Neon Progress Bar for Mini Player -->
+        <div id="mini-progress-bar" style="position: absolute; bottom: 0; left: 0; height: 4px; width: 100%; background: rgba(255,255,255,0.05); cursor: pointer; z-index: 10;" onclick="seekMiniPlayer(event)">
+            <div id="mini-progress-fill" style="position: absolute; bottom: 0; left: 0; height: 100%; width: 0%; background: #1DB954; box-shadow: 0 -2px 12px 2px #1DB954, 0 0 20px #1DB954; border-radius: 0 2px 2px 0; pointer-events: none; transition: width 0.1s linear;"></div>
+            <div id="mini-progress-thumb" style="position: absolute; top: 50%; transform: translate(-50%, -50%); width: 12px; height: 12px; background: #fff; border-radius: 50%; left: 0%; box-shadow: 0 0 10px #fff; pointer-events: none; transition: left 0.1s linear;"></div>
+        </div>
         
         <div style="display: flex; align-items: center; justify-content: space-between; height: 100%; width: 100%;">
             <div style="display: flex; align-items: center; gap: 15px; flex: 1; min-width: 0;">
@@ -7151,7 +7154,7 @@ function checkAndShowHolidayBanner(viewId) {
                 html += `
                 <div class="music-track-card fade-in-up" data-id="${t.id}" style="display:flex; align-items:center; gap:14px; padding:14px 18px; background:rgba(255,255,255,0.05); border-radius:14px; margin-bottom:10px; cursor:grab; border:1px solid rgba(255,255,255,0.06); transition:all 0.2s;" onclick="playOfflineTrack('${t.id}')" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='rgba(255,255,255,0.05)'">
                     <div style="color: rgba(255,255,255,0.2); margin-right: 5px; font-size: 1.2rem;">⋮⋮</div>
-                    <img src="${t.cover_url || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMzMzIi8+PC9zdmc+'}" style="width:50px; height:50px; border-radius:10px; object-fit:cover; flex-shrink:0;">
+                    <img src="${t.cover_data || t.cover_url || \'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMzMzIi8+PC9zdmc+'}" style="width:50px; height:50px; border-radius:10px; object-fit:cover; flex-shrink:0;">
                     <div style="flex:1; min-width:0;">
                         <div style="color:#fff; font-weight:600; font-size:0.95rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${t.title}</div>
                         <div style="color:var(--text-sub); font-size:0.8rem;">${t.artist}</div>
@@ -8251,10 +8254,19 @@ function checkAndShowHolidayBanner(viewId) {
             return `${min}:${sec < 10 ? '0' : ''}${sec}`;
         }
         
+        function seekMiniPlayer(e) {
+            e.stopPropagation();
+            if (!audioPlayer.duration) return;
+            const bar = document.getElementById('mini-progress-bar');
+            audioPlayer.currentTime = (e.offsetX / bar.clientWidth) * audioPlayer.duration;
+        }
+
         function updateMusicProgress() {
             const fill = document.getElementById('player-progress-fill');
             const fillFs = document.getElementById('fs-progress-fill');
             const fillMobile = document.getElementById('mobile-progress-fill');
+            const fillMini = document.getElementById('mini-progress-fill');
+            const thumbMini = document.getElementById('mini-progress-thumb');
             
             // Dynamic Favicon logic
             const favicon = document.getElementById('dynamic-favicon');
@@ -8268,6 +8280,8 @@ function checkAndShowHolidayBanner(viewId) {
                 if(fill) fill.style.width = perc;
                 if(fillFs) fillFs.style.width = perc;
                 if(fillMobile) fillMobile.style.width = perc;
+                if(fillMini) fillMini.style.width = perc;
+                if(thumbMini) thumbMini.style.left = perc;
                 
                 if (window.syncedLyricsData && window.syncedLyricsData.length > 0) {
                     const ct = audioPlayer.currentTime;
