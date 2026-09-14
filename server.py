@@ -1606,7 +1606,10 @@ def admin_stats():
     })
 
 @app.route('/')
-def serve_index(): return send_from_directory('.', 'index.html')
+def serve_index():
+    response = send_from_directory('.', 'index.html')
+    response.headers['Cache-Control'] = 'no-cache, must-revalidate'
+    return response
 @app.route('/<path:path>')
 def serve_static(path):
     safe_paths = ['index.html', 'manifest.json', 'sw.js', 'robots.txt', 'sitemap.xml']
@@ -1620,7 +1623,7 @@ def serve_static(path):
     if path.startswith('images/') or path.endswith('.js') or path.endswith('.css'):
         response.headers['Cache-Control'] = 'public, max-age=31536000, immutable'
     elif path == 'index.html':
-        response.headers['Cache-Control'] = 'public, max-age=3600' # cache HTML for 1 hour
+        response.headers['Cache-Control'] = 'no-cache, must-revalidate' # always revalidate HTML
     return response
 
 if __name__ == '__main__':
