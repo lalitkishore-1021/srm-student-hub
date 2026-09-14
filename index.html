@@ -7193,7 +7193,7 @@ function checkAndShowHolidayBanner(viewId) {
                 html += `
                 <div class="music-track-card fade-in-up" data-id="${t.id}" style="display:flex; align-items:center; gap:14px; padding:14px 18px; background:rgba(255,255,255,0.05); border-radius:14px; margin-bottom:10px; cursor:grab; border:1px solid rgba(255,255,255,0.06); transition:all 0.2s;" onclick="playOfflineTrack('${t.id}')" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='rgba(255,255,255,0.05)'">
                     <div style="color: rgba(255,255,255,0.2); margin-right: 5px; font-size: 1.2rem;">⋮⋮</div>
-                    <img src="${t.cover_data || t.cover_url || \'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMzMzIi8+PC9zdmc+'}" style="width:50px; height:50px; border-radius:10px; object-fit:cover; flex-shrink:0;">
+                    <img src="${t.cover_data || t.cover_url || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMzMzIi8+PC9zdmc+'}" style="width:50px; height:50px; border-radius:10px; object-fit:cover; flex-shrink:0;">
                     <div style="flex:1; min-width:0;">
                         <div style="color:#fff; font-weight:600; font-size:0.95rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${t.title}</div>
                         <div style="color:var(--text-sub); font-size:0.8rem;">${t.artist}</div>
