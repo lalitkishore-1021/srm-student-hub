@@ -86,7 +86,7 @@ def get_db():
     return conn
 
 def strip_base64_images(items, table_name):
-    col = 'image_url' if table_name == 'class_chats' else 'image_data'
+    col = 'image_url' # all these tables use image_url
     for item in items:
         if col in item and item[col] and item[col].startswith('data:image'):
             item[col] = f"/api/image/{table_name}/{item['id']}"
@@ -94,7 +94,7 @@ def strip_base64_images(items, table_name):
 
 @app.route('/api/image/<table>/<int:item_id>', methods=['GET'])
 def get_image_data(table, item_id):
-    valid_tables = {'class_chats': 'image_url', 'marketplace': 'image_data', 'club_events': 'image_data', 'lost_found': 'image_data'}
+    valid_tables = {'class_chats': 'image_url', 'marketplace': 'image_url', 'club_events': 'image_url', 'lost_found': 'image_url'}
     if table not in valid_tables: return "Invalid table", 400
     
     conn = get_db()
@@ -157,6 +157,13 @@ def init_db():
             id SERIAL PRIMARY KEY, section TEXT NOT NULL, sender_name TEXT, sender_net_id TEXT, message TEXT, image_url TEXT, deleted_for_all INTEGER DEFAULT 0, deleted_by TEXT, created_at TEXT)''')
         cur.execute('''CREATE TABLE IF NOT EXISTS spotted_feed (
             id SERIAL PRIMARY KEY, message TEXT NOT NULL, likes INTEGER DEFAULT 0, net_id TEXT, created_at TEXT)''')
+        cur.execute('''CREATE TABLE IF NOT EXISTS wall_comments (
+            id SERIAL PRIMARY KEY, post_id INTEGER NOT NULL, message TEXT NOT NULL, author TEXT, created_at TEXT)''')
+        cur.execute('''CREATE TABLE IF NOT EXISTS spotted_comments (
+            id SERIAL PRIMARY KEY, post_id INTEGER NOT NULL, message TEXT NOT NULL, created_at TEXT)''')
+        cur.execute('''CREATE TABLE IF NOT EXISTS spotted_likes (
+            id SERIAL PRIMARY KEY, post_id INTEGER NOT NULL, net_id TEXT NOT NULL, UNIQUE(post_id, net_id))''')
+
         conn.commit()
         for table, col, ctype in [
             ('students', 'created_at', 'TEXT'),
@@ -243,6 +250,13 @@ def init_db():
             id INTEGER PRIMARY KEY AUTOINCREMENT, section TEXT NOT NULL, sender_name TEXT, sender_net_id TEXT, message TEXT, image_url TEXT, deleted_for_all INTEGER DEFAULT 0, deleted_by TEXT, created_at TEXT, audio_url TEXT)''')
         cur.execute('''CREATE TABLE IF NOT EXISTS spotted_feed (
             id INTEGER PRIMARY KEY AUTOINCREMENT, message TEXT NOT NULL, likes INTEGER DEFAULT 0, net_id TEXT, created_at TEXT)''')
+        cur.execute('''CREATE TABLE IF NOT EXISTS wall_comments (
+            id SERIAL PRIMARY KEY, post_id INTEGER NOT NULL, message TEXT NOT NULL, author TEXT, created_at TEXT)''')
+        cur.execute('''CREATE TABLE IF NOT EXISTS spotted_comments (
+            id SERIAL PRIMARY KEY, post_id INTEGER NOT NULL, message TEXT NOT NULL, created_at TEXT)''')
+        cur.execute('''CREATE TABLE IF NOT EXISTS spotted_likes (
+            id SERIAL PRIMARY KEY, post_id INTEGER NOT NULL, net_id TEXT NOT NULL, UNIQUE(post_id, net_id))''')
+
         
         for table, col, ctype in [
             ('students', 'created_at', 'TEXT'),
@@ -726,11 +740,27 @@ def get_wall():
         cur.execute("SELECT * FROM campus_wall ORDER BY id DESC LIMIT 100")
         rows = cur.fetchall()
         posts = [dict(row) for row in rows]
+        
+        if posts:
+            post_ids = [p['id'] for p in posts]
+            placeholders = ','.join(['%s' if DATABASE_URL else '?'] * len(post_ids))
+            cur.execute(f"SELECT * FROM wall_comments WHERE post_id IN ({placeholders}) ORDER BY id ASC", tuple(post_ids))
+            comments = [dict(c) for c in cur.fetchall()]
+            for p in posts:
+                p['comments'] = [c for c in comments if c['post_id'] == p['id']]
     else:
         cur = conn.cursor()
         cur.execute("SELECT * FROM campus_wall ORDER BY id DESC LIMIT 100")
         rows = cur.fetchall()
         posts = [dict(row) for row in rows]
+        
+        if posts:
+            post_ids = [p['id'] for p in posts]
+            placeholders = ','.join(['%s' if DATABASE_URL else '?'] * len(post_ids))
+            cur.execute(f"SELECT * FROM wall_comments WHERE post_id IN ({placeholders}) ORDER BY id ASC", tuple(post_ids))
+            comments = [dict(c) for c in cur.fetchall()]
+            for p in posts:
+                p['comments'] = [c for c in comments if c['post_id'] == p['id']]
     
     cur.close()
     conn.close()
@@ -760,6 +790,30 @@ def submit_wall():
         cur.close()
         conn.close()
 
+    return jsonify({'success': True})
+
+
+@app.route('/api/wall/comment/<int:post_id>', methods=['POST'])
+def submit_wall_comment(post_id):
+    data = request.json
+    if not data or not data.get('message'): return jsonify({'success': False, 'error': 'Message required'}), 400
+    conn = get_db()
+    cur = conn.cursor()
+    now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    author = data.get('author', 'Anonymous Fox').strip()
+    try:
+        if DATABASE_URL:
+            cur.execute("INSERT INTO wall_comments (post_id, message, author, created_at) VALUES (%s, %s, %s, %s)",
+                        (post_id, data['message'].strip(), author, now_str))
+        else:
+            cur.execute("INSERT INTO wall_comments (post_id, message, author, created_at) VALUES (?, ?, ?, ?)",
+                        (post_id, data['message'].strip(), author, now_str))
+        conn.commit()
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        cur.close()
+        conn.close()
     return jsonify({'success': True})
 
 @app.route('/api/wall/like/<int:post_id>', methods=['POST'])
@@ -1554,6 +1608,29 @@ def post_spotted():
         conn.commit()
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)})
+    finally:
+        cur.close()
+        conn.close()
+    return jsonify({'success': True})
+
+
+@app.route('/api/spotted/comment/<int:post_id>', methods=['POST'])
+def submit_spotted_comment(post_id):
+    data = request.json
+    if not data or not data.get('message'): return jsonify({'success': False, 'error': 'Message required'}), 400
+    conn = get_db()
+    cur = conn.cursor()
+    now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    try:
+        if DATABASE_URL:
+            cur.execute("INSERT INTO spotted_comments (post_id, message, created_at) VALUES (%s, %s, %s)",
+                        (post_id, data['message'].strip(), now_str))
+        else:
+            cur.execute("INSERT INTO spotted_comments (post_id, message, created_at) VALUES (?, ?, ?)",
+                        (post_id, data['message'].strip(), now_str))
+        conn.commit()
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
     finally:
         cur.close()
         conn.close()

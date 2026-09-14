@@ -1824,13 +1824,13 @@
         .planner-holiday {
             border: 2px solid #00cc66 !important;
             box-shadow: 0 0 10px rgba(0, 204, 102, 0.5) !important;
-            animation: pulse-green 2s infinite alternate;
+            
         }
 
         .planner-day-order {
             border: 2px solid #bf5af2 !important;
             box-shadow: 0 0 10px rgba(191, 90, 242, 0.5) !important;
-            animation: pulse-purple 2s infinite alternate;
+            
         }
 
         @keyframes pulse-green {
@@ -5486,11 +5486,17 @@
                 if (dateStr === todayISOTime) extraClass += ' today';
 
                 let plan = srmPlanner[dateStr];
+                let contentHTML = `${i}`;
                 if (plan) {
-                    if (plan.type === 'Holiday') extraClass += ' planner-holiday';
-                    else if (plan.type === 'Day Order') extraClass += ' planner-day-order';
+                    if (plan.type === 'Holiday') {
+                        extraClass += ' planner-holiday';
+                    }
+                    else if (plan.type === 'Day Order') {
+                        extraClass += ' planner-day-order';
+                        contentHTML += `<div style="position: absolute; bottom: 3px; right: 4px; font-size: 0.55rem; font-weight: 800; color: rgba(255,255,255,0.7); pointer-events: none;">DO${plan.day_order}</div>`;
+                    }
                 }
-                grid.innerHTML += `<div class="cal-day ${extraClass}" onclick="showEventDetails('${dateStr}')">${i}</div>`;
+                grid.innerHTML += `<div class="cal-day ${extraClass}" onclick="showEventDetails('${dateStr}')" style="position: relative;">${contentHTML}</div>`;
             }
             
             checkAndShowHolidayBanner('plan-holiday-banner');
@@ -6441,18 +6447,30 @@ function checkAndShowHolidayBanner(viewId) {
                     const techTags = (p.tech_stack || '').split(',').filter(t => t.trim()).map(t =>
                         `<span style="background: rgba(255,255,255,0.07); padding: 3px 10px; border-radius: 5px; font-size: 0.8rem; color: #aaa;">${t.trim()}</span>`
                     ).join('');
-                    const links = [
-                        p.github_url ? `<a href="${p.github_url}" target="_blank" style="color: var(--primary); font-weight: bold; font-size: 0.9rem;">GitHub ↗</a>` : '',
-                        p.demo_url ? `<a href="${p.demo_url}" target="_blank" style="color: #62d5ff; font-weight: bold; font-size: 0.9rem;">Live Demo →</a>` : ''
-                    ].filter(Boolean).join('<span style="color: var(--text-sub); padding: 0 10px;">|</span>');
+                    const demoBtn = p.demo_url ? `<a href="${p.demo_url}" target="_blank" style="background: linear-gradient(135deg, #00C6ff, #0072ff); color: #fff; padding: 8px 16px; border-radius: 20px; font-weight: bold; font-size: 0.85rem; text-decoration: none; display: flex; align-items: center; gap: 5px; box-shadow: 0 4px 15px rgba(0, 114, 255, 0.4);"><svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M8 5v14l11-7z"/></svg> Live Demo</a>` : '';
+                    const gitBtn = p.github_url ? `<a href="${p.github_url}" target="_blank" style="background: rgba(255,255,255,0.1); color: #fff; padding: 8px 16px; border-radius: 20px; font-weight: bold; font-size: 0.85rem; text-decoration: none; display: flex; align-items: center; gap: 5px;"><svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.603-3.369-1.34-3.369-1.34-.454-1.156-1.11-1.462-1.11-1.462-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.831.092-.646.35-1.086.636-1.336-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0112 6.836c.85.004 1.705.114 2.504.336 1.909-1.294 2.747-1.025 2.747-1.025.546 1.379.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.138 20.161 22 16.416 22 12c0-5.523-4.477-10-10-10z"/></svg> GitHub</a>` : '';
+                    
                     return `
-                    <div class="image-card fade-in-up" style="transform: none; text-align: left; position: relative;">
+                    <div class="glass-card fade-in-up" style="transform: none; text-align: left; position: relative; background: rgba(20,20,25,0.8); border: 1px solid rgba(255,165,0,0.2); border-radius: 16px; margin-bottom: 20px; padding: 20px;">
                         ${isOwner ? `<button onclick="deleteProject(${p.id})" style="position: absolute; top: 15px; right: 15px; background: rgba(255,68,68,0.15); border: 1px solid rgba(255,68,68,0.4); color: #ff4444; padding: 5px 12px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.8rem;"> Delete</button>` : ''}
-                        <h3 style="color: var(--text-main); margin: 0 0 8px 0; font-size: 1.15rem; font-family: 'Montserrat', sans-serif; padding-right: 80px;">${p.title}</h3>
-                        ${p.submitted_by ? `<div style="font-size:0.8rem; color: var(--text-sub); margin-bottom: 10px;">By <b style="color: var(--primary);">${p.submitted_by}</b> · ${p.net_id ? p.net_id.toUpperCase() : ''}</div>` : ''}
-                        <p style="color: var(--text-sub); font-size: 0.9rem; margin-bottom: 12px; line-height: 1.5;">${p.description || ''}</p>
-                        ${techTags ? `<div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px;">${techTags}</div>` : ''}
-                        ${links ? `<div style="display: flex; align-items: center; gap: 5px;">${links}</div>` : ''}
+                        <h3 style="color: #fff; margin: 0 0 8px 0; font-size: 1.25rem; font-family: 'Montserrat', sans-serif; padding-right: 80px;">${p.title}</h3>
+                        ${p.submitted_by ? `<div style="font-size:0.8rem; color: rgba(255,255,255,0.6); margin-bottom: 15px;">By <b style="color: var(--primary);">${p.submitted_by}</b> · ${p.net_id ? p.net_id.toUpperCase() : ''}</div>` : ''}
+                        <p style="color: #ccc; font-size: 0.95rem; margin-bottom: 15px; line-height: 1.5;">${p.description || ''}</p>
+                        ${techTags ? `<div style="display: flex; gap: 8px; flex-wrap: wrap;">${techTags}</div>` : ''}
+                        
+                        <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 15px; justify-content: space-between; align-items: center;">
+                            <div style="display: flex; gap: 8px;">
+                                <button style="background: rgba(255,255,255,0.05); border: none; color: var(--text-sub); border-radius: 20px; padding: 6px 14px; cursor: pointer; display: flex; align-items: center; gap: 5px; font-weight: 600; transition: all 0.2s;" onclick="this.style.color='#ff4757'; this.style.background='rgba(255,71,87,0.1)'; this.querySelector('svg').style.fill='#ff4757';">
+                                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg> Like
+                                </button>
+                                <button style="background: rgba(255,255,255,0.05); border: none; color: var(--text-sub); border-radius: 20px; padding: 6px 14px; cursor: pointer; display: flex; align-items: center; gap: 5px; font-weight: 600; transition: all 0.2s;" onclick="alert('Link copied to clipboard!');" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='rgba(255,255,255,0.05)'">
+                                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg> Share
+                                </button>
+                            </div>
+                            <div style="display: flex; gap: 8px;">
+                                ${gitBtn} ${demoBtn}
+                            </div>
+                        </div>
                     </div>`;
                 }).join('');
 
@@ -6650,6 +6668,38 @@ function checkAndShowHolidayBanner(viewId) {
         }
 
         // ============ CAMPUS WALL ============
+        
+        function toggleComments(type, id) {
+            const el = document.getElementById(`comments-${type}-${id}`);
+            if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
+        }
+        
+        async function submitWallComment(id) {
+            const input = document.getElementById(`comment-input-wall-${id}`);
+            if (!input.value.trim()) return;
+            try {
+                const res = await fetch(`${BACKEND_URL}/api/wall/comment/${id}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: input.value.trim() })
+                });
+                if (res.ok) loadWall();
+            } catch (e) { alert('Failed to post comment'); }
+        }
+        
+        async function submitSpottedComment(id) {
+            const input = document.getElementById(`comment-input-spotted-${id}`);
+            if (!input.value.trim()) return;
+            try {
+                const res = await fetch(`${BACKEND_URL}/api/spotted/comment/${id}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: input.value.trim() })
+                });
+                if (res.ok) loadSpottedFeed();
+            } catch (e) { alert('Failed to post comment'); }
+        }
+
         async function loadWall() {
             const list = document.getElementById('wall-list');
             if (!list) return;
@@ -6664,16 +6714,38 @@ function checkAndShowHolidayBanner(viewId) {
                 }
 
                 list.innerHTML = posts.map(p => {
-                    const formatTime = p.created_at ? new Date(p.created_at).toLocaleString() : '';
+                    const formatTime = p.created_at ? new Date(p.created_at).toLocaleString([], {month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'}) : '';
                     return `
-                    <div class="image-card fade-in-up" id="post-${p.id}" style="transform: none; text-align: left; padding: 18px;">
-                        <div style="font-size: 0.8rem; color: var(--text-sub); margin-bottom: 8px; display: flex; justify-content: space-between;">
-                            <span>Anonymous Fox </span>
-                            <span>${formatTime}</span>
+                    <div class="glass-card fade-in-up" id="post-${p.id}" style="background: rgba(20,20,25,0.8); border: 1px solid rgba(255,255,255,0.05); border-radius: 16px; margin-bottom: 20px; padding: 20px; transform: none;">
+                        <div style="font-size: 0.8rem; color: var(--text-sub); margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
+                            <span style="font-weight: 600; display: flex; align-items: center; gap: 6px;"><div style="width: 24px; height: 24px; background: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px;">🦊</div> ${p.author || 'Anonymous Fox'}</span>
+                            <span style="opacity: 0.7;">${formatTime}</span>
                         </div>
-                        <p style="color: var(--text-main); font-size: 1.05rem; line-height: 1.5; margin: 0 0 15px 0;">${p.message}</p>
-                        <div style="display: flex; gap: 15px;">
-                            <button onclick="likeWall(${p.id})" style="background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); color: var(--text-main); border-radius: 20px; padding: 5px 15px; cursor: pointer; display: flex; align-items: center; gap: 5px;"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path></svg> <span id="like-count-${p.id}">${p.likes || 0}</span></button>
+                        <p style="color: #fff; font-size: 1.1rem; line-height: 1.6; margin: 0 0 20px 0;">${p.message}</p>
+                        
+                        <div style="display: flex; gap: 12px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 15px;">
+                            <button onclick="likeWall(${p.id})" style="background: rgba(255,255,255,0.05); border: none; color: var(--text-sub); border-radius: 20px; padding: 6px 16px; cursor: pointer; display: flex; align-items: center; gap: 6px; font-weight: 600; transition: all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='rgba(255,255,255,0.05)'">
+                                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path></svg> <span id="like-count-${p.id}">${p.likes || 0}</span>
+                            </button>
+                            <button onclick="toggleComments('wall', ${p.id})" style="background: rgba(255,255,255,0.05); border: none; color: var(--text-sub); border-radius: 20px; padding: 6px 16px; cursor: pointer; display: flex; align-items: center; gap: 6px; font-weight: 600; transition: all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='rgba(255,255,255,0.05)'">
+                                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg> ${p.comments ? p.comments.length : 0}
+                            </button>
+                        </div>
+                        
+                        <div id="comments-wall-${p.id}" style="display: none; margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 15px;">
+                            ${(p.comments || []).map(c => `
+                                <div style="background: rgba(0,0,0,0.2); padding: 12px; border-radius: 12px; margin-bottom: 10px;">
+                                    <div style="font-size: 0.75rem; color: var(--text-sub); margin-bottom: 5px; display: flex; justify-content: space-between;">
+                                        <span style="font-weight:bold;">${c.author}</span>
+                                        <span>${new Date(c.created_at).toLocaleString([], {month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'})}</span>
+                                    </div>
+                                    <div style="font-size: 0.95rem; color: #ddd; line-height: 1.4;">${c.message}</div>
+                                </div>
+                            `).join('')}
+                            <div style="display: flex; gap: 8px; margin-top: 12px;">
+                                <input id="comment-input-wall-${p.id}" placeholder="Add a comment anonymously..." style="flex: 1; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 10px 15px; border-radius: 20px; outline: none; font-size: 0.9rem;">
+                                <button onclick="submitWallComment(${p.id})" style="background: var(--primary); color: #000; border: none; border-radius: 20px; padding: 0 15px; font-weight: bold; cursor: pointer;">Post</button>
+                            </div>
                         </div>
                     </div>`;
                 }).join('');
@@ -9377,15 +9449,33 @@ function checkAndShowHolidayBanner(viewId) {
                 }
                 posts.forEach(p => {
                     const dt = new Date(p.created_at);
-                    const timeStr = dt.toLocaleDateString() + ' ' + dt.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                    const timeStr = dt.toLocaleDateString([], {month:'short', day:'numeric'}) + ' ' + dt.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
                     feed.innerHTML += `
-                        <div class="image-card" style="padding: 15px; text-align: left; background: rgba(0,0,0,0.2); border: 1px solid var(--glass-border);">
-                            <div style="font-family: 'Montserrat', sans-serif; font-size: 1rem; color: #fff; line-height: 1.4; margin-bottom: 10px;">${p.message}</div>
-                            <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 10px; margin-top: 5px;">
-                                <div style="font-size: 0.8rem; color: var(--text-sub);">${timeStr}</div>
-                                <button onclick="likeSpotted(${p.id}, this)" style="background: transparent; border: none; cursor: pointer; color: #ff4757; font-size: 1.1rem; display: flex; align-items: center; gap: 5px;">
-                                     <span>${p.likes}</span>
-                                </button>
+                        <div class="glass-card fade-in-up" style="padding: 20px; text-align: left; background: rgba(30, 10, 20, 0.5); border: 1px solid rgba(255,100,150,0.2); border-radius: 16px; margin-bottom: 20px; transform: none;">
+                            <div style="font-family: 'Montserrat', sans-serif; font-size: 1.1rem; color: #fff; line-height: 1.5; margin-bottom: 15px;">${p.message}</div>
+                            <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,100,150,0.1); padding-top: 12px;">
+                                <div style="font-size: 0.8rem; color: rgba(255,255,255,0.5);">${timeStr}</div>
+                                <div style="display: flex; gap: 10px;">
+                                    <button onclick="likeSpotted(${p.id}, this)" id="btn-spot-like-${p.id}" style="background: rgba(255,71,87,0.1); border: 1px solid rgba(255,71,87,0.3); border-radius: 20px; cursor: pointer; color: #ff4757; padding: 6px 14px; font-size: 0.9rem; display: flex; align-items: center; gap: 6px; font-weight: bold; transition: all 0.2s;" onmouseover="this.style.background='rgba(255,71,87,0.2)'" onmouseout="this.style.background='rgba(255,71,87,0.1)'">
+                                         <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg> <span id="spot-like-${p.id}">${p.likes}</span>
+                                    </button>
+                                    <button onclick="toggleComments('spotted', ${p.id})" style="background: rgba(255,255,255,0.05); border: none; color: var(--text-sub); border-radius: 20px; padding: 6px 14px; cursor: pointer; display: flex; align-items: center; gap: 6px; font-weight: 600; transition: all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='rgba(255,255,255,0.05)'">
+                                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg> ${p.comments ? p.comments.length : 0}
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div id="comments-spotted-${p.id}" style="display: none; margin-top: 15px; border-top: 1px solid rgba(255,100,150,0.1); padding-top: 15px;">
+                                ${(p.comments || []).map(c => `
+                                    <div style="background: rgba(0,0,0,0.3); padding: 12px; border-radius: 12px; margin-bottom: 10px;">
+                                        <div style="font-size: 0.75rem; color: rgba(255,255,255,0.4); margin-bottom: 5px;">${new Date(c.created_at).toLocaleString([], {month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'})}</div>
+                                        <div style="font-size: 0.95rem; color: #eee; line-height: 1.4;">${c.message}</div>
+                                    </div>
+                                `).join('')}
+                                <div style="display: flex; gap: 8px; margin-top: 12px;">
+                                    <input id="comment-input-spotted-${p.id}" placeholder="Spill more tea anonymously..." style="flex: 1; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,100,150,0.2); color: #fff; padding: 10px 15px; border-radius: 20px; outline: none; font-size: 0.9rem;">
+                                    <button onclick="submitSpottedComment(${p.id})" style="background: #ff4757; color: #fff; border: none; border-radius: 20px; padding: 0 15px; font-weight: bold; cursor: pointer;">Post</button>
+                                </div>
                             </div>
                         </div>
                     `;
@@ -9689,7 +9779,10 @@ function checkAndShowHolidayBanner(viewId) {
                 });
                 
                 if (wasAtBottom) history.scrollTop = history.scrollHeight;
-            } catch(e) {}
+            } catch(e) {
+                const spinner = history.querySelector('#chat-loading-spinner');
+                if (spinner) spinner.remove();
+            }
         }
 
         async function sendClassChat() {
