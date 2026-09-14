@@ -5493,7 +5493,7 @@
                     }
                     else if (plan.type === 'Day Order') {
                         extraClass += ' planner-day-order';
-                        contentHTML += `<div style="position: absolute; bottom: 3px; right: 4px; font-size: 0.55rem; font-weight: 800; color: rgba(255,255,255,0.7); pointer-events: none;">DO${plan.day_order}</div>`;
+                        contentHTML += `<div style="position: absolute; bottom: 2px; right: 4px; font-size: 0.65rem; font-weight: 900; color: #fff; text-shadow: 0 0 5px #fff, 0 0 10px #fff; pointer-events: none;">DO${plan.value}</div>`;
                     }
                 }
                 grid.innerHTML += `<div class="cal-day ${extraClass}" onclick="showEventDetails('${dateStr}')" style="position: relative;">${contentHTML}</div>`;
@@ -8817,17 +8817,36 @@ function checkAndShowHolidayBanner(viewId) {
     </div>
 
     <!-- AI Placement Predictor Modal -->
-    <div id="predictModal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 10000; flex-direction: column; justify-content: center; align-items: center; background: rgba(0,0,0,0.8); backdrop-filter: blur(10px);">
-        <div class="image-card" style="max-width: 450px; width: 90%; padding: 30px; text-align: center; background: rgba(20,20,20,0.9); border: 1px solid rgba(0, 206, 201, 0.3); max-height: 90vh; overflow-y: auto; position: relative;">
-            <button onclick="document.getElementById('predictModal').style.display='none'" style="position: absolute; top: 15px; right: 15px; background: none; border: none; color: #fff; font-size: 1.5rem; cursor: pointer;">&times;</button>
-            <h2 style="color: #00cec9; margin-bottom: 10px; font-family: 'Montserrat', sans-serif;">AI Placement Predictor </h2>
-            <p style="color: var(--text-sub); font-size: 0.9rem; margin-bottom: 20px;">Enter your details and our AI will predict your target companies and generate a 6-month roadmap!</p>
-            <input type="text" id="ai-cgpa" placeholder="Current CGPA (e.g. 8.5)" style="width: 100%; padding: 12px; margin-bottom: 10px; border-radius: 8px; border: 1px solid var(--glass-border); background: rgba(255,255,255,0.1); color: #fff;">
-            <input type="text" id="ai-skills" placeholder="Skills (e.g. React, Python, C++)" style="width: 100%; padding: 12px; margin-bottom: 10px; border-radius: 8px; border: 1px solid var(--glass-border); background: rgba(255,255,255,0.1); color: #fff;">
-            <textarea id="ai-projects" placeholder="Describe your top 2 projects briefly..." rows="2" style="width: 100%; padding: 12px; margin-bottom: 15px; border-radius: 8px; border: 1px solid var(--glass-border); background: rgba(255,255,255,0.1); color: #fff; font-family: inherit; resize: none;"></textarea>
-            <button onclick="submitPredict()" class="action-btn" style="background: #00cec9; color: #fff; width: 100%; margin: 0; border-radius: 8px; font-weight: bold;">Predict My Future </button>
-            <div id="predict-result" style="margin-top: 15px; text-align: left; font-size: 0.9rem; color: #fff; white-space: pre-wrap; background: rgba(0,0,0,0.5); padding: 15px; border-radius: 8px; display: none; line-height: 1.6;"></div>
-            <p id="predict-status" style="margin-top: 10px; font-weight: bold; color: var(--primary);"></p>
+    <div id="predictModal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 10000; flex-direction: column; justify-content: center; align-items: center; background: rgba(0,0,0,0.85); backdrop-filter: blur(15px);">
+        <div class="glass-card" style="max-width: 450px; width: 90%; padding: 35px; text-align: center; background: linear-gradient(145deg, rgba(30,30,40,0.95), rgba(15,15,20,0.95)); border: 1px solid rgba(0, 206, 201, 0.4); border-radius: 24px; box-shadow: 0 10px 40px rgba(0, 206, 201, 0.2); max-height: 90vh; overflow-y: auto; position: relative;">
+            <button onclick="document.getElementById('predictModal').style.display='none'" style="position: absolute; top: 15px; right: 15px; background: rgba(255,255,255,0.1); border: none; color: #fff; font-size: 1.2rem; cursor: pointer; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: background 0.3s;" onmouseover="this.style.background='rgba(255,255,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.1)'">&times;</button>
+            
+            <div style="width: 60px; height: 60px; background: rgba(0, 206, 201, 0.15); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px auto; box-shadow: 0 0 20px rgba(0, 206, 201, 0.3);">
+                <svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="#00cec9" stroke-width="2"><path d="M12 2a10 10 0 1 0 10 10H12V2z"></path><path d="M12 12 2.1 7.1"></path><path d="M12 12l9.9 4.9"></path></svg>
+            </div>
+            
+            <h2 style="color: #fff; margin-bottom: 8px; font-family: 'Montserrat', sans-serif; font-size: 1.6rem; letter-spacing: -0.5px;">Placement AI</h2>
+            <p style="color: rgba(255,255,255,0.6); font-size: 0.9rem; margin-bottom: 25px; line-height: 1.5;">Our neural engine analyzes your profile to predict target companies & generates a personalized 6-month roadmap.</p>
+            
+            <div style="text-align: left; margin-bottom: 15px;">
+                <label style="font-size: 0.75rem; color: #00cec9; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px; display: block;">Current CGPA</label>
+                <input type="text" id="ai-cgpa" placeholder="e.g. 8.75" style="width: 100%; padding: 14px 16px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.3); color: #fff; font-size: 1rem; outline: none; transition: border 0.3s;" onfocus="this.style.borderColor='#00cec9'" onblur="this.style.borderColor='rgba(255,255,255,0.1)'">
+            </div>
+            
+            <div style="text-align: left; margin-bottom: 15px;">
+                <label style="font-size: 0.75rem; color: #00cec9; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px; display: block;">Core Skills</label>
+                <input type="text" id="ai-skills" placeholder="e.g. React, Node.js, Python" style="width: 100%; padding: 14px 16px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.3); color: #fff; font-size: 1rem; outline: none; transition: border 0.3s;" onfocus="this.style.borderColor='#00cec9'" onblur="this.style.borderColor='rgba(255,255,255,0.1)'">
+            </div>
+            
+            <div style="text-align: left; margin-bottom: 25px;">
+                <label style="font-size: 0.75rem; color: #00cec9; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px; display: block;">Top Projects</label>
+                <textarea id="ai-projects" placeholder="Briefly describe your best work..." rows="3" style="width: 100%; padding: 14px 16px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.3); color: #fff; font-size: 1rem; outline: none; transition: border 0.3s; font-family: inherit; resize: none;" onfocus="this.style.borderColor='#00cec9'" onblur="this.style.borderColor='rgba(255,255,255,0.1)'"></textarea>
+            </div>
+            
+            <button onclick="submitPredict()" style="background: linear-gradient(135deg, #00cec9, #0984e3); color: #fff; width: 100%; padding: 16px; border: none; border-radius: 12px; font-weight: 800; font-size: 1.1rem; cursor: pointer; box-shadow: 0 5px 20px rgba(0, 206, 201, 0.4); text-transform: uppercase; letter-spacing: 1px; transition: transform 0.2s;" onmousedown="this.style.transform='scale(0.98)'" onmouseup="this.style.transform='scale(1)'">Initiate Prediction</button>
+            
+            <div id="predict-result" style="margin-top: 20px; text-align: left; font-size: 0.95rem; color: #fff; white-space: pre-wrap; background: rgba(0, 206, 201, 0.05); border: 1px solid rgba(0, 206, 201, 0.2); padding: 20px; border-radius: 12px; display: none; line-height: 1.6; max-height: 300px; overflow-y: auto;"></div>
+            <p id="predict-status" style="margin-top: 15px; font-weight: bold; color: #ff4757; font-size: 0.9rem;"></p>
         </div>
     </div>
 
@@ -9709,7 +9728,7 @@ function checkAndShowHolidayBanner(viewId) {
                     bubble.id = 'chat-msg-' + m.id;
                     bubble.dataset.msgId = m.id;
                     bubble.className = "chat-bubble-anim fade-in-up";
-                    bubble.style.cssText = `max-width: 85%; padding: 12px 16px; border-radius: 18px; display: flex; flex-direction: column; gap: 5px; position: relative; box-shadow: 0 4px 15px rgba(0,0,0,0.2); backdrop-filter: blur(10px); ${isMe ? 'background: linear-gradient(135deg, rgba(0, 204, 102, 0.8), rgba(0, 153, 77, 0.9)); color: white; align-self: flex-end; border-bottom-right-radius: 4px; border: 1px solid rgba(0,255,100,0.3);' : 'background: rgba(255,255,255,0.1); color: white; align-self: flex-start; border-bottom-left-radius: 4px; border: 1px solid rgba(255,255,255,0.1);'}`;
+                    bubble.style.cssText = `max-width: 85%; padding: 12px 16px; border-radius: 18px; display: flex; flex-direction: column; gap: 5px; position: relative; box-shadow: 0 4px 15px rgba(0,0,0,0.2); backdrop-filter: blur(10px); ${isMe ? 'background: linear-gradient(135deg, #00b09b, #96c93d); color: white; align-self: flex-end; border-bottom-right-radius: 2px; border-top-left-radius: 20px; border-bottom-left-radius: 20px; border-top-right-radius: 20px; box-shadow: 0 4px 15px rgba(0, 176, 155, 0.4); border: none;' : 'background: rgba(30, 30, 40, 0.85); color: white; align-self: flex-start; border-bottom-left-radius: 2px; border-top-right-radius: 20px; border-bottom-right-radius: 20px; border-top-left-radius: 20px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3); border: 1px solid rgba(255,255,255,0.05);'}`;
                     
                     if (m.deleted_for_all) {
                         bubble.dataset.deleted = "true";
@@ -9809,7 +9828,7 @@ function checkAndShowHolidayBanner(viewId) {
             const noMsg = document.getElementById('no-msg-txt');
             if (noMsg) noMsg.remove();
             
-            let tempHtml = `<div id="${tempId}" class="chat-bubble-anim fade-in-up" style="max-width: 85%; padding: 12px 16px; border-radius: 18px; display: flex; flex-direction: column; gap: 5px; position: relative; box-shadow: 0 4px 15px rgba(0,0,0,0.2); backdrop-filter: blur(10px); background: linear-gradient(135deg, rgba(0, 204, 102, 0.5), rgba(0, 153, 77, 0.6)); color: white; align-self: flex-end; border-bottom-right-radius: 4px; border: 1px solid rgba(0,255,100,0.3); opacity: 0.8;">
+            let tempHtml = `<div id="${tempId}" class="chat-bubble-anim fade-in-up" style="max-width: 85%; padding: 12px 16px; border-radius: 18px; display: flex; flex-direction: column; gap: 5px; position: relative; box-shadow: 0 4px 15px rgba(0,0,0,0.2); backdrop-filter: blur(10px); background: linear-gradient(135deg, #00b09b, #96c93d); color: white; align-self: flex-end; border-bottom-right-radius: 2px; border-top-left-radius: 20px; border-bottom-left-radius: 20px; border-top-right-radius: 20px; border: none; opacity: 0.6;">
                 <div style="font-size: 0.75rem; font-weight: bold; color: rgba(255,255,255,0.9); margin-bottom: 4px;">You (Sending...)</div>`;
             
             if (img) tempHtml += `<img src="${img}" style="max-width: 100%; border-radius: 12px; margin-bottom: 5px; opacity: 0.7;">`;
@@ -9826,6 +9845,8 @@ function checkAndShowHolidayBanner(viewId) {
                     method: 'POST', headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({ sender_name: name, sender_net_id: netId, message: msg, image_url: img, audio_url: audio })
                 });
+                const tBubble = document.getElementById(tempId);
+                if (tBubble) tBubble.remove();
                 loadClassChat();
             } catch(e) { 
                 alert('Failed to send message'); 
