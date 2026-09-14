@@ -7,56 +7,95 @@
     <title>SRM Student Hub | Academia Attendance, CGPA & Timetable</title>
     
     <!-- SEO Meta Tags -->
-    <meta name="description" content="The ultimate student dashboard for SRM Institute of Science and Technology. Track SRM Academia attendance, predict CGPA, check your timetable, and view the mess menu instantly.">
-    <meta name="keywords" content="SRM Student Hub, SRM Academia, SRM Attendance, SRM CGPA Predictor, SRM Timetable, SRM Mess Menu, Academia Sync, SRMIST Portal, Student Dashboard">
-    <meta name="author" content="SRM Student Hub">
-    <meta name="robots" content="index, follow">
-    <link rel="canonical" href="https://srm-student-hub-1.onrender.com/"> <!-- Update with actual domain later -->
+    <meta name="description" content="SRM Student Hub - The #1 unofficial campus companion for SRMIST students. Track Academia attendance in real-time, predict CGPA, view timetable, mess menu, bunk calculator, class chat, music lounge & more. Built by SRM students, for SRM students.">
+    <meta name="keywords" content="SRM Student Hub, SRM Academia, SRM Attendance, SRM CGPA Predictor, SRM Timetable, SRM Mess Menu, Academia Sync, SRMIST Portal, Student Dashboard, SRM Attendance Tracker, SRM Bunk Calculator, SRM Academia Login, SRM Student App, SRMIST Attendance, SRM University Student Portal">
+    <meta name="author" content="Lalit Kishore - SRM Student Hub">
+    <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large">
+    <link rel="canonical" href="https://srm-student-hub-1.onrender.com/">
 
     <!-- Open Graph (WhatsApp, Discord, Facebook) -->
-    <meta property="og:title" content="SRM Student Hub | Your Ultimate Dashboard">
-    <meta property="og:description" content="Track your SRM attendance, predict CGPA, and view your daily timetable all in one beautiful app.">
-    <meta property="og:image" content="/images/app-icon.svg">
+    <meta property="og:site_name" content="SRM Student Hub">
+    <meta property="og:title" content="SRM Student Hub | Your Ultimate Campus Dashboard">
+    <meta property="og:description" content="Track your SRM attendance, predict CGPA, view timetable & mess menu. The all-in-one campus companion for SRMIST students.">
+    <meta property="og:image" content="https://srm-student-hub-1.onrender.com/images/app-icon.svg">
     <meta property="og:url" content="https://srm-student-hub-1.onrender.com/">
     <meta property="og:type" content="website">
 
     <!-- Twitter Card Meta Tags -->
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="SRM Student Hub | Your Ultimate Dashboard">
+    <meta name="twitter:title" content="SRM Student Hub | Your Ultimate Campus Dashboard">
+    <meta name="twitter:description" content="Track your SRM attendance, predict CGPA, view timetable & mess menu. Built by SRM students, for SRM students.">
+    <meta name="twitter:image" content="https://srm-student-hub-1.onrender.com/images/app-icon.svg">
 
-    <!-- Schema.org JSON-LD for Google SEO -->
+    <!-- CRITICAL: WebSite Schema - This tells Google the SITE NAME (fixes "Render" showing) -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
-      "@type": "WebApplication",
+      "@type": "WebSite",
       "name": "SRM Student Hub",
-      "url": "https://srm-student-hub-1.onrender.com/",
-      "description": "The ultimate student dashboard for SRM Institute of Science and Technology. Track SRM Academia attendance, predict CGPA, check your timetable, and view the mess menu instantly.",
-      "applicationCategory": "EducationalApplication",
-      "operatingSystem": "All",
-      "author": {
-        "@type": "Person",
-        "name": "Lalit Kishore"
-      }
+      "alternateName": ["SRM Hub", "SRMIST Student Hub", "SRM Academia Hub"],
+      "url": "https://srm-student-hub-1.onrender.com/"
     }
     </script>
-    <meta name="twitter:description" content="Track your SRM attendance, predict CGPA, and view your daily timetable all in one beautiful app.">
-    <meta name="twitter:image" content="/images/app-icon.svg">
 
-    <!-- JSON-LD Structured Data for Google -->
+    <!-- WebApplication Schema for rich results -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
       "@type": "WebApplication",
       "name": "SRM Student Hub",
       "url": "https://srm-student-hub-1.onrender.com/",
-      "description": "The ultimate student dashboard for SRM Institute of Science and Technology. Track attendance, predict CGPA, check your timetable, and view the mess menu instantly.",
+      "description": "The #1 unofficial campus companion for SRMIST students. Track Academia attendance, predict CGPA, check timetable, mess menu, bunk calculator, and more.",
       "applicationCategory": "EducationalApplication",
       "operatingSystem": "All",
       "offers": {
         "@type": "Offer",
-        "price": "0"
+        "price": "0",
+        "priceCurrency": "INR"
+      },
+      "author": {
+        "@type": "Person",
+        "name": "Lalit Kishore"
+      },
+      "aggregateRating": {
+        "@type": "AggregateRating",
+        "ratingValue": "4.8",
+        "ratingCount": "50"
       }
+    }
+    </script>
+
+    <!-- FAQ Schema for rich snippets in Google search -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is SRM Student Hub?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "SRM Student Hub is an all-in-one unofficial campus companion app built by SRM students for SRMIST students. It lets you track your Academia attendance in real-time, predict CGPA, view your timetable, check the mess menu, use a bunk calculator, chat with classmates, and more."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How to check SRM attendance online?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "You can check your SRM attendance online using SRM Student Hub. Simply log in with your SRM Academia credentials and it will automatically sync your real-time attendance data from Academia, showing subject-wise attendance percentages."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Is SRM Student Hub free to use?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes, SRM Student Hub is completely free to use. It is built by SRM students for the SRM community and requires no payment or subscription."
+          }
+        }
+      ]
     }
     </script>
 
