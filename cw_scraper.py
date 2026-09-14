@@ -44,11 +44,21 @@ def scrape_campusweb(netid, pwd):
                 marked_courses.add(ccode)
                 
                 tests = item.get('tests', {})
-                internal = tests.get('Internal Marks')
-                if internal:
-                    got = internal.get('got', 0)
-                    total = internal.get('total', 0)
-                    perfString = f"Internal/{total} | {got}"
+                perf_parts = []
+                for test_name, test_data in tests.items():
+                    if test_name.lower() in ['internal marks', 'total', 'overall', 'internal']: continue
+                    got = test_data.get('got', 0)
+                    total = test_data.get('total', 0)
+                    if float(total) > 0:
+                        perf_parts.append(f"{test_name}/{total} | {got}")
+                
+                if not perf_parts and 'Internal Marks' in tests:
+                    got = tests['Internal Marks'].get('got', 0)
+                    total = tests['Internal Marks'].get('total', 0)
+                    perf_parts.append(f"Internal/{total} | {got}")
+                
+                if perf_parts:
+                    perfString = "  ".join(perf_parts)
                 else:
                     perfString = "Internal/100 | 0"
                     

@@ -3901,13 +3901,13 @@
     <div id="musicSubmitModal" class="music-upload-backdrop" onclick="if(event.target===this) document.getElementById('musicSubmitModal').style.display='none'">
         <div class="music-upload-modal">
             <span class="music-upload-close" onclick="document.getElementById('musicSubmitModal').style.display='none'">&times;</span>
-            <div class="music-upload-title">🎵 UPLOAD TO MUSIC LOUNGE</div>
+            <div class="music-upload-title">UPLOAD TO MUSIC LOUNGE</div>
             <div style="display: flex; flex-direction: column;">
                 <input id="music-title" class="music-upload-input" placeholder="Song Title *">
                 <input id="music-artist" class="music-upload-input" placeholder="Artist Name *">
                 
                 <label for="music-cover-file" class="music-file-btn">
-                    <span class="music-file-icon">🖼️</span>
+                    <span class="music-file-icon"><svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg></span>
                     <div class="music-file-text">
                         <span class="music-file-title">Upload Cover Art</span>
                         <span class="music-file-subtext" id="music-cover-text">Optional · JPG, PNG, WebP</span>
@@ -3916,7 +3916,7 @@
                 </label>
                 
                 <label for="music-video-file" class="music-file-btn">
-                    <span class="music-file-icon">🎬</span>
+                    <span class="music-file-icon"><svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg></span>
                     <div class="music-file-text">
                         <span class="music-file-title">Upload Visualizer/Video</span>
                         <span class="music-file-subtext" id="music-video-text">Optional · MP4, WebM</span>
@@ -3925,7 +3925,7 @@
                 </label>
                 
                 <label for="music-audio-file" class="music-file-btn required-mp3">
-                    <span class="music-file-icon">🎵</span>
+                    <span class="music-file-icon"><svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg></span>
                     <div class="music-file-text">
                         <span class="music-file-title">Upload MP3 File *</span>
                         <span class="music-file-subtext" id="music-audio-text" style="color: inherit;">Required · MP3, WAV, OGG · Max 10MB</span>
@@ -5195,7 +5195,7 @@
                 let courseObtained = 0; 
                 let tests = [];
                 
-                const regex = /([A-Za-z0-9-\s]+)\/([0-9.]+)\s*\|\s*([0-9.]+)/g;
+                const regex = /([^\/]+)\/([0-9.]+)\s*\|\s*([0-9.]+)/g;
                 let match;
 
                 while ((match = regex.exec(perfString)) !== null) {
@@ -5333,14 +5333,14 @@
                             </div>
                         </div>
                         
-                        <details style="padding: 0 20px 15px 25px;">
-                            <summary style="color: var(--text-sub); font-size: 11px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; cursor: pointer; display: flex; align-items: center; gap: 8px; user-select: none; list-style: none;">
+                        <div style="padding: 0 20px 15px 25px;">
+                            <div style="color: var(--text-sub); font-size: 11px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; display: flex; align-items: center; gap: 8px;">
                                 <i class="fas fa-chart-line"></i> Detailed Performance
-                            </summary>
+                            </div>
                             <div style="margin-top: 10px; padding-top: 5px; border-top: 1px solid rgba(255,255,255,0.05);">
                                 ${testRows}
                             </div>
-                        </details>
+                        </div>
                     </div>
                 `;
             });
@@ -9942,7 +9942,7 @@ function initCalculators() {
         let perfString = item['Test Performance'] || item.performance || item.marks || "";
         
         let courseMax = 0; let courseObtained = 0;
-        const regex = /([A-Za-z0-9-\s]+)\/([0-9.]+)\s*\|\s*([0-9.]+)/g;
+        const regex = /([^\/]+)\/([0-9.]+)\s*\|\s*([0-9.]+)/g;
         let match;
         while ((match = regex.exec(perfString)) !== null) {
             courseMax += parseFloat(match[2]);

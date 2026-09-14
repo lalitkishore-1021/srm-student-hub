@@ -85,6 +85,47 @@ def get_db():
     conn.row_factory = sqlite3.Row
     return conn
 
+def strip_base64_images(items, table_name):
+    col = 'image_url' if table_name == 'class_chats' else 'image_data'
+    for item in items:
+        if col in item and item[col] and item[col].startswith('data:image'):
+            item[col] = f"/api/image/{table_name}/{item['id']}"
+    return items
+
+@app.route('/api/image/<table>/<int:item_id>', methods=['GET'])
+def get_image_data(table, item_id):
+    valid_tables = {'class_chats': 'image_url', 'marketplace': 'image_data', 'club_events': 'image_data', 'lost_found': 'image_data'}
+    if table not in valid_tables: return "Invalid table", 400
+    
+    conn = get_db()
+    cur = conn.cursor()
+    col = valid_tables[table]
+    try:
+        if DATABASE_URL:
+            cur.execute(f"SELECT {col} FROM {table} WHERE id = %s", (item_id,))
+        else:
+            cur.execute(f"SELECT {col} FROM {table} WHERE id = ?", (item_id,))
+        row = cur.fetchone()
+    finally:
+        cur.close()
+        conn.close()
+        
+    if not row or not row[0] or not str(row[0]).startswith('data:image'):
+        return "Not found", 404
+        
+    try:
+        header, encoded = str(row[0]).split(',', 1)
+        mime_type = header.split(';')[0].split(':')[1]
+        import base64
+        from io import BytesIO
+        img_bytes = base64.b64decode(encoded)
+        response = send_file(BytesIO(img_bytes), mimetype=mime_type)
+        response.headers['Cache-Control'] = 'public, max-age=31536000, immutable'
+        return response
+    except Exception as e:
+        return str(e), 400
+
+
 def init_db():
     conn = get_db()
     cur = conn.cursor()
@@ -293,7 +334,7 @@ def save_student_to_db(net_id, name, register_no, att_data, marks_data):
             try:
                 perf_string = sub.get('Test Performance') or sub.get('performance') or sub.get('marks') or ""
                 
-                matches = re.findall(r'([A-Za-z0-9-]+)/([0-9.]+)\s*\|\s*([0-9.]+)', perf_string)
+                matches = re.findall(r'([^/]+)/([0-9.]+)\s*\|\s*([0-9.]+)', perf_string)
                 
                 course_max = 0
                 course_obtained = 0
@@ -1003,7 +1044,7 @@ def get_music():
 
     cur.close()
     conn.close()
-    return jsonify(items)
+    return jsonify(strip_base64_images(items, 'lost_found'))
 
 import base64
 from flask import Response
@@ -1404,6 +1445,7 @@ def get_chat(section):
     cur.close()
     conn.close()
     
+    items = strip_base64_images(items, 'class_chats')
     response = jsonify(items)
     response.set_etag(etag)
     return response
@@ -1492,7 +1534,7 @@ def get_spotted():
     items = [dict(row) for row in rows]
     cur.close()
     conn.close()
-    return jsonify(items)
+    return jsonify(strip_base64_images(items, 'lost_found'))
 
 @app.route('/api/spotted', methods=['POST'])
 def post_spotted():
