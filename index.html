@@ -6819,17 +6819,22 @@ function checkAndShowHolidayBanner(viewId) {
                     const isOwner = myNetId && p.net_id && myNetId === (p.net_id || '').toLowerCase();
                     
                     return `
-                    <div class="image-card fade-in-up" style="transform: none; text-align: left; padding: 20px; border-left: 4px solid #00cc66;">
+                    <div class="glass-card fade-in-up" style="transform: none; text-align: left; padding: 22px; background: linear-gradient(145deg, rgba(20,25,22,0.8), rgba(15,20,18,0.95)); border: 1px solid rgba(0,204,102,0.2); border-radius: 20px; margin-bottom: 20px; position: relative; overflow: hidden; box-shadow: 0 8px 25px rgba(0,0,0,0.4);">
+                        <div style="position: absolute; top: 0; left: 0; width: 4px; height: 100%; background: #00cc66;"></div>
                         <div style="display: flex; justify-content: space-between; align-items: flex-start;">
                             <div>
-                                <div style="font-size: 0.8rem; color: var(--primary); text-transform: uppercase; font-weight: bold; letter-spacing: 1px; margin-bottom: 5px;">TO: ${p.destination}</div>
-                                <h3 style="margin: 0 0 10px 0; color: var(--text-main); font-size: 1.2rem;">${formattedDate} &bull; ${p.travel_time}</h3>
-                                <div style="font-size: 0.9rem; color: var(--text-sub); margin-bottom: 15px;"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 5px;"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg> ${p.spots || 'Spots available'}</div>
-                                <div style="font-size: 0.8rem; color: #888;">Posted by ${p.creator_name || 'Student'}</div>
+                                <div style="font-size: 0.75rem; color: #00cc66; text-transform: uppercase; font-weight: 800; letter-spacing: 1.5px; margin-bottom: 8px; display: flex; align-items: center; gap: 5px;"><svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 0 1 0-5 2.5 2.5 0 0 1 0 5z"/></svg> TO: ${p.destination}</div>
+                                <h3 style="margin: 0 0 10px 0; color: #fff; font-size: 1.3rem; font-family: 'Montserrat', sans-serif;">${formattedDate} &bull; ${p.travel_time}</h3>
+                                <div style="font-size: 0.95rem; color: rgba(255,255,255,0.7); margin-bottom: 15px; display: flex; align-items: center; gap: 6px;">
+                                    <div style="background: rgba(0,204,102,0.15); padding: 4px 10px; border-radius: 12px; color: #00cc66; font-weight: bold; font-size: 0.8rem; display: flex; align-items: center; gap: 4px;">
+                                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg> ${p.spots || 'Available'}
+                                    </div>
+                                </div>
+                                <div style="font-size: 0.85rem; color: rgba(255,255,255,0.5); display: flex; align-items: center; gap: 6px;"><div style="width: 20px; height: 20px; background: rgba(255,255,255,0.1); border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 10px;">👤</div> ${p.creator_name || 'Student'}</div>
                             </div>
-                            <div style="display: flex; flex-direction: column; gap: 8px; align-items: flex-end;">
-                                ${waLink ? `<a href="${waLink}" target="_blank" style="background: #25D366; color: #fff; text-decoration: none; padding: 10px 15px; border-radius: 12px; font-weight: bold; font-size: 0.9rem; white-space: nowrap;">Chat ↗</a>` : ''}
-                                ${isOwner ? `<button onclick="deleteCab(${p.id})" style="background: rgba(255,68,68,0.15); border: 1px solid rgba(255,68,68,0.4); color: #ff4444; padding: 6px 12px; border-radius: 10px; cursor: pointer; font-weight: bold; font-size: 0.8rem;"> Delete</button>` : ''}
+                            <div style="display: flex; flex-direction: column; gap: 10px; align-items: flex-end;">
+                                ${waLink ? `<a href="${waLink}" target="_blank" style="background: linear-gradient(135deg, #25D366, #128C7E); color: #fff; text-decoration: none; padding: 10px 20px; border-radius: 20px; font-weight: 800; font-size: 0.9rem; white-space: nowrap; box-shadow: 0 4px 15px rgba(37, 211, 102, 0.4); display: flex; align-items: center; gap: 6px;"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg> Join</a>` : ''}
+                                ${isOwner ? `<button onclick="deleteCab(${p.id})" style="background: rgba(255,68,68,0.1); border: 1px solid rgba(255,68,68,0.3); color: #ff4444; padding: 8px 16px; border-radius: 20px; cursor: pointer; font-weight: 800; font-size: 0.8rem; transition: all 0.2s;" onmouseover="this.style.background='rgba(255,68,68,0.2)'" onmouseout="this.style.background='rgba(255,68,68,0.1)'">Delete</button>` : ''}
                             </div>
                         </div>
                     </div>`;
@@ -7173,7 +7178,7 @@ function checkAndShowHolidayBanner(viewId) {
             });
         }
         
-        async function saveTrackOffline(track, audioData) {
+        async function saveTrackOffline(track, audioData, coverData) {
             const db = await openMusicDB();
             return new Promise((resolve, reject) => {
                 const tx = db.transaction('downloads', 'readwrite');
@@ -7181,7 +7186,7 @@ function checkAndShowHolidayBanner(viewId) {
                     id: String(track.id),
                     title: track.title,
                     artist: track.artist,
-                    cover_data: track.cover_url || '',
+                    cover_data: coverData || track.cover_url || '',
                     audio_data: audioData,
                     has_video: track.has_video ? 1 : 0,
                     downloaded_at: Date.now()
@@ -7298,7 +7303,7 @@ function checkAndShowHolidayBanner(viewId) {
         async function playOfflineTrack(trackId) {
             trackId = Number(trackId);
             const tracks = await getAllOfflineTracks();
-            const track = tracks.find(t => t.id === trackId);
+            const track = tracks.find(t => String(t.id) === String(trackId));
             if (!track || !track.audio_data) return alert('Track data not found offline.');
             
             let savedOrder = JSON.parse(localStorage.getItem('downloadsOrder') || '[]');
@@ -7915,7 +7920,7 @@ function checkAndShowHolidayBanner(viewId) {
         async function playMusicTrack(index) {
             if (index < 0 || index >= currentPlaylist.length) return;
             try {
-                fetch(`${BACKEND_URL}/api/music/play/${currentPlaylist[index].id}`, { method: 'POST', body: '{}', headers: {'Content-Type':'application/json'} }).catch(e=>console.log(e));
+                fetch(`${BACKEND_URL}/api/music/play/${currentPlaylist[index].id}`, { method: 'POST', body: JSON.stringify({user_name: JSON.parse(localStorage.getItem('squadProfile')||'{}').name || 'Anonymous', net_id: getCurrentNetId()}), headers: {'Content-Type':'application/json'} }).catch(e=>console.log(e));
             } catch(e) {}
             isLoadingTrack = true;
             currentTrackIndex = index;
@@ -7926,7 +7931,7 @@ function checkAndShowHolidayBanner(viewId) {
             document.getElementById('music-player-bar').classList.add('active');
             document.getElementById('player-title').innerText = track.title;
             document.getElementById('player-artist').innerText = track.artist;
-            const coverSrc = track.cover_url || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMzMzIi8+PC9zdmc+';
+            const coverSrc = track.cover_data || track.cover_url || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMzMzIi8+PC9zdmc+';
             document.getElementById('fs-bg-blur').src = coverSrc;
             
             // Auto open fullscreen player
@@ -8449,7 +8454,7 @@ function checkAndShowHolidayBanner(viewId) {
             document.getElementById('fs-title').innerText = track.title;
             document.getElementById('fs-artist').innerText = track.artist;
             
-            const coverSrc = track.cover_url || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMzMzIi8+PC9zdmc+';
+            const coverSrc = track.cover_data || track.cover_url || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMzMzIi8+PC9zdmc+';
             const fsCover = document.getElementById('fs-cover');
             fsCover.src = coverSrc;
             
@@ -8713,8 +8718,23 @@ function checkAndShowHolidayBanner(viewId) {
                 }
                 
                 if (audioData) {
+                    let coverData = '';
+                    if (track.cover_url) {
+                        try {
+                            const cRes = await fetch(track.cover_url);
+                            if(cRes.ok) {
+                                const blob = await cRes.blob();
+                                coverData = await new Promise(resolve => {
+                                    const reader = new FileReader();
+                                    reader.onloadend = () => resolve(reader.result);
+                                    reader.readAsDataURL(blob);
+                                });
+                            }
+                        } catch(err) {}
+                    }
+                    
                     // Save to IndexedDB for offline playback
-                    await saveTrackOffline(track, audioData);
+                    await saveTrackOffline(track, audioData, coverData);
                     
                     // Update download button to show checkmark
                     updateDownloadBtnState(track.id);
@@ -9841,17 +9861,22 @@ function checkAndShowHolidayBanner(viewId) {
             chatAudioBase64 = null;
             
             try {
-                await fetch(`${BACKEND_URL}/api/chat/${section}`, {
+                const res = await fetch(`${BACKEND_URL}/api/chat/${section}`, {
                     method: 'POST', headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({ sender_name: name, sender_net_id: netId, message: msg, image_url: img, audio_url: audio })
                 });
                 const tBubble = document.getElementById(tempId);
-                if (tBubble) tBubble.remove();
-                loadClassChat();
+                const data = await res.json();
+                
+                if (res.ok && data.success) {
+                    if (tBubble) tBubble.remove();
+                    loadClassChat();
+                } else {
+                    if (tBubble) tBubble.innerHTML += `<div style="color:#ff4444; font-size:0.75rem; margin-top:5px; padding:4px; background:rgba(0,0,0,0.5); border-radius:5px;">Failed: ${data.error || 'Server error'}</div>`;
+                }
             } catch(e) { 
-                alert('Failed to send message'); 
-                const el = document.getElementById(tempId);
-                if(el) el.remove();
+                const tBubble = document.getElementById(tempId);
+                if (tBubble) tBubble.innerHTML += `<div style="color:#ff4444; font-size:0.75rem; margin-top:5px; padding:4px; background:rgba(0,0,0,0.5); border-radius:5px;">Network Error</div>`;
             }
         }
 

@@ -153,6 +153,9 @@ def init_db():
         cur.execute('''CREATE TABLE IF NOT EXISTS music_hub (
             id SERIAL PRIMARY KEY, title TEXT NOT NULL, artist TEXT, audio_data TEXT NOT NULL, cover_data TEXT,
             uploaded_by TEXT, net_id TEXT, created_at TEXT, order_index INTEGER DEFAULT 0)''')
+        cur.execute('''CREATE TABLE IF NOT EXISTS music_logs (
+            id SERIAL PRIMARY KEY, track_id INTEGER, title TEXT, artist TEXT, user_name TEXT, net_id TEXT, played_at TEXT)'''
+        )
         cur.execute('''CREATE TABLE IF NOT EXISTS class_chats (
             id SERIAL PRIMARY KEY, section TEXT NOT NULL, sender_name TEXT, sender_net_id TEXT, message TEXT, image_url TEXT, deleted_for_all INTEGER DEFAULT 0, deleted_by TEXT, created_at TEXT)''')
         cur.execute('''CREATE TABLE IF NOT EXISTS spotted_feed (
@@ -246,6 +249,9 @@ def init_db():
         cur.execute('''CREATE TABLE IF NOT EXISTS music_hub (
             id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT NOT NULL, artist TEXT, audio_data TEXT NOT NULL, cover_data TEXT,
             uploaded_by TEXT, net_id TEXT, created_at TEXT, order_index INTEGER DEFAULT 0)''')
+        cur.execute('''CREATE TABLE IF NOT EXISTS music_logs (
+            id SERIAL PRIMARY KEY, track_id INTEGER, title TEXT, artist TEXT, user_name TEXT, net_id TEXT, played_at TEXT)'''
+        )
         cur.execute('''CREATE TABLE IF NOT EXISTS class_chats (
             id INTEGER PRIMARY KEY AUTOINCREMENT, section TEXT NOT NULL, sender_name TEXT, sender_net_id TEXT, message TEXT, image_url TEXT, deleted_for_all INTEGER DEFAULT 0, deleted_by TEXT, created_at TEXT, audio_url TEXT)''')
         cur.execute('''CREATE TABLE IF NOT EXISTS spotted_feed (
@@ -1376,6 +1382,42 @@ def call_gemini(prompt, file_base64=None, mime_type=None):
             
     return f"Error: All Gemini models failed. Last error: {last_error}"
 
+
+@app.route('/api/music/play/<int:track_id>', methods=['POST'])
+def record_music_play(track_id):
+    data = request.json or {}
+    user_name = data.get('user_name', 'Anonymous')
+    net_id = data.get('net_id', '')
+    now = datetime.utcnow().isoformat()
+    
+    conn = get_db()
+    cur = conn.cursor()
+    try:
+        # Get track info
+        if DATABASE_URL:
+            cur.execute("SELECT title, artist FROM music_hub WHERE id = %s", (track_id,))
+        else:
+            cur.execute("SELECT title, artist FROM music_hub WHERE id = ?", (track_id,))
+        track = cur.fetchone()
+        
+        if track:
+            title, artist = track[0], track[1]
+            if DATABASE_URL:
+                cur.execute("UPDATE music_hub SET play_count = COALESCE(play_count, 0) + 1 WHERE id = %s", (track_id,))
+                cur.execute("INSERT INTO music_logs (track_id, title, artist, user_name, net_id, played_at) VALUES (%s, %s, %s, %s, %s, %s)",
+                            (track_id, title, artist, user_name, net_id, now))
+            else:
+                cur.execute("UPDATE music_hub SET play_count = COALESCE(play_count, 0) + 1 WHERE id = ?", (track_id,))
+                cur.execute("INSERT INTO music_logs (track_id, title, artist, user_name, net_id, played_at) VALUES (?, ?, ?, ?, ?, ?)",
+                            (track_id, title, artist, user_name, net_id, now))
+            conn.commit()
+    except Exception as e:
+        print(f"Error logging play: {e}")
+    finally:
+        cur.close()
+        conn.close()
+    return jsonify({"success": True})
+
 @app.route('/api/music/lyrics', methods=['GET'])
 def get_lyrics():
     artist = request.args.get('artist')
@@ -1684,20 +1726,28 @@ def admin_stats():
                 cur.execute(f"SELECT name, register_no, net_id, {order_by} FROM students WHERE {order_by} IS NOT NULL ORDER BY {order_by} DESC LIMIT 10")
             else:
                 cur.execute(f"SELECT name, register_no, net_id, {order_by} FROM students WHERE {order_by} IS NOT NULL ORDER BY {order_by} DESC LIMIT 10")
-            return [{"name": r[0], "register_no": r[1] or r[2].upper(), "net_id": r[2], "timestamp": r[3] or "Never"} for r in cur.fetchall()]
-        except:
-            return []
+            
+            users = []
+            for r in cur.fetchall():
+                name = r[0] or 'Unknown'
+                net_id = r[2] or ''
+                reg_no = r[1]
+                if not reg_no: reg_no = net_id.upper() if net_id else 'N/A'
+                users.append({"name": name, "register_no": reg_no, "net_id": net_id, "timestamp": r[3] or "Never"})
+            return users
+        except Exception as e:
+            return [{"name": "Error", "register_no": str(e), "net_id": "", "timestamp": ""}]
 
     recent_new_users = fetch_users('created_at')
     recent_synced_users = fetch_users('synced_at')
     recent_opened_users = fetch_users('last_opened_at')
     
-    # Music stats
+    # Music stats from logs
     try:
-        cur.execute("SELECT id, title, artist, COALESCE(play_count, 0) as pc FROM music_hub ORDER BY pc DESC LIMIT 20")
-        music_stats = [{"id": r[0], "title": r[1], "artist": r[2], "plays": r[3]} for r in cur.fetchall()]
-    except:
-        music_stats = []
+        cur.execute("SELECT track_id, title, artist, user_name, net_id, played_at FROM music_logs ORDER BY id DESC LIMIT 50")
+        music_stats = [{"id": r[0], "title": r[1], "artist": r[2], "user": r[3], "net_id": r[4], "played_at": r[5]} for r in cur.fetchall()]
+    except Exception as e:
+        music_stats = [{"title": "Error fetching logs", "artist": str(e)}]
         
     def get_count(table):
         try:
