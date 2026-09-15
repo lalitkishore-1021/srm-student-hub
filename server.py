@@ -92,6 +92,30 @@ def strip_base64_images(items, table_name):
             item[col] = f"/api/image/{table_name}/{item['id']}"
     return items
 
+
+@app.route('/api/track_open', methods=['POST'])
+def track_open():
+    data = request.json or {}
+    net_id = data.get('net_id', '').strip().lower()
+    if not net_id:
+        return jsonify({'success': False})
+    
+    conn = get_db()
+    cur = conn.cursor()
+    now = datetime.utcnow().isoformat()
+    try:
+        if DATABASE_URL:
+            cur.execute("UPDATE students SET last_opened_at = %s WHERE net_id = %s", (now, net_id))
+        else:
+            cur.execute("UPDATE students SET last_opened_at = ? WHERE net_id = ?", (now, net_id))
+        conn.commit()
+    except Exception as e:
+        pass
+    finally:
+        cur.close()
+        conn.close()
+    return jsonify({'success': True})
+
 @app.route('/api/image/<table>/<int:item_id>', methods=['GET'])
 def get_image_data(table, item_id):
     valid_tables = {'class_chats': 'image_url', 'marketplace': 'image_url', 'club_events': 'image_url', 'lost_found': 'image_url'}
