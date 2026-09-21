@@ -2891,7 +2891,7 @@
                 </div>
 
                 <div id="login-tip" style="color: var(--text-sub); font-size: 0.9rem; font-style: italic; min-height: 40px; padding: 0 10px; text-align: center; transition: opacity 0.3s;"> Did you know? The library has a massive collection of e-books available for free.</div>
-                <button id="login-back-btn" class="action-btn" style="display: none; margin-top: 20px; background: rgba(255,255,255,0.1); color: #fff;" onclick="history.back()">&#8592; Try Again</button>
+                <button id="login-back-btn" class="action-btn" style="display: none; margin-top: 20px; background: rgba(255,255,255,0.1); color: #fff;" onclick="document.getElementById('login-loader-container').style.display='none'; document.getElementById('login-form-container').style.display='block'; this.style.display='none'; window.abortLoginSync=true;">&#8592; Try Again</button>
             </div>
         </div>
     </div>
