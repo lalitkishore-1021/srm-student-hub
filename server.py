@@ -496,7 +496,11 @@ def start_session():
                 
                 # Merge CampusWeb (secondary data)
                 try:
-                    cw_res = future_cw.result(timeout=15)
+                    # Adaptive Timeout:
+                    # If Academia failed (mock data), CampusWeb is our ONLY hope, so wait up to 25s (gives Fly.io time to wake up).
+                    # If Academia succeeded, we already have good data, so only wait 2s max for CampusWeb to keep login lightning fast.
+                    wait_time = 25 if result.get('is_mock_attendance', False) else 2
+                    cw_res = future_cw.result(timeout=wait_time)
                     if cw_res and cw_res.get('success'):
                         if cw_res.get('attendance') and len(cw_res.get('attendance')) > 0:
                             result['data'] = cw_res.get('attendance')
@@ -504,7 +508,7 @@ def start_session():
                         if cw_res.get('marks') and len(cw_res.get('marks')) > 0:
                             result['marks'] = cw_res.get('marks')
                 except Exception as e:
-                    print(f"CampusWeb fallback failed: {e}")
+                    print(f"CampusWeb fallback skipped/timed out (waited {wait_time}s): {e}")
             
             if result.get('success'):
                 profile = result.get('profile', {})
