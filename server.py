@@ -481,35 +481,47 @@ def start_session():
             with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
                 import cw_scraper
                 
-                # Helper to run academia and return its queue result
+                # Helper to run academia (for timetable/profile/day_order ONLY)
                 def run_academia():
                     out_queue = queue.Queue()
                     scrape_academia_worker(reg_no, pwd, batch, out_queue)
                     return out_queue.get(timeout=30)
                 
-                # Submit both tasks concurrently
+                # Run BOTH in parallel
                 future_ac = executor.submit(run_academia)
                 future_cw = executor.submit(cw_scraper.scrape_campusweb, reg_no, pwd)
                 
-                # Wait for academia (primary data)
-                result = future_ac.result()
-                
-                # Merge CampusWeb (secondary data)
+                # CampusWeb is PRIMARY for attendance & marks
+                cw_res = None
                 try:
-                    # Adaptive Timeout:
-                    # If Academia failed (mock data), CampusWeb is our ONLY hope, so wait up to 25s (gives Fly.io time to wake up).
-                    # If Academia succeeded, we already have good data, so only wait 2s max for CampusWeb to keep login lightning fast.
-                    wait_time = 25 if result.get('is_mock_attendance', False) else 2
-                    cw_res = future_cw.result(timeout=wait_time)
-                    if cw_res and cw_res.get('success'):
-                        if cw_res.get('attendance') and len(cw_res.get('attendance')) > 0:
-                            result['data'] = cw_res.get('attendance')
-                            result['is_mock_attendance'] = False
-                        if cw_res.get('marks') and len(cw_res.get('marks')) > 0:
-                            result['marks'] = cw_res.get('marks')
+                    cw_res = future_cw.result(timeout=45)
                 except Exception as e:
-                    print(f"CampusWeb fallback skipped/timed out (waited {wait_time}s): {e}")
-            
+                    print(f"[{reg_no}] CampusWeb failed: {e}")
+                
+                # Academia is PRIMARY for timetable/profile/day_order
+                result = None
+                try:
+                    result = future_ac.result(timeout=5)
+                except Exception as e:
+                    print(f"[{reg_no}] Academia timed out (non-critical): {e}")
+                
+                # Build final result
+                if result is None or not result.get('success'):
+                    # Academia failed entirely, build minimal result
+                    result = result or {}
+                    result['success'] = True if (cw_res and cw_res.get('success')) else False
+                    if not result.get('success'):
+                        sync_jobs[sid] = {'status': 'failed', 'result': {'success': False, 'error': 'Both Academia and CampusWeb failed.'}, 'timestamp': time.time()}
+                        return
+                
+                # ALWAYS use CampusWeb data for attendance & marks (Academia is in maintenance)
+                if cw_res and cw_res.get('success'):
+                    if cw_res.get('attendance') and len(cw_res.get('attendance')) > 0:
+                        result['data'] = cw_res.get('attendance')
+                        result['is_mock_attendance'] = False
+                    if cw_res.get('marks') and len(cw_res.get('marks')) > 0:
+                        result['marks'] = cw_res.get('marks')
+                
             if result.get('success'):
                 profile = result.get('profile', {})
                 raw_reg = reg_no or ''

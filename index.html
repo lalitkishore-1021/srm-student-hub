@@ -4771,20 +4771,10 @@
                 try { renderProfile(profile); } catch (e) { console.error("Profile Render Error:", e); }
                 try { renderTimetable(ttDict); } catch (e) { console.error("Timetable Render Error:", e); }
                 
-                // Attendance & Marks Fallback Protection
-                if (!result.is_mock_attendance || !localStorage.getItem('squadAttendance') || JSON.parse(localStorage.getItem('squadAttendance')).length === 0) {
-                    localStorage.setItem('squadAttendance', JSON.stringify(attList));
-                    try { renderAttendance(attList); } catch (e) {}
-                } else {
-                    try { renderAttendance(JSON.parse(localStorage.getItem('squadAttendance'))); } catch (e) {}
-                }
-
-                if (!result.is_mock_attendance || !localStorage.getItem('squadMarks') || JSON.parse(localStorage.getItem('squadMarks')).length === 0) {
-                    localStorage.setItem('squadMarks', JSON.stringify(marksList));
-                    try { renderMarks(marksList); } catch (e) {}
-                } else {
-                    try { renderMarks(JSON.parse(localStorage.getItem('squadMarks'))); } catch (e) {}
-                }
+                localStorage.setItem('squadAttendance', JSON.stringify(attList));
+                localStorage.setItem('squadMarks', JSON.stringify(marksList));
+                try { renderAttendance(attList); } catch (e) { console.error("Attendance Render Error:", e); }
+                try { renderMarks(marksList); } catch (e) { console.error("Marks Render Error:", e); }
 
                 document.getElementById('login-progress-bar').style.width = '100%';
                 let thumbFinal = document.getElementById('login-progress-thumb');
@@ -4878,19 +4868,10 @@
                     try { renderProfile(profile); } catch (e) {}
                     try { renderTimetable(ttDict); } catch (e) {}
                     
-                    if (!result.is_mock_attendance || !localStorage.getItem('squadAttendance') || JSON.parse(localStorage.getItem('squadAttendance')).length === 0) {
-                        localStorage.setItem('squadAttendance', JSON.stringify(attList));
-                        try { renderAttendance(attList); } catch (e) {}
-                    } else {
-                        try { renderAttendance(JSON.parse(localStorage.getItem('squadAttendance'))); } catch (e) {}
-                    }
-
-                    if (!result.is_mock_attendance || !localStorage.getItem('squadMarks') || JSON.parse(localStorage.getItem('squadMarks')).length === 0) {
-                        localStorage.setItem('squadMarks', JSON.stringify(marksList));
-                        try { renderMarks(marksList); } catch (e) {}
-                    } else {
-                        try { renderMarks(JSON.parse(localStorage.getItem('squadMarks'))); } catch (e) {}
-                    }
+                    localStorage.setItem('squadAttendance', JSON.stringify(attList));
+                    localStorage.setItem('squadMarks', JSON.stringify(marksList));
+                    try { renderAttendance(attList); } catch (e) {}
+                    try { renderMarks(marksList); } catch (e) {}
                     hideSyncToast(true);
                 } else {
                     hideSyncToast(false);
