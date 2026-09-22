@@ -186,9 +186,11 @@ def run_fast_scraper(email, password, out_queue):
         attendance_data = result.get('attendance_data')
         timetable_data = result.get('timetable_data')
         
+        is_mock_attendance = False
         if attendance_data is None or (isinstance(attendance_data, dict) and attendance_data.get("error")):
             print(f"[{email}] Attendance invalid, using fallback...")
             attendance_data = generate_mock_attendance_from_timetable(timetable_data)
+            is_mock_attendance = True
             if attendance_data is None:
                 attendance_data = {}
         
@@ -233,6 +235,7 @@ def run_fast_scraper(email, password, out_queue):
             'timetable': final_tt,
             'profile': profile,
             'day_order': day_order,
+            'is_mock_attendance': is_mock_attendance,
             'cookie_dump': json.dumps(client.get_session_data())
         })
         

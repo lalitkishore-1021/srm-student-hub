@@ -351,7 +351,7 @@ def init_db():
 
 init_db()
 
-def save_student_to_db(net_id, name, register_no, att_data, marks_data):
+def save_student_to_db(net_id, name, register_no, att_data, marks_data, is_mock=False):
     try:
         # Calculate Attendance
         total_att = 0; total_cls = 0
@@ -408,22 +408,33 @@ def save_student_to_db(net_id, name, register_no, att_data, marks_data):
 
         conn = get_db()
         cur = conn.cursor()
+        if is_mock:
+            update_att = "overall_attendance=COALESCE(students.overall_attendance, EXCLUDED.overall_attendance)"
+            update_cgpa = "est_cgpa=COALESCE(students.est_cgpa, EXCLUDED.est_cgpa)"
+            update_att_lite = "overall_attendance=COALESCE(students.overall_attendance, excluded.overall_attendance)"
+            update_cgpa_lite = "est_cgpa=COALESCE(students.est_cgpa, excluded.est_cgpa)"
+        else:
+            update_att = "overall_attendance=EXCLUDED.overall_attendance"
+            update_cgpa = "est_cgpa=EXCLUDED.est_cgpa"
+            update_att_lite = "overall_attendance=excluded.overall_attendance"
+            update_cgpa_lite = "est_cgpa=excluded.est_cgpa"
+
         if DATABASE_URL:
-            cur.execute('''
+            cur.execute(f'''
                 INSERT INTO students (net_id, name, register_no, overall_attendance, est_cgpa, synced_at, created_at, last_opened_at)
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
                 ON CONFLICT(net_id) DO UPDATE SET
                     name=EXCLUDED.name, register_no=EXCLUDED.register_no,
-                    overall_attendance=EXCLUDED.overall_attendance, est_cgpa=EXCLUDED.est_cgpa,
+                    {update_att}, {update_cgpa},
                     synced_at=EXCLUDED.synced_at
             ''', (net_id.lower(), name, register_no.upper(), overall_att, cgpa, datetime.utcnow().isoformat(), datetime.utcnow().isoformat(), datetime.utcnow().isoformat()))
         else:
-            cur.execute('''
+            cur.execute(f'''
                 INSERT INTO students (net_id, name, register_no, overall_attendance, est_cgpa, synced_at, created_at, last_opened_at)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT(net_id) DO UPDATE SET
                     name=excluded.name, register_no=excluded.register_no,
-                    overall_attendance=excluded.overall_attendance, est_cgpa=excluded.est_cgpa,
+                    {update_att_lite}, {update_cgpa_lite},
                     synced_at=excluded.synced_at
             ''', (net_id.lower(), name, register_no.upper(), overall_att, cgpa, datetime.utcnow().isoformat(), datetime.utcnow().isoformat(), datetime.utcnow().isoformat()))
         conn.commit()
@@ -489,6 +500,7 @@ def start_session():
                     if cw_res and cw_res.get('success'):
                         if cw_res.get('attendance') and len(cw_res.get('attendance')) > 0:
                             result['data'] = cw_res.get('attendance')
+                            result['is_mock_attendance'] = False
                         if cw_res.get('marks') and len(cw_res.get('marks')) > 0:
                             result['marks'] = cw_res.get('marks')
                 except Exception as e:
@@ -500,7 +512,7 @@ def start_session():
                 net_id = raw_reg.split('@')[0]
                 register_no = profile.get('reg_no', net_id.upper())
                 name = profile.get('name', 'Student')
-                save_student_to_db(net_id, name, register_no, result.get('data', []), result.get('marks', []))
+                save_student_to_db(net_id, name, register_no, result.get('data', []), result.get('marks', []), is_mock=result.get('is_mock_attendance', False))
             sync_jobs[sid] = {'status': 'completed', 'result': result, 'timestamp': time.time()}
         except queue.Empty:
             sync_jobs[sid] = {'status': 'failed', 'result': {'success': False, 'error': 'Background task crashed or timed out.'}, 'timestamp': time.time()}
