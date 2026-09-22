@@ -1601,9 +1601,12 @@ def post_chat(section):
         if DATABASE_URL:
             cur.execute("INSERT INTO class_chats (section, sender_name, sender_net_id, message, image_url, audio_url, created_at) VALUES (%s, %s, %s, %s, %s, %s, %s)",
                         (section, sender_name, sender_net_id, message, image_url, audio_url, now))
+            # Auto-trim to 200 messages per section to prevent DB bloat
+            cur.execute("DELETE FROM class_chats WHERE section = %s AND id NOT IN (SELECT id FROM class_chats WHERE section = %s ORDER BY created_at DESC LIMIT 200)", (section, section))
         else:
             cur.execute("INSERT INTO class_chats (section, sender_name, sender_net_id, message, image_url, audio_url, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
                         (section, sender_name, sender_net_id, message, image_url, audio_url, now))
+            cur.execute("DELETE FROM class_chats WHERE section = ? AND id NOT IN (SELECT id FROM class_chats WHERE section = ? ORDER BY created_at DESC LIMIT 200)", (section, section))
         conn.commit()
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)})
