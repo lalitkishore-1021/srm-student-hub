@@ -5884,37 +5884,15 @@
                 messBtns.forEach(btn => { if (btn.classList.contains('active')) renderMessMenu(btn.innerText); });
             }
 
-            if (isLoggedIn) {
-                const now = new Date();
-                const currentHour = now.getHours();
-                let lastMilestone = new Date(now);
-                if (currentHour >= 8) {
-                    lastMilestone.setHours(8, 0, 0, 0);
-                } else {
-                    lastMilestone.setHours(0, 0, 0, 0);
-                }
-                
-                const lastAuto = localStorage.getItem('lastAutoSyncTime');
-                if (!lastAuto || new Date(parseInt(lastAuto)) < lastMilestone) {
-                    if (typeof backgroundSync === 'function') {
-                        const now = new Date();
-                        const h = now.getHours();
-                        const m = now.getMinutes();
-                        const time = h + m / 60.0;
-                        let currentWindow = null;
-                        if (time >= 6 && time <= 12.5) currentWindow = 'morning';
-                        else if (time >= 15 && time <= 18) currentWindow = 'afternoon';
-                        else if (time >= 20 && time <= 23.834) currentWindow = 'evening';
-                        
-                        if (currentWindow) {
-                            const windowKey = `${now.getFullYear()}-${now.getMonth()}-${now.getDate()}-${currentWindow}`;
-                            if (localStorage.getItem('lastAutoSyncWindow') !== windowKey) {
-                                localStorage.setItem('lastAutoSyncWindow', windowKey);
-                                backgroundSync();
-                            }
-                        }
-                        localStorage.setItem('lastAutoSyncTime', now.getTime().toString());
-                    }
+            // Auto-sync: runs every 3 hours, no time window restrictions
+            if (isLoggedIn && typeof backgroundSync === 'function') {
+                const lastAuto = parseInt(localStorage.getItem('lastAutoSyncTime') || '0');
+                const now = Date.now();
+                const THREE_HOURS = 3 * 60 * 60 * 1000;
+                if (now - lastAuto > THREE_HOURS) {
+                    console.log('[AutoSync] 3+ hours since last sync, triggering backgroundSync...');
+                    localStorage.setItem('lastAutoSyncTime', now.toString());
+                    backgroundSync();
                 }
             }
         }
@@ -6040,24 +6018,15 @@
                     loadSavedData();
                     switchView('home-view');
                     
-                    const now = new Date();
-                    const h = now.getHours();
-                    const m = now.getMinutes();
-                    const time = h + m / 60.0;
-                    let currentWindow = null;
-                    if (time >= 6 && time <= 12.5) currentWindow = 'morning';
-                    else if (time >= 15 && time <= 18) currentWindow = 'afternoon';
-                    else if (time >= 20 && time <= 23.834) currentWindow = 'evening';
-                    
-                    if (currentWindow) {
-                        const windowKey = `${now.getFullYear()}-${now.getMonth()}-${now.getDate()}-${currentWindow}`;
-                        if (localStorage.getItem('lastAutoSyncWindow') !== windowKey) {
-                            localStorage.setItem('lastAutoSyncWindow', windowKey);
-                            backgroundSync();
-                        }
+                    // Auto-sync on app open: sync if 3+ hours since last sync
+                    const lastAuto = parseInt(localStorage.getItem('lastAutoSyncTime') || '0');
+                    const nowTs = Date.now();
+                    const THREE_HOURS = 3 * 60 * 60 * 1000;
+                    if (nowTs - lastAuto > THREE_HOURS) {
+                        console.log('[AutoSync] App opened, 3+ hours since last sync, triggering...');
+                        localStorage.setItem('lastAutoSyncTime', nowTs.toString());
+                        backgroundSync();
                     }
-                    
-                    // Sync reminder banner removed as per user request
                 } else {
                     isLoggedIn = false;
                     // Hide everything and show login view
