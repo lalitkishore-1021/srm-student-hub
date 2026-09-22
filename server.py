@@ -1735,6 +1735,30 @@ def like_spotted(post_id):
 def ping():
     return jsonify({"status": "ok"})
 
+
+@app.route('/api/admin/db_size', methods=['GET'])
+def admin_db_size():
+    conn = get_db()
+    cur = conn.cursor()
+    try:
+        if DATABASE_URL:
+            cur.execute('''
+                SELECT relname AS table_name,
+                       pg_size_pretty(pg_total_relation_size(relid)) AS total_size,
+                       pg_total_relation_size(relid) AS size_bytes
+                FROM pg_catalog.pg_statio_user_tables
+                ORDER BY pg_total_relation_size(relid) DESC;
+            ''')
+            rows = cur.fetchall()
+            return jsonify([{'table': r[0], 'size': r[1], 'bytes': r[2]} for r in rows])
+        else:
+            return jsonify({'error': 'Not Postgres'})
+    except Exception as e:
+        return jsonify({'error': str(e)})
+    finally:
+        cur.close()
+        conn.close()
+
 @app.route('/api/admin/stats', methods=['GET'])
 def admin_stats():
     secret_key = request.args.get('key')
