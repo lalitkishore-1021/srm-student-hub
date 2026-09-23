@@ -1793,12 +1793,12 @@ def admin_stats():
     cur.execute("SELECT COUNT(*) FROM students")
     total_users = cur.fetchone()[0] if not DATABASE_URL else cur.fetchone()[0]
     
-    # Get active users today (synced_at contains today's date in ISO format)
+    # Get active users today (check both synced_at and last_opened_at)
     today_prefix = datetime.utcnow().isoformat()[:10]
     if DATABASE_URL:
-        cur.execute("SELECT COUNT(*) FROM students WHERE synced_at LIKE %s", (f"{today_prefix}%",))
+        cur.execute("SELECT COUNT(*) FROM students WHERE synced_at LIKE %s OR last_opened_at LIKE %s", (f"{today_prefix}%", f"{today_prefix}%"))
     else:
-        cur.execute("SELECT COUNT(*) FROM students WHERE synced_at LIKE ?", (f"{today_prefix}%",))
+        cur.execute("SELECT COUNT(*) FROM students WHERE synced_at LIKE ? OR last_opened_at LIKE ?", (f"{today_prefix}%", f"{today_prefix}%"))
     active_today = cur.fetchone()[0]
 
     def fetch_users(order_by):
@@ -1823,13 +1823,6 @@ def admin_stats():
     recent_synced_users = fetch_users('synced_at')
     recent_opened_users = fetch_users('last_opened_at')
     
-    # Music stats from logs
-    try:
-        cur.execute("SELECT track_id, title, artist, user_name, net_id, played_at FROM music_logs ORDER BY id DESC LIMIT 50")
-        music_stats = [{"id": r[0], "title": r[1], "artist": r[2], "user": r[3], "net_id": r[4], "played_at": r[5]} for r in cur.fetchall()]
-    except Exception as e:
-        music_stats = [{"title": "Error fetching logs", "artist": str(e)}]
-        
     def get_count(table):
         try:
             cur.execute(f"SELECT COUNT(*) FROM {table}")
@@ -1848,7 +1841,6 @@ def admin_stats():
         "recent_new_users": recent_new_users,
         "recent_synced_users": recent_synced_users,
         "recent_opened_users": recent_opened_users,
-        "music_plays": music_stats,
         "total_chat_messages": get_count('class_chats'),
         "total_marketplace_items": get_count('marketplace'),
         "total_events": get_count('club_events'),
