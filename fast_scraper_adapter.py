@@ -177,7 +177,7 @@ def run_fast_scraper(email, password, out_queue):
             
         print(f"[{email}] Login successful. Fetching data...")
         
-        result = fetch_all_data_with_retry(client, max_retries=2, save_debug_html=False)
+        result = fetch_all_data_with_retry(client, max_retries=1, save_debug_html=False)
         if not result.get("success"):
             out_queue.put({'success': False, 'error': result.get("error", "Failed to fetch data")})
             return
