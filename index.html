@@ -4771,10 +4771,20 @@
                 try { renderProfile(profile); } catch (e) { console.error("Profile Render Error:", e); }
                 try { renderTimetable(ttDict); } catch (e) { console.error("Timetable Render Error:", e); }
                 
-                localStorage.setItem('squadAttendance', JSON.stringify(attList));
-                localStorage.setItem('squadMarks', JSON.stringify(marksList));
-                try { renderAttendance(attList); } catch (e) { console.error("Attendance Render Error:", e); }
-                try { renderMarks(marksList); } catch (e) { console.error("Marks Render Error:", e); }
+                // Only overwrite attendance/marks if server returned real data
+                if (attList.length > 0) {
+                    localStorage.setItem('squadAttendance', JSON.stringify(attList));
+                    try { renderAttendance(attList); } catch (e) { console.error("Attendance Render Error:", e); }
+                } else {
+                    // Try to render previously saved data
+                    try { const saved = JSON.parse(localStorage.getItem('squadAttendance') || '[]'); if (saved.length > 0) renderAttendance(saved); } catch(e) {}
+                }
+                if (marksList.length > 0) {
+                    localStorage.setItem('squadMarks', JSON.stringify(marksList));
+                    try { renderMarks(marksList); } catch (e) { console.error("Marks Render Error:", e); }
+                } else {
+                    try { const saved = JSON.parse(localStorage.getItem('squadMarks') || '[]'); if (saved.length > 0) renderMarks(saved); } catch(e) {}
+                }
 
                 document.getElementById('login-progress-bar').style.width = '100%';
                 let thumbFinal = document.getElementById('login-progress-thumb');
@@ -4868,10 +4878,15 @@
                     try { renderProfile(profile); } catch (e) {}
                     try { renderTimetable(ttDict); } catch (e) {}
                     
-                    localStorage.setItem('squadAttendance', JSON.stringify(attList));
-                    localStorage.setItem('squadMarks', JSON.stringify(marksList));
-                    try { renderAttendance(attList); } catch (e) {}
-                    try { renderMarks(marksList); } catch (e) {}
+                    // Only overwrite attendance/marks if server returned real data
+                    if (attList.length > 0) {
+                        localStorage.setItem('squadAttendance', JSON.stringify(attList));
+                        try { renderAttendance(attList); } catch (e) {}
+                    }
+                    if (marksList.length > 0) {
+                        localStorage.setItem('squadMarks', JSON.stringify(marksList));
+                        try { renderMarks(marksList); } catch (e) {}
+                    }
                     hideSyncToast(true);
                 } else {
                     hideSyncToast(false);
