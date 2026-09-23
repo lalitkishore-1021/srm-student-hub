@@ -481,31 +481,31 @@ def start_session():
             import cw_scraper
             executor = concurrent.futures.ThreadPoolExecutor(max_workers=2)
             
-            # Helper to run academia (for timetable/profile/day_order ONLY)
             def run_academia():
                 out_queue = queue.Queue()
                 scrape_academia_worker(reg_no, pwd, batch, out_queue)
                 return out_queue.get(timeout=30)
             
-            # Run BOTH in parallel
+            # Run BOTH in parallel at the same time
             future_ac = executor.submit(run_academia)
             future_cw = executor.submit(cw_scraper.scrape_campusweb, reg_no, pwd)
             
-            # CampusWeb is PRIMARY for attendance & marks - wait for it
-            cw_res = None
-            try:
-                cw_res = future_cw.result(timeout=45)
-            except Exception as e:
-                print(f"[{reg_no}] CampusWeb failed: {e}")
-            
-            # Academia is for timetable/profile/day_order only - wait max 5s EXTRA
+            # 1. Wait for Academia FIRST (it's fast - finishes in 1-3 seconds)
             result = None
             try:
-                result = future_ac.result(timeout=5)
+                result = future_ac.result(timeout=15)
             except Exception as e:
-                print(f"[{reg_no}] Academia timed out (non-critical): {e}")
+                print(f"[{reg_no}] Academia failed: {e}")
             
-            # IMMEDIATELY release executor - don't wait for Academia retries
+            # 2. Now check CampusWeb - it's been running in parallel this whole time
+            #    Give it max 10 seconds TOTAL from when it started (not 10 extra seconds)
+            cw_res = None
+            try:
+                cw_res = future_cw.result(timeout=10)
+            except Exception as e:
+                print(f"[{reg_no}] CampusWeb slow/failed (non-blocking): {e}")
+            
+            # Release executor immediately
             executor.shutdown(wait=False)
             
             # Build final result
@@ -516,7 +516,7 @@ def start_session():
                     sync_jobs[sid] = {'status': 'failed', 'result': {'success': False, 'error': 'Both Academia and CampusWeb failed.'}, 'timestamp': time.time()}
                     return
             
-            # ALWAYS use CampusWeb data for attendance & marks
+            # Override with CampusWeb attendance & marks if available
             if cw_res and cw_res.get('success'):
                 if cw_res.get('attendance') and len(cw_res.get('attendance')) > 0:
                     result['data'] = cw_res.get('attendance')
