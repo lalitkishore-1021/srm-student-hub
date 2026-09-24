@@ -9688,7 +9688,7 @@ function checkAndShowHolidayBanner(viewId) {
             const wasAtBottom = history.scrollHeight - history.scrollTop <= history.clientHeight + 50;
 
             try {
-                const res = await fetch(`${BACKEND_URL}/api/chat/${section}`);
+                const res = await fetch(`${BACKEND_URL}/api/chat/${section}?t=${Date.now()}`);
                 const msgs = await res.json();
                 
                 const noMsg = document.getElementById('no-msg-txt');
