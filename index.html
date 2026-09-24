@@ -4802,6 +4802,7 @@
                         mc.style.display = 'block';
                         mc.classList.add('content-visible');
                     }
+                    setTimeout(checkAndShowAdPopup, 1000);
                     
                     const navButtons = document.getElementById('navButtons');
                     if (navButtons) navButtons.style.display = 'flex';
@@ -6032,6 +6033,7 @@
 
                     loadSavedData();
                     switchView('home-view');
+                    setTimeout(checkAndShowAdPopup, 1000);
                     
                     // Auto-sync on app open: sync if 3+ hours since last sync
                     const lastAuto = parseInt(localStorage.getItem('lastAutoSyncTime') || '0');
@@ -10544,6 +10546,37 @@ function predictDateRangeUI() {
             submitBtn.innerHTML = 'Sync';
             submitBtn.disabled = false;
             document.getElementById('edge-loader').style.display = 'none';
+        }
+    </script>
+    <!-- Music Lounge Advertisement Popup -->
+    <div id="ad-popup" class="modal-overlay" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.85); z-index:99999; justify-content:center; align-items:center;">
+        <div style="position:relative; width:90%; max-width:400px; max-height:90vh; border-radius:15px; overflow:hidden; box-shadow: 0 10px 40px rgba(0,0,0,0.6);">
+            <div onclick="closeAdPopup(event)" style="position:absolute; top:12px; right:12px; width:34px; height:34px; background:rgba(0,0,0,0.7); color:white; border-radius:50%; display:flex; justify-content:center; align-items:center; cursor:pointer; font-size:24px; font-weight:bold; z-index:2;">&times;</div>
+            <img src="images/music-poster.jpg" style="width:100%; height:auto; display:block; cursor:pointer; max-height:90vh; object-fit:contain; background:#000;" onclick="openMusicLoungeFromAd()">
+        </div>
+    </div>
+    
+    <script>
+        function closeAdPopup(e) {
+            e.stopPropagation();
+            document.getElementById('ad-popup').style.display = 'none';
+        }
+        
+        function openMusicLoungeFromAd() {
+            document.getElementById('ad-popup').style.display = 'none';
+            switchView('music-view');
+            try { loadMusicList(); } catch(e) {}
+        }
+        
+        function checkAndShowAdPopup() {
+            // Only show if user is logged in (main content visible) and not already shown this session
+            if (!sessionStorage.getItem('musicAdShown')) {
+                const mainContent = document.getElementById('main-content');
+                if (mainContent && (mainContent.style.display === 'block' || mainContent.classList.contains('content-visible'))) {
+                    document.getElementById('ad-popup').style.display = 'flex';
+                    sessionStorage.setItem('musicAdShown', 'true');
+                }
+            }
         }
     </script>
 </body>
