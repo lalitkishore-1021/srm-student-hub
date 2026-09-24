@@ -4802,7 +4802,7 @@
                         mc.style.display = 'block';
                         mc.classList.add('content-visible');
                     }
-                    checkAndShowAdPopup();
+                    setTimeout(function(){ var p=document.getElementById('ad-popup'); if(p && !sessionStorage.getItem('musicAdShown')){ p.style.display='flex'; sessionStorage.setItem('musicAdShown','true'); }}, 500);
                     
                     const navButtons = document.getElementById('navButtons');
                     if (navButtons) navButtons.style.display = 'flex';
@@ -6033,7 +6033,7 @@
 
                     loadSavedData();
                     switchView('home-view');
-                    checkAndShowAdPopup();
+                    setTimeout(function(){ var p=document.getElementById('ad-popup'); if(p && !sessionStorage.getItem('musicAdShown')){ p.style.display='flex'; sessionStorage.setItem('musicAdShown','true'); }}, 500);
                     
                     // Auto-sync on app open: sync if 3+ hours since last sync
                     const lastAuto = parseInt(localStorage.getItem('lastAutoSyncTime') || '0');
