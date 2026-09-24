@@ -9,10 +9,10 @@ def scrape_campusweb(netid, pwd):
         import concurrent.futures
         
         def fetch_att():
-            return requests.post('https://campusapi.fly.dev/api/student-portal/attendance', json={'net_id': netid, 'password': pwd}, timeout=15).json()
+            return requests.post('https://campusapi.fly.dev/api/student-portal/attendance', json={'net_id': netid, 'password': pwd}, timeout=25).json()
             
         def fetch_marks():
-            return requests.post('https://campusapi.fly.dev/api/student-portal/marks', json={'net_id': netid, 'password': pwd}, timeout=15).json()
+            return requests.post('https://campusapi.fly.dev/api/student-portal/marks', json={'net_id': netid, 'password': pwd}, timeout=25).json()
             
         with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
             future_att = executor.submit(fetch_att)

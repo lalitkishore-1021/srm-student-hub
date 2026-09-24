@@ -79,12 +79,16 @@ def fetch_all_data_with_retry(client, max_retries: int = 2, save_debug_html: boo
                 day_order = 4
 
             # --- ATTENDANCE ---
-            print("[DATA] Fetching attendance data...")
-            attendance_data = client.get_attendance()
+            print("[DATA] Skipping attendance fetch from Academia (Disabled by user request due to 403 errors)")
+            attendance_data = None
             
             # --- TIMETABLE ---
             print("[DATA] Fetching timetable data...")
-            timetable_data = client.get_timetable()
+            try:
+                timetable_data = client.get_timetable()
+            except Exception as tt_err:
+                print(f"✗ [DATA] Timetable fetch failed: {tt_err}")
+                timetable_data = None
             
             # --- VALIDATE PARSING ---
             attendance_failed = (

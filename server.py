@@ -498,10 +498,10 @@ def start_session():
                 print(f"[{reg_no}] Academia failed: {e}")
             
             # 2. Now check CampusWeb - it's been running in parallel this whole time
-            #    Give it max 10 seconds TOTAL from when it started (not 10 extra seconds)
+            #    Give it max 20 seconds extra
             cw_res = None
             try:
-                cw_res = future_cw.result(timeout=10)
+                cw_res = future_cw.result(timeout=20)
             except Exception as e:
                 print(f"[{reg_no}] CampusWeb slow/failed (non-blocking): {e}")
             
