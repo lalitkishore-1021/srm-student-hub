@@ -4802,7 +4802,7 @@
                         mc.style.display = 'block';
                         mc.classList.add('content-visible');
                     }
-                    setTimeout(checkAndShowAdPopup, 1000);
+                    checkAndShowAdPopup();
                     
                     const navButtons = document.getElementById('navButtons');
                     if (navButtons) navButtons.style.display = 'flex';
@@ -6033,7 +6033,7 @@
 
                     loadSavedData();
                     switchView('home-view');
-                    setTimeout(checkAndShowAdPopup, 1000);
+                    checkAndShowAdPopup();
                     
                     // Auto-sync on app open: sync if 3+ hours since last sync
                     const lastAuto = parseInt(localStorage.getItem('lastAutoSyncTime') || '0');
@@ -10569,13 +10569,9 @@ function predictDateRangeUI() {
         }
         
         function checkAndShowAdPopup() {
-            // Only show if user is logged in (main content visible) and not already shown this session
             if (!sessionStorage.getItem('musicAdShown')) {
-                const mainContent = document.getElementById('main-content');
-                if (mainContent && (mainContent.style.display === 'block' || mainContent.classList.contains('content-visible'))) {
-                    document.getElementById('ad-popup').style.display = 'flex';
-                    sessionStorage.setItem('musicAdShown', 'true');
-                }
+                document.getElementById('ad-popup').style.display = 'flex';
+                sessionStorage.setItem('musicAdShown', 'true');
             }
         }
     </script>
