@@ -1338,7 +1338,7 @@ def submit_music():
             audio_bytes = base64.b64decode(b64_str)
             
             # Using the live keys
-            SUPABASE_URL = "https://turnmcioxwkrgloqfgit.supabase.co"
+            SUPABASE_URL = "https://turnmciexwkrgloqfgit.supabase.co"
             SUPABASE_KEY = os.environ.get('SUPABASE_SECRET_KEY')
             
             if not SUPABASE_KEY:
