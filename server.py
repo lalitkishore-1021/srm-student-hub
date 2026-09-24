@@ -1325,6 +1325,43 @@ def submit_music():
     if not all(k in data for k in required) or not data['audio_data']:
         return jsonify({'success': False, 'error': 'Missing required fields'}), 400
 
+    audio_data = data.get('audio_data')
+    
+    # If the user uploaded a file, it comes as base64. We upload it to Supabase Storage!
+    if audio_data and audio_data.startswith("data:"):
+        import base64
+        import requests
+        import uuid
+        
+        try:
+            b64_str = audio_data.split(",")[1]
+            audio_bytes = base64.b64decode(b64_str)
+            
+            # Using the live keys
+            SUPABASE_URL = "https://turnmcioxwkrgloqfgit.supabase.co"
+            SUPABASE_KEY = os.environ.get('SUPABASE_SECRET_KEY')
+            
+            if not SUPABASE_KEY:
+                return jsonify({'success': False, 'error': 'Server missing SUPABASE_SECRET_KEY'}), 500
+            
+            filename = f"track_{uuid.uuid4().hex[:12]}.mp3"
+            upload_url = f"{SUPABASE_URL}/storage/v1/object/music/{filename}"
+            
+            headers = {
+                "Authorization": f"Bearer {SUPABASE_KEY}",
+                "apikey": SUPABASE_KEY,
+                "Content-Type": "audio/mpeg"
+            }
+            
+            res = requests.post(upload_url, headers=headers, data=audio_bytes)
+            if res.status_code == 200:
+                # Replace the giant base64 string with just the URL!
+                audio_data = f"{SUPABASE_URL}/storage/v1/object/public/music/{filename}"
+            else:
+                return jsonify({'success': False, 'error': f'Failed to upload to storage: {res.text}'}), 500
+        except Exception as e:
+            return jsonify({'success': False, 'error': f'Storage upload error: {str(e)}'}), 500
+
     conn = get_db()
     cur = conn.cursor()
     now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -1334,13 +1371,13 @@ def submit_music():
             cur.execute("""
                 INSERT INTO music_hub (title, artist, audio_data, cover_data, uploaded_by, net_id, created_at, video_data)
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-            """, (data.get('title'), data.get('artist'), data.get('audio_data'), data.get('cover_data'),
+            """, (data.get('title'), data.get('artist'), audio_data, data.get('cover_data'),
                   data.get('uploaded_by'), data.get('net_id'), now_str, data.get('video_data')))
         else:
             cur.execute("""
                 INSERT INTO music_hub (title, artist, audio_data, cover_data, uploaded_by, net_id, created_at, video_data)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            """, (data.get('title'), data.get('artist'), data.get('audio_data'), data.get('cover_data'),
+            """, (data.get('title'), data.get('artist'), audio_data, data.get('cover_data'),
                   data.get('uploaded_by'), data.get('net_id'), now_str, data.get('video_data')))
         conn.commit()
     except Exception as e:
