@@ -7724,6 +7724,7 @@ function checkAndShowHolidayBanner(viewId) {
 
         
         let bgFadeTimeout = null;
+        let coverHideTimeout = null;
 
         function updateVideoBackground(track, videoData = null) {
             const bgVideoPlayer = document.getElementById('bg-video-player');
@@ -7732,21 +7733,28 @@ function checkAndShowHolidayBanner(viewId) {
             if (!bgVideoPlayer || !musicVideoBg) return;
 
             clearTimeout(bgFadeTimeout);
+            clearTimeout(coverHideTimeout);
             bgVideoPlayer.style.opacity = '0';
 
-            const videoSrc = videoData || track.video_data;
+            const videoSrc = videoData || (track && track.video_data) || (track && track.has_video ? `${BACKEND_URL}/api/music/video/${track.id}` : null);
 
-            if (track.has_video && videoSrc && videoSrc.trim() !== '') {
-                bgVideoPlayer.src = videoSrc;
-                bgVideoPlayer.load();
-                bgVideoPlayer.play().catch(() => {});
+            if (track && track.has_video && videoSrc && videoSrc.trim() !== '') {
+                const oldFallback = musicVideoBg.querySelector('.bg-cover-fallback');
+                if (oldFallback) oldFallback.remove();
+
+                let shown = false;
                 const showVideo = () => {
-                    bgVideoPlayer.style.transition = 'opacity 1.2s ease';
+                    if (shown) return;
+                    shown = true;
+                    bgVideoPlayer.style.transition = 'opacity 0.8s ease';
                     bgVideoPlayer.style.opacity = '1';
                     
                     if (fsCoverContainer) {
+                        fsCoverContainer.style.transition = 'opacity 0.5s ease';
                         fsCoverContainer.style.opacity = '0';
-                        setTimeout(() => { fsCoverContainer.style.display = 'none'; }, 500);
+                        coverHideTimeout = setTimeout(() => {
+                            fsCoverContainer.style.display = 'none';
+                        }, 500);
                     }
                 };
                 
@@ -7754,13 +7762,17 @@ function checkAndShowHolidayBanner(viewId) {
                 bgVideoPlayer.oncanplay = showVideo;
                 bgVideoPlayer.onloadeddata = showVideo;
 
-                const oldFallback = musicVideoBg.querySelector('.bg-cover-fallback');
-                if (oldFallback) oldFallback.remove();
+                bgVideoPlayer.src = videoSrc;
+                bgVideoPlayer.load();
+                bgVideoPlayer.play().catch(() => {});
             } else {
+                bgVideoPlayer.onplaying = null;
+                bgVideoPlayer.oncanplay = null;
+                bgVideoPlayer.onloadeddata = null;
                 bgVideoPlayer.src = '';
                 const img = document.createElement('img');
                 img.className = 'bg-cover-fallback';
-                img.src = track.cover_url || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMzMzIi8+PC9zdmc+';
+                img.src = (track && track.cover_url) || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMzMzIi8+PC9zdmc+';
                 img.onerror = () => { img.src = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMzMzIi8+PC9zdmc+'; };
                 const oldFallback = musicVideoBg.querySelector('.bg-cover-fallback');
                 if (oldFallback) oldFallback.remove();
@@ -7937,11 +7949,10 @@ function checkAndShowHolidayBanner(viewId) {
                 }
                 // Update background if it's the current track
                 updateVideoBackground(track, vidUrl);
+            } else {
+                // Feature 1 & 2 integration
+                updateVideoBackground(track);
             }
-
-            
-            // Feature 1 & 2 integration
-            updateVideoBackground(track);
             loadLyricsForTrack(track);
             
             const playAudioData = async (audioData) => {
@@ -7952,6 +7963,10 @@ function checkAndShowHolidayBanner(viewId) {
                 const startPlayback = async () => {
                     try {
                         await audioPlayer.play();
+                        const bgVid = document.getElementById('bg-video-player');
+                        if (track.has_video && bgVid && bgVid.paused) {
+                            bgVid.play().catch(() => {});
+                        }
                         consecutiveErrors = 0;
                         isLoadingTrack = false;
                         isPlaying = true;
@@ -8452,11 +8467,15 @@ function checkAndShowHolidayBanner(viewId) {
             const fab = document.getElementById('ai-fab');
             if (fab) fab.classList.add('hidden-fab');
             
-            // Re-trigger background video now that the container is visible
-            // Browsers refuse to load/play videos inside display:none elements
-            if (track && track.has_video) {
+            // Resume or trigger background video when reopening fullscreen from mini-player
+            if (!force && track && track.has_video) {
+                const bgVid = document.getElementById('bg-video-player');
                 const vidUrl = `${BACKEND_URL}/api/music/video/${track.id}`;
-                updateVideoBackground(track, vidUrl);
+                if (bgVid && bgVid.src && bgVid.src.includes(`/api/music/video/${track.id}`)) {
+                    if (isPlaying && bgVid.paused) bgVid.play().catch(() => {});
+                } else {
+                    updateVideoBackground(track, vidUrl);
+                }
             }
             
             if (!force && !history.state?.fsMusic) {
