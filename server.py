@@ -1229,7 +1229,11 @@ def get_music_video(track_id):
     
     if row and row[0]:
         v_data = row[0]
-        if v_data.startswith('data:video'):
+        if v_data.startswith('http'):
+            # Directly redirect to Supabase CDN for massive bandwidth savings
+            from flask import redirect
+            return redirect(v_data)
+        elif v_data.startswith('data:video'):
             try:
                 header, encoded = v_data.split(',', 1)
                 mime_type = header.split(':')[1].split(';')[0]
@@ -1268,6 +1272,39 @@ def upload_music_video():
         if has_video and owner_id != net_id:
             return jsonify({'success': False, 'error': 'Unauthorized: This track already has a video. Only the original uploader can change it.'})
             
+        # If the user uploaded a file, it comes as base64. We upload it to Supabase Storage!
+        if video_data and video_data.startswith("data:"):
+            import base64
+            import requests
+            import uuid
+            
+            try:
+                b64_str = video_data.split(",")[1]
+                video_bytes = base64.b64decode(b64_str)
+                
+                # Using the live keys
+                SUPABASE_URL = "https://turnmciexwkrgloqfgit.supabase.co"
+                SUPABASE_KEY = os.environ.get('SUPABASE_SECRET_KEY')
+                
+                if SUPABASE_KEY:
+                    filename = f"video_{uuid.uuid4().hex[:12]}.mp4"
+                    upload_url = f"{SUPABASE_URL}/storage/v1/object/music/{filename}"
+                    
+                    headers = {
+                        "Authorization": f"Bearer {SUPABASE_KEY}",
+                        "apikey": SUPABASE_KEY,
+                        "Content-Type": "video/mp4"
+                    }
+                    
+                    res = requests.post(upload_url, headers=headers, data=video_bytes)
+                    if res.status_code == 200:
+                        # Replace the giant base64 string with just the URL!
+                        video_data = f"{SUPABASE_URL}/storage/v1/object/public/music/{filename}"
+                    else:
+                        print(f"Failed to upload video to storage: {res.text}")
+            except Exception as e:
+                print(f"Storage upload error: {str(e)}")
+
         # Update video
         if DATABASE_URL:
             cur.execute("UPDATE music_hub SET video_data = %s WHERE id = %s", (video_data, track_id))
