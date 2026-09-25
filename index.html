@@ -2633,8 +2633,10 @@
             height: 75%;
             background: linear-gradient(135deg, var(--fs-accent-1, rgba(29,185,84,0.15)), var(--fs-accent-2, rgba(20,120,50,0.2)), var(--fs-accent-3, rgba(0,0,0,0.3)));
             border-radius: 40px 40px 0 0;
-            padding: 20px;
-            overflow-y: auto;
+            padding: 20px 20px 0 20px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
             color: #fff;
             font-size: 1.1rem;
             line-height: 1.8;
@@ -2644,7 +2646,7 @@
             border-top: 1px solid rgba(255, 255, 255, 0.2);
             border-left: 1px solid rgba(255, 255, 255, 0.05);
             border-right: 1px solid rgba(255, 255, 255, 0.05);
-            z-index: 20;
+            z-index: 50;
             box-sizing: border-box;
             transform: translateY(100%);
             transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), background 0.5s ease;
@@ -4382,6 +4384,13 @@
         });
 
         window.addEventListener('popstate', (e) => {
+            // Check for music fullscreen
+            const fsMusic = document.getElementById('music-fullscreen');
+            if (fsMusic && fsMusic.style.display !== 'none' && (!e.state || !e.state.fsMusic)) {
+                closeFullscreenPlayer(true);
+                return;
+            }
+
             // Close fullscreen modals on back button
             const modals = ['cgpa-modal', 'grade-modal', 'att-predict-modal'];
             modals.forEach(m => {
@@ -8276,6 +8285,29 @@ function checkAndShowHolidayBanner(viewId) {
             loadLyricsForTrack(track);
         }
 
+        // Add Swipe Down to Close Lyrics
+        window.addEventListener('load', () => {
+            const sheet = document.getElementById('fs-lyrics-container');
+            let lyricsTouchStartY = 0;
+            if (sheet) {
+                sheet.addEventListener('touchstart', (e) => {
+                    // Only start swipe if we touch the handle area, OR if content is scrolled to top
+                    const content = document.getElementById('fs-lyrics-content');
+                    if (content && content.scrollTop > 5) return;
+                    lyricsTouchStartY = e.touches[0].clientY;
+                }, { passive: true });
+                
+                sheet.addEventListener('touchend', (e) => {
+                    if (lyricsTouchStartY === 0) return;
+                    const touchEndY = e.changedTouches[0].clientY;
+                    if (touchEndY - lyricsTouchStartY > 80) { // Swiped down
+                        sheet.classList.remove('active');
+                    }
+                    lyricsTouchStartY = 0;
+                });
+            }
+        });
+
         let sleepTimerTimeout = null;
         function toggleSleepTimerMenu() {
             const menu = document.getElementById('sleep-timer-menu');
@@ -8357,8 +8389,11 @@ function checkAndShowHolidayBanner(viewId) {
                         if (current) {
                             current.classList.add('active-lyric');
                             const container = document.getElementById('fs-lyrics-container');
-                            if (container && container.classList.contains('active')) {
-                                current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            const contentArea = document.getElementById('fs-lyrics-content');
+                            if (container && container.classList.contains('active') && contentArea) {
+                                // Calculate position so the active lyric is centered in the scroll area
+                                const targetScroll = current.offsetTop - (contentArea.clientHeight / 2) + (current.clientHeight / 2);
+                                contentArea.scrollTo({ top: Math.max(0, targetScroll), behavior: 'smooth' });
                             }
                         }
                         window.currentLyricIndex = activeIndex;
@@ -8413,14 +8448,21 @@ function checkAndShowHolidayBanner(viewId) {
             document.getElementById('music-fullscreen').style.display = 'flex';
             const fab = document.getElementById('ai-fab');
             if (fab) fab.classList.add('hidden-fab');
+            
+            if (!force && !history.state?.fsMusic) {
+                history.pushState({fsMusic: true}, '');
+            }
         }
         
-        function closeFullscreenPlayer() {
+        function closeFullscreenPlayer(fromPopState = false) {
             document.getElementById('music-fullscreen').style.display = 'none';
             const activeView = document.querySelector('.app-view.active');
             if (activeView && activeView.id === 'home-view') {
                 const fab = document.getElementById('ai-fab');
                 if (fab) fab.classList.remove('hidden-fab');
+            }
+            if (!fromPopState && history.state && history.state.fsMusic) {
+                history.back();
             }
         }
         

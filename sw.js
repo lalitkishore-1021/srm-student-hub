@@ -1,5 +1,5 @@
 // Change this version number every time you want to force phones to update!
-const CACHE_NAME = 'srm-hub-v42-spotify-canvas-fix'; 
+const CACHE_NAME = 'srm-hub-v43-lyrics-back-button'; 
 
 const ASSETS_TO_CACHE = [
     '/',
