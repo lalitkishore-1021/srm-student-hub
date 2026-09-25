@@ -1246,13 +1246,13 @@ def get_music_video(track_id):
 
 @app.route('/api/music/video/upload', methods=['POST'])
 def upload_music_video():
-    data = request.json
+    data = request.json or {}
     track_id = data.get('id')
-    net_id = data.get('net_id', '').lower()
+    net_id = (data.get('net_id') or '').strip().lower()
     video_data = data.get('video_data')
     
-    if not track_id or not net_id or not video_data:
-        return jsonify({'success': False, 'error': 'Missing required fields'})
+    if not track_id or not video_data:
+        return jsonify({'success': False, 'error': 'Missing required fields (track_id or video_data)'})
         
     conn = get_db()
     cur = conn.cursor()
@@ -1267,9 +1267,9 @@ def upload_music_video():
         if not row:
             return jsonify({'success': False, 'error': 'Track not found'})
             
-        owner_id = row[0].lower()
+        owner_id = (row[0] or '').strip().lower()
         has_video = bool(row[1])
-        if has_video and owner_id != net_id:
+        if has_video and owner_id and owner_id != net_id:
             return jsonify({'success': False, 'error': 'Unauthorized: This track already has a video. Only the original uploader can change it.'})
             
         # If the user uploaded a file, it comes as base64. We upload it to Supabase Storage!
@@ -1446,6 +1446,30 @@ def submit_music():
         except Exception as e:
             return jsonify({'success': False, 'error': f'Storage upload error: {str(e)}'}), 500
 
+    video_data = data.get('video_data')
+    if video_data and video_data.startswith("data:"):
+        import base64
+        import requests
+        import uuid
+        try:
+            b64_str = video_data.split(",")[1]
+            video_bytes = base64.b64decode(b64_str)
+            SUPABASE_URL = "https://turnmciexwkrgloqfgit.supabase.co"
+            SUPABASE_KEY = os.environ.get('SUPABASE_SECRET_KEY')
+            if SUPABASE_KEY:
+                v_filename = f"video_{uuid.uuid4().hex[:12]}.mp4"
+                v_upload_url = f"{SUPABASE_URL}/storage/v1/object/music/{v_filename}"
+                v_headers = {
+                    "Authorization": f"Bearer {SUPABASE_KEY}",
+                    "apikey": SUPABASE_KEY,
+                    "Content-Type": "video/mp4"
+                }
+                v_res = requests.post(v_upload_url, headers=v_headers, data=video_bytes)
+                if v_res.status_code == 200:
+                    video_data = f"{SUPABASE_URL}/storage/v1/object/public/music/{v_filename}"
+        except Exception as e:
+            print(f"Submit music video storage error: {str(e)}")
+
     conn = get_db()
     cur = conn.cursor()
     now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -1456,13 +1480,13 @@ def submit_music():
                 INSERT INTO music_hub (title, artist, audio_data, cover_data, uploaded_by, net_id, created_at, video_data)
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
             """, (data.get('title'), data.get('artist'), audio_data, data.get('cover_data'),
-                  data.get('uploaded_by'), data.get('net_id'), now_str, data.get('video_data')))
+                  data.get('uploaded_by'), data.get('net_id'), now_str, video_data))
         else:
             cur.execute("""
                 INSERT INTO music_hub (title, artist, audio_data, cover_data, uploaded_by, net_id, created_at, video_data)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """, (data.get('title'), data.get('artist'), audio_data, data.get('cover_data'),
-                  data.get('uploaded_by'), data.get('net_id'), now_str, data.get('video_data')))
+                  data.get('uploaded_by'), data.get('net_id'), now_str, video_data))
         conn.commit()
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500

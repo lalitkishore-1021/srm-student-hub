@@ -4415,8 +4415,8 @@
         // ================= UI STATE MANAGEMENT =================
         function getCurrentNetId() {
             const profile = JSON.parse(localStorage.getItem('squadProfile') || '{}');
-            const regNoRaw = document.getElementById('srm-reg')?.value || profile.regNo || '';
-            return (regNoRaw.split('@')[0] || '').toLowerCase();
+            const regNoRaw = document.getElementById('srm-reg')?.value || localStorage.getItem('syncId') || profile.regNo || profile.netId || '';
+            return (regNoRaw.split('@')[0] || '').toLowerCase().trim();
         }
 
         function updateHomeState() {
@@ -8581,7 +8581,8 @@ function checkAndShowHolidayBanner(viewId) {
             const track = currentPlaylist[currentTrackIndex];
             
             const btn = document.getElementById('fs-add-video-btn');
-            btn.innerHTML = '<div class="css-loader" style="width:20px;height:20px;border-width:2px;border-top-color:#1DB954;"></div>';
+            const origBtnHtml = '<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4zM15 16H5V8h10v8zm-5-1h2v-2h2v-2h-2V9h-2v2H8v2h2v2z"/></svg>';
+            if (btn) btn.innerHTML = '<div class="css-loader" style="width:20px;height:20px;border-width:2px;border-top-color:#1DB954;"></div>';
             
             try {
                 const videoData = await new Promise((resolve, reject) => {
@@ -8593,7 +8594,7 @@ function checkAndShowHolidayBanner(viewId) {
                 
                 const payload = {
                     id: track.id,
-                    net_id: getCurrentNetId(),
+                    net_id: getCurrentNetId() || track.net_id || 'student',
                     video_data: videoData
                 };
                 
@@ -8615,9 +8616,7 @@ function checkAndShowHolidayBanner(viewId) {
                     // Trigger video load
                     const vidUrl = `${BACKEND_URL}/api/music/video/${track.id}?t=${Date.now()}`;
                     const playerVid = document.getElementById('player-video');
-                    const fsVid = document.getElementById('fs-video');
                     const playerImg = document.getElementById('player-cover');
-                    const fsImg = document.getElementById('fs-cover');
                     
                     if (playerVid) {
                         playerVid.src = '';
@@ -8631,6 +8630,9 @@ function checkAndShowHolidayBanner(viewId) {
                 }
             } catch(e) {
                 alert("Connection error while uploading video.");
+            } finally {
+                if (btn) btn.innerHTML = origBtnHtml;
+                inputElement.value = '';
             }
             
             // Restore icon

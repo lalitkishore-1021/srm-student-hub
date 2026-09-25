@@ -1,5 +1,5 @@
 // Change this version number every time you want to force phones to update!
-const CACHE_NAME = 'srm-hub-v47-fix-duplicate-video-wipe'; 
+const CACHE_NAME = 'srm-hub-v48-fix-video-upload'; 
 
 const ASSETS_TO_CACHE = [
     '/',
