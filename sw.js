@@ -1,5 +1,5 @@
 // Change this version number every time you want to force phones to update!
-const CACHE_NAME = 'srm-hub-v35-offline-fix'; 
+const CACHE_NAME = 'srm-hub-v36-offline-types'; 
 
 const ASSETS_TO_CACHE = [
     '/',
