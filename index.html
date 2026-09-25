@@ -7740,7 +7740,7 @@ function checkAndShowHolidayBanner(viewId) {
                 bgVideoPlayer.src = videoSrc;
                 bgVideoPlayer.load();
                 bgVideoPlayer.play().catch(() => {});
-                bgVideoPlayer.oncanplay = () => {
+                bgVideoPlayer.onplaying = () => {
                     bgVideoPlayer.style.transition = 'opacity 1.2s ease';
                     bgVideoPlayer.style.opacity = '1';
                     
@@ -7927,10 +7927,9 @@ function checkAndShowHolidayBanner(viewId) {
             if (track.has_video) {
                 const vidUrl = `${BACKEND_URL}/api/music/video/${track.id}`;
                 if (playerVid) {
-                    playerVid.src = vidUrl;
-                    playerVid.style.display = 'block';
-                    playerImg.style.display = 'none';
-                    playerVid.play().catch(e=>{});
+                    playerVid.src = '';
+                    playerVid.style.display = 'none';
+                    playerImg.style.display = 'block';
                 }
                 // Update background if it's the current track
                 updateVideoBackground(track, vidUrl);
@@ -8591,10 +8590,9 @@ function checkAndShowHolidayBanner(viewId) {
                     const fsImg = document.getElementById('fs-cover');
                     
                     if (playerVid) {
-                        playerVid.src = vidUrl;
-                        playerVid.style.display = 'block';
-                        playerImg.style.display = 'none';
-                        playerVid.play().catch(e=>{});
+                        playerVid.src = '';
+                        playerVid.style.display = 'none';
+                        playerImg.style.display = 'block';
                     }
 
                     updateVideoBackground(track, vidUrl);
