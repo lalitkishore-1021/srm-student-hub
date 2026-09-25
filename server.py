@@ -1161,10 +1161,10 @@ def get_music():
     conn = get_db()
     if DATABASE_URL:
         cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-        cur.execute("SELECT id, title, artist, cover_data, uploaded_by, net_id, created_at, lyrics, 0 as has_video FROM music_hub ORDER BY order_index ASC, created_at DESC")
+        cur.execute("SELECT id, title, artist, cover_data, uploaded_by, net_id, created_at, lyrics, CASE WHEN video_data IS NOT NULL THEN 1 ELSE 0 END as has_video FROM music_hub ORDER BY order_index ASC, created_at DESC")
     else:
         cur = conn.cursor()
-        cur.execute("SELECT id, title, artist, cover_data, uploaded_by, net_id, created_at, lyrics, 0 as has_video FROM music_hub ORDER BY order_index ASC, created_at DESC")
+        cur.execute("SELECT id, title, artist, cover_data, uploaded_by, net_id, created_at, lyrics, CASE WHEN video_data IS NOT NULL THEN 1 ELSE 0 END as has_video FROM music_hub ORDER BY order_index ASC, created_at DESC")
     
     rows = cur.fetchall()
     items = []
@@ -1216,7 +1216,29 @@ def get_music_cover(track_id):
 
 @app.route('/api/music/video/<int:track_id>', methods=['GET'])
 def get_music_video(track_id):
-    return jsonify({'video_data': None})
+    conn = get_db()
+    cur = conn.cursor()
+    if DATABASE_URL:
+        cur.execute("SELECT video_data FROM music_hub WHERE id = %s", (track_id,))
+    else:
+        cur.execute("SELECT video_data FROM music_hub WHERE id = ?", (track_id,))
+    
+    row = cur.fetchone()
+    cur.close()
+    conn.close()
+    
+    if row and row[0]:
+        v_data = row[0]
+        if v_data.startswith('data:video'):
+            try:
+                header, encoded = v_data.split(',', 1)
+                mime_type = header.split(':')[1].split(';')[0]
+                decoded = base64.b64decode(encoded)
+                # Stream it natively to save bandwidth
+                return Response(decoded, mimetype=mime_type, headers={'Cache-Control': 'public, max-age=31536000', 'Accept-Ranges': 'bytes'})
+            except Exception:
+                pass
+    return Response(status=404)
 
 @app.route('/api/music/video/upload', methods=['POST'])
 def upload_music_video():

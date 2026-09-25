@@ -7905,25 +7905,23 @@ function checkAndShowHolidayBanner(viewId) {
             }
             
             if (track.has_video) {
-                fetch(`${BACKEND_URL}/api/music/video/${track.id}`).then(r => r.json()).then(data => {
-                    if (data.video_data && track.id === currentPlaylist[currentTrackIndex].id) {
-                        if (playerVid) {
-                            playerVid.src = data.video_data;
-                            playerVid.style.display = 'block';
-                            playerImg.style.display = 'none';
-                            playerVid.play().catch(e=>{});
-                        }
-                        if (fsVid) {
-                            fsVid.src = data.video_data;
-                            fsVid.style.display = 'block';
-                            fsImg.style.display = 'none';
-                            fsVid.play().catch(e=>{});
-                        }
-                        // Update background if it's the current track
-                        updateVideoBackground(track, data.video_data);
-                    }
-                }).catch(e=>{});
+                const vidUrl = `${BACKEND_URL}/api/music/video/${track.id}`;
+                if (playerVid) {
+                    playerVid.src = vidUrl;
+                    playerVid.style.display = 'block';
+                    playerImg.style.display = 'none';
+                    playerVid.play().catch(e=>{});
+                }
+                if (fsVid) {
+                    fsVid.src = vidUrl;
+                    fsVid.style.display = 'block';
+                    fsImg.style.display = 'none';
+                    fsVid.play().catch(e=>{});
+                }
+                // Update background if it's the current track
+                updateVideoBackground(track, vidUrl);
             }
+
             
             // Feature 1 & 2 integration
             updateVideoBackground(track);
@@ -8539,28 +8537,25 @@ function checkAndShowHolidayBanner(viewId) {
                     }
                     
                     // Trigger video load
-                    fetch(`${BACKEND_URL}/api/music/video/${track.id}`).then(r => r.json()).then(d => {
-                        if (d.video_data) {
-                            const playerVid = document.getElementById('player-video');
-                            const fsVid = document.getElementById('fs-video');
-                            const playerImg = document.getElementById('player-cover');
-                            const fsImg = document.getElementById('fs-cover');
-                            
-                            if (playerVid) {
-                                playerVid.src = d.video_data;
-                                playerVid.style.display = 'block';
-                                playerImg.style.display = 'none';
-                                playerVid.play().catch(e=>{});
-                            }
-                            if (fsVid) {
-                                fsVid.src = d.video_data;
-                                fsVid.style.display = 'block';
-                                fsImg.style.display = 'none';
-                                fsVid.play().catch(e=>{});
-                            }
-                            updateVideoBackground(track, d.video_data);
-                        }
-                    });
+                    const vidUrl = `${BACKEND_URL}/api/music/video/${track.id}?t=${Date.now()}`;
+                    const playerVid = document.getElementById('player-video');
+                    const fsVid = document.getElementById('fs-video');
+                    const playerImg = document.getElementById('player-cover');
+                    const fsImg = document.getElementById('fs-cover');
+                    
+                    if (playerVid) {
+                        playerVid.src = vidUrl;
+                        playerVid.style.display = 'block';
+                        playerImg.style.display = 'none';
+                        playerVid.play().catch(e=>{});
+                    }
+                    if (fsVid) {
+                        fsVid.src = vidUrl;
+                        fsVid.style.display = 'block';
+                        fsImg.style.display = 'none';
+                        fsVid.play().catch(e=>{});
+                    }
+                    updateVideoBackground(track, vidUrl);
                 } else {
                     alert("Failed to add video: " + (data.error || "Unknown error"));
                 }
