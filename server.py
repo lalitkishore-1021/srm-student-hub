@@ -484,7 +484,7 @@ def start_session():
             def run_academia():
                 out_queue = queue.Queue()
                 scrape_academia_worker(reg_no, pwd, batch, out_queue)
-                return out_queue.get(timeout=40)
+                return out_queue.get(timeout=55)
             
             # Run BOTH in parallel at the same time
             future_ac = executor.submit(run_academia)
@@ -493,7 +493,7 @@ def start_session():
             # 1. Wait for Academia FIRST (Cold starts with Unified Timetable can take 20-30s)
             result = None
             try:
-                result = future_ac.result(timeout=35)
+                result = future_ac.result(timeout=50)
             except Exception as e:
                 print(f"[{reg_no}] Academia failed or timed out: {e}")
             
