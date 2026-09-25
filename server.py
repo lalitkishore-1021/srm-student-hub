@@ -534,7 +534,7 @@ def start_session():
                 if not result.get('profile'):
                     raw_reg = reg_no or ''
                     net_id = raw_reg.split('@')[0].upper()
-                    result['profile'] = {'name': 'STUDENT (Academia Offline)', 'regNo': net_id, 'course': 'Data Synced via CampusWeb', 'department': ''}
+                    result['profile'] = {'name': 'STUDENT (Academia Offline)', 'regNo': net_id, 'course': 'Partial Data Synced', 'department': ''}
                 if cw_res.get('attendance') and len(cw_res.get('attendance')) > 0:
                     result['data'] = cw_res.get('attendance')
                     result['is_mock_attendance'] = False
