@@ -484,24 +484,24 @@ def start_session():
             def run_academia():
                 out_queue = queue.Queue()
                 scrape_academia_worker(reg_no, pwd, batch, out_queue)
-                return out_queue.get(timeout=30)
+                return out_queue.get(timeout=40)
             
             # Run BOTH in parallel at the same time
             future_ac = executor.submit(run_academia)
             future_cw = executor.submit(cw_scraper.scrape_campusweb, reg_no, pwd)
             
-            # 1. Wait for Academia FIRST (it's fast - finishes in 1-3 seconds)
+            # 1. Wait for Academia FIRST (Cold starts with Unified Timetable can take 20-30s)
             result = None
             try:
-                result = future_ac.result(timeout=15)
+                result = future_ac.result(timeout=35)
             except Exception as e:
-                print(f"[{reg_no}] Academia failed: {e}")
+                print(f"[{reg_no}] Academia failed or timed out: {e}")
             
             # 2. Now check CampusWeb - it's been running in parallel this whole time
-            #    Give it max 20 seconds extra
             cw_res = None
             try:
-                cw_res = future_cw.result(timeout=20)
+                # Give it up to 10 more seconds if Academia finished early
+                cw_res = future_cw.result(timeout=10)
             except Exception as e:
                 print(f"[{reg_no}] CampusWeb slow/failed (non-blocking): {e}")
             
