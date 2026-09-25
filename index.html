@@ -7734,10 +7734,15 @@ function checkAndShowHolidayBanner(viewId) {
                 bgVideoPlayer.oncanplay = () => {
                     bgVideoPlayer.style.transition = 'opacity 1.2s ease';
                     bgVideoPlayer.style.opacity = '1';
+                    
+                    // ONLY hide the thumbnail cover ONCE the background video is ready to play!
+                    if (fsCoverContainer) {
+                        fsCoverContainer.style.opacity = '0';
+                        setTimeout(() => { fsCoverContainer.style.display = 'none'; }, 500);
+                    }
                 };
                 const oldFallback = musicVideoBg.querySelector('.bg-cover-fallback');
                 if (oldFallback) oldFallback.remove();
-                if (fsCoverContainer) fsCoverContainer.style.display = 'none';
             } else {
                 bgVideoPlayer.src = '';
                 const img = document.createElement('img');
@@ -7750,7 +7755,10 @@ function checkAndShowHolidayBanner(viewId) {
                 img.style.opacity = '0';
                 img.style.transition = 'opacity 1.2s ease';
                 bgFadeTimeout = setTimeout(() => { img.style.opacity = '1'; }, 100);
-                if (fsCoverContainer) fsCoverContainer.style.display = 'flex';
+                if (fsCoverContainer) {
+                    fsCoverContainer.style.display = 'flex';
+                    fsCoverContainer.style.opacity = '1';
+                }
             }
         }
 
@@ -7887,7 +7895,10 @@ function checkAndShowHolidayBanner(viewId) {
             
             const fsCoverContainer = document.getElementById('fs-cover-container');
             if (fsCoverContainer) {
-                fsCoverContainer.style.display = track.has_video ? 'none' : 'flex';
+                // ALWAYS show the thumbnail container initially!
+                fsCoverContainer.style.display = 'flex';
+                fsCoverContainer.style.opacity = '1';
+                fsCoverContainer.style.transition = 'opacity 0.5s ease';
             }
             
             if (document.getElementById('music-fullscreen').style.display === 'flex') {
@@ -7911,12 +7922,6 @@ function checkAndShowHolidayBanner(viewId) {
                     playerVid.style.display = 'block';
                     playerImg.style.display = 'none';
                     playerVid.play().catch(e=>{});
-                }
-                if (fsVid) {
-                    fsVid.src = vidUrl;
-                    fsVid.style.display = 'block';
-                    fsImg.style.display = 'none';
-                    fsVid.play().catch(e=>{});
                 }
                 // Update background if it's the current track
                 updateVideoBackground(track, vidUrl);
@@ -8549,12 +8554,7 @@ function checkAndShowHolidayBanner(viewId) {
                         playerImg.style.display = 'none';
                         playerVid.play().catch(e=>{});
                     }
-                    if (fsVid) {
-                        fsVid.src = vidUrl;
-                        fsVid.style.display = 'block';
-                        fsImg.style.display = 'none';
-                        fsVid.play().catch(e=>{});
-                    }
+
                     updateVideoBackground(track, vidUrl);
                 } else {
                     alert("Failed to add video: " + (data.error || "Unknown error"));
