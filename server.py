@@ -511,13 +511,21 @@ def start_session():
             # Build final result
             if result is None or not result.get('success'):
                 result = result or {}
+                ac_err = result.get('error', '')
+                ac_err_lower = ac_err.lower()
+                
+                # STRICT AUTH: If Academia explicitly rejected the password, DO NOT fallback to CampusWeb!
+                # (CampusWeb API insecurely caches data without verifying passwords)
+                if 'password' in ac_err_lower or 'credential' in ac_err_lower or 'wrong email' in ac_err_lower or 'invalid' in ac_err_lower:
+                    sync_jobs[sid] = {'status': 'failed', 'result': {'success': False, 'error': "Wrong NetID or Password. Please try again."}, 'timestamp': time.time()}
+                    return
+                
                 result['success'] = True if (cw_res and cw_res.get('success')) else False
                 if not result.get('success'):
-                    ac_err = result.get('error', '')
                     cw_err = (cw_res or {}).get('error', '')
                     
                     final_err = "Login Failed. Invalid NetID or Password."
-                    if 'password' in ac_err.lower() or 'credential' in ac_err.lower() or 'password' in cw_err.lower():
+                    if 'password' in cw_err.lower():
                         final_err = "Wrong NetID or Password. Please try again."
                     elif '@srmist.edu.in' not in reg_no.lower():
                         final_err = "Please include @srmist.edu.in in your NetID."

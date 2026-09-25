@@ -1,5 +1,5 @@
 // Change this version number every time you want to force phones to update!
-const CACHE_NAME = 'srm-hub-v39-avatar-timeout-fixes'; 
+const CACHE_NAME = 'srm-hub-v40-avatar-auth-fixes'; 
 
 const ASSETS_TO_CACHE = [
     '/',

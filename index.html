@@ -4478,19 +4478,9 @@
             // Inject 3D Avatar
             const avatarImg = document.getElementById('id-avatar-img');
             const fallback = document.getElementById('id-avatar-fallback');
-            if (avatarImg && profile.regNo) {
-                const nameParam = encodeURIComponent(profile.name || profile.regNo || 'SRM');
-                avatarImg.src = `https://ui-avatars.com/api/?name=${nameParam}&background=random&color=fff&size=200&bold=true`;
-                avatarImg.style.display = 'block';
-                avatarImg.style.objectFit = 'cover';
-                avatarImg.style.objectPosition = 'center';
-                if(fallback) fallback.style.display = 'none';
-                
-                avatarImg.onerror = function() {
-                    this.style.display = 'none';
-                    if(fallback) fallback.style.display = 'block';
-                };
-            }
+            // Always use the human SVG icon instead of images or letters
+            if (avatarImg) avatarImg.style.display = 'none';
+            if (fallback) fallback.style.display = 'block';
 
             // Apply daily theme
             if (typeof applyDailyTheme === 'function') applyDailyTheme();
