@@ -1,5 +1,5 @@
 // Change this version number every time you want to force phones to update!
-const CACHE_NAME = 'srm-hub-v45-bg-video-preload-fix'; 
+const CACHE_NAME = 'srm-hub-v46-video-visibility-fix'; 
 
 const ASSETS_TO_CACHE = [
     '/',

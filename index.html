@@ -8452,6 +8452,13 @@ function checkAndShowHolidayBanner(viewId) {
             const fab = document.getElementById('ai-fab');
             if (fab) fab.classList.add('hidden-fab');
             
+            // Re-trigger background video now that the container is visible
+            // Browsers refuse to load/play videos inside display:none elements
+            if (track && track.has_video) {
+                const vidUrl = `${BACKEND_URL}/api/music/video/${track.id}`;
+                updateVideoBackground(track, vidUrl);
+            }
+            
             if (!force && !history.state?.fsMusic) {
                 history.pushState({fsMusic: true}, '');
             }
