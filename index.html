@@ -3337,7 +3337,7 @@
                 <button class="action-btn" onclick="document.getElementById('marketSubmitModal').style.display='flex'; document.getElementById('market-status').innerText='';" style="background: linear-gradient(135deg, #ffaa00, #ff8800); color: #000; font-weight: 900; font-size: 1rem; padding: 14px 30px; border-radius: 30px; box-shadow: 0 10px 20px rgba(255,170,0,0.4); text-transform: uppercase; max-width: 300px; margin: 0 auto;">+ Sell an Item</button>
             </div>
 
-            <div id="market-list" style="max-width: 800px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px;">
+            <div id="market-list" style="max-width: 800px; margin: 0 auto; display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px;">
                 <!-- dynamic items here -->
             </div>
         </div>
@@ -6565,21 +6565,20 @@ function checkAndShowHolidayBanner(viewId) {
                 const isOwner = myNetId && p.net_id && myNetId === (p.net_id || '').toLowerCase();
                 
                 return `
-                <div class="image-card fade-in-up" style="transform: none; text-align: left; position: relative; padding: 20px;">
-                    <span style="position: absolute; top: 20px; right: 20px; background: rgba(255,255,255,0.1); padding: 5px 12px; border-radius: 8px; font-size: 0.8rem; font-weight: bold; color: #fff;">${p.category || 'Item'}</span>
+                <div class="image-card fade-in-up" style="transform: none; text-align: left; position: relative; padding: 12px; display: flex; flex-direction: column;">
+                    ${p.image_url ? `<img src="${p.image_url}" alt="${p.title}" style="width: 100%; height: 120px; border-radius: 8px; margin-bottom: 10px; border: 1px solid var(--glass-border); object-fit: cover;" onerror="this.style.display='none'">` : '<div style="width:100%; height:120px; background:rgba(255,255,255,0.05); border-radius:8px; margin-bottom:10px; display:flex; align-items:center; justify-content:center; color:rgba(255,255,255,0.2);">No Image</div>'}
+                    <span style="position: absolute; top: 16px; right: 16px; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); padding: 3px 8px; border-radius: 6px; font-size: 0.65rem; font-weight: bold; color: #fff;">${p.category || 'Item'}</span>
                     
-                    <h3 style="color: var(--text-main); margin: 0 0 5px 0; font-size: 1.25rem; font-family: 'Montserrat', sans-serif; padding-right: 80px;">${p.title}</h3>
-                    <div style="font-size:0.8rem; color: var(--text-sub); margin-bottom: 12px;">By <b style="color: var(--primary);">${p.seller_name}</b> &bull; ${formatTime}</div>
+                    <h3 style="color: var(--text-main); margin: 0 0 5px 0; font-size: 1rem; font-family: 'Montserrat', sans-serif; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${p.title}</h3>
+                    <div style="font-size:0.7rem; color: var(--text-sub); margin-bottom: 8px;">By <b style="color: var(--primary);">${p.seller_name.split(' ')[0]}</b> &bull; ${formatTime}</div>
                     
-                    ${p.image_url ? `<img src="${p.image_url}" alt="${p.title}" style="width: 100%; height: auto; border-radius: 10px; margin-bottom: 15px; border: 1px solid var(--glass-border);" onerror="this.style.display='none'">` : ''}
+                    <p style="color: var(--text-sub); font-size: 0.8rem; margin-bottom: auto; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis;">${p.description || ''}</p>
                     
-                    <p style="color: var(--text-sub); font-size: 0.95rem; margin-bottom: 15px; line-height: 1.5;">${p.description || ''}</p>
-                    
-                    <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--glass-border); padding-top: 15px;">
-                        <span style="font-size: 1.2rem; font-weight: 900; color: #62d5ff; font-family: 'Montserrat', sans-serif;">${p.price ? p.price : 'DM for price'}</span>
-                        <div style="display: flex; gap: 8px; align-items: center;">
-                            ${isOwner ? `<button onclick="deleteMarketItem(${p.id})" style="background: rgba(255,68,68,0.15); border: 1px solid rgba(255,68,68,0.4); color: #ff4444; padding: 8px 14px; border-radius: 10px; cursor: pointer; font-weight: bold; font-size: 0.85rem;"> Delete</button>` : ''}
-                            ${waLink ? `<a href="${waLink}" target="_blank" style="background: #25D366; color: #fff; font-weight: bold; padding: 8px 16px; border-radius: 10px; text-decoration: none; font-size: 0.9rem; display: flex; align-items: center; gap: 8px;"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347zM12 21.826A9.826 9.826 0 1 1 21.826 12 9.837 9.837 0 0 1 12 21.826M12 2C6.477 2 2 6.477 2 12c0 1.761.458 3.425 1.282 4.881L2 22l5.253-1.252A9.974 9.974 0 0 0 12 22c5.523 0 10-4.477 10-10S17.523 2 12 2"/></svg> Contact</a>` : ''}
+                    <div style="display: flex; flex-direction: column; gap: 8px; border-top: 1px solid var(--glass-border); padding-top: 10px; margin-top: 10px;">
+                        <span style="font-size: 1.05rem; font-weight: 900; color: #62d5ff; font-family: 'Montserrat', sans-serif;">${p.price ? p.price : 'DM'}</span>
+                        <div style="display: flex; gap: 5px; width: 100%;">
+                            ${waLink ? `<a href="${waLink}" target="_blank" onclick="if(navigator.vibrate) navigator.vibrate(50);" style="background: #25D366; color: #fff; font-weight: bold; padding: 6px; border-radius: 8px; text-decoration: none; font-size: 0.75rem; flex: 1; text-align: center; display: flex; align-items: center; justify-content: center; gap: 4px;"><svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347zM12 21.826A9.826 9.826 0 1 1 21.826 12 9.837 9.837 0 0 1 12 21.826M12 2C6.477 2 2 6.477 2 12c0 1.761.458 3.425 1.282 4.881L2 22l5.253-1.252A9.974 9.974 0 0 0 12 22c5.523 0 10-4.477 10-10S17.523 2 12 2"/></svg> Msg</a>` : ''}
+                            ${isOwner ? `<button onclick="deleteMarketItem(${p.id}); if(navigator.vibrate) navigator.vibrate(50);" style="background: rgba(255,68,68,0.15); border: 1px solid rgba(255,68,68,0.4); color: #ff4444; padding: 6px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.75rem; flex: 1;">Delete</button>` : ''}
                         </div>
                     </div>
                 </div>`;
@@ -10099,12 +10098,26 @@ function initCalculators() {
             else grade = 'F';
         }
         
-        cgpaCourses.push({ title: title, credits: 3, grade: grade }); // Default 3 credits
+        // Estimate actual credits based on course title
+        let actualCredits = 3;
+        const upTitle = title.toUpperCase();
+        if (upTitle.includes('LAB') || upTitle.includes('PRACTICAL')) actualCredits = 1.5;
+        else if (upTitle.includes('PROJECT') || upTitle.includes('SEMINAR')) actualCredits = 2;
+        else if (upTitle.includes('SKILL') || upTitle.includes('APTITUDE')) actualCredits = 1;
+        else if (code.toUpperCase().endsWith('L')) actualCredits = 1.5; // common lab code
+        else if (code.toUpperCase().endsWith('T')) actualCredits = 3;
         
-        if (courseMax <= 60 && code.toUpperCase().includes('THEORY')) {
+        cgpaCourses.push({ title: title, credits: actualCredits, grade: grade });
+        
+        if (courseMax > 0 && courseMax <= 150) {
+            // Scale internal marks strictly out of 60 for the calculator
+            let scaledInternal = courseObtained;
+            if (courseMax !== 60) {
+                scaledInternal = (courseObtained / courseMax) * 60;
+            }
             gradeCalcCourses.push({
                 title: title,
-                internal: courseObtained,
+                internal: scaledInternal.toFixed(2),
                 target: 'O'
             });
         }
@@ -10453,22 +10466,27 @@ function predictDateRangeUI() {
         </div>
         
         <div style="padding: 20px;">
-            <div style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:16px; padding:20px; margin-bottom:20px;">
-                <div style="color:var(--text-main); font-weight:700; font-size:16px; margin-bottom:5px;">Select Date Range</div>
-                <div style="color:var(--text-sub); font-size:12px; margin-bottom:15px;">Simulate absence based on your timetable classes.</div>
+            <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:20px; padding:25px; margin-bottom:20px; box-shadow: 0 10px 30px rgba(0,0,0,0.2);">
+                <div style="display:flex; align-items:center; gap:12px; margin-bottom: 8px;">
+                    <div style="width: 40px; height: 40px; border-radius: 12px; background: rgba(255,170,0,0.15); display: flex; align-items: center; justify-content: center; color: var(--primary);">
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                    </div>
+                    <div style="color:var(--text-main); font-weight:800; font-size:18px;">Select Dates to Bunk</div>
+                </div>
+                <div style="color:var(--text-sub); font-size:13px; margin-bottom:20px; line-height: 1.5;">Simulate your future attendance by selecting the exact dates you plan to miss classes.</div>
                 
-                <div style="display:flex; gap:10px; margin-bottom:20px;">
+                <div style="display:flex; gap:15px; margin-bottom:25px;">
                     <div style="flex:1;">
-                        <label style="color:var(--text-sub); font-size:10px; font-weight:700; text-transform:uppercase; margin-bottom:5px; display:block;">From</label>
-                        <input type="date" id="att-predict-start" style="width:100%; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.1); color:#fff; padding:12px; border-radius:8px;">
+                        <label style="color:var(--text-sub); font-size:11px; font-weight:700; text-transform:uppercase; margin-bottom:8px; display:block; letter-spacing: 0.5px;">From Date</label>
+                        <input type="date" id="att-predict-start" style="width:100%; box-sizing: border-box; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.12); color:#fff; padding:14px; border-radius:12px; font-family: 'Montserrat', sans-serif; outline: none; transition: border-color 0.3s;" onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='rgba(255,255,255,0.12)'">
                     </div>
                     <div style="flex:1;">
-                        <label style="color:var(--text-sub); font-size:10px; font-weight:700; text-transform:uppercase; margin-bottom:5px; display:block;">To</label>
-                        <input type="date" id="att-predict-end" style="width:100%; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.1); color:#fff; padding:12px; border-radius:8px;">
+                        <label style="color:var(--text-sub); font-size:11px; font-weight:700; text-transform:uppercase; margin-bottom:8px; display:block; letter-spacing: 0.5px;">To Date</label>
+                        <input type="date" id="att-predict-end" style="width:100%; box-sizing: border-box; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.12); color:#fff; padding:14px; border-radius:12px; font-family: 'Montserrat', sans-serif; outline: none; transition: border-color 0.3s;" onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='rgba(255,255,255,0.12)'">
                     </div>
                 </div>
                 
-                <button onclick="predictDateRangeUI()" style="width:100%; background:var(--accent); color:#fff; border:none; border-radius:12px; padding:15px; font-weight:700; font-size:14px; cursor:pointer;">Predict</button>
+                <button onclick="if(navigator.vibrate) navigator.vibrate(50); predictDateRangeUI()" style="width:100%; background:linear-gradient(135deg, #ffaa00, #ff8800); color:#000; border:none; border-radius:14px; padding:16px; font-weight:800; font-size:15px; cursor:pointer; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 10px 20px rgba(255,170,0,0.3); transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='scale(1.02)'; this.style.boxShadow='0 12px 25px rgba(255,170,0,0.4)';" onmouseout="this.style.transform='none'; this.style.boxShadow='0 10px 20px rgba(255,170,0,0.3)';">Calculate Impact</button>
             </div>
             
             <div id="att-predict-results"></div>
@@ -10586,6 +10604,13 @@ function predictDateRangeUI() {
                 sessionStorage.setItem('musicAdShown', 'true');
             }
         }
+        
+        // Global Haptic Feedback
+        document.addEventListener('click', function(e) {
+            if (e.target.closest('button') || e.target.closest('.day-btn') || e.target.closest('.bottom-nav-item') || e.target.closest('.action-btn')) {
+                if (navigator.vibrate) navigator.vibrate(30);
+            }
+        });
     </script>
 </body>
 

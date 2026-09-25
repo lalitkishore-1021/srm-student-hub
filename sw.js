@@ -1,5 +1,5 @@
 // Change this version number every time you want to force phones to update!
-const CACHE_NAME = 'srm-hub-v37-popup-close-fix'; 
+const CACHE_NAME = 'srm-hub-v38-ui-fixes'; 
 
 const ASSETS_TO_CACHE = [
     '/',

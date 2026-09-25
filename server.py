@@ -513,11 +513,28 @@ def start_session():
                 result = result or {}
                 result['success'] = True if (cw_res and cw_res.get('success')) else False
                 if not result.get('success'):
-                    sync_jobs[sid] = {'status': 'failed', 'result': {'success': False, 'error': 'Both Academia and CampusWeb failed.'}, 'timestamp': time.time()}
+                    ac_err = result.get('error', '')
+                    cw_err = (cw_res or {}).get('error', '')
+                    
+                    final_err = "Login Failed. Invalid NetID or Password."
+                    if 'password' in ac_err.lower() or 'credential' in ac_err.lower() or 'password' in cw_err.lower():
+                        final_err = "Wrong NetID or Password. Please try again."
+                    elif '@srmist.edu.in' not in reg_no.lower():
+                        final_err = "Please include @srmist.edu.in in your NetID."
+                    elif 'network' in ac_err.lower() or 'timeout' in ac_err.lower() or 'time out' in ac_err.lower() or 'network' in cw_err.lower():
+                        final_err = "Poor network connectivity. The university servers took too long to respond."
+                    elif ac_err:
+                        final_err = f"University Server Error: {ac_err}"
+                    
+                    sync_jobs[sid] = {'status': 'failed', 'result': {'success': False, 'error': final_err}, 'timestamp': time.time()}
                     return
             
             # Override with CampusWeb attendance & marks if available
             if cw_res and cw_res.get('success'):
+                if not result.get('profile'):
+                    raw_reg = reg_no or ''
+                    net_id = raw_reg.split('@')[0].upper()
+                    result['profile'] = {'name': 'STUDENT (Academia Offline)', 'regNo': net_id, 'course': 'Data Synced via CampusWeb', 'department': ''}
                 if cw_res.get('attendance') and len(cw_res.get('attendance')) > 0:
                     result['data'] = cw_res.get('attendance')
                     result['is_mock_attendance'] = False
