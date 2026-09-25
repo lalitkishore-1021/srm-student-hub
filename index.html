@@ -4017,7 +4017,7 @@
 <!-- FULLSCREEN MUSIC PLAYER -->
     <div id="music-fullscreen" class="music-fullscreen">
         <div id="music-video-bg" class="music-video-bg">
-            <video id="bg-video-player" autoplay muted loop playsinline preload="none" class="bg-video"></video>
+            <video id="bg-video-player" autoplay muted loop playsinline class="bg-video"></video>
             <div class="bg-video-overlay"></div>
         </div>
         <div class="fs-bg-orbs-container">
@@ -7740,16 +7740,20 @@ function checkAndShowHolidayBanner(viewId) {
                 bgVideoPlayer.src = videoSrc;
                 bgVideoPlayer.load();
                 bgVideoPlayer.play().catch(() => {});
-                bgVideoPlayer.onplaying = () => {
+                const showVideo = () => {
                     bgVideoPlayer.style.transition = 'opacity 1.2s ease';
                     bgVideoPlayer.style.opacity = '1';
                     
-                    // ONLY hide the thumbnail cover ONCE the background video is ready to play!
                     if (fsCoverContainer) {
                         fsCoverContainer.style.opacity = '0';
                         setTimeout(() => { fsCoverContainer.style.display = 'none'; }, 500);
                     }
                 };
+                
+                bgVideoPlayer.onplaying = showVideo;
+                bgVideoPlayer.oncanplay = showVideo;
+                bgVideoPlayer.onloadeddata = showVideo;
+
                 const oldFallback = musicVideoBg.querySelector('.bg-cover-fallback');
                 if (oldFallback) oldFallback.remove();
             } else {
