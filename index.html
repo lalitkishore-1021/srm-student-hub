@@ -8703,8 +8703,19 @@ function checkAndShowHolidayBanner(viewId) {
                     const data = await res.json();
                     audioData = data.audio_data;
                 }
-                
+
                 if (audioData) {
+                    if (audioData.startsWith('http')) {
+                        const aRes = await fetch(audioData);
+                        if (aRes.ok) {
+                            const aBlob = await aRes.blob();
+                            audioData = await new Promise(res => {
+                                const r = new FileReader();
+                                r.onloadend = () => res(r.result);
+                                r.readAsDataURL(aBlob);
+                            });
+                        }
+                    }
                     let coverData = '';
                     if (track.cover_url) {
                         try {
