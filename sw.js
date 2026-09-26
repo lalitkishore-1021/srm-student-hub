@@ -1,5 +1,5 @@
 // Change this version number every time you want to force phones to update!
-const CACHE_NAME = 'srm-hub-v50-post-deletion-and-chat'; 
+const CACHE_NAME = 'srm-hub-v51-background-music-fix'; 
 
 const ASSETS_TO_CACHE = [
     '/',

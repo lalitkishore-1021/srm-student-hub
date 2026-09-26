@@ -7156,7 +7156,10 @@ function checkAndShowHolidayBanner(viewId) {
                     has_video: track.has_video ? 1 : 0,
                     downloaded_at: Date.now()
                 });
-                tx.oncomplete = () => resolve();
+                tx.oncomplete = () => {
+                    try { if (window.offlineAudioCache) window.offlineAudioCache.set(String(track.id), audioData); } catch(e) {}
+                    resolve();
+                };
                 tx.onerror = () => reject(tx.error);
             });
         }
@@ -7190,7 +7193,10 @@ function checkAndShowHolidayBanner(viewId) {
             return new Promise((resolve, reject) => {
                 const tx = db.transaction('downloads', 'readwrite');
                 tx.objectStore('downloads').delete(String(trackId));
-                tx.oncomplete = () => resolve();
+                tx.oncomplete = () => {
+                    try { if (window.offlineAudioCache) window.offlineAudioCache.delete(String(trackId)); } catch(e) {}
+                    resolve();
+                };
                 tx.onerror = () => reject(tx.error);
             });
         }
@@ -7285,9 +7291,10 @@ function checkAndShowHolidayBanner(viewId) {
                 return (b.downloaded_at || 0) - (a.downloaded_at || 0);
             });
             const idx = currentPlaylist.findIndex(t => String(t.id) === String(trackId));
-            
-            nextTrackCache = { index: idx, audio_data: track.audio_data };
-            playMusicTrack(idx);
+            if (idx !== -1 && track && track.audio_data) {
+                try { if (window.offlineAudioCache) window.offlineAudioCache.set(String(track.id), track.audio_data); } catch(e) {}
+                playMusicTrack(idx);
+            }
         }
         
         async function removeOfflineTrack(trackId) {
@@ -7326,9 +7333,60 @@ function checkAndShowHolidayBanner(viewId) {
         let userManuallyStopped = false;
         let wakeLock = null;
         let isLoadingTrack = false;
+        let nextTrackPreloaded = false;
+
+        // In-memory offline cache for instant synchronous playback without async gaps
+        window.offlineAudioCache = new Map();
+        async function refreshOfflineAudioCache() {
+            try {
+                const tracks = await getAllOfflineTracks();
+                tracks.forEach(t => {
+                    if (t.id && t.audio_data) {
+                        window.offlineAudioCache.set(String(t.id), t.audio_data);
+                    }
+                });
+            } catch(e) {}
+        }
+        setTimeout(refreshOfflineAudioCache, 800);
+
+        let preloadedAudio = null;
+        let preloadedTrackId = null;
+
+        function preloadNextTrack(track) {
+            if (!track || preloadedTrackId === track.id) return;
+            try {
+                preloadedTrackId = track.id;
+                const offlineData = window.offlineAudioCache ? window.offlineAudioCache.get(String(track.id)) : null;
+                if (offlineData) return; // Already in offline cache
+                
+                if (!preloadedAudio) {
+                    preloadedAudio = new Audio();
+                    preloadedAudio.preload = 'auto';
+                    preloadedAudio.volume = 0;
+                    preloadedAudio.muted = true;
+                }
+                preloadedAudio.src = `${BACKEND_URL}/api/music/audio/${track.id}/stream`;
+                preloadedAudio.load();
+            } catch(e) {}
+        }
 
         const audioPlayer = new Audio();
-        audioPlayer.preload = 'metadata';
+        audioPlayer.preload = 'auto';
+        audioPlayer.addEventListener('play', () => {
+            isPlaying = true;
+            updatePlayPauseBtn();
+            if ('mediaSession' in navigator) {
+                navigator.mediaSession.playbackState = 'playing';
+            }
+        });
+        audioPlayer.addEventListener('pause', () => {
+            if (wakeLock) { wakeLock.release(); wakeLock = null; }
+            isPlaying = false;
+            updatePlayPauseBtn();
+            if ('mediaSession' in navigator) {
+                navigator.mediaSession.playbackState = 'paused';
+            }
+        });
         audioPlayer.addEventListener('timeupdate', () => {
             if (typeof updateMusicProgress === 'function') updateMusicProgress();
         });
@@ -7337,9 +7395,6 @@ function checkAndShowHolidayBanner(viewId) {
         });
         audioPlayer.addEventListener('error', () => {
             if (typeof handleMusicError === 'function') handleMusicError();
-        });
-        audioPlayer.addEventListener('pause', () => {
-            if (wakeLock) { wakeLock.release(); wakeLock = null; }
         });
 
         async function requestWakeLock() {
@@ -7361,6 +7416,11 @@ function checkAndShowHolidayBanner(viewId) {
             if (document.visibilityState === 'visible') {
                 if (currentTrackIndex !== -1 && audioPlayer.paused && !userManuallyStopped) {
                     audioPlayer.play().catch(() => {});
+                }
+                const track = currentPlaylist[currentTrackIndex];
+                if (track && track.has_video && isPlaying) {
+                    const bgVid = document.getElementById('bg-video-player');
+                    if (bgVid && bgVid.paused) bgVid.play().catch(() => {});
                 }
             }
         });
@@ -7906,213 +7966,231 @@ function checkAndShowHolidayBanner(viewId) {
             return (str||'').replace(/'/g, "\\'").replace(/\n/g, '\\n');
         }
 
-        async function playMusicTrack(index) {
-            if (index < 0 || index >= currentPlaylist.length) return;
+        function updateMediaSessionPositionState() {
+            if ('mediaSession' in navigator && 'setPositionState' in navigator.mediaSession) {
+                if (audioPlayer.duration && !isNaN(audioPlayer.duration) && isFinite(audioPlayer.duration)) {
+                    try {
+                        navigator.mediaSession.setPositionState({
+                            duration: audioPlayer.duration,
+                            playbackRate: audioPlayer.playbackRate || 1.0,
+                            position: Math.min(audioPlayer.currentTime, audioPlayer.duration)
+                        });
+                    } catch(e) {}
+                }
+            }
+        }
+
+        function updateMediaSession(track) {
+            if (!('mediaSession' in navigator) || !track) return;
             try {
-                fetch(`${BACKEND_URL}/api/music/play/${currentPlaylist[index].id}`, { method: 'POST', body: JSON.stringify({user_name: JSON.parse(localStorage.getItem('squadProfile')||'{}').name || 'Anonymous', net_id: getCurrentNetId()}), headers: {'Content-Type':'application/json'} }).catch(e=>console.log(e));
-            } catch(e) {}
-            isLoadingTrack = true;
-            currentTrackIndex = index;
+                const coverSrc = track.cover_url || track.cover_data || 'https://via.placeholder.com/512';
+                navigator.mediaSession.metadata = new MediaMetadata({
+                    title: track.title || 'Unknown Title',
+                    artist: track.artist || 'SRM Student Hub',
+                    album: 'SRM Music Lounge',
+                    artwork: [
+                        { src: coverSrc, sizes: '96x96', type: 'image/png' },
+                        { src: coverSrc, sizes: '128x128', type: 'image/png' },
+                        { src: coverSrc, sizes: '192x192', type: 'image/png' },
+                        { src: coverSrc, sizes: '256x256', type: 'image/png' },
+                        { src: coverSrc, sizes: '384x384', type: 'image/png' },
+                        { src: coverSrc, sizes: '512x512', type: 'image/png' }
+                    ]
+                });
+                navigator.mediaSession.playbackState = 'playing';
+
+                const setAction = (action, handler) => {
+                    try { navigator.mediaSession.setActionHandler(action, handler); } catch(e) {}
+                };
+
+                setAction('play', () => {
+                    audioPlayer.play().catch(() => {});
+                });
+                setAction('pause', () => {
+                    audioPlayer.pause();
+                });
+                setAction('previoustrack', () => {
+                    prevMusicTrack(true);
+                });
+                setAction('nexttrack', () => {
+                    nextMusicTrack(true);
+                });
+                setAction('seekto', (details) => {
+                    if (details.fastSeek && 'fastSeek' in audioPlayer) {
+                        audioPlayer.fastSeek(details.seekTime);
+                    } else {
+                        audioPlayer.currentTime = details.seekTime;
+                    }
+                    updateMediaSessionPositionState();
+                });
+                setAction('seekbackward', (details) => {
+                    const skip = details.seekOffset || 10;
+                    audioPlayer.currentTime = Math.max(audioPlayer.currentTime - skip, 0);
+                    updateMediaSessionPositionState();
+                });
+                setAction('seekforward', (details) => {
+                    const skip = details.seekOffset || 10;
+                    audioPlayer.currentTime = Math.min(audioPlayer.currentTime + skip, audioPlayer.duration || 0);
+                    updateMediaSessionPositionState();
+                });
+
+                updateMediaSessionPositionState();
+            } catch(e) {
+                console.warn('Error setting mediaSession:', e);
+            }
+        }
+
+        async function playMusicTrack(index, userInitiated = true) {
+            if (index < 0 || index >= currentPlaylist.length) return;
             const track = currentPlaylist[index];
+            currentTrackIndex = index;
+            nextTrackPreloaded = false;
+            isLoadingTrack = true;
+            userManuallyStopped = false;
             playRequestId++;
             const currentReqId = playRequestId;
-            
-            document.getElementById('music-player-bar').classList.add('active');
-            document.getElementById('player-title').innerText = track.title;
-            document.getElementById('player-artist').innerText = track.artist;
+
+            // 1. Asynchronously log track play count (non-blocking)
+            try {
+                fetch(`${BACKEND_URL}/api/music/play/${track.id}`, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        user_name: JSON.parse(localStorage.getItem('squadProfile') || '{}').name || 'Anonymous',
+                        net_id: getCurrentNetId()
+                    }),
+                    headers: {'Content-Type': 'application/json'}
+                }).catch(() => {});
+            } catch(e) {}
+
+            // 2. Synchronous audio source selection (0ms delay)
+            let audioSrc = null;
+            if (window.offlineAudioCache && window.offlineAudioCache.has(String(track.id))) {
+                audioSrc = window.offlineAudioCache.get(String(track.id));
+            } else if (track.audio_data) {
+                audioSrc = track.audio_data;
+            } else {
+                audioSrc = `${BACKEND_URL}/api/music/audio/${track.id}/stream`;
+            }
+
+            // 3. Immediately assign src WITHOUT calling pause() or clearing src
+            // Crucial: Keeping media session unbroken avoids Android/iOS tab sleep during transitions
+            audioPlayer.src = audioSrc;
+            audioPlayer.load();
+
+            // 4. Play synchronously within the user gesture or 'ended' tick
+            const playPromise = audioPlayer.play();
+            if (playPromise !== undefined) {
+                playPromise.then(() => {
+                    consecutiveErrors = 0;
+                    isLoadingTrack = false;
+                    isPlaying = true;
+                    updatePlayPauseBtn();
+                    requestWakeLock();
+                    updateMediaSession(track);
+
+                    // Preload the next track to warm browser cache
+                    let nextIdx = index + 1;
+                    if (nextIdx >= currentPlaylist.length && currentPlaylist.length > 0) nextIdx = 0;
+                    if (currentPlaylist[nextIdx]) {
+                        preloadNextTrack(currentPlaylist[nextIdx]);
+                    }
+                }).catch(err => {
+                    console.warn("audioPlayer.play() rejected:", err);
+                    isLoadingTrack = false;
+                    isPlaying = false;
+                    updatePlayPauseBtn();
+                });
+            }
+
+            // 5. Update UI (mini-player, lockscreen, fullscreen if visible)
             const coverSrc = track.cover_data || track.cover_url || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMzMzIi8+PC9zdmc+';
-            document.getElementById('fs-bg-blur').src = coverSrc;
             
-            // Auto open fullscreen player
-            openFullscreenPlayer(null, true);
-            
+            const playerBar = document.getElementById('music-player-bar');
+            if (playerBar) playerBar.classList.add('active');
+            const playerTitle = document.getElementById('player-title');
+            if (playerTitle) playerTitle.innerText = track.title;
+            const playerArtist = document.getElementById('player-artist');
+            if (playerArtist) playerArtist.innerText = track.artist;
+
+            const fsBgBlur = document.getElementById('fs-bg-blur');
+            if (fsBgBlur) fsBgBlur.src = coverSrc;
+
             const playerImg = document.getElementById('player-cover');
             const playerVid = document.getElementById('player-video');
             const fsImg = document.getElementById('fs-cover');
             const fsVid = document.getElementById('fs-video');
-            
-            playerVid.style.display = 'none';
-            playerVid.src = '';
-            playerImg.style.display = 'block';
-            playerImg.src = coverSrc;
-            
+
+            if (playerVid) { playerVid.style.display = 'none'; playerVid.src = ''; }
+            if (playerImg) { playerImg.style.display = 'block'; playerImg.src = coverSrc; }
             if (fsVid) { fsVid.style.display = 'none'; fsVid.src = ''; }
             if (fsImg) { fsImg.style.display = 'block'; fsImg.src = coverSrc; }
-            
+
             const fsCoverContainer = document.getElementById('fs-cover-container');
             if (fsCoverContainer) {
-                // ALWAYS show the thumbnail container initially!
                 fsCoverContainer.style.display = 'flex';
                 fsCoverContainer.style.opacity = '1';
                 fsCoverContainer.style.transition = 'opacity 0.5s ease';
             }
-            
-            if (document.getElementById('music-fullscreen').style.display === 'flex') {
-                document.getElementById('fs-title').innerText = track.title;
-                document.getElementById('fs-artist').innerText = track.artist;
-            }
-            
+
+            const fsTitle = document.getElementById('fs-title');
+            if (fsTitle) fsTitle.innerText = track.title;
+            const fsArtist = document.getElementById('fs-artist');
+            if (fsArtist) fsArtist.innerText = track.artist;
+
             const myNetId = getCurrentNetId();
             const isOwner = myNetId && track.net_id && myNetId === (track.net_id || '').toLowerCase();
             const addVideoBtn = document.getElementById('fs-add-video-btn');
             if (addVideoBtn) {
-                // Allow ANY user to add a video if the track doesn't have one.
-                // If it already has one, only the owner can see the button to edit it.
                 addVideoBtn.style.display = (!track.has_video || isOwner) ? 'inline-flex' : 'none';
             }
-            
-            if (track.has_video) {
-                const vidUrl = `${BACKEND_URL}/api/music/video/${track.id}`;
-                if (playerVid) {
-                    playerVid.src = '';
-                    playerVid.style.display = 'none';
-                    playerImg.style.display = 'block';
+
+            // If app is currently visible, handle visual features (video bg, fullscreen)
+            if (!document.hidden) {
+                const isFsOpen = document.getElementById('music-fullscreen')?.style.display === 'flex';
+                if (isFsOpen || userInitiated) {
+                    openFullscreenPlayer(null, true);
                 }
-                // Update background if it's the current track
-                updateVideoBackground(track, vidUrl);
+                if (track.has_video) {
+                    const vidUrl = `${BACKEND_URL}/api/music/video/${track.id}`;
+                    updateVideoBackground(track, vidUrl);
+                } else {
+                    updateVideoBackground(track);
+                }
             } else {
-                // Feature 1 & 2 integration
-                updateVideoBackground(track);
+                // Background mode / Screen off: Pause video to save CPU/battery
+                const bgVid = document.getElementById('bg-video-player');
+                if (bgVid && !bgVid.paused) bgVid.pause();
             }
+
             loadLyricsForTrack(track);
-            
-            const playAudioData = async (audioData) => {
-                audioPlayer.pause();
-                audioPlayer.src = audioData;
-                const isStreamUrl = !audioData.startsWith('data:');
-                
-                const startPlayback = async () => {
-                    try {
-                        await audioPlayer.play();
-                        const bgVid = document.getElementById('bg-video-player');
-                        if (track.has_video && bgVid && bgVid.paused) {
-                            bgVid.play().catch(() => {});
-                        }
-                        consecutiveErrors = 0;
-                        isLoadingTrack = false;
-                        isPlaying = true;
-                        updatePlayPauseBtn();
-                        userManuallyStopped = false;
-                        
-                        requestWakeLock();
-                        if ('mediaSession' in navigator) {
-                            navigator.mediaSession.metadata = new MediaMetadata({
-                                title: track.title,
-                                artist: track.artist,
-                                album: 'SRM Music Lounge',
-                                artwork: [ { src: track.cover_url || 'https://via.placeholder.com/512', sizes: '512x512', type: 'image/png' } ]
-                            });
-                            navigator.mediaSession.setActionHandler('play', toggleMusicPlay);
-                            navigator.mediaSession.setActionHandler('pause', toggleMusicPlay);
-                            navigator.mediaSession.setActionHandler('previoustrack', prevMusicTrack);
-                            navigator.mediaSession.setActionHandler('nexttrack', nextMusicTrack);
-                        }
-                    } catch(e) {
-                        console.error("Playback prevented:", e);
-                        isLoadingTrack = false;
-                        // Do NOT auto-skip here; it causes jumps on mobile when play is blocked.
-                        return;
-                    }
-                    localStorage.setItem('lastPlayedTrackId', track.id);
-                    
-                    let nextIdx = index + 1;
-                    if (nextIdx >= currentPlaylist.length && currentPlaylist.length > 0) nextIdx = 0;
-
-                };
-                
-                if (isStreamUrl) {
-                    audioPlayer.load();
-                    let streamLoaded = false;
-                    await new Promise((resolve, reject) => {
-                        const onCanPlay = () => { cleanup(); resolve(); };
-                        const onError = () => { cleanup(); reject(audioPlayer.error); };
-                        const cleanup = () => {
-                            audioPlayer.removeEventListener('canplay', onCanPlay);
-                            audioPlayer.removeEventListener('error', onError);
-                        };
-                        audioPlayer.addEventListener('canplay', onCanPlay, { once: true });
-                        audioPlayer.addEventListener('error', onError, { once: true });
-                        setTimeout(() => { cleanup(); reject(new Error('Audio load timeout')); }, 15000);
-                    }).then(() => {
-                        streamLoaded = true;
-                    }).catch(e => {
-                        console.error("Stream load failed:", e);
-                    });
-                    if (streamLoaded) await startPlayback();
-                } else {
-                    await startPlayback();
-                }
-            };
-
-            // If we have it cached, play IMMEDIATELY (synchronously) to bypass mobile background restrictions
-            if (nextTrackCache.index === index && nextTrackCache.audio_data) {
-                playAudioData(nextTrackCache.audio_data);
-                return;
-            }
-
-            // Otherwise, fetch it
-            audioPlayer.pause();
-            audioPlayer.src = '';
-            isPlaying = false;
-            document.getElementById('player-play-btn').innerHTML = '<div class="css-loader" style="width:15px;height:15px;border-width:2px;border-top-color:#000;"></div>';
-            if(document.getElementById('mobile-play-btn')) document.getElementById('mobile-play-btn').innerHTML = '<div class="css-loader" style="width:15px;height:15px;border-width:2px;border-top-color:#fff;"></div>';
-            document.getElementById('fs-play-btn').innerHTML = '<div class="css-loader" style="width:20px;height:20px;border-width:2px;border-top-color:#000;"></div>';
-            
-            try {
-                let audioData = null;
-                try {
-                    const offlineTrack = await getOfflineTrack(track.id);
-                    if (offlineTrack && offlineTrack.audio_data) {
-                        audioData = offlineTrack.audio_data;
-                    }
-                } catch(e) {}
-                
-                if (!audioData) {
-                    const res = await fetch(`${BACKEND_URL}/api/music/audio/${track.id}`);
-                    const data = await res.json();
-                    if (currentReqId !== playRequestId) return;
-                    audioData = data.audio_data;
-                }
-                
-                if (audioData) {
-                    playAudioData(audioData);
-                } else {
-                    console.warn("Audio not found.");
-                    isLoadingTrack = false;
-                    updatePlayPauseBtn();
-                }
-            } catch(e) {
-                console.warn("Error loading audio.", e);
-                isLoadingTrack = false;
-                updatePlayPauseBtn();
-            }
+            localStorage.setItem('lastPlayedTrackId', track.id);
         }
-        
+
         function toggleMusicPlay() {
             if (!audioPlayer) return;
             const playerVid = document.getElementById('player-video');
             const fsVid = document.getElementById('fs-video');
             const bgVideoPlayer = document.getElementById('bg-video-player');
             
-            if (isPlaying) {
+            if (!audioPlayer.paused) {
+                userManuallyStopped = true;
                 audioPlayer.pause();
-                if(playerVid && playerVid.style.display !== 'none') playerVid.pause();
-                if(fsVid && fsVid.style.display !== 'none') fsVid.pause();
-                if(bgVideoPlayer) bgVideoPlayer.pause();
+                if (playerVid && playerVid.style.display !== 'none') playerVid.pause();
+                if (fsVid && fsVid.style.display !== 'none') fsVid.pause();
+                if (bgVideoPlayer) bgVideoPlayer.pause();
             } else { 
+                userManuallyStopped = false;
                 audioPlayer.play().catch(e => console.warn(e)); 
-                if(playerVid && playerVid.style.display !== 'none') playerVid.play();
-                if(fsVid && fsVid.style.display !== 'none') fsVid.play();
-                if(bgVideoPlayer) bgVideoPlayer.play().catch(()=>{});
+                if (playerVid && playerVid.style.display !== 'none') playerVid.play();
+                if (fsVid && fsVid.style.display !== 'none') fsVid.play();
+                if (bgVideoPlayer && !document.hidden) bgVideoPlayer.play().catch(() => {});
             }
-            isPlaying = !isPlaying;
-            updatePlayPauseBtn();
         }
-        
+
         function changeVolume(val) {
             if (audioPlayer) audioPlayer.volume = val;
         }
-        
+
         function updatePlayPauseBtn() {
             const btns = [
                 { el: document.getElementById('player-play-btn'), w: '24', color: '#000' },
@@ -8120,7 +8198,7 @@ function checkAndShowHolidayBanner(viewId) {
                 { el: document.getElementById('mobile-play-btn'), w: '24', color: '#fff' }
             ];
             btns.forEach(b => {
-                if(b.el) {
+                if (b.el) {
                     if (isPlaying) {
                         b.el.innerHTML = `<svg viewBox="0 0 24 24" width="${b.w}" height="${b.w}" fill="${b.color}"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>`;
                     } else {
@@ -8129,45 +8207,45 @@ function checkAndShowHolidayBanner(viewId) {
                 }
             });
         }
-        
-        function nextMusicTrack() {
+
+        function nextMusicTrack(userInitiated = false) {
             if (isShuffle && currentPlaylist.length > 1) {
                 let randomIndex = currentTrackIndex;
                 while (randomIndex === currentTrackIndex) {
                     randomIndex = Math.floor(Math.random() * currentPlaylist.length);
                 }
-                playMusicTrack(randomIndex);
+                playMusicTrack(randomIndex, userInitiated);
             } else {
                 if (currentTrackIndex < currentPlaylist.length - 1) {
-                    playMusicTrack(currentTrackIndex + 1);
+                    playMusicTrack(currentTrackIndex + 1, userInitiated);
                 } else if (currentPlaylist.length > 0) {
-                    playMusicTrack(0);
+                    playMusicTrack(0, userInitiated);
                 }
             }
         }
-        
-        function prevMusicTrack() {
+
+        function prevMusicTrack(userInitiated = true) {
             if (isShuffle && currentPlaylist.length > 1) {
                 let randomIndex = currentTrackIndex;
                 while (randomIndex === currentTrackIndex) {
                     randomIndex = Math.floor(Math.random() * currentPlaylist.length);
                 }
-                playMusicTrack(randomIndex);
+                playMusicTrack(randomIndex, userInitiated);
             } else {
                 if (currentTrackIndex > 0) {
-                    playMusicTrack(currentTrackIndex - 1);
+                    playMusicTrack(currentTrackIndex - 1, userInitiated);
                 } else if (currentPlaylist.length > 0) {
-                    playMusicTrack(currentPlaylist.length - 1);
+                    playMusicTrack(currentPlaylist.length - 1, userInitiated);
                 }
             }
         }
-        
+
         function toggleRepeat() {
             isRepeat = !isRepeat;
-            document.getElementById('repeat-btn-desktop').style.color = isRepeat ? '#1DB954' : '#fff';
-            if (document.getElementById('repeat-btn-fs')) {
-                document.getElementById('repeat-btn-fs').style.color = isRepeat ? '#1DB954' : '#fff';
-            }
+            const desktopBtn = document.getElementById('repeat-btn-desktop');
+            if (desktopBtn) desktopBtn.style.color = isRepeat ? '#1DB954' : '#fff';
+            const fsBtn = document.getElementById('repeat-btn-fs');
+            if (fsBtn) fsBtn.style.color = isRepeat ? '#1DB954' : '#fff';
         }
 
         function toggleShuffle() {
@@ -8177,22 +8255,21 @@ function checkAndShowHolidayBanner(viewId) {
                 shuffleBtn.style.color = isShuffle ? '#1DB954' : '#fff';
             }
         }
-        
+
         function handleMusicEnded() {
             if (isLoadingTrack) return;
             if (isRepeat) {
                 audioPlayer.currentTime = 0;
                 audioPlayer.play().catch(e => { console.error('Repeat play failed:', e); });
             } else {
-                nextMusicTrack();
+                // Synchronously trigger next track immediately within 'ended' event
+                nextMusicTrack(false);
             }
         }
 
         let consecutiveErrors = 0;
         function handleMusicError() {
-            // Don't skip if we're in the middle of loading a new track
             if (isLoadingTrack) return;
-            // Don't skip if src is empty (we clear it intentionally while loading new tracks)
             if (!audioPlayer.src || audioPlayer.src === '' || audioPlayer.src === window.location.href) return;
             
             console.warn('Audio element error, auto-skipping to next track...');
@@ -8202,12 +8279,18 @@ function checkAndShowHolidayBanner(viewId) {
             consecutiveErrors++;
             if (consecutiveErrors > 3) {
                 console.error('Too many consecutive errors, stopping playback.');
-                document.getElementById('player-title').innerText = "Playback Error";
-                document.getElementById('player-artist').innerText = "Tap to retry";
+                const pTitle = document.getElementById('player-title');
+                if (pTitle) pTitle.innerText = "Playback Error";
+                const pArtist = document.getElementById('player-artist');
+                if (pArtist) pArtist.innerText = "Check connection";
                 return;
             }
             
-            setTimeout(() => { nextMusicTrack(); }, 1500);
+            if (document.hidden) {
+                nextMusicTrack(false);
+            } else {
+                setTimeout(() => { nextMusicTrack(false); }, 800);
+            }
         }
 
         function extractAlbumColors(imgEl) {
@@ -8400,13 +8483,33 @@ function checkAndShowHolidayBanner(viewId) {
             } else if (favicon && audioPlayer.paused) {
                 updateFavicon(false);
             }
-            if (audioPlayer.duration) {
+            if (audioPlayer.duration && !isNaN(audioPlayer.duration) && isFinite(audioPlayer.duration)) {
                 const perc = `${(audioPlayer.currentTime / audioPlayer.duration) * 100}%`;
                 if(fill) fill.style.width = perc;
                 if(fillFs) fillFs.style.width = perc;
                 if(fillMobile) fillMobile.style.width = perc;
                 if(fillMini) fillMini.style.width = perc;
                 if(thumbMini) thumbMini.style.left = perc;
+
+                // Preload next track early in playback so it is cached before song ends
+                if (audioPlayer.currentTime > 5 && !nextTrackPreloaded && currentPlaylist.length > 1) {
+                    nextTrackPreloaded = true;
+                    let nextIdx = currentTrackIndex + 1;
+                    if (nextIdx >= currentPlaylist.length) nextIdx = 0;
+                    if (isShuffle) {
+                        let randIdx = Math.floor(Math.random() * currentPlaylist.length);
+                        if (randIdx !== currentTrackIndex && currentPlaylist[randIdx]) {
+                            preloadNextTrack(currentPlaylist[randIdx]);
+                        }
+                    } else if (currentPlaylist[nextIdx]) {
+                        preloadNextTrack(currentPlaylist[nextIdx]);
+                    }
+                }
+
+                // Periodically update mediaSession position state for lockscreen scrubbers
+                if (Math.floor(audioPlayer.currentTime) % 2 === 0) {
+                    updateMediaSessionPositionState();
+                }
                 
                 if (window.syncedLyricsData && window.syncedLyricsData.length > 0) {
                     const ct = audioPlayer.currentTime;
@@ -8439,10 +8542,16 @@ function checkAndShowHolidayBanner(viewId) {
                     }
                 }
                 
-                document.getElementById('player-time-current').innerText = formatTime(audioPlayer.currentTime);
-                document.getElementById('player-time-total').innerText = formatTime(audioPlayer.duration);
-                document.getElementById('fs-time-current').innerText = formatTime(audioPlayer.currentTime);
-                document.getElementById('fs-time-total').innerText = formatTime(audioPlayer.duration);
+                const curStr = formatTime(audioPlayer.currentTime);
+                const totStr = formatTime(audioPlayer.duration);
+                const ptc = document.getElementById('player-time-current');
+                if (ptc) ptc.innerText = curStr;
+                const ptt = document.getElementById('player-time-total');
+                if (ptt) ptt.innerText = totStr;
+                const ftc = document.getElementById('fs-time-current');
+                if (ftc) ftc.innerText = curStr;
+                const ftt = document.getElementById('fs-time-total');
+                if (ftt) ftt.innerText = totStr;
             }
         }
         

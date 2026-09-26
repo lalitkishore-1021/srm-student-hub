@@ -10,7 +10,7 @@ import requests
 import uuid
 import urllib.parse
 from datetime import datetime
-from flask import Flask, request, jsonify, send_from_directory, Response, send_file
+from flask import Flask, request, jsonify, send_from_directory, Response, send_file, redirect
 from flask_compress import Compress
 
 from collections import defaultdict
@@ -1388,7 +1388,7 @@ def get_music_audio(track_id):
         return jsonify({'audio_data': row[0]})
     return jsonify({'audio_data': None})
 
-@lru_cache(maxsize=32)
+@lru_cache(maxsize=64)
 def get_track_binary(track_id):
     conn = get_db()
     cur = conn.cursor()
@@ -1405,11 +1405,22 @@ def get_track_binary(track_id):
         return None, None
         
     data_url = row[0]
+    if isinstance(data_url, memoryview):
+        data_url = bytes(data_url)
+    if isinstance(data_url, bytes):
+        return data_url, "audio/mpeg"
+    if isinstance(data_url, str) and (data_url.startswith("http://") or data_url.startswith("https://")):
+        return "REDIRECT", data_url
     try:
-        header, encoded = data_url.split(",", 1)
-        mime_type = header.split(";")[0].split(":")[1]
-        binary_data = base64.b64decode(encoded)
-        return binary_data, mime_type
+        if "," in data_url:
+            header, encoded = data_url.split(",", 1)
+            mime_part = header.split(";")[0]
+            mime_type = mime_part.split(":")[1] if ":" in mime_part else "audio/mpeg"
+            binary_data = base64.b64decode(encoded)
+            return binary_data, mime_type
+        else:
+            binary_data = base64.b64decode(data_url)
+            return binary_data, "audio/mpeg"
     except Exception:
         return None, None
 
@@ -1418,13 +1429,15 @@ def stream_music_audio(track_id):
     binary_data, mime_type = get_track_binary(track_id)
     if not binary_data:
         return "Not found", 404
+    if binary_data == "REDIRECT":
+        return redirect(mime_type)
         
     try:
         total_size = len(binary_data)
         range_header = request.headers.get('Range')
         
         if range_header:
-            # Handle Range request for seeking and progressive playback
+            # Handle Range request for seeking and progressive background playback
             byte_range = range_header.replace('bytes=', '').split('-')
             start = int(byte_range[0])
             end = int(byte_range[1]) if len(byte_range) > 1 and byte_range[1] else total_size - 1
@@ -1439,7 +1452,10 @@ def stream_music_audio(track_id):
             resp.headers['Content-Range'] = f'bytes {start}-{end}/{total_size}'
             resp.headers['Content-Length'] = str(chunk_size)
             resp.headers['Accept-Ranges'] = 'bytes'
-            resp.headers['Cache-Control'] = 'public, max-age=3600'
+            resp.headers['Cache-Control'] = 'public, max-age=86400'
+            resp.headers['Access-Control-Allow-Origin'] = '*'
+            resp.headers['Access-Control-Allow-Headers'] = 'Range, Content-Type, Accept'
+            resp.headers['Access-Control-Expose-Headers'] = 'Content-Range, Content-Length, Accept-Ranges'
             return resp
         else:
             resp = Response(
@@ -1449,7 +1465,10 @@ def stream_music_audio(track_id):
             )
             resp.headers['Content-Length'] = str(total_size)
             resp.headers['Accept-Ranges'] = 'bytes'
-            resp.headers['Cache-Control'] = 'public, max-age=3600'
+            resp.headers['Cache-Control'] = 'public, max-age=86400'
+            resp.headers['Access-Control-Allow-Origin'] = '*'
+            resp.headers['Access-Control-Allow-Headers'] = 'Range, Content-Type, Accept'
+            resp.headers['Access-Control-Expose-Headers'] = 'Content-Range, Content-Length, Accept-Ranges'
             return resp
     except Exception as e:
         return str(e), 500
