@@ -2324,6 +2324,26 @@ def handle_train_reports():
         cur.close()
         conn.close()
 
+# ================= REAL LIVE TRAIN STATUS API (NTES / RAPIDAPI) =================
+@app.route('/api/trains/live-status/<train_no>', methods=['GET'])
+@app.route('/api/trains/live-status', methods=['GET'])
+def get_train_live_status_endpoint(train_no=None):
+    if not train_no:
+        train_no = request.args.get('train_no', '40508')
+    try:
+        from utils.railway_service import get_live_train_status
+        result = get_live_train_status(train_no)
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'is_live': False,
+            'train_no': str(train_no),
+            'status': 'Live data unavailable',
+            'error': str(e),
+            'stale_message': 'Live data unavailable from railway control'
+        }), 200
+
 @app.route('/api/spotted', methods=['GET'])
 def get_spotted():
     conn = get_db()

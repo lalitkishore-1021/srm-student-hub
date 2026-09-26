@@ -3986,6 +3986,10 @@
                         <span style="font-size:12px; font-weight:800; color:#fff; letter-spacing:0.3px;">Live Route & Station Headway</span>
                     </div>
                     <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                        <button type="button" onclick="refreshLiveWimtData()" class="wimt-action-pill" style="background:rgba(16,185,129,0.15); color:#10b981; border:1px solid rgba(16,185,129,0.3); border-radius:20px; padding:6px 12px; font-size:11px; font-weight:800; cursor:pointer; display:flex; align-items:center; gap:5px; transition:all 0.2s;">
+                            <svg id="wimt-refresh-spinner" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+                            <span>Refresh Live</span>
+                        </button>
                         <button type="button" onclick="scrollToLocomotive()" class="wimt-action-pill" style="background:rgba(56,189,248,0.15); color:#38bdf8; border:1px solid rgba(56,189,248,0.3); border-radius:20px; padding:6px 12px; font-size:11px; font-weight:800; cursor:pointer; display:flex; align-items:center; gap:5px; transition:all 0.2s;">
                             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"></circle><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon></svg>
                             <span>Locate Train</span>
@@ -12213,6 +12217,7 @@ function predictDateRangeUI() {
             initTrainTracker();
         };
 
+        let wimtLivePollTicks = 0;
         function initTrainTracker() {
             fetchCommunityTrainReports();
             renderTrainTrackerUI();
@@ -12223,14 +12228,34 @@ function predictDateRangeUI() {
                     if (currentTrainViewMode === 'departures') {
                         updateDeparturesCountdowns();
                     } else if (currentTrainViewMode === 'wimt') {
+                        wimtLivePollTicks++;
+                        if (wimtLivePollTicks % 30 === 0 && currentWimtTrainNo) {
+                            fetchRealLiveTrainStatus(currentWimtTrainNo, true);
+                        }
                         renderWhereIsMyTrain(currentWimtTrainNo, false);
                     }
                 }
             }, 1000);
         }
 
+        window.refreshLiveWimtData = function() {
+            const sp = document.getElementById('wimt-refresh-spinner');
+            if (sp) sp.style.animation = 'spin 1s linear infinite';
+            if (currentWimtTrainNo) {
+                fetchRealLiveTrainStatus(currentWimtTrainNo, true, () => {
+                    if (sp) sp.style.animation = 'none';
+                    if (typeof triggerHaptic === 'function') triggerHaptic('light');
+                });
+            } else {
+                if (sp) sp.style.animation = 'none';
+            }
+        };
+
         function refreshTrainTracker() {
             fetchCommunityTrainReports();
+            if (currentWimtTrainNo) {
+                fetchRealLiveTrainStatus(currentWimtTrainNo, true);
+            }
             renderTrainTrackerUI();
             if (typeof triggerHaptic === 'function') triggerHaptic('light');
         }
@@ -12288,58 +12313,71 @@ function predictDateRangeUI() {
             }
         }
 
-        // ================= AUTOMATIC DELAY DETECTOR (WHERE IS MY TRAIN) =================
-        function detectTrainDelay(train, curMins) {
-            // 1. Check crowdsourced train spotter reports
-            const rep = activeCommunityReports.find(r => r.train_no === train.no);
-            const repDelay = rep ? (rep.delay_mins || 0) : 0;
+        // ================= REAL LIVE TRAIN DATA ENGINE (WHERE IS MY TRAIN) =================
+        let liveTrainDataCache = {};
+        let liveTrainLoading = {};
+        let lastTrainLiveFetchTime = {};
 
-            // 2. Intelligent Real-Time Auto-Delay Detection
-            const originMins = parseTimeToMinutes(train.origin);
-            const potiMins = parseTimeToMinutes(train.poti);
-            let destMins = parseTimeToMinutes(train.dest);
-            if (destMins < originMins) destMins += 24 * 60;
+        function fetchRealLiveTrainStatus(trainNo, forceRefresh = false, callback = null) {
+            if (!trainNo) return;
+            const now = Date.now();
+            if (!forceRefresh && liveTrainDataCache[trainNo] && (now - (lastTrainLiveFetchTime[trainNo] || 0) < 30000)) {
+                if (typeof callback === 'function') callback(liveTrainDataCache[trainNo]);
+                return;
+            }
+            if (liveTrainLoading[trainNo] && !forceRefresh) return;
+            liveTrainLoading[trainNo] = true;
 
-            let autoDelay = 0;
-            let delayReason = '';
-
-            // Detect if train has already departed its origin
-            if (curMins >= originMins) {
-                // Peak rush hour headway delay on Chennai Suburban line:
-                // Morning Peak: 08:00 - 10:30 (480 - 630 mins)
-                // Evening Peak: 17:00 - 20:00 (1020 - 1200 mins)
-                const isMorningRush = (curMins >= 480 && curMins <= 630);
-                const isEveningRush = (curMins >= 1020 && curMins <= 1200);
-
-                if (isMorningRush) {
-                    autoDelay = 5;
-                    delayReason = 'Morning peak headway & Tambaram junction clearance';
-                } else if (isEveningRush) {
-                    autoDelay = 7;
-                    delayReason = 'Evening rush line congestion & single-line section clearance';
-                }
-
-                // If current time is past scheduled POTI arrival, but train hasn't cleared Potheri
-                if (curMins > potiMins && curMins <= potiMins + 35) {
-                    const elapsedPastSched = curMins - potiMins;
-                    if (elapsedPastSched > autoDelay) {
-                        autoDelay = elapsedPastSched;
-                        delayReason = 'Signal hold before station entry';
+            fetch(`${BACKEND_URL}/api/trains/live-status/${trainNo}`)
+                .then(r => r.json())
+                .then(data => {
+                    liveTrainLoading[trainNo] = false;
+                    lastTrainLiveFetchTime[trainNo] = Date.now();
+                    if (data) {
+                        liveTrainDataCache[trainNo] = data;
+                        if (typeof callback === 'function') callback(data);
+                        if (currentTrainViewMode === 'wimt' && currentWimtTrainNo === trainNo) {
+                            renderWhereIsMyTrain(trainNo, false);
+                        } else if (currentTrainViewMode === 'departures') {
+                            renderTrainDeparturesView();
+                        }
                     }
-                }
+                })
+                .catch(err => {
+                    liveTrainLoading[trainNo] = false;
+                    console.warn('[WIMT] Live railway feed fetch warning:', err);
+                });
+        }
+
+        function detectTrainDelay(train, curMins) {
+            // Check real live Indian Railways API data first
+            const live = liveTrainDataCache[train.no];
+            if (live && live.is_live) {
+                return {
+                    delay: live.delay_mins || 0,
+                    statusText: live.delay_text || (live.delay_mins > 0 ? `Delayed +${live.delay_mins}m` : 'On Time'),
+                    delayReason: live.status_headline || 'Reported by Indian Railways NTES live radar',
+                    isLiveReal: true
+                };
             }
 
-            const finalDelay = Math.max(repDelay, autoDelay);
-            let statusText = 'On Time';
-            if (finalDelay > 0) {
-                statusText = `Delayed +${finalDelay}m`;
+            // Fallback to commuter spotter reports if reported
+            const rep = activeCommunityReports.find(r => r.train_no === train.no);
+            if (rep && rep.delay_mins) {
+                return {
+                    delay: rep.delay_mins,
+                    statusText: rep.delay_mins > 0 ? `Delayed +${rep.delay_mins}m` : 'On Time',
+                    delayReason: 'Verified by commuter spotter report',
+                    isLiveReal: true
+                };
             }
 
+            // When no live data is reported yet, show scheduled status without fake mathematical delay
             return {
-                delay: finalDelay,
-                statusText: statusText,
-                delayReason: finalDelay > 0 ? (rep ? 'Verified by commuter spotter report' : delayReason) : 'Operating on regular schedule',
-                isAutoDetected: (finalDelay > 0 && finalDelay > repDelay)
+                delay: 0,
+                statusText: 'Scheduled',
+                delayReason: 'Operating on regular schedule • Live feed pending',
+                isLiveReal: false
             };
         }
 
@@ -12552,117 +12590,139 @@ function predictDateRangeUI() {
             }
             if (!selectedTrain) return;
 
+            // Trigger real live railway feed fetch if not cached recently
+            fetchRealLiveTrainStatus(selectedTrain.no, false);
+
+            const liveData = liveTrainDataCache[selectedTrain.no];
+            const isLiveActive = !!(liveData && liveData.is_live);
+
             // 1. Render Top Carousel
             renderWimtTrainCarousel(trains, selectedTrain.no);
 
             const curMins = getLiveIstMinutes();
             const isBeachBound = (currentTrainDirection === 'beach');
             const stations = isBeachBound ? [...CHENNAI_EMU_STATIONS] : [...CHENNAI_EMU_STATIONS].reverse();
-            
+
             const startMins = parseTimeToMinutes(selectedTrain.origin);
             let endMins = parseTimeToMinutes(selectedTrain.dest);
             if (endMins < startMins) endMins += 24 * 60;
             const totalDuration = endMins - startMins;
-            const trainDelay = selectedTrain.delay || 0;
 
-            // Calculate expected schedule times along each station
-            const stationTimes = stations.map(st => {
-                const distRatio = isBeachBound ? (st.km / 65.2) : ((65.2 - st.km) / 65.2);
-                const sched = startMins + (distRatio * totalDuration);
-                const exp = sched + trainDelay;
-                return { sched, exp };
-            });
+            // REAL RAILWAY DATA RESOLUTION
+            const actualDelay = isLiveActive ? (liveData.delay_mins || 0) : (selectedTrain.delay || 0);
+            const liveStatusText = isLiveActive ? (liveData.delay_text || (actualDelay > 0 ? `Delayed +${actualDelay}m` : 'On Time')) : selectedTrain.statusText;
+            const liveStatusHeadline = isLiveActive ? (liveData.status_headline || liveData.status) : (liveData ? 'Live data unavailable' : 'Connecting to railway live feed...');
+            const lastUpdatedText = isLiveActive ? `Last updated: ${liveData.last_updated} • NTES Official Live Feed` : (liveData ? 'Live data unavailable from railway control • Timetable schedule shown' : 'Connecting to railway radar...');
+            const sourceBadgeText = isLiveActive ? (liveData.source || 'Indian Railways NTES Official Feed') : 'Indian Railways Timetable';
 
-            // Calculate continuous station index and train motion
+            // SPEED: Display speed ONLY when provided by API telemetry. Never fake km/h!
+            const speedDisplay = (isLiveActive && liveData.speed != null) ? `${liveData.speed} km/h` : 'Not Reported';
+            const speedSub = (isLiveActive && liveData.speed != null) ? 'GPS Telemetry' : 'Station Signal Telemetry';
+
+            // CURRENT TRAIN POSITION ON TRACK:
+            // Positioned from REAL station telemetry reported by the official railway system.
             let contIndex = 0;
-            let currentSpeed = '0 km/h';
-            let trainSubStatus = '';
             let currentStationIdx = 0;
+            let trainSubStatus = '';
             let isTrainRunning = false;
+            let journeyPct = 0;
 
-            if (curMins < startMins) {
+            if (isLiveActive) {
+                const opStatus = (liveData.status || '').toLowerCase();
+                if (opStatus.includes('destination') || opStatus.includes('terminat')) {
+                    contIndex = stations.length - 1;
+                    currentStationIdx = stations.length - 1;
+                    trainSubStatus = `Journey Completed • Terminated at ${stations[stations.length - 1].name}`;
+                    journeyPct = 100;
+                } else if (opStatus.includes('yet to start') || opStatus.includes('origin')) {
+                    contIndex = 0;
+                    currentStationIdx = 0;
+                    trainSubStatus = `At Origin Platform • ${stations[0].name}`;
+                    journeyPct = 0;
+                } else {
+                    isTrainRunning = true;
+                    // Match current station reported by railway API
+                    let matchedIdx = -1;
+                    if (liveData.current_station && liveData.current_station.code) {
+                        const targetCode = liveData.current_station.code.toUpperCase().trim();
+                        matchedIdx = stations.findIndex(s => s.code === targetCode);
+                    }
+                    if (matchedIdx === -1 && liveData.current_station && liveData.current_station.name) {
+                        const targetName = liveData.current_station.name.toUpperCase().trim();
+                        matchedIdx = stations.findIndex(s => targetName.includes(s.name.toUpperCase()) || s.name.toUpperCase().includes(targetName));
+                    }
+                    if (matchedIdx === -1 && typeof liveData.current_station_idx === 'number') {
+                        matchedIdx = isBeachBound ? liveData.current_station_idx : (stations.length - 1 - liveData.current_station_idx);
+                    }
+
+                    if (matchedIdx >= 0) {
+                        currentStationIdx = Math.min(stations.length - 1, Math.max(0, matchedIdx));
+                        const isAtStation = opStatus.includes('at station') || opStatus.includes('arrived');
+                        if (isAtStation || currentStationIdx === stations.length - 1) {
+                            contIndex = currentStationIdx;
+                            trainSubStatus = `Halted at ${stations[currentStationIdx].name}`;
+                        } else {
+                            contIndex = Math.min(stations.length - 1, currentStationIdx + 0.5);
+                            trainSubStatus = `Departed ${stations[currentStationIdx].name} • In Transit`;
+                        }
+                    } else {
+                        contIndex = 0;
+                        currentStationIdx = 0;
+                        trainSubStatus = liveStatusHeadline;
+                    }
+                    journeyPct = Math.min(100, Math.max(0, (contIndex / (stations.length - 1)) * 100));
+                }
+            } else {
+                // Live data unavailable - train remains stationary at origin with clear notice
                 contIndex = 0;
                 currentStationIdx = 0;
-                currentSpeed = '0 km/h';
-                trainSubStatus = `At Origin Platform &bull; Departs ${formatMinsTo12Hr(startMins)}`;
-            } else if (curMins >= stationTimes[stations.length - 1].exp) {
-                contIndex = stations.length - 1;
-                currentStationIdx = stations.length - 1;
-                currentSpeed = '0 km/h';
-                trainSubStatus = `Journey Completed &bull; Terminated at ${stations[stations.length - 1].name}`;
-            } else {
-                isTrainRunning = true;
-                let foundSeg = false;
-                for (let k = 0; k < stations.length - 1; k++) {
-                    const tCur = stationTimes[k].exp;
-                    const tNext = stationTimes[k + 1].exp;
-                    if (curMins >= tCur && curMins < tNext) {
-                        const legDur = Math.max(1, tNext - tCur);
-                        const legFrac = Math.min(1, Math.max(0, (curMins - tCur) / legDur));
-                        contIndex = k + legFrac;
-                        currentStationIdx = k;
-                        foundSeg = true;
-
-                        if (legFrac < 0.15) {
-                            currentSpeed = '~28 km/h';
-                            trainSubStatus = `Departed ${stations[k].name} &bull; Accelerating`;
-                        } else if (legFrac > 0.85) {
-                            currentSpeed = '~26 km/h';
-                            trainSubStatus = `Approaching ${stations[k + 1].name} &bull; Decelerating`;
-                        } else {
-                            currentSpeed = '~58 km/h';
-                            trainSubStatus = `Cruising between ${stations[k].name} & ${stations[k + 1].name}`;
-                        }
-                        break;
-                    }
-                }
-                if (!foundSeg) {
-                    const overallRatio = Math.min(1, Math.max(0, (curMins - startMins) / (totalDuration + trainDelay)));
-                    contIndex = overallRatio * (stations.length - 1);
-                    currentStationIdx = Math.floor(contIndex);
-                    currentSpeed = '~54 km/h';
-                    trainSubStatus = `In Transit to ${stations[stations.length - 1].name}`;
-                }
+                trainSubStatus = liveData ? 'Live data unavailable from railway control' : 'Connecting to Indian Railways radar...';
+                journeyPct = 0;
             }
 
-            // Distance & ETA to Potheri
+            // Potheri Reference & Proximity
             const potiStation = CHENNAI_EMU_STATIONS.find(s => s.code === 'POTI');
-            const approxProgressKm = isBeachBound ? 
-                (contIndex / (stations.length - 1)) * 65.2 : 
-                (1 - (contIndex / (stations.length - 1))) * 65.2;
-            const potiDist = Math.abs(approxProgressKm - potiStation.km);
-            const nextStopName = (currentStationIdx < stations.length - 1) ? stations[currentStationIdx + 1].name : stations[stations.length - 1].name;
-            const nextStopEta = (currentStationIdx < stations.length - 1) ? stationTimes[currentStationIdx + 1].exp : stationTimes[stations.length - 1].exp;
+            const currentStationObj = stations[currentStationIdx] || stations[0];
+            const potiDist = Math.abs(currentStationObj.km - potiStation.km);
 
-            const potiIdxInList = stations.findIndex(s => s.code === 'POTI');
-            const potiExpTime = (potiIdxInList >= 0) ? stationTimes[potiIdxInList].exp : (parseTimeToMinutes(selectedTrain.poti) + trainDelay);
-            const potiDiffMins = potiExpTime - curMins;
-            const potiDiffSec = Math.max(0, Math.floor(potiDiffMins * 60));
-            const potiMin = Math.floor(potiDiffSec / 60);
-            const potiSec = potiDiffSec % 60;
             let potiCountdownStr = '';
-            if (potiDiffMins < -2) {
-                potiCountdownStr = 'Departed POTI';
-            } else if (potiDiffMins <= 0.5) {
-                potiCountdownStr = 'At Platform 2';
+            if (isLiveActive && liveData.potheri) {
+                if (liveData.potheri.is_passed) {
+                    potiCountdownStr = 'Departed POTI';
+                } else if (liveData.potheri.is_current) {
+                    potiCountdownStr = 'At Platform 2';
+                } else if (liveData.potheri.actual_time || liveData.potheri.sched_time) {
+                    potiCountdownStr = `Exp ${liveData.potheri.actual_time || liveData.potheri.sched_time}`;
+                } else {
+                    potiCountdownStr = formatMinsTo12Hr(parseTimeToMinutes(selectedTrain.poti) + actualDelay);
+                }
             } else {
-                potiCountdownStr = `${potiMin}m ${potiSec.toString().padStart(2, '0')}s`;
+                const potiSchedMins = parseTimeToMinutes(selectedTrain.poti);
+                const potiDiff = potiSchedMins - curMins;
+                if (potiDiff < -5) potiCountdownStr = 'Departed POTI';
+                else if (potiDiff <= 1 && potiDiff >= -1) potiCountdownStr = 'At Platform 2';
+                else potiCountdownStr = formatMinsTo12Hr(potiSchedMins);
             }
 
-            const journeyPct = Math.min(100, Math.max(0, (contIndex / (stations.length - 1)) * 100));
+            // Next Stop Info
+            const nextStopName = (currentStationIdx < stations.length - 1) ? stations[currentStationIdx + 1].name : stations[stations.length - 1].name;
 
             // 2. Render Telemetry Cockpit Header
             const telemetryCard = document.getElementById('wimt-telemetry-card');
             if (telemetryCard) {
-                const delayBadgeHtml = trainDelay > 0 ? `
+                const delayBadgeHtml = isLiveActive ? (actualDelay > 0 ? `
                     <span style="background:rgba(245,158,11,0.2); color:#fbbf24; border:1px solid rgba(245,158,11,0.4); font-size:11px; font-weight:800; padding:3px 10px; border-radius:8px; display:inline-flex; align-items:center; gap:5px;">
                         <span style="width:6px; height:6px; border-radius:50%; background:#f59e0b; display:inline-block; animation:wimtPulse 1.2s infinite;"></span>
-                        <span>${selectedTrain.statusText} (${selectedTrain.delayReason})</span>
+                        <span>${liveStatusText} (NTES Live)</span>
                     </span>
                 ` : `
                     <span style="background:rgba(16,185,129,0.18); color:#10b981; border:1px solid rgba(16,185,129,0.35); font-size:11px; font-weight:800; padding:3px 10px; border-radius:8px; display:inline-flex; align-items:center; gap:5px;">
                         <span style="width:6px; height:6px; border-radius:50%; background:#10b981; display:inline-block;"></span>
-                        <span>On Time &bull; Optimal Headway</span>
+                        <span>On Time (NTES Verified)</span>
+                    </span>
+                `) : `
+                    <span style="background:rgba(255,255,255,0.08); color:var(--text-sub); border:1px solid rgba(255,255,255,0.15); font-size:11px; font-weight:700; padding:3px 10px; border-radius:8px; display:inline-flex; align-items:center; gap:5px;">
+                        <span>Live data unavailable</span>
                     </span>
                 `;
 
@@ -12675,10 +12735,10 @@ function predictDateRangeUI() {
                                 <span>${stations[0].name} (${formatMinsTo12Hr(startMins)})</span>
                             </div>
                             <div style="display:flex; align-items:center; gap:5px; background:rgba(56,189,248,0.15); color:#38bdf8; padding:2px 8px; border-radius:10px; font-size:10px; border:1px solid rgba(56,189,248,0.3);">
-                                <span>${journeyPct.toFixed(0)}% Journey Completed</span>
+                                <span>${isLiveActive ? `${journeyPct.toFixed(0)}% Route Cleared` : 'Timetable Route'}</span>
                             </div>
                             <div style="display:flex; align-items:center; gap:6px;">
-                                <span>${stations[stations.length - 1].name} (${formatMinsTo12Hr(endMins + trainDelay)})</span>
+                                <span>${stations[stations.length - 1].name} (${formatMinsTo12Hr(endMins + actualDelay)})</span>
                                 <span style="width:6px; height:6px; border-radius:50%; background:#38bdf8;"></span>
                             </div>
                         </div>
@@ -12695,20 +12755,20 @@ function predictDateRangeUI() {
                         <div>
                             <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
                                 <span style="background:rgba(56,189,248,0.2); color:#38bdf8; font-size:11px; font-weight:800; padding:3px 8px; border-radius:8px; display:inline-flex; align-items:center; gap:5px;">
-                                    <span style="width:6px; height:6px; border-radius:50%; background:#38bdf8; display:inline-block; animation:wimtPulse 1.4s infinite;"></span>
-                                    <span>WHERE IS MY TRAIN</span>
+                                    <span style="width:6px; height:6px; border-radius:50%; background:#38bdf8; display:inline-block; ${isLiveActive ? 'animation:wimtPulse 1.4s infinite;' : ''}"></span>
+                                    <span>${sourceBadgeText}</span>
                                 </span>
                                 ${delayBadgeHtml}
                                 <span style="background:rgba(255,255,255,0.08); color:#fff; font-size:11px; font-weight:700; padding:3px 8px; border-radius:8px;">${selectedTrain.type}</span>
                             </div>
                             <h3 style="margin:8px 0 3px 0; color:#fff; font-size:1.6rem; font-weight:900; letter-spacing:-0.4px;">${selectedTrain.no} &bull; ${selectedTrain.name}</h3>
                             <div style="font-size:12px; color:var(--text-sub);">
-                                ${isBeachBound ? 'Chengalpattu to Chennai Beach' : 'Chennai Beach to Chengalpattu'} &bull; POTI Platform: <strong style="color:#fff;">Platform ${selectedTrain.platform} (${isBeachBound ? 'Footbridge to Campus Main Gate' : 'GST Road Side'})</strong>
+                                ${liveStatusHeadline} &bull; <span style="color:rgba(255,255,255,0.6);">${lastUpdatedText}</span>
                             </div>
                         </div>
                         <div style="text-align:right;">
                             <div style="font-size:11px; font-weight:700; color:var(--text-sub); text-transform:uppercase;">Arrival at Potheri</div>
-                            <div id="wimt-cockpit-poti-timer" style="font-size:2.1rem; font-weight:900; color:${trainDelay > 0 ? '#f59e0b' : '#38bdf8'}; font-variant-numeric:tabular-nums; letter-spacing:-1px;">${potiCountdownStr}</div>
+                            <div id="wimt-cockpit-poti-timer" style="font-size:2.1rem; font-weight:900; color:${actualDelay > 0 ? '#f59e0b' : '#38bdf8'}; font-variant-numeric:tabular-nums; letter-spacing:-1px;">${potiCountdownStr}</div>
                         </div>
                     </div>
 
@@ -12719,16 +12779,16 @@ function predictDateRangeUI() {
                                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2.5"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
                                 <span>Live Speed</span>
                             </div>
-                            <div class="wimt-gauge-val" style="color:#10b981;">${currentSpeed}</div>
-                            <div class="wimt-gauge-sub">${isTrainRunning ? 'Cruising Headway' : 'Station Dwell'}</div>
+                            <div class="wimt-gauge-val" style="color:${isLiveActive && liveData.speed != null ? '#10b981' : 'var(--text-sub)'}; font-size:${isLiveActive && liveData.speed != null ? '1.4rem' : '1.05rem'};">${speedDisplay}</div>
+                            <div class="wimt-gauge-sub">${speedSub}</div>
                         </div>
                         <div class="wimt-gauge-tile">
                             <div class="wimt-gauge-label">
                                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2.5"><rect x="4" y="3" width="16" height="16" rx="2"></rect><circle cx="8" cy="15" r="1"></circle><circle cx="16" cy="15" r="1"></circle></svg>
-                                <span>Next Stop</span>
+                                <span>Next Station</span>
                             </div>
                             <div class="wimt-gauge-val" style="font-size:1.05rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${nextStopName}</div>
-                            <div class="wimt-gauge-sub">ETA ${formatMinsTo12Hr(nextStopEta)} (${Math.max(0, Math.round(nextStopEta - curMins))}m)</div>
+                            <div class="wimt-gauge-sub">${isLiveActive ? (currentStationIdx < stations.length - 1 ? 'Approaching' : 'Terminus') : 'Scheduled Stop'}</div>
                         </div>
                         <div class="wimt-gauge-tile">
                             <div class="wimt-gauge-label">
@@ -12736,15 +12796,15 @@ function predictDateRangeUI() {
                                 <span>Distance to POTI</span>
                             </div>
                             <div class="wimt-gauge-val" style="color:#f59e0b;">${potiDist.toFixed(1)} km</div>
-                            <div class="wimt-gauge-sub">${isBeachBound ? 'From Chengalpattu' : 'From Tambaram'}</div>
+                            <div class="wimt-gauge-sub">${isBeachBound ? 'From Chengalpattu Side' : 'From Tambaram Side'}</div>
                         </div>
                         <div class="wimt-gauge-tile">
                             <div class="wimt-gauge-label">
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="${trainDelay > 0 ? '#f59e0b' : '#38bdf8'}" stroke-width="2.5"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 14 14"></polyline></svg>
-                                <span>Schedule</span>
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="${actualDelay > 0 ? '#f59e0b' : '#38bdf8'}" stroke-width="2.5"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 14 14"></polyline></svg>
+                                <span>Schedule Delay</span>
                             </div>
-                            <div class="wimt-gauge-val" style="font-size:1.05rem; color:${trainDelay > 0 ? '#f59e0b' : '#38bdf8'};">${selectedTrain.statusText}</div>
-                            <div class="wimt-gauge-sub">${selectedTrain.delayReason}</div>
+                            <div class="wimt-gauge-val" style="font-size:1.05rem; color:${actualDelay > 0 ? '#f59e0b' : '#38bdf8'};">${liveStatusText}</div>
+                            <div class="wimt-gauge-sub">${isLiveActive ? 'Indian Railways Feed' : 'Live Feed Pending'}</div>
                         </div>
                     </div>
                 `;
@@ -12754,32 +12814,37 @@ function predictDateRangeUI() {
             const trackListEl = document.getElementById('wimt-track-list');
             if (!trackListEl) return;
 
-            let passedCount = 0;
             const stationsHtml = stations.map((st, idx) => {
-                const times = stationTimes[idx];
-                const isPassed = (curMins >= times.exp);
-                if (isPassed) passedCount++;
-
                 const isPotheri = (st.code === 'POTI');
                 const isJunction = st.isMajor;
                 const isAirport = st.isAirport;
-                const isNextApproaching = (idx === currentStationIdx + 1 && isTrainRunning);
                 const pfNum = isBeachBound ? st.pfUp : st.pfDown;
 
-                let timeDisplay = formatMinsTo12Hr(times.sched);
-                if (trainDelay > 0 && !isPassed) {
-                    timeDisplay = `${formatMinsTo12Hr(times.sched)} <span style="color:#f59e0b; font-size:11px; font-weight:700;">(Exp: ${formatMinsTo12Hr(times.exp)})</span>`;
+                let isPassed = false;
+                let isCurrent = false;
+                let isNextApproaching = false;
+                let actualOrExpTime = '';
+
+                if (isLiveActive) {
+                    if (idx < currentStationIdx || (idx === currentStationIdx && contIndex > currentStationIdx)) {
+                        isPassed = true;
+                    } else if (idx === currentStationIdx) {
+                        isCurrent = true;
+                    } else if (idx === currentStationIdx + 1 && isTrainRunning) {
+                        isNextApproaching = true;
+                    }
+
+                    if (liveData.stations && Array.isArray(liveData.stations)) {
+                        const stLive = liveData.stations.find(s => s.code === st.code);
+                        if (stLive) {
+                            actualOrExpTime = stLive.actual_time || stLive.sched_time;
+                        }
+                    }
                 }
 
-                let statusBadge = 'On Time';
-                let statusColor = '#38bdf8';
-                if (isPassed) {
-                    statusBadge = 'Passed';
-                    statusColor = '#10b981';
-                } else if (trainDelay > 0) {
-                    statusBadge = `+${trainDelay}m`;
-                    statusColor = '#f59e0b';
-                }
+                let timeDisplay = actualOrExpTime ? actualOrExpTime : '';
+                let statusBadge = isLiveActive ? (isPassed ? 'Passed' : (isCurrent ? 'Current Location' : 'Upcoming')) : 'Scheduled';
+                let statusColor = isPassed ? '#10b981' : (isCurrent ? '#38bdf8' : 'var(--text-sub)');
 
                 if (isPotheri) {
                     return `
@@ -12801,15 +12866,15 @@ function predictDateRangeUI() {
                                 </div>
                             </div>
                             <div style="text-align:right;">
-                                <div style="font-weight:900; font-size:14px; color:#fff;">${timeDisplay}</div>
-                                <div style="font-size:11px; font-weight:800; color:${statusColor}; margin-top:2px;">${statusBadge}</div>
+                                <div style="font-weight:900; font-size:14px; color:#fff;">${timeDisplay || selectedTrain.poti}</div>
+                                <div style="font-size:11px; font-weight:800; color:${isPassed ? '#10b981' : '#fbbf24'}; margin-top:2px;">${statusBadge}</div>
                             </div>
                         </div>
                     `;
                 }
 
                 return `
-                    <div class="wimt-station-row ${isPassed ? 'passed' : ''} ${isNextApproaching ? 'next-approaching' : ''}" data-index="${idx}">
+                    <div class="wimt-station-row ${isPassed ? 'passed' : ''} ${isNextApproaching ? 'next-approaching' : ''} ${isCurrent ? 'current' : ''}" data-index="${idx}">
                         <div class="wimt-station-node ${isJunction ? 'is-junction' : ''}"></div>
                         <div style="display:flex; align-items:center; gap:12px;">
                             <div>
@@ -12869,12 +12934,12 @@ function predictDateRangeUI() {
                         </svg>
                         <div class="wimt-headlight-beams"></div>
                     </div>
-                    <div class="wimt-engine-badge ${trainDelay > 0 ? 'is-late' : ''}">
+                    <div class="wimt-engine-badge ${actualDelay > 0 ? 'is-late' : ''}">
                         <div class="wimt-badge-top">
                             <span class="wimt-engine-dot"></span>
                             <strong>Train ${selectedTrain.no}</strong>
-                            <span class="wimt-engine-speed">${currentSpeed}</span>
-                            <span class="wimt-engine-delay-tag">${selectedTrain.statusText}</span>
+                            <span class="wimt-engine-speed">${speedDisplay}</span>
+                            <span class="wimt-engine-delay-tag">${liveStatusText}</span>
                         </div>
                         <div class="wimt-badge-sub">${trainSubStatus}</div>
                     </div>
@@ -12896,10 +12961,10 @@ function predictDateRangeUI() {
             // Update floating dock status
             const dockStatusEl = document.getElementById('wimt-dock-status');
             if (dockStatusEl) {
-                dockStatusEl.innerText = `${selectedTrain.no} • ${currentSpeed} • ${potiDist.toFixed(1)} km to POTI`;
+                dockStatusEl.innerText = `${selectedTrain.no} • ${isLiveActive ? liveStatusText : 'Live data unavailable'} • ${potiDist.toFixed(1)} km to POTI`;
             }
 
-            // Measure actual DOM offsets for pixel-perfect continuous locomotive positioning
+            // Position locomotive engine at confirmed station DOM offset
             requestAnimationFrame(() => {
                 const engineMarker = document.getElementById('wimt-moving-locomotive');
                 const progressLeft = document.getElementById('wimt-live-progress-left');
@@ -12919,7 +12984,7 @@ function predictDateRangeUI() {
                     const exactTop = Math.round(topFloor + (frac * (topCeil - topFloor)));
 
                     engineMarker.style.top = `${exactTop}px`;
-                    const lineH = `${Math.max(0, exactTop - 16)}px`;
+                    const lineH = isLiveActive ? `${Math.max(0, exactTop - 16)}px` : '0px';
                     if (progressLeft) progressLeft.style.height = lineH;
                     if (progressRight) progressRight.style.height = lineH;
 
