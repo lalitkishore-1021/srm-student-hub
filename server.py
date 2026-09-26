@@ -244,11 +244,12 @@ def init_db():
             conn.commit()
         except Exception:
             conn.rollback()
-        try:
-            cur.execute("ALTER TABLE class_chats ADD COLUMN audio_url TEXT")
-            conn.commit()
-        except Exception:
-            conn.rollback()
+        for col, ctype in [('audio_url', 'TEXT'), ('deleted_for_all', 'INTEGER DEFAULT 0'), ('deleted_by', 'TEXT')]:
+            try:
+                cur.execute(f"ALTER TABLE class_chats ADD COLUMN {col} {ctype}")
+                conn.commit()
+            except Exception:
+                conn.rollback()
     else:
         cur.execute('''CREATE TABLE IF NOT EXISTS students (
             net_id TEXT PRIMARY KEY, name TEXT, register_no TEXT,
@@ -1706,57 +1707,41 @@ def ai_predict():
 
 # --- CHAT & SPOTTED ENDPOINTS ---
 
-@app.route('/api/chat/<section>', methods=['GET'])
+@app.route('/api/chat/<path:section>', methods=['GET'])
 def get_chat(section):
+    from urllib.parse import unquote
+    section = unquote(section).strip()
     conn = get_db()
     
-    # ETag Optimization to save bandwidth
+    # Fetch max 100 recent messages ordered strictly by id (most reliable across timezones)
     if DATABASE_URL:
         cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-        cur.execute("SELECT MAX(id), COUNT(*) FROM class_chats WHERE section = %s", (section,))
-        row = cur.fetchone()
-        max_id = row['max'] if row and row['max'] else 0
-        count = row['count'] if row and row['count'] else 0
+        cur.execute("SELECT * FROM (SELECT * FROM class_chats WHERE UPPER(TRIM(section)) = UPPER(TRIM(%s)) ORDER BY id DESC LIMIT 100) sub ORDER BY id ASC", (section,))
     else:
         cur = conn.cursor()
-        cur.execute("SELECT MAX(id), COUNT(*) FROM class_chats WHERE section = ?", (section,))
-        row = cur.fetchone()
-        max_id = row[0] if row and row[0] else 0
-        count = row[1] if row and row[1] else 0
-        
-    etag = f'"{max_id}-{count}"'
-    if request.headers.get('If-None-Match') == etag:
-        cur.close()
-        conn.close()
-        return '', 304
-
-    # Fetch max 100 recent messages to further save bandwidth
-    if DATABASE_URL:
-        cur.execute("SELECT * FROM (SELECT * FROM class_chats WHERE section = %s ORDER BY created_at DESC LIMIT 100) sub ORDER BY created_at ASC", (section,))
-    else:
-        cur.execute("SELECT * FROM (SELECT * FROM class_chats WHERE section = ? ORDER BY created_at DESC LIMIT 100) sub ORDER BY created_at ASC", (section,))
+        cur.execute("SELECT * FROM (SELECT * FROM class_chats WHERE UPPER(TRIM(section)) = UPPER(TRIM(?)) ORDER BY id DESC LIMIT 100) sub ORDER BY id ASC", (section,))
     rows = cur.fetchall()
     items = [dict(row) for row in rows]
     cur.close()
     conn.close()
     
     items = strip_base64_images(items, 'class_chats')
-    response = jsonify(items)
-    response.set_etag(etag)
-    return response
+    return jsonify(items)
 
-@app.route('/api/chat/<section>', methods=['POST'])
+@app.route('/api/chat/<path:section>', methods=['POST'])
 def post_chat(section):
-    data = request.json
-    sender_name = data.get('sender_name', 'Anonymous').strip()
-    sender_net_id = data.get('sender_net_id', '').lower().strip()
-    message = data.get('message', '').strip()
-    image_url = data.get('image_url', '')
-    audio_url = data.get('audio_url', '')
+    from urllib.parse import unquote
+    section = unquote(section).strip()
+    data = request.json or {}
+    sender_name = (data.get('sender_name') or 'Anonymous').strip()
+    sender_net_id = (data.get('sender_net_id') or '').lower().strip()
+    message = (data.get('message') or '').strip()
+    image_url = data.get('image_url') or ''
+    audio_url = data.get('audio_url') or ''
     now = datetime.now().isoformat()
     
     if not message and not image_url and not audio_url:
-        return jsonify({'success': False, 'error': 'Empty message'})
+        return jsonify({'success': False, 'error': 'Empty message'}), 400
         
     conn = get_db()
     cur = conn.cursor()
@@ -1765,14 +1750,14 @@ def post_chat(section):
             cur.execute("INSERT INTO class_chats (section, sender_name, sender_net_id, message, image_url, audio_url, created_at) VALUES (%s, %s, %s, %s, %s, %s, %s)",
                         (section, sender_name, sender_net_id, message, image_url, audio_url, now))
             # Auto-trim to 200 messages per section to prevent DB bloat
-            cur.execute("DELETE FROM class_chats WHERE section = %s AND id NOT IN (SELECT id FROM class_chats WHERE section = %s ORDER BY created_at DESC LIMIT 200)", (section, section))
+            cur.execute("DELETE FROM class_chats WHERE UPPER(TRIM(section)) = UPPER(TRIM(%s)) AND id NOT IN (SELECT id FROM class_chats WHERE UPPER(TRIM(section)) = UPPER(TRIM(%s)) ORDER BY id DESC LIMIT 200)", (section, section))
         else:
             cur.execute("INSERT INTO class_chats (section, sender_name, sender_net_id, message, image_url, audio_url, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
                         (section, sender_name, sender_net_id, message, image_url, audio_url, now))
-            cur.execute("DELETE FROM class_chats WHERE section = ? AND id NOT IN (SELECT id FROM class_chats WHERE section = ? ORDER BY created_at DESC LIMIT 200)", (section, section))
+            cur.execute("DELETE FROM class_chats WHERE UPPER(TRIM(section)) = UPPER(TRIM(?)) AND id NOT IN (SELECT id FROM class_chats WHERE UPPER(TRIM(section)) = UPPER(TRIM(?)) ORDER BY id DESC LIMIT 200)", (section, section))
         conn.commit()
     except Exception as e:
-        return jsonify({'success': False, 'error': str(e)})
+        return jsonify({'success': False, 'error': str(e)}), 500
     finally:
         cur.close()
         conn.close()
