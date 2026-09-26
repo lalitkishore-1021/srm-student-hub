@@ -194,12 +194,15 @@ def init_db():
             id SERIAL PRIMARY KEY, post_id INTEGER NOT NULL, message TEXT NOT NULL, created_at TEXT)''')
         cur.execute('''CREATE TABLE IF NOT EXISTS spotted_likes (
             id SERIAL PRIMARY KEY, post_id INTEGER NOT NULL, net_id TEXT NOT NULL, UNIQUE(post_id, net_id))''')
+        cur.execute('''CREATE TABLE IF NOT EXISTS push_subscriptions (
+            id SERIAL PRIMARY KEY, net_id TEXT, endpoint TEXT UNIQUE NOT NULL, p256dh TEXT, auth TEXT, created_at TEXT)''')
 
         conn.commit()
         for table, col, ctype in [
             ('students', 'created_at', 'TEXT'),
             ('students', 'last_opened_at', 'TEXT'),
-            ('music_hub', 'play_count', 'INTEGER DEFAULT 0')
+            ('music_hub', 'play_count', 'INTEGER DEFAULT 0'),
+            ('class_chats', 'reactions', "TEXT DEFAULT '{}'")
         ]:
             try:
                 cur.execute(f"ALTER TABLE {table} ADD COLUMN {col} {ctype}")
@@ -296,12 +299,14 @@ def init_db():
             id SERIAL PRIMARY KEY, post_id INTEGER NOT NULL, message TEXT NOT NULL, created_at TEXT)''')
         cur.execute('''CREATE TABLE IF NOT EXISTS spotted_likes (
             id SERIAL PRIMARY KEY, post_id INTEGER NOT NULL, net_id TEXT NOT NULL, UNIQUE(post_id, net_id))''')
-
+        cur.execute('''CREATE TABLE IF NOT EXISTS push_subscriptions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT, net_id TEXT, endpoint TEXT UNIQUE NOT NULL, p256dh TEXT, auth TEXT, created_at TEXT)''')
         
         for table, col, ctype in [
             ('students', 'created_at', 'TEXT'),
             ('students', 'last_opened_at', 'TEXT'),
-            ('music_hub', 'play_count', 'INTEGER DEFAULT 0')
+            ('music_hub', 'play_count', 'INTEGER DEFAULT 0'),
+            ('class_chats', 'reactions', "TEXT DEFAULT '{}'")
         ]:
             try:
                 cur.execute(f"ALTER TABLE {table} ADD COLUMN {col} {ctype}")
@@ -1890,6 +1895,104 @@ def delete_chat(msg_id):
         cur.close()
         conn.close()
     return jsonify({'success': True})
+
+@app.route('/api/chat/react', methods=['POST'])
+def react_chat():
+    data = request.json or {}
+    msg_id = data.get('msg_id')
+    emoji = (data.get('emoji') or '').strip()
+    net_id = (data.get('net_id') or '').strip().lower()
+    
+    if not msg_id or not emoji or not net_id:
+        return jsonify({'success': False, 'error': 'Missing required fields'}), 400
+        
+    conn = get_db()
+    cur = conn.cursor()
+    try:
+        if DATABASE_URL:
+            cur.execute("SELECT reactions FROM class_chats WHERE id = %s", (msg_id,))
+        else:
+            cur.execute("SELECT reactions FROM class_chats WHERE id = ?", (msg_id,))
+        row = cur.fetchone()
+        if not row:
+            return jsonify({'success': False, 'error': 'Message not found'}), 404
+            
+        raw_rxn = row[0] if row else '{}'
+        try:
+            rxn_dict = json.loads(raw_rxn or '{}') if isinstance(raw_rxn, str) else (raw_rxn or {})
+        except Exception:
+            rxn_dict = {}
+            
+        # Toggle user's reaction
+        user_list = rxn_dict.get(emoji, [])
+        if net_id in user_list:
+            user_list.remove(net_id)
+            if not user_list:
+                rxn_dict.pop(emoji, None)
+            else:
+                rxn_dict[emoji] = user_list
+        else:
+            user_list.append(net_id)
+            rxn_dict[emoji] = user_list
+            
+        new_rxn_json = json.dumps(rxn_dict)
+        if DATABASE_URL:
+            cur.execute("UPDATE class_chats SET reactions = %s WHERE id = %s", (new_rxn_json, msg_id))
+        else:
+            cur.execute("UPDATE class_chats SET reactions = ? WHERE id = ?", (new_rxn_json, msg_id))
+        conn.commit()
+        
+        summary = {em: len(users) for em, users in rxn_dict.items() if len(users) > 0}
+        user_reacted = [em for em, users in rxn_dict.items() if net_id in users]
+        return jsonify({'success': True, 'reactions': summary, 'user_reactions': user_reacted})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        cur.close()
+        conn.close()
+
+@app.route('/api/push/subscribe', methods=['POST'])
+def push_subscribe():
+    data = request.json or {}
+    subscription = data.get('subscription') or {}
+    net_id = (data.get('net_id') or '').strip().lower()
+    endpoint = subscription.get('endpoint', '')
+    keys = subscription.get('keys') or {}
+    p256dh = keys.get('p256dh', '')
+    auth = keys.get('auth', '')
+    now = datetime.now().isoformat()
+    
+    if not endpoint:
+        return jsonify({'success': False, 'error': 'Endpoint required'}), 400
+        
+    conn = get_db()
+    cur = conn.cursor()
+    try:
+        if DATABASE_URL:
+            cur.execute('''
+                INSERT INTO push_subscriptions (net_id, endpoint, p256dh, auth, created_at)
+                VALUES (%s, %s, %s, %s, %s)
+                ON CONFLICT(endpoint) DO UPDATE SET
+                    net_id = EXCLUDED.net_id, p256dh = EXCLUDED.p256dh, auth = EXCLUDED.auth, created_at = EXCLUDED.created_at
+            ''', (net_id, endpoint, p256dh, auth, now))
+        else:
+            cur.execute('''
+                INSERT INTO push_subscriptions (net_id, endpoint, p256dh, auth, created_at)
+                VALUES (?, ?, ?, ?, ?)
+                ON CONFLICT(endpoint) DO UPDATE SET
+                    net_id = excluded.net_id, p256dh = excluded.p256dh, auth = excluded.auth, created_at = excluded.created_at
+            ''', (net_id, endpoint, p256dh, auth, now))
+        conn.commit()
+        return jsonify({'success': True, 'message': 'Subscribed successfully'})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        cur.close()
+        conn.close()
+
+@app.route('/api/push/test', methods=['POST'])
+def push_test():
+    return jsonify({'success': True, 'message': 'Push service ready'})
 
 @app.route('/api/spotted', methods=['GET'])
 def get_spotted():

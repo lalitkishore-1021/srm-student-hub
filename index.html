@@ -2812,6 +2812,60 @@
         </div>
     </div>
 
+    <!-- Haptics, Audio & Background Push Preferences Modal -->
+    <div id="preferences-modal" class="depth-blur-overlay" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.85); z-index:25000; justify-content:center; align-items:center;" onclick="if(event.target===this)closePreferencesModal()">
+        <div class="sync-confirm-card" style="width: 90%; max-width: 420px; padding: 22px 20px; background: rgba(20,24,32,0.96); border: 1px solid rgba(255,255,255,0.15); border-radius: 24px; box-shadow: 0 20px 50px rgba(0,0,0,0.6); backdrop-filter: blur(25px);">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px;">
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <div style="width:36px; height:36px; border-radius:10px; background:rgba(0,229,255,0.15); display:flex; align-items:center; justify-content:center; color:#00e5ff;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                    </div>
+                    <h3 style="margin:0; font-size:1.15rem; font-weight:800; color:#fff;">Sound & Alerts</h3>
+                </div>
+                <button onclick="closePreferencesModal()" style="background:rgba(255,255,255,0.1); border:none; border-radius:50%; width:32px; height:32px; color:#fff; cursor:pointer; font-size:16px;">&times;</button>
+            </div>
+
+            <!-- Sound Effects Toggle -->
+            <div style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:16px; padding:14px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;">
+                <div>
+                    <div style="font-weight:700; font-size:14px; color:#fff;">UI Sound Effects</div>
+                    <div style="font-size:11px; color:var(--text-sub); margin-top:2px;">Subtle clicks & pops (Strictly muted in Music Lounge)</div>
+                </div>
+                <input type="checkbox" id="pref-sound-effects" onchange="toggleSoundEffectsPref(this.checked)" style="width:20px; height:20px; accent-color:var(--primary); cursor:pointer;">
+            </div>
+
+            <!-- Haptic Feedback Toggle -->
+            <div style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:16px; padding:14px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;">
+                <div>
+                    <div style="font-weight:700; font-size:14px; color:#fff;">Haptic Touch Profiles</div>
+                    <div style="font-size:11px; color:var(--text-sub); margin-top:2px;">Tactile response for buttons, reactions & steppers</div>
+                </div>
+                <input type="checkbox" id="pref-haptics" onchange="toggleHapticsPref(this.checked)" style="width:20px; height:20px; accent-color:var(--primary); cursor:pointer;">
+            </div>
+
+            <!-- Background Notifications Card -->
+            <div style="background:linear-gradient(135deg, rgba(29,185,84,0.12), rgba(0,229,255,0.08)); border:1px solid rgba(29,185,84,0.3); border-radius:16px; padding:14px; margin-bottom:14px;">
+                <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+                    <span style="font-size:16px;">🔔</span>
+                    <div style="font-weight:800; font-size:13px; color:#fff;">Background Push Notifications</div>
+                </div>
+                <p style="font-size:11px; color:var(--text-sub); margin:0 0 10px 0; line-height:1.4;">
+                    Get alerted for upcoming timetable classes & mess timings even when your phone screen is locked or app is completely closed.
+                </p>
+                <div style="display:flex; gap:8px;">
+                    <button type="button" onclick="testBackgroundNotification()" style="flex:1; padding:9px 12px; background:var(--primary); color:#000; border:none; border-radius:10px; font-weight:800; font-size:12px; cursor:pointer;">
+                        🚀 Test in 3s (Lock Phone)
+                    </button>
+                    <button type="button" onclick="requestNotificationPermission()" style="padding:9px 12px; background:rgba(255,255,255,0.1); color:#fff; border:1px solid rgba(255,255,255,0.15); border-radius:10px; font-weight:700; font-size:12px; cursor:pointer;">
+                        Enable
+                    </button>
+                </div>
+            </div>
+            
+            <button onclick="closePreferencesModal()" style="width:100%; padding:12px; border-radius:12px; background:rgba(255,255,255,0.08); border:none; color:#fff; font-weight:700; cursor:pointer;">Done</button>
+        </div>
+    </div>
+
     <!-- Cinematic Day Recap Modal (Story Mode) -->
     <div id="story-modal" class="depth-blur-overlay" style="display:none; flex-direction:column; background: #000; z-index: 20000; padding-top: env(safe-area-inset-top, 20px);">
         <div style="display: flex; gap: 5px; padding: 15px; width: 100%; max-width: 500px; margin: 0 auto; z-index: 10;">
@@ -3222,6 +3276,16 @@
                     <div>
                         <h4 class="action-title">Download APK</h4>
                         <p class="action-sub">Restriction-free app</p>
+                    </div>
+                </div>
+                <div class="action-card" onclick="openPreferencesModal()">
+                    <div class="action-icon" style="color: #00e5ff;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                    </svg></div>
+                    <div>
+                        <h4 class="action-title">Sound & Alerts</h4>
+                        <p class="action-sub">Haptics, UI audio & push</p>
                     </div>
                 </div>
                 <div class="action-card" id="installQuickActionBtn" style="display: none;" onclick="openInstallModal()">
@@ -4332,6 +4396,8 @@
         }
 
         function switchNav(viewId, element) {
+            if (typeof playUiSound === 'function') playUiSound('tab');
+            if (typeof triggerHaptic === 'function') triggerHaptic('light');
             document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
             element.classList.add('active');
             
@@ -4585,6 +4651,10 @@
             let toast = document.getElementById('sync-toast');
             if (toast) {
                 toast.innerHTML = success ? ` Data Synced Successfully` : ` Background Sync Failed`;
+                if (success) {
+                    if (typeof playUiSound === 'function') playUiSound('chime');
+                    if (typeof triggerHaptic === 'function') triggerHaptic('success');
+                }
                 setTimeout(() => toast.remove(), 3000);
             }
         }
@@ -4707,6 +4777,8 @@
 
                 statusText.innerText = ` Success! Synced in ${secondsPassed} seconds.`;
                 statusText.style.color = "var(--success)";
+                if (typeof playUiSound === 'function') playUiSound('chime');
+                if (typeof triggerHaptic === 'function') triggerHaptic('success');
 
                 isLoggedIn = true;
                     updateHomeState();
@@ -9813,6 +9885,197 @@ function checkAndShowHolidayBanner(viewId) {
         let chatInterval = null;
         let chatImageBase64 = "";
 
+        // ================= ANIMATED CHAT REACTIONS & CONFETTI =================
+        function buildReactionsInnerHtml(msgId, rxnMap, myNetId) {
+            const emojis = Object.keys(rxnMap || {}).filter(k => Array.isArray(rxnMap[k]) && rxnMap[k].length > 0);
+            return emojis.map(em => {
+                const count = rxnMap[em].length;
+                const userReacted = Boolean(myNetId && rxnMap[em].map(x => (x || '').split('@')[0].toLowerCase().trim()).includes(myNetId));
+                return `
+                    <button type="button" onclick="reactToChatMessage(${msgId}, '${em}', event)" class="rxn-pill ${userReacted ? 'active' : ''}" style="
+                        display:inline-flex; align-items:center; gap:4px; border-radius:12px; padding:2px 8px; font-size:11px; font-weight:700; cursor:pointer;
+                        background:${userReacted ? 'rgba(29, 185, 84, 0.28)' : 'rgba(255,255,255,0.08)'};
+                        border:1px solid ${userReacted ? 'rgba(29, 185, 84, 0.6)' : 'rgba(255,255,255,0.12)'};
+                        color:${userReacted ? '#1DB954' : '#fff'};
+                        backdrop-filter:blur(8px); transition:all 0.15s ease;
+                    ">
+                        <span style="font-size:13px; line-height:1;">${em}</span>
+                        <span>${count}</span>
+                    </button>
+                `;
+            }).join('');
+        }
+
+        function toggleReactionPicker(msgId, e) {
+            if (e) {
+                e.stopPropagation();
+                if (e.preventDefault) e.preventDefault();
+            }
+            document.querySelectorAll('.chat-ctx-menu').forEach(mx => mx.style.display = 'none');
+            const picker = document.getElementById(`rxn-picker-${msgId}`);
+            if (!picker) return;
+            const isShown = picker.style.display === 'flex';
+            document.querySelectorAll('.chat-reaction-picker').forEach(p => p.style.display = 'none');
+            if (!isShown) {
+                picker.style.display = 'flex';
+                if (typeof triggerHaptic === 'function') triggerHaptic('light');
+            }
+        }
+
+        async function reactToChatMessage(msgId, emoji, e) {
+            if (e) {
+                e.stopPropagation();
+                if (e.preventDefault) e.preventDefault();
+            }
+            document.querySelectorAll('.chat-reaction-picker').forEach(p => p.style.display = 'none');
+
+            // Coordinates for celebratory confetti burst
+            let cx = window.innerWidth / 2;
+            let cy = window.innerHeight / 2;
+            if (e && e.clientX && e.clientY) {
+                cx = e.clientX;
+                cy = e.clientY;
+            } else if (e && e.target) {
+                const rect = e.target.getBoundingClientRect();
+                cx = rect.left + rect.width / 2;
+                cy = rect.top + rect.height / 2;
+            }
+
+            burstReactionConfetti(cx, cy, emoji);
+            if (typeof playUiSound === 'function') playUiSound('pop');
+            if (typeof triggerHaptic === 'function') triggerHaptic('pop');
+
+            const myNetId = getCurrentNetId();
+            if (!myNetId) return;
+
+            // Optimistic DOM update for immediate 0ms response
+            const row = document.getElementById(`rxn-row-${msgId}`);
+            if (row) {
+                let rxnMap = {};
+                try { rxnMap = JSON.parse(row.dataset.rxnHash || '{}'); } catch(err) { rxnMap = {}; }
+                let list = rxnMap[emoji] || [];
+                if (list.includes(myNetId)) {
+                    list = list.filter(x => x !== myNetId);
+                    if (list.length === 0) delete rxnMap[emoji];
+                    else rxnMap[emoji] = list;
+                } else {
+                    list.push(myNetId);
+                    rxnMap[emoji] = list;
+                }
+                row.dataset.rxnHash = JSON.stringify(rxnMap);
+                row.innerHTML = buildReactionsInnerHtml(msgId, rxnMap, myNetId);
+                row.style.display = Object.keys(rxnMap).some(k => rxnMap[k]?.length > 0) ? 'flex' : 'none';
+            }
+
+            try {
+                const res = await fetch(`${BACKEND_URL}/api/chat/react`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ msg_id: msgId, emoji: emoji, net_id: myNetId })
+                });
+                const data = await res.json();
+                if (data.success && data.reactions && row) {
+                    const emojis = Object.keys(data.reactions).filter(k => data.reactions[k] > 0);
+                    if (emojis.length > 0) {
+                        row.style.display = 'flex';
+                        row.innerHTML = emojis.map(em => {
+                            const count = data.reactions[em];
+                            const userReacted = (data.user_reactions || []).includes(em);
+                            return `
+                                <button type="button" onclick="reactToChatMessage(${msgId}, '${em}', event)" class="rxn-pill ${userReacted ? 'active' : ''}" style="
+                                    display:inline-flex; align-items:center; gap:4px; border-radius:12px; padding:2px 8px; font-size:11px; font-weight:700; cursor:pointer;
+                                    background:${userReacted ? 'rgba(29, 185, 84, 0.28)' : 'rgba(255,255,255,0.08)'};
+                                    border:1px solid ${userReacted ? 'rgba(29, 185, 84, 0.6)' : 'rgba(255,255,255,0.12)'};
+                                    color:${userReacted ? '#1DB954' : '#fff'};
+                                    backdrop-filter:blur(8px); transition:all 0.15s ease;
+                                ">
+                                    <span style="font-size:13px; line-height:1;">${em}</span>
+                                    <span>${count}</span>
+                                </button>
+                            `;
+                        }).join('');
+                    } else {
+                        row.style.display = 'none';
+                        row.innerHTML = '';
+                    }
+                }
+            } catch(err) {
+                console.warn('React API error:', err);
+            }
+        }
+
+        function burstReactionConfetti(x, y, emoji) {
+            const container = document.createElement('div');
+            container.style.cssText = 'position:fixed; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:99999; overflow:hidden;';
+            document.body.appendChild(container);
+
+            const colors = ['#1DB954', '#00e5ff', '#ffb703', '#ff007f', '#a855f7', '#ffffff'];
+
+            // 1. Floating Emoji particles (5 drifting upward)
+            for (let i = 0; i < 5; i++) {
+                const p = document.createElement('div');
+                p.innerText = emoji;
+                p.style.cssText = `
+                    position:absolute; left:${x}px; top:${y}px;
+                    font-size:${20 + Math.random() * 14}px;
+                    transform:translate(-50%, -50%);
+                    transition:transform 0.85s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.85s ease-out;
+                    user-select:none;
+                `;
+                container.appendChild(p);
+
+                const angle = -Math.PI / 2 + (Math.random() - 0.5) * 1.3;
+                const dist = 70 + Math.random() * 80;
+                const targetX = Math.cos(angle) * dist;
+                const targetY = Math.sin(angle) * dist;
+                const rot = (Math.random() - 0.5) * 60;
+
+                requestAnimationFrame(() => {
+                    p.style.transform = `translate(calc(-50% + ${targetX}px), calc(-50% + ${targetY}px)) scale(1.35) rotate(${rot}deg)`;
+                    p.style.opacity = '0';
+                });
+            }
+
+            // 2. Confetti sparkles (17 colorful confetti shards)
+            for (let i = 0; i < 17; i++) {
+                const p = document.createElement('div');
+                const color = colors[Math.floor(Math.random() * colors.length)];
+                const size = 6 + Math.random() * 6;
+                p.style.cssText = `
+                    position:absolute; left:${x}px; top:${y}px;
+                    width:${size}px; height:${size}px;
+                    background:${color};
+                    border-radius:${Math.random() > 0.5 ? '50%' : '2px'};
+                    transform:translate(-50%, -50%);
+                    box-shadow: 0 0 8px ${color};
+                    transition:transform 0.8s cubic-bezier(0.2, 0.9, 0.3, 1), opacity 0.8s ease-out;
+                `;
+                container.appendChild(p);
+
+                const angle = Math.random() * Math.PI * 2;
+                const dist = 40 + Math.random() * 95;
+                const targetX = Math.cos(angle) * dist;
+                const targetY = Math.sin(angle) * dist + 30; // simulated gravity pull
+                const rot = Math.random() * 360;
+
+                requestAnimationFrame(() => {
+                    p.style.transform = `translate(calc(-50% + ${targetX}px), calc(-50% + ${targetY}px)) rotate(${rot}deg) scale(0.6)`;
+                    p.style.opacity = '0';
+                });
+            }
+
+            setTimeout(() => {
+                container.remove();
+            }, 1000);
+        }
+
+        // Close reaction pickers on outside click
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.chat-reaction-picker') && !e.target.closest('.chat-react-trigger')) {
+                document.querySelectorAll('.chat-reaction-picker').forEach(p => p.style.display = 'none');
+            }
+        });
+
         function openClassChat() {
             const section = getUserSection();
             document.getElementById('chat-title').innerText = `Class Chat - ${section}`;
@@ -9904,6 +10167,15 @@ function checkAndShowHolidayBanner(viewId) {
                             existing.style.boxShadow = 'none';
                             const deletedText = isMe ? 'You deleted this message' : 'This message was deleted';
                             existing.innerHTML = `<div style="font-style: italic; color: rgba(255,255,255,0.6); display:flex; align-items:center; gap:5px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line></svg> ${deletedText}</div>`;
+                        } else if (!m.deleted_for_all) {
+                            const rxnRow = existing.querySelector('.chat-rxn-row');
+                            let rxnMap = {};
+                            try { rxnMap = typeof m.reactions === 'string' ? JSON.parse(m.reactions || '{}') : (m.reactions || {}); } catch(e) {}
+                            if (rxnRow && rxnRow.dataset.rxnHash !== JSON.stringify(rxnMap)) {
+                                rxnRow.dataset.rxnHash = JSON.stringify(rxnMap);
+                                rxnRow.innerHTML = buildReactionsInnerHtml(m.id, rxnMap, myNetId);
+                                rxnRow.style.display = Object.keys(rxnMap).some(k => rxnMap[k]?.length > 0) ? 'flex' : 'none';
+                            }
                         }
                         return;
                     }
@@ -9928,14 +10200,30 @@ function checkAndShowHolidayBanner(viewId) {
                             <div class="ctx-item" onclick="openDeleteModal('${m.id}', false)" style="padding:10px 15px; cursor:pointer; font-size:0.9rem; color:#ff4757; transition:background 0.2s;">Delete for me</div>
                         </div>`;
                     } else {
+                        let rxnMap = {};
+                        try { rxnMap = typeof m.reactions === 'string' ? JSON.parse(m.reactions || '{}') : (m.reactions || {}); } catch(e) {}
+                        const hasRxns = Object.keys(rxnMap).some(k => rxnMap[k]?.length > 0);
+                        const rxnInnerHtml = buildReactionsInnerHtml(m.id, rxnMap, myNetId);
+
                         let html = '';
+                        html += `
+                        <div class="chat-reaction-picker" id="rxn-picker-${m.id}" style="display:none; position:absolute; bottom:calc(100% + 6px); ${isMe ? 'right:0' : 'left:0'}; background:rgba(20,24,30,0.96); backdrop-filter:blur(25px); border:1px solid rgba(255,255,255,0.18); border-radius:26px; padding:4px 10px; box-shadow:0 12px 35px rgba(0,0,0,0.6); z-index:115; align-items:center; gap:8px;">
+                            ${['❤️', '🔥', '😂', '💀', '👏', '🚀', '💯'].map(em => `
+                                <span onclick="reactToChatMessage(${m.id}, '${em}', event)" class="rxn-emoji-btn" style="font-size:22px; cursor:pointer; padding:2px; transition:transform 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275); display:inline-block; user-select:none;" onmouseenter="this.style.transform='scale(1.35)'" onmouseleave="this.style.transform='scale(1)'">${em}</span>
+                            `).join('')}
+                        </div>`;
+
                         html += `<div style="font-size: 0.75rem; font-weight: bold; color: ${isMe ? 'rgba(255,255,255,0.9)' : '#ffaa00'}; margin-bottom: 4px; display:flex; justify-content:space-between; align-items:center;">
                             <span>${isMe ? 'You' : escHtml(m.sender_name || 'Anonymous')}</span>
-                            <span class="chat-menu-btn" style="cursor:pointer; opacity:0.6; padding:0 5px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg></span>
+                            <div style="display:flex; align-items:center; gap:3px;">
+                                <span class="chat-react-trigger" onclick="toggleReactionPicker(${m.id}, event)" title="React" style="cursor:pointer; opacity:0.7; padding:0 4px; font-size:13px; transition:transform 0.15s;" onmouseenter="this.style.opacity='1'" onmouseleave="this.style.opacity='0.7'">😊+</span>
+                                <span class="chat-menu-btn" style="cursor:pointer; opacity:0.6; padding:0 4px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg></span>
+                            </div>
                         </div>`;
 
                         const safeMsg = m.message ? m.message.replace(/'/g, "\\'").replace(/"/g, '&quot;') : '';
                         const menuHtml = `<div class="chat-ctx-menu" style="display:none; position:absolute; top:25px; right:10px; background:rgba(20,20,20,0.95); border:1px solid rgba(255,255,255,0.1); border-radius:10px; padding:5px 0; z-index:100; box-shadow:0 10px 25px rgba(0,0,0,0.5); backdrop-filter:blur(15px); flex-direction:column; min-width:120px;">
+                            <div class="ctx-item" onclick="toggleReactionPicker(${m.id}, event)" style="padding:10px 15px; cursor:pointer; font-size:0.9rem; transition:background 0.2s;">React with emoji</div>
                             <div class="ctx-item" onclick="copyClassChat('${safeMsg}')" style="padding:10px 15px; cursor:pointer; font-size:0.9rem; transition:background 0.2s;">Copy</div>
                             <div class="ctx-item" onclick="openDeleteModal('${m.id}', ${isMe})" style="padding:10px 15px; cursor:pointer; font-size:0.9rem; color:#ff4757; transition:background 0.2s;">Delete</div>
                         </div>`;
@@ -9954,6 +10242,10 @@ function checkAndShowHolidayBanner(viewId) {
                         }
                         
                         if (m.message) html += `<div style="word-wrap: break-word; line-height: 1.5; font-size: 0.95rem;">${escHtml(m.message)}</div>`;
+                        
+                        // Reactions row container
+                        html += `<div class="chat-rxn-row" id="rxn-row-${m.id}" data-rxn-hash="${escAttr(JSON.stringify(rxnMap))}" style="display:${hasRxns ? 'flex' : 'none'}; flex-wrap:wrap; gap:5px; margin-top:6px; align-items:center;">${rxnInnerHtml}</div>`;
+
                         if (timeStr) html += `<div style="font-size: 0.65rem; color: rgba(255,255,255,0.7); align-self: flex-end; margin-top: 4px;">${timeStr}</div>`;
                         
                         bubble.innerHTML = html;
@@ -9966,6 +10258,7 @@ function checkAndShowHolidayBanner(viewId) {
                                     menuBtn.onclick = (e) => {
                                         e.stopPropagation();
                                         document.querySelectorAll('.chat-ctx-menu').forEach(mx => { if(mx !== menu) mx.style.display='none'; });
+                                        document.querySelectorAll('.chat-reaction-picker').forEach(p => p.style.display='none');
                                         menu.style.display = menu.style.display === 'none' ? 'flex' : 'none';
                                     };
                                 }
@@ -9976,15 +10269,33 @@ function checkAndShowHolidayBanner(viewId) {
                                     document.querySelectorAll('.chat-ctx-menu').forEach(mx => mx.style.display='none');
                                     menu.style.display = 'flex';
                                 });
-                                bubble.addEventListener('touchstart', () => {
+                                bubble.addEventListener('touchstart', (e) => {
+                                    if (e.target.closest('.rxn-pill') || e.target.closest('.chat-reaction-picker') || e.target.closest('.chat-react-trigger')) return;
                                     touchTimer = setTimeout(() => {
                                         document.querySelectorAll('.chat-ctx-menu').forEach(mx => mx.style.display='none');
                                         menu.style.display = 'flex';
-                                        if (navigator.vibrate) navigator.vibrate(50);
+                                        if (typeof triggerHaptic === 'function') triggerHaptic('medium');
                                     }, 500);
                                 }, {passive: true});
                                 bubble.addEventListener('touchend', () => clearTimeout(touchTimer));
                                 bubble.addEventListener('touchmove', () => clearTimeout(touchTimer));
+
+                                // Double tap / Double click to open reaction picker
+                                let lastTapTime = 0;
+                                bubble.addEventListener('touchend', (e) => {
+                                    if (e.target.closest('.chat-rxn-row') || e.target.closest('.chat-menu-btn') || e.target.closest('.chat-react-trigger') || e.target.closest('.chat-ctx-menu') || e.target.closest('.chat-reaction-picker')) return;
+                                    const curTime = Date.now();
+                                    if (curTime - lastTapTime < 320 && curTime - lastTapTime > 0) {
+                                        e.preventDefault();
+                                        toggleReactionPicker(m.id, e);
+                                    }
+                                    lastTapTime = curTime;
+                                });
+                                bubble.addEventListener('dblclick', (e) => {
+                                    if (e.target.closest('.chat-rxn-row') || e.target.closest('.chat-menu-btn') || e.target.closest('.chat-react-trigger') || e.target.closest('.chat-ctx-menu') || e.target.closest('.chat-reaction-picker')) return;
+                                    e.preventDefault();
+                                    toggleReactionPicker(m.id, e);
+                                });
                             }
                         }, 0);
                     }
@@ -10038,7 +10349,8 @@ function checkAndShowHolidayBanner(viewId) {
             history.scrollTop = history.scrollHeight;
             chatAudioBase64 = null;
             
-            if (navigator.vibrate) navigator.vibrate(40);
+            if (typeof playUiSound === 'function') playUiSound('pop');
+            if (typeof triggerHaptic === 'function') triggerHaptic('pop');
             
             try {
                 const res = await fetch(`${BACKEND_URL}/api/chat/${encodeURIComponent(section)}`, {
@@ -10257,66 +10569,153 @@ function initCalculators() {
     cgpaCourses = [];
     gradeCalcCourses = [];
     
-    // Parse from marksData if available
     let marksData = [];
-    try {
-        marksData = JSON.parse(localStorage.getItem('squadMarks')) || [];
-    } catch (e) {}
+    try { marksData = JSON.parse(localStorage.getItem('squadMarks')) || []; } catch(e) {}
+    
+    let attData = [];
+    try { attData = JSON.parse(localStorage.getItem('squadAttendance')) || []; } catch(e) {}
+    
+    let savedCourses = [];
+    try { savedCourses = JSON.parse(localStorage.getItem('squadCourses')) || []; } catch(e) {}
 
-    marksData.forEach(item => {
-        const title = item.courseTitle || item.CourseTitle || item.name || "Subject";
-        const code = item.courseCode || item.code || "THEORY";
-        let perfString = item['Test Performance'] || item.performance || item.marks || "";
+    // Map of courses keyed by normalized alphanumeric code
+    const courseMap = new Map();
+
+    // 1. Ingest savedCourses (from timetable scraping)
+    savedCourses.forEach(c => {
+        const code = (c.course_code || c.code || '').trim();
+        const base = code.toUpperCase().replace(/[^A-Z0-9]/g, '');
+        if (base) {
+            courseMap.set(base, {
+                title: c.course_title || c.title || 'Course',
+                code: code,
+                credit: parseFloat(c.credit) || 0,
+                perf: ''
+            });
+        }
+    });
+
+    // 2. Ingest attData
+    attData.forEach(a => {
+        const code = (a.courseCode || a.code || '').trim();
+        const base = code.toUpperCase().replace(/[^A-Z0-9]/g, '');
+        if (base) {
+            const existing = courseMap.get(base);
+            const cred = parseFloat(a.credit) || (existing ? existing.credit : 0);
+            courseMap.set(base, {
+                title: a.courseTitle || (existing ? existing.title : 'Course'),
+                code: code,
+                credit: cred,
+                perf: existing ? existing.perf : ''
+            });
+        }
+    });
+
+    // 3. Ingest marksData
+    marksData.forEach(m => {
+        const code = (m.courseCode || m.code || '').trim();
+        const base = code.toUpperCase().replace(/[^A-Z0-9]/g, '');
+        const title = m.courseTitle || m.CourseTitle || m.name || '';
+        const perf = m['Test Performance'] || m.performance || m.marks || '';
+        const cred = parseFloat(m.credit) || 0;
+
+        if (base && courseMap.has(base)) {
+            const existing = courseMap.get(base);
+            if (perf) existing.perf = perf;
+            if (cred > 0 && !existing.credit) existing.credit = cred;
+            if (title && (!existing.title || existing.title === 'Course')) existing.title = title;
+        } else if (base) {
+            courseMap.set(base, {
+                title: title || 'Course',
+                code: code,
+                credit: cred,
+                perf: perf
+            });
+        } else if (title) {
+            const titleKey = title.toUpperCase().replace(/[^A-Z0-9]/g, '');
+            courseMap.set(titleKey, {
+                title: title,
+                code: 'THEORY',
+                credit: cred,
+                perf: perf
+            });
+        }
+    });
+
+    // Function to calculate exact credit for a course
+    function resolveCredit(course) {
+        if (course.credit && course.credit > 0) return course.credit;
+        const upCode = (course.code || '').toUpperCase().trim();
+        const upTitle = (course.title || '').toUpperCase().trim();
         
-        let courseMax = 0; let courseObtained = 0;
+        // SRM University standard credit regulations
+        if (upCode.endsWith('J')) return 4.0; // Integrated theory + lab
+        if (upCode.endsWith('P') || upCode.endsWith('L') || upTitle.includes('PRACTICAL') || upTitle.includes('LAB')) {
+            return upCode.endsWith('P') ? 2.0 : 1.5;
+        }
+        if (upTitle.includes('PROJECT') || upTitle.includes('CAPSTONE') || upTitle.includes('SEMINAR')) return 3.0;
+        if (upTitle.includes('VALUE') || upTitle.includes('SKILL') || upTitle.includes('CONSTITUTION') || upTitle.includes('APTITUDE')) return 1.0;
+        if (upCode.endsWith('T') || upTitle.includes('THEORY')) return 3.0;
+        return 3.0;
+    }
+
+    courseMap.forEach((c) => {
+        const title = c.title || 'Course';
+        const code = c.code || 'THEORY';
+        const perfString = c.perf || '';
+        const credit = resolveCredit(c);
+
+        let courseMax = 0;
+        let courseObtained = 0;
         const regex = /([^\/]+)\/([0-9.]+)\s*\|\s*([0-9.]+)/g;
         let match;
         while ((match = regex.exec(perfString)) !== null) {
             courseMax += parseFloat(match[2]);
             courseObtained += parseFloat(match[3]);
         }
-        
-        // Calculate current grade for CGPA calc
+
+        // Determine initial grade estimate
         let grade = 'O';
         if (courseMax > 0) {
-            let marksCut = courseMax - courseObtained;
-            if (marksCut < 10) grade = 'O';
-            else if (marksCut < 20) grade = 'A+';
-            else if (marksCut < 30) grade = 'A';
-            else if (marksCut < 40) grade = 'B+';
-            else if (marksCut < 45) grade = 'B';
-            else if (marksCut < 50) grade = 'C';
+            let percent = (courseObtained / courseMax) * 100;
+            if (percent >= 90) grade = 'O';
+            else if (percent >= 80) grade = 'A+';
+            else if (percent >= 70) grade = 'A';
+            else if (percent >= 60) grade = 'B+';
+            else if (percent >= 55) grade = 'B';
+            else if (percent >= 50) grade = 'C';
             else grade = 'F';
         }
-        
-        // Estimate actual credits based on course title
-        let actualCredits = 3;
-        const upTitle = title.toUpperCase();
-        if (upTitle.includes('LAB') || upTitle.includes('PRACTICAL')) actualCredits = 1.5;
-        else if (upTitle.includes('PROJECT') || upTitle.includes('SEMINAR')) actualCredits = 2;
-        else if (upTitle.includes('SKILL') || upTitle.includes('APTITUDE')) actualCredits = 1;
-        else if (code.toUpperCase().endsWith('L')) actualCredits = 1.5; // common lab code
-        else if (code.toUpperCase().endsWith('T')) actualCredits = 3;
-        
-        cgpaCourses.push({ title: title, credits: actualCredits, grade: grade });
-        
-        if (courseMax > 0 && courseMax <= 150) {
-            // Scale internal marks strictly out of 60 for the calculator
-            let scaledInternal = courseObtained;
-            if (courseMax !== 60) {
-                scaledInternal = (courseObtained / courseMax) * 60;
-            }
-            gradeCalcCourses.push({
-                title: title,
-                internal: scaledInternal.toFixed(2),
-                target: 'O'
-            });
+
+        cgpaCourses.push({
+            title: title,
+            code: code,
+            credits: credit,
+            grade: grade
+        });
+
+        // Exact internal marks without artificial scaling
+        let internalScore = 0;
+        if (courseMax > 0) {
+            internalScore = courseObtained;
         }
+
+        gradeCalcCourses.push({
+            title: title,
+            code: code,
+            credits: credit,
+            internal: internalScore > 0 ? parseFloat(internalScore.toFixed(1)) : 0,
+            actualObtained: courseObtained > 0 ? parseFloat(courseObtained.toFixed(1)) : 0,
+            actualMax: courseMax > 0 ? parseFloat(courseMax.toFixed(1)) : 0,
+            target: 'O'
+        });
     });
-    
+
+    if (cgpaCourses.length === 0) {
+        cgpaCourses.push({ title: 'Theory Course', code: 'THEORY', credits: 3.0, grade: 'O' });
+    }
     if (gradeCalcCourses.length === 0) {
-        // Fallback dummy
-        gradeCalcCourses.push({ title: 'Theory Subject', internal: 45, target: 'O' });
+        gradeCalcCourses.push({ title: 'Theory Course', code: 'THEORY', credits: 3.0, internal: 45, actualObtained: 45, actualMax: 60, target: 'O' });
     }
 }
 
@@ -10348,24 +10747,27 @@ function renderCgpaCalculator() {
         totalPoints += (cred * pt);
         
         html += `
-            <div class="glass-card" style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 16px; margin-bottom: 12px; position:relative;">
-                <button onclick="removeCgpaCourse(${i})" style="position:absolute; top:15px; right:15px; background:none; border:none; color:var(--text-sub); cursor:pointer;"><i class="fas fa-trash"></i></button>
-                <div style="color: var(--text-main); font-weight: 700; font-size: 14px; margin-bottom: 15px; padding-right:20px;">${c.title}</div>
-                <div style="display:flex; gap:15px;">
+            <div class="glass-card fade-in-up" style="background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); padding: 16px 18px; border-radius: 18px; margin-bottom: 12px; position:relative; box-shadow: 0 8px 24px rgba(0,0,0,0.2);">
+                <button onclick="removeCgpaCourse(${i})" style="position:absolute; top:15px; right:15px; background:none; border:none; color:var(--text-sub); opacity:0.6; cursor:pointer;"><i class="fas fa-trash"></i></button>
+                <div style="color: var(--text-main); font-weight: 800; font-size: 14px; margin-bottom: 12px; padding-right:25px; line-height:1.3;">
+                    ${c.title}
+                    <span style="display:block; color:var(--text-sub); font-size:11px; font-family:monospace; margin-top:2px;">${c.code || ''}</span>
+                </div>
+                <div style="display:flex; gap:12px;">
                     <div style="flex:1;">
-                        <label style="color:var(--text-sub); font-size:10px; font-weight:700; text-transform:uppercase; margin-bottom:5px; display:block;">Credits</label>
-                        <input type="number" value="${c.credits}" onchange="updateCgpaCourse(${i}, 'credits', this.value)" style="width:100%; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.1); color:#fff; padding:10px; border-radius:8px;">
+                        <label style="color:var(--text-sub); font-size:10px; font-weight:800; text-transform:uppercase; margin-bottom:6px; display:block;">Credits</label>
+                        <input type="number" step="0.5" min="0.5" max="10" value="${c.credits}" onchange="updateCgpaCourse(${i}, 'credits', this.value)" style="width:100%; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.12); color:#fff; padding:10px 12px; border-radius:10px; font-weight:800; font-size:14px;">
                     </div>
                     <div style="flex:1;">
-                        <label style="color:var(--text-sub); font-size:10px; font-weight:700; text-transform:uppercase; margin-bottom:5px; display:block;">Grade</label>
-                        <select onchange="updateCgpaCourse(${i}, 'grade', this.value)" style="width:100%; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.1); color:#fff; padding:10px; border-radius:8px;">
-                            <option value="O" ${c.grade==='O'?'selected':''}>O</option>
-                            <option value="A+" ${c.grade==='A+'?'selected':''}>A+</option>
-                            <option value="A" ${c.grade==='A'?'selected':''}>A</option>
-                            <option value="B+" ${c.grade==='B+'?'selected':''}>B+</option>
-                            <option value="B" ${c.grade==='B'?'selected':''}>B</option>
-                            <option value="C" ${c.grade==='C'?'selected':''}>C</option>
-                            <option value="F" ${c.grade==='F'?'selected':''}>F</option>
+                        <label style="color:var(--text-sub); font-size:10px; font-weight:800; text-transform:uppercase; margin-bottom:6px; display:block;">Expected Grade</label>
+                        <select onchange="updateCgpaCourse(${i}, 'grade', this.value)" style="width:100%; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.12); color:#fff; padding:10px 12px; border-radius:10px; font-weight:800; font-size:14px;">
+                            <option value="O" ${c.grade==='O'?'selected':''}>O (10 GP)</option>
+                            <option value="A+" ${c.grade==='A+'?'selected':''}>A+ (9 GP)</option>
+                            <option value="A" ${c.grade==='A'?'selected':''}>A (8 GP)</option>
+                            <option value="B+" ${c.grade==='B+'?'selected':''}>B+ (7 GP)</option>
+                            <option value="B" ${c.grade==='B'?'selected':''}>B (6 GP)</option>
+                            <option value="C" ${c.grade==='C'?'selected':''}>C (5 GP)</option>
+                            <option value="F" ${c.grade==='F'?'selected':''}>F (0 GP)</option>
                         </select>
                     </div>
                 </div>
@@ -10375,7 +10777,8 @@ function renderCgpaCalculator() {
     list.innerHTML = html;
     
     let cgpa = totalCredits > 0 ? (totalPoints / totalCredits) : 0;
-    document.getElementById('cgpa-display').innerText = cgpa.toFixed(2);
+    const cgpaEl = document.getElementById('cgpa-display');
+    if (cgpaEl) cgpaEl.innerText = cgpa.toFixed(2);
 }
 
 function updateCgpaCourse(index, field, value) {
@@ -10387,7 +10790,7 @@ function removeCgpaCourse(index) {
     renderCgpaCalculator();
 }
 function addCgpaCourse() {
-    cgpaCourses.push({ title: 'New Course', credits: 3, grade: 'O' });
+    cgpaCourses.push({ title: 'New Course', code: 'THEORY', credits: 3.0, grade: 'O' });
     renderCgpaCalculator();
 }
 
@@ -10410,63 +10813,148 @@ function renderGradeCalculator() {
     let html = '';
     
     gradeCalcCourses.forEach((c, i) => {
-        let reqTotal = gradeThresholds[c.target] || 91;
-        let reqExternal = (reqTotal - parseFloat(c.internal)) * (100.0 / 40.0);
+        let internalVal = parseFloat(c.internal) || 0;
+        let targetGrade = c.target || 'O';
+        let reqTotal = gradeThresholds[targetGrade] || 91;
+        
+        // SRM Formula: Total (100) = Internal (out of 60) + External * 0.40
+        // External needed (out of 100) = (reqTotal - internal) / 0.40 = (reqTotal - internal) * 2.5
+        let reqExternal = (reqTotal - internalVal) * 2.5;
         let isImpossible = reqExternal > 100;
         
-        let warningHtml = '';
+        let statusCardHtml = '';
         if (isImpossible) {
-            warningHtml = `
-                <div style="margin-top:15px; padding:12px; background:rgba(255, 152, 0, 0.1); border:1px solid rgba(255, 152, 0, 0.3); border-radius:8px; display:flex; gap:10px;">
-                    <i class="fas fa-exclamation-triangle" style="color:#ff9800; margin-top:2px;"></i>
-                    <div style="flex:1;">
-                        <div style="color:#ff9800; font-weight:700; font-size:12px; margin-bottom:4px;">Mathematically Impossible</div>
-                        <div style="color:var(--text-sub); font-size:10px; font-style:italic;">Only relative grading can save you</div>
-                        <div style="display:flex; justify-content:space-between; margin-top:8px; padding-top:8px; border-top:1px solid rgba(255,152,0,0.2);">
-                            <span style="color:var(--text-sub); font-size:11px;">Current Total:</span>
-                            <span style="color:var(--text-main); font-weight:700; font-size:11px;">${parseFloat(c.internal).toFixed(2)}</span>
-                        </div>
-                        <div style="display:flex; justify-content:space-between; margin-top:4px;">
-                            <span style="color:var(--text-sub); font-size:11px;">Marks Needed:</span>
-                            <span style="color:var(--text-main); font-weight:700; font-size:11px;">${reqExternal.toFixed(2)} over 100</span>
-                        </div>
+            statusCardHtml = `
+                <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 12px; padding: 12px 14px; margin-top: 14px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                        <span style="color:#ef4444; font-weight:800; font-size:12px; display:flex; align-items:center; gap:6px;">
+                            <i class="fas fa-exclamation-triangle"></i> Needs Relative Moderation
+                        </span>
+                        <span style="color:#ef4444; font-weight:800; font-size:13px;">Need ${reqExternal.toFixed(1)} / 100</span>
+                    </div>
+                    <div style="color:var(--text-sub); font-size:11px; line-height:1.4;">
+                        Targeting <strong>${targetGrade}</strong> requires more than 100 marks in finals on absolute scale. Try targeting the next grade or wait for the class curve!
                     </div>
                 </div>
             `;
         } else {
-            warningHtml = `
-                <div style="margin-top:15px; padding:12px; background:rgba(76, 175, 80, 0.1); border:1px solid rgba(76, 175, 80, 0.3); border-radius:8px; display:flex; gap:10px;">
-                    <i class="fas fa-check-circle" style="color:#4CAF50; margin-top:2px;"></i>
-                    <div style="flex:1;">
-                        <div style="color:#4CAF50; font-weight:700; font-size:12px; margin-bottom:4px;">Target Achievable</div>
-                        <div style="display:flex; justify-content:space-between; margin-top:8px; padding-top:8px; border-top:1px solid rgba(76, 175, 80, 0.2);">
-                            <span style="color:var(--text-sub); font-size:11px;">Marks Needed:</span>
-                            <span style="color:var(--text-main); font-weight:700; font-size:11px;">${reqExternal.toFixed(2)} over 100</span>
+            let badgeBg = '#22c55e';
+            let badgeText = 'Achievable Target';
+            let badgeColor = '#22c55e';
+            if (reqExternal > 80) {
+                badgeColor = '#f59e0b';
+                badgeText = 'High Effort Required';
+            } else if (reqExternal > 60) {
+                badgeColor = '#06b6d4';
+                badgeText = 'Moderate Goal';
+            } else {
+                badgeColor = '#22c55e';
+                badgeText = 'Comfortable Target';
+            }
+
+            let minNote = reqExternal < 45 ? ' (SRM min 45/100 required to pass)' : '';
+
+            statusCardHtml = `
+                <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 14px; margin-top: 14px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                        <span style="background:${badgeColor}22; color:${badgeColor}; border:1px solid ${badgeColor}44; border-radius:20px; padding:3px 10px; font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.5px;">
+                            ${badgeText}
+                        </span>
+                        <div style="text-align:right;">
+                            <span style="color:var(--text-sub); font-size:11px;">Need in End-Sem: </span>
+                            <span style="color:#fff; font-weight:900; font-size:16px;">${Math.max(45, Math.ceil(reqExternal))} <span style="font-size:11px; color:var(--text-sub);">/ 100</span></span>
                         </div>
+                    </div>
+                    <!-- Visual Progress Bar towards target -->
+                    <div style="background:rgba(255,255,255,0.08); height:6px; border-radius:3px; overflow:hidden; margin-top:8px;">
+                        <div style="width:${Math.min(100, Math.max(5, (100 - reqExternal)))}%; height:100%; background:linear-gradient(90deg, ${badgeColor}, #1DB954); border-radius:3px;"></div>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; color:var(--text-sub); font-size:10px; margin-top:6px;">
+                        <span>Current Internal: ${internalVal.toFixed(1)}/60</span>
+                        <span>${minNote || `Target: ${reqTotal} total marks`}</span>
                     </div>
                 </div>
             `;
         }
 
+        const gradePills = ['O', 'A+', 'A', 'B+', 'B', 'C'].map(g => {
+            const isSel = g === targetGrade;
+            return `
+                <button type="button" onclick="setGradeTarget(${i}, '${g}')" style="
+                    flex: 1; padding: 7px 4px; border-radius: 10px; font-weight: 800; font-size: 12px; cursor: pointer; transition: all 0.2s;
+                    border: 1px solid ${isSel ? 'var(--primary)' : 'rgba(255,255,255,0.1)'};
+                    background: ${isSel ? 'var(--primary)' : 'rgba(255,255,255,0.04)'};
+                    color: ${isSel ? '#000' : 'var(--text-main)'};
+                    box-shadow: ${isSel ? '0 0 15px rgba(29, 185, 84, 0.4)' : 'none'};
+                ">${g}</button>
+            `;
+        }).join('');
+
+        let subtitleInfo = '';
+        if (c.actualMax > 0) {
+            subtitleInfo = `Scored <strong>${c.actualObtained}</strong> / ${c.actualMax} in tests so far`;
+        } else {
+            subtitleInfo = `Estimated internal marks out of 60`;
+        }
+
         html += `
-            <div class="glass-card" style="background: rgba(255,255,255,0.05); padding: 20px; border-radius: 16px; margin-bottom: 15px; position:relative;">
-                <button onclick="removeGradeCourse(${i})" style="position:absolute; top:15px; right:15px; background:none; border:none; color:var(--text-sub); cursor:pointer;"><i class="fas fa-trash"></i></button>
-                <div style="color: var(--text-main); font-weight: 700; font-size: 14px; margin-bottom: 15px; padding-right:20px;">${c.title}</div>
+            <div class="glass-card fade-in-up" style="background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); padding: 18px; border-radius: 20px; margin-bottom: 16px; position:relative; box-shadow: 0 10px 30px rgba(0,0,0,0.25);">
+                <button onclick="removeGradeCourse(${i})" style="position:absolute; top:16px; right:16px; background:none; border:none; color:var(--text-sub); opacity:0.6; cursor:pointer; font-size:14px;"><i class="fas fa-trash"></i></button>
                 
-                <label style="color:var(--text-sub); font-size:10px; font-weight:700; text-transform:uppercase; margin-bottom:5px; display:block;">Internal Marks (out of 60)</label>
-                <input type="number" value="${c.internal}" onchange="updateGradeCourse(${i}, 'internal', this.value)" style="width:100%; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.1); color:#fff; padding:12px; border-radius:8px; margin-bottom:15px; font-weight:700;">
-                
-                <label style="color:var(--text-sub); font-size:10px; font-weight:700; text-transform:uppercase; margin-bottom:5px; display:block;">Target Grade: ${c.target}</label>
-                <input type="range" min="0" max="5" value="${['O','A+','A','B+','B','C'].indexOf(c.target)}" onchange="updateGradeCourse(${i}, 'target', ['O','A+','A','B+','B','C'][this.value])" style="width:100%; margin-bottom:5px;">
-                <div style="display:flex; justify-content:space-between; color:var(--text-sub); font-size:10px; font-weight:700;">
-                    <span>O</span><span>A+</span><span>A</span><span>B+</span><span>B</span><span>C</span>
+                <div style="padding-right:30px; margin-bottom:12px;">
+                    <div style="color: #fff; font-weight: 800; font-size: 15px; line-height:1.3; margin-bottom:4px;">${c.title}</div>
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <span style="color:var(--text-sub); font-size:11px; font-family:monospace;">${c.code || 'THEORY'}</span>
+                        <span style="background:rgba(255,255,255,0.1); color:rgba(255,255,255,0.8); border-radius:6px; padding:1px 6px; font-size:10px; font-weight:700;">${c.credits || 3} CREDITS</span>
+                    </div>
                 </div>
-                
-                ${warningHtml}
+
+                <!-- Internal Score Stepper & Input -->
+                <div style="background:rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.06); border-radius:14px; padding:12px 14px; margin-bottom:14px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                        <label style="color:var(--text-sub); font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:0.8px;">Internal Marks (out of 60)</label>
+                        <span style="color:var(--text-sub); font-size:11px;">${subtitleInfo}</span>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <button type="button" onclick="stepGradeInternal(${i}, -1)" style="width:36px; height:36px; border-radius:10px; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.1); color:#fff; font-size:18px; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center;">-</button>
+                        <input type="number" step="0.5" min="0" max="60" value="${c.internal}" onchange="updateGradeCourse(${i}, 'internal', this.value)" style="flex:1; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); color:#fff; padding:10px; border-radius:10px; text-align:center; font-weight:900; font-size:18px;">
+                        <button type="button" onclick="stepGradeInternal(${i}, 1)" style="width:36px; height:36px; border-radius:10px; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.1); color:#fff; font-size:18px; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center;">+</button>
+                    </div>
+                </div>
+
+                <!-- Target Grade Selector Pills -->
+                <div>
+                    <label style="color:var(--text-sub); font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:0.8px; margin-bottom:8px; display:block;">Select Target Grade</label>
+                    <div style="display:flex; gap:6px;">
+                        ${gradePills}
+                    </div>
+                </div>
+
+                <!-- Result Card -->
+                ${statusCardHtml}
             </div>
         `;
     });
+
     list.innerHTML = html;
+}
+
+function setGradeTarget(index, grade) {
+    if (gradeCalcCourses[index]) {
+        gradeCalcCourses[index].target = grade;
+        triggerHaptic('light');
+        renderGradeCalculator();
+    }
+}
+
+function stepGradeInternal(index, delta) {
+    if (gradeCalcCourses[index]) {
+        let cur = parseFloat(gradeCalcCourses[index].internal) || 0;
+        let next = Math.max(0, Math.min(60, cur + delta));
+        gradeCalcCourses[index].internal = parseFloat(next.toFixed(1));
+        triggerHaptic('light');
+        renderGradeCalculator();
+    }
 }
 
 function updateGradeCourse(index, field, value) {
@@ -10478,7 +10966,7 @@ function removeGradeCourse(index) {
     renderGradeCalculator();
 }
 function addGradeCourse() {
-    gradeCalcCourses.push({ title: 'New Course', internal: 0, target: 'O' });
+    gradeCalcCourses.push({ title: 'New Course', code: 'THEORY', credits: 3.0, internal: 0, actualObtained: 0, actualMax: 0, target: 'O' });
     renderGradeCalculator();
 }
 
@@ -10795,26 +11283,108 @@ function predictDateRangeUI() {
                 sessionStorage.setItem('musicAdShown', 'true');
             }
         }
-        // Enhanced Global Haptic Feedback
+        // ================= SOUND & HAPTICS ENGINE =================
+        // Strict Rule: UI sound effects are STRICTLY MUTED inside Music Lounge or when music is playing!
+        function isMusicActiveOrInLounge() {
+            try {
+                if (typeof isPlaying !== 'undefined' && isPlaying) return true;
+                if (typeof currentAudio !== 'undefined' && currentAudio && !currentAudio.paused) return true;
+                if (typeof currentTrack !== 'undefined' && currentTrack && !currentAudio?.paused) return true;
+                const fs = document.getElementById('music-fullscreen');
+                if (fs && (fs.style.display === 'flex' || fs.classList.contains('active'))) return true;
+                const mv = document.getElementById('music-view');
+                if (mv && (mv.classList.contains('active') || mv.style.display === 'block')) return true;
+                const curActiveView = document.querySelector('.app-view.active');
+                if (curActiveView && curActiveView.id === 'music-view') return true;
+                if (window.location.hash === '#music-view') return true;
+            } catch(e) {}
+            return false;
+        }
+
+        window.playUiSound = function(type = 'tab') {
+            if (localStorage.getItem('srm_sound_effects') === 'false') return;
+            if (isMusicActiveOrInLounge()) return; // 100% soundproof inside Music Lounge!
+
+            try {
+                const AudioCtxClass = window.AudioContext || window.webkitAudioContext;
+                if (!AudioCtxClass) return;
+                if (!window._srmAudioCtx) {
+                    window._srmAudioCtx = new AudioCtxClass();
+                }
+                const ctx = window._srmAudioCtx;
+                if (ctx.state === 'suspended') {
+                    ctx.resume();
+                }
+                const now = ctx.currentTime;
+
+                if (type === 'tab' || type === 'click') {
+                    // Apple-style tactile click
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(1400, now);
+                    osc.frequency.exponentialRampToValueAtTime(450, now + 0.022);
+                    gain.gain.setValueAtTime(0.04, now);
+                    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.022);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.023);
+                } else if (type === 'pop' || type === 'react') {
+                    // Juicy bubble pop
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(320, now);
+                    osc.frequency.exponentialRampToValueAtTime(840, now + 0.038);
+                    osc.frequency.exponentialRampToValueAtTime(300, now + 0.08);
+                    gain.gain.setValueAtTime(0.07, now);
+                    gain.gain.linearRampToValueAtTime(0.12, now + 0.02);
+                    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.085);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.086);
+                } else if (type === 'chime' || type === 'success') {
+                    // Crystalline dual-harmonic bell chime
+                    [523.25, 659.25, 1046.5].forEach((freq, idx) => {
+                        const osc = ctx.createOscillator();
+                        const gain = ctx.createGain();
+                        osc.type = 'sine';
+                        const t = now + idx * 0.06;
+                        osc.frequency.setValueAtTime(freq, t);
+                        gain.gain.setValueAtTime(0.05 / (idx + 1), t);
+                        gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.32);
+                        osc.connect(gain);
+                        gain.connect(ctx.destination);
+                        osc.start(t);
+                        osc.stop(t + 0.33);
+                    });
+                }
+            } catch(e) {}
+        };
+
         let lastHapticTime = 0;
         window.triggerHaptic = function(type = 'light') {
+            if (localStorage.getItem('srm_haptics') === 'false') return;
             try {
                 if ('vibrate' in navigator) {
-                    if (type === 'light') navigator.vibrate(45);
-                    else if (type === 'medium') navigator.vibrate(65);
-                    else if (type === 'heavy') navigator.vibrate([40, 30, 40]);
-                    else if (type === 'success') navigator.vibrate([35, 40, 60]);
+                    if (type === 'light') navigator.vibrate(28);
+                    else if (type === 'medium') navigator.vibrate(50);
+                    else if (type === 'pop') navigator.vibrate([22, 18, 32]);
+                    else if (type === 'heavy') navigator.vibrate([45, 30, 45]);
+                    else if (type === 'success') navigator.vibrate([30, 40, 60]);
                 }
             } catch(e) {}
         };
 
         function onHapticTrigger(e) {
             const now = Date.now();
-            if (now - lastHapticTime < 120) return;
+            if (now - lastHapticTime < 110) return;
             const interactive = e.target.closest(
                 'button, .nav-item, .day-btn, .action-card, .quick-link, .tool-card, ' +
                 '.ctrl-btn, .fs-close, .fs-util-btn, [onclick], .market-card, .song-item, ' +
-                '.tab-btn, .close-btn, .sync-modal-close, input[type="submit"]'
+                '.tab-btn, .close-btn, .sync-modal-close, input[type="submit"], .rxn-pill, .rxn-emoji-btn'
             );
             if (interactive) {
                 lastHapticTime = now;
@@ -10824,8 +11394,154 @@ function predictDateRangeUI() {
 
         // pointerdown provides instant 0ms latency tactile response on mobile touch
         document.addEventListener('pointerdown', onHapticTrigger, { passive: true });
-        // click fallback for devices without pointerdown
         document.addEventListener('click', onHapticTrigger, { passive: true });
+
+        // ================= PREFERENCES MODAL =================
+        function openPreferencesModal() {
+            const modal = document.getElementById('preferences-modal');
+            if (!modal) return;
+            const soundCb = document.getElementById('pref-sound-effects');
+            const hapticCb = document.getElementById('pref-haptics');
+            if (soundCb) soundCb.checked = localStorage.getItem('srm_sound_effects') !== 'false';
+            if (hapticCb) hapticCb.checked = localStorage.getItem('srm_haptics') !== 'false';
+            modal.style.display = 'flex';
+            if (typeof triggerHaptic === 'function') triggerHaptic('light');
+        }
+
+        function closePreferencesModal() {
+            const modal = document.getElementById('preferences-modal');
+            if (modal) modal.style.display = 'none';
+        }
+
+        function toggleSoundEffectsPref(enabled) {
+            localStorage.setItem('srm_sound_effects', enabled ? 'true' : 'false');
+            if (enabled && typeof playUiSound === 'function') playUiSound('tab');
+        }
+
+        function toggleHapticsPref(enabled) {
+            localStorage.setItem('srm_haptics', enabled ? 'true' : 'false');
+            if (enabled && typeof triggerHaptic === 'function') triggerHaptic('medium');
+        }
+
+        // ================= BACKGROUND PUSH & OFFLINE NOTIFICATIONS =================
+        function urlBase64ToUint8Array(base64String) {
+            const padding = '='.repeat((4 - base64String.length % 4) % 4);
+            const base64 = (base64String + padding).replace(/\-/g, '+').replace(/_/g, '/');
+            const rawData = window.atob(base64);
+            const outputArray = new Uint8Array(rawData.length);
+            for (let i = 0; i < rawData.length; ++i) {
+                outputArray[i] = rawData.charCodeAt(i);
+            }
+            return outputArray;
+        }
+
+        function syncStudentScheduleToServiceWorker(tt, att, profile) {
+            if (!('serviceWorker' in navigator)) return;
+            navigator.serviceWorker.ready.then(reg => {
+                if (!reg.active) return;
+                const timetable = tt || JSON.parse(localStorage.getItem('squadTimetable') || '{}');
+                const attendance = att || JSON.parse(localStorage.getItem('squadAttendance') || '[]');
+                const prof = profile || JSON.parse(localStorage.getItem('squadProfile') || '{}');
+                reg.active.postMessage({
+                    type: 'UPDATE_SCHEDULE_CACHE',
+                    timetable: timetable,
+                    attendance: attendance,
+                    profile: prof
+                });
+            }).catch(() => {});
+        }
+
+        async function initBackgroundPushService() {
+            try {
+                if (!('serviceWorker' in navigator)) return;
+                const reg = await navigator.serviceWorker.ready;
+
+                // Sync current student timetable to SW Cache immediately
+                syncStudentScheduleToServiceWorker();
+
+                // Periodic Background Sync registration
+                if ('periodicSync' in reg) {
+                    try {
+                        const status = await navigator.permissions.query({ name: 'periodic-background-sync' });
+                        if (status.state === 'granted') {
+                            await reg.periodicSync.register('check-notifications', {
+                                minInterval: 15 * 60 * 1000 // 15 mins interval
+                            });
+                        }
+                    } catch(e) {}
+                }
+
+                // Native Push Manager subscription
+                if ('PushManager' in window && Notification.permission === 'granted') {
+                    let sub = await reg.pushManager.getSubscription();
+                    if (!sub) {
+                        try {
+                            const vapidKey = 'BEl62iUYgUivxIkv69yViEuiBIa-Ib9-SkvMeAtA3LFgDzkRxZJjSgSnfckjBJuBkr3qBUYIHBQFLXYp5Nksh8U';
+                            sub = await reg.pushManager.subscribe({
+                                userVisibleOnly: true,
+                                applicationServerKey: urlBase64ToUint8Array(vapidKey)
+                            });
+                        } catch(e1) {
+                            try {
+                                sub = await reg.pushManager.subscribe({ userVisibleOnly: true });
+                            } catch(e2) {}
+                        }
+                    }
+                    if (sub) {
+                        const netId = getCurrentNetId();
+                        fetch(`${BACKEND_URL}/api/push/subscribe`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                net_id: netId,
+                                subscription: sub.toJSON()
+                            })
+                        }).catch(() => {});
+                    }
+                }
+            } catch(err) {
+                console.warn('initBackgroundPushService err:', err);
+            }
+        }
+
+        window.testBackgroundNotification = function() {
+            if (!("Notification" in window)) {
+                alert("Your browser does not support notifications.");
+                return;
+            }
+            if (Notification.permission !== "granted") {
+                Notification.requestPermission().then(p => {
+                    if (p === "granted") {
+                        initBackgroundPushService();
+                        window.testBackgroundNotification();
+                    } else {
+                        alert("Please allow notification permissions in your browser bar.");
+                    }
+                });
+                return;
+            }
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.ready.then(reg => {
+                    if (reg.active) {
+                        reg.active.postMessage({
+                            type: 'SCHEDULE_DELAYED_NOTIFICATION',
+                            delayMs: 3000,
+                            title: 'SRM Student Hub 🎓',
+                            body: 'Background Notification Active! You will get class & mess reminders without opening the app! 🚀',
+                            url: '/'
+                        });
+                        alert("⏰ Notification scheduled for 3 seconds!\n\nLock your phone screen or switch to another app right now to watch it fire in the background!");
+                    } else {
+                        alert("Service worker is activating. Please try again in 2 seconds.");
+                    }
+                });
+            }
+        };
+
+        // Initialize Background Service on load
+        window.addEventListener('load', () => {
+            setTimeout(initBackgroundPushService, 3000);
+        });
     </script>
 </body>
 

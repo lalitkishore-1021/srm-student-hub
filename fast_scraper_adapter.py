@@ -93,7 +93,39 @@ def build_timetable(student_batch, courses):
                 })
     return final_tt
 
-def adapt_attendance(attendance_data):
+def get_course_credit(code, title, timetable_courses=None):
+    clean_code = (code or '').upper().strip()
+    clean_title = (title or '').upper().strip()
+    
+    # Check timetable courses first
+    if timetable_courses:
+        base_code = ''.join(ch for ch in clean_code if ch.isalnum())
+        for tc in timetable_courses:
+            tc_code = ''.join(ch for ch in str(tc.get('course_code', '')).upper() if ch.isalnum())
+            if tc_code and (tc_code == base_code or tc_code.startswith(base_code[:8]) or base_code.startswith(tc_code[:8])):
+                cred = tc.get('credit')
+                if cred and float(cred) > 0:
+                    return float(cred)
+            tc_title = str(tc.get('course_title', '')).upper().strip()
+            if tc_title and tc_title == clean_title:
+                cred = tc.get('credit')
+                if cred and float(cred) > 0:
+                    return float(cred)
+
+    # Standard SRM University credit heuristics
+    if clean_code.endswith('J'):
+        return 4.0 # Integrated Theory & Practical
+    elif clean_code.endswith('P') or clean_code.endswith('L') or 'LAB' in clean_title or 'PRACTICAL' in clean_title:
+        return 2.0 if clean_code.endswith('P') else 1.5
+    elif 'PROJECT' in clean_title or 'SEMINAR' in clean_title or 'CAPSTONE' in clean_title:
+        return 3.0
+    elif 'CONSTITUTION' in clean_title or 'VALUE' in clean_title or 'SKILL' in clean_title or 'APTITUDE' in clean_title:
+        return 1.0
+    elif clean_code.endswith('T') or 'THEORY' in clean_title:
+        return 3.0
+    return 3.0
+
+def adapt_attendance(attendance_data, timetable_courses=None):
     if not attendance_data or "courses" not in attendance_data:
         return []
         
@@ -101,10 +133,14 @@ def adapt_attendance(attendance_data):
     adapted = []
     
     for key, c in courses.items():
+        clean_code = key.replace("RegularTheory", "").replace("RegularPractical", "").strip()
+        course_title = c.get("course_title", "").strip()
+        credit = get_course_credit(clean_code, course_title, timetable_courses)
+        
         # Match our expected output format exactly
         adapted.append({
-            "courseTitle": c.get("course_title", ""),
-            "courseCode": key.replace("RegularTheory", "").replace("RegularPractical", ""), # Approximated
+            "courseTitle": course_title,
+            "courseCode": clean_code,
             "category": c.get("category", ""),
             "faculty": c.get("faculty_name", ""),
             "slot": c.get("slot", ""),
@@ -112,7 +148,8 @@ def adapt_attendance(attendance_data):
             "conducted": c.get("hours_conducted", 0),
             "absent": c.get("hours_absent", 0),
             "attended": c.get("attendance_percentage", 0.0),
-            "classes_per_cycle": 1 # Used for target calc in frontend
+            "credit": credit,
+            "classes_per_cycle": 1
         })
     return adapted
 
@@ -144,6 +181,8 @@ def adapt_marks(marks_data, courses_data, timetable_courses=None):
                     actual_title = t_course.get('course_title', actual_title)
                     break
         
+        credit = get_course_credit(key, actual_title, timetable_courses)
+
         tests = m.get("tests", [])
         if tests:
             perf_list = []
@@ -156,7 +195,8 @@ def adapt_marks(marks_data, courses_data, timetable_courses=None):
         adapted.append({
             "courseTitle": actual_title,
             "performance": perf_string,
-            "courseCode": key
+            "courseCode": key,
+            "credit": credit
         })
     return adapted
 
@@ -204,7 +244,7 @@ def run_fast_scraper(email, password, out_queue):
         final_tt = build_timetable(student_batch, courses_list)
         
         # Adapt to frontend format
-        attList = adapt_attendance(attendance_data)
+        attList = adapt_attendance(attendance_data, courses_list)
         marksList = adapt_marks(attendance_data.get('marks', {}), attendance_data.get('courses', {}), courses_list)
         
         advisors = timetable_data.get('advisors', {}) if timetable_data else {}
@@ -233,6 +273,7 @@ def run_fast_scraper(email, password, out_queue):
             'data': attList,
             'marks': marksList,
             'timetable': final_tt,
+            'courses': courses_list,
             'profile': profile,
             'day_order': day_order,
             'is_mock_attendance': is_mock_attendance,

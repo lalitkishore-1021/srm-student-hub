@@ -26,13 +26,22 @@ def scrape_campusweb(netid, pwd):
             
         att_data = []
         for item in att_json.get('attendance', []):
+            code = (item.get('subjectcode', '') or '').strip().upper()
+            title = (item.get('subjectdesc', '') or '').strip().upper()
+            credit = 3.0
+            if code.endswith('J'): credit = 4.0
+            elif code.endswith('P') or code.endswith('L') or 'LAB' in title or 'PRACTICAL' in title: credit = 2.0 if code.endswith('P') else 1.5
+            elif 'PROJECT' in title or 'SEMINAR' in title: credit = 3.0
+            elif 'VALUE' in title or 'SKILL' in title or 'CONSTITUTION' in title: credit = 1.0
+            
             att_data.append({
                 "courseTitle": item.get('subjectdesc', ''),
                 "courseCode": item.get('subjectcode', ''),
                 "category": "THEORY",
                 "conducted": float(item.get('total', 0)),
                 "absent": float(item.get('absent', 0)),
-                "attended": float(item.get('presentpercentage', 0))
+                "attended": float(item.get('presentpercentage', 0)),
+                "credit": credit
             })
         
         marks_data = []
