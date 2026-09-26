@@ -71,10 +71,17 @@ def scrape_campusweb(netid, pwd):
                 else:
                     perfString = "Internal/100 | 0"
                     
+                credit = 3.0
+                for a in att_data:
+                    if a.get('courseCode', '').upper() == ccode.upper():
+                        credit = a.get('credit', 3.0)
+                        break
+
                 marks_data.append({
                     "courseTitle": item.get('courseName', ''),
                     "courseCode": ccode,
-                    "marks": perfString
+                    "marks": perfString,
+                    "credit": credit
                 })
         
         # Merge missing courses from attendance into marks_data so they show up
@@ -83,7 +90,8 @@ def scrape_campusweb(netid, pwd):
                 marks_data.append({
                     "courseTitle": att["courseTitle"],
                     "courseCode": att["courseCode"],
-                    "marks": "No tests conducted yet"
+                    "marks": "No tests conducted yet",
+                    "credit": att.get("credit", 3.0)
                 })
                 
         return {"success": True, "attendance": att_data, "marks": marks_data}

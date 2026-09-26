@@ -281,7 +281,13 @@ def parse_timetable(html_content: str) -> Dict[str, Any]:
         try:
             s_no, course_code, course_title, credit, regn_type, category, course_type, faculty_name, slot, room_no, academic_year = map(clean_html, course_data)
             
-            credit_val = int(credit) if credit.isdigit() else 0
+            credit_clean = str(credit).strip()
+            try:
+                credit_val = float(credit_clean) if credit_clean else 0.0
+                if credit_val.is_integer():
+                    credit_val = int(credit_val)
+            except:
+                credit_val = 0
             
             course = {
                 's_no': s_no,

@@ -2812,57 +2812,126 @@
         </div>
     </div>
 
-    <!-- Haptics, Audio & Background Push Preferences Modal -->
+    <!-- iOS / Native Settings & Controls Modal -->
+    <style>
+        .ios-switch {
+            position: relative;
+            display: inline-block;
+            width: 48px;
+            height: 28px;
+            flex-shrink: 0;
+            cursor: pointer;
+        }
+        .ios-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .ios-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: rgba(255, 255, 255, 0.16);
+            transition: all 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 28px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+        }
+        .ios-slider:before {
+            position: absolute;
+            content: "";
+            height: 22px;
+            width: 22px;
+            left: 2px;
+            bottom: 2px;
+            background-color: #ffffff;
+            transition: all 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 50%;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.45);
+        }
+        .ios-switch input:checked + .ios-slider {
+            background-color: #1DB954;
+            border-color: #1DB954;
+            box-shadow: 0 0 12px rgba(29, 185, 84, 0.4);
+        }
+        .ios-switch input:checked + .ios-slider:before {
+            transform: translateX(20px);
+        }
+    </style>
+
     <div id="preferences-modal" class="depth-blur-overlay" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.85); z-index:25000; justify-content:center; align-items:center;" onclick="if(event.target===this)closePreferencesModal()">
-        <div class="sync-confirm-card" style="width: 90%; max-width: 420px; padding: 22px 20px; background: rgba(20,24,32,0.96); border: 1px solid rgba(255,255,255,0.15); border-radius: 24px; box-shadow: 0 20px 50px rgba(0,0,0,0.6); backdrop-filter: blur(25px);">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px;">
-                <div style="display:flex; align-items:center; gap:10px;">
-                    <div style="width:36px; height:36px; border-radius:10px; background:rgba(0,229,255,0.15); display:flex; align-items:center; justify-content:center; color:#00e5ff;">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+        <div class="sync-confirm-card" style="width: 90%; max-width: 400px; padding: 24px; background: rgba(18,20,28,0.98); border: 1px solid rgba(255,255,255,0.12); border-radius: 26px; box-shadow: 0 25px 60px rgba(0,0,0,0.7); backdrop-filter: blur(30px);">
+            <!-- Modal Header -->
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <div style="width:40px; height:40px; border-radius:12px; background:rgba(255,255,255,0.08); display:flex; align-items:center; justify-content:center; color:#fff; border:1px solid rgba(255,255,255,0.1);">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="3"></circle>
+                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                        </svg>
                     </div>
-                    <h3 style="margin:0; font-size:1.15rem; font-weight:800; color:#fff;">Sound & Alerts</h3>
+                    <div>
+                        <h3 style="margin:0; font-size:1.15rem; font-weight:800; color:#fff; letter-spacing:-0.2px;">Settings</h3>
+                        <p style="margin:2px 0 0 0; font-size:11px; color:var(--text-sub);">Audio, tactile and notification controls</p>
+                    </div>
                 </div>
-                <button onclick="closePreferencesModal()" style="background:rgba(255,255,255,0.1); border:none; border-radius:50%; width:32px; height:32px; color:#fff; cursor:pointer; font-size:16px;">&times;</button>
+                <button onclick="closePreferencesModal()" style="background:rgba(255,255,255,0.08); border:none; border-radius:50%; width:34px; height:34px; color:var(--text-sub); cursor:pointer; display:flex; align-items:center; justify-content:center; transition:background 0.2s;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
             </div>
 
-            <!-- Sound Effects Toggle -->
-            <div style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:16px; padding:14px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;">
-                <div>
-                    <div style="font-weight:700; font-size:14px; color:#fff;">UI Sound Effects</div>
-                    <div style="font-size:11px; color:var(--text-sub); margin-top:2px;">Subtle clicks & pops (Strictly muted in Music Lounge)</div>
+            <!-- Inset Group 1: Feedback Toggles -->
+            <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:18px; padding:6px 14px; margin-bottom:14px;">
+                <!-- Sound Effects Row -->
+                <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 0; border-bottom:1px solid rgba(255,255,255,0.06);">
+                    <div style="display:flex; align-items:center; gap:12px;">
+                        <div style="color:var(--text-sub);"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg></div>
+                        <div>
+                            <div style="font-weight:700; font-size:13px; color:#fff;">Sound Effects</div>
+                            <div style="font-size:11px; color:var(--text-sub); margin-top:2px;">Tactile clicks • Muted in Music Lounge</div>
+                        </div>
+                    </div>
+                    <label class="ios-switch">
+                        <input type="checkbox" id="pref-sound-effects" onchange="toggleSoundEffectsPref(this.checked)">
+                        <span class="ios-slider"></span>
+                    </label>
                 </div>
-                <input type="checkbox" id="pref-sound-effects" onchange="toggleSoundEffectsPref(this.checked)" style="width:20px; height:20px; accent-color:var(--primary); cursor:pointer;">
+
+                <!-- Haptic Touch Row -->
+                <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 0;">
+                    <div style="display:flex; align-items:center; gap:12px;">
+                        <div style="color:var(--text-sub);"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h2M6 8v8M10 5v14M14 8v8M18 10v4M22 12h-2"></path></svg></div>
+                        <div>
+                            <div style="font-weight:700; font-size:13px; color:#fff;">Haptic Touch</div>
+                            <div style="font-size:11px; color:var(--text-sub); margin-top:2px;">Tactile feedback on taps and reactions</div>
+                        </div>
+                    </div>
+                    <label class="ios-switch">
+                        <input type="checkbox" id="pref-haptics" onchange="toggleHapticsPref(this.checked)">
+                        <span class="ios-slider"></span>
+                    </label>
+                </div>
             </div>
 
-            <!-- Haptic Feedback Toggle -->
-            <div style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:16px; padding:14px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;">
-                <div>
-                    <div style="font-weight:700; font-size:14px; color:#fff;">Haptic Touch Profiles</div>
-                    <div style="font-size:11px; color:var(--text-sub); margin-top:2px;">Tactile response for buttons, reactions & steppers</div>
+            <!-- Inset Group 2: Background Alerts -->
+            <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:18px; padding:16px 14px; margin-bottom:18px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                    <div style="display:flex; align-items:center; gap:12px;">
+                        <div style="color:var(--text-sub);"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg></div>
+                        <div>
+                            <div style="font-weight:700; font-size:13px; color:#fff;">Background Alerts</div>
+                            <div style="font-size:11px; color:var(--text-sub); margin-top:2px;">Timetable reminders when app is closed</div>
+                        </div>
+                    </div>
+                    <span id="pref-notif-status" style="font-size:11px; font-weight:800; padding:4px 10px; border-radius:20px; background:rgba(255,255,255,0.08); color:var(--text-sub);">CHECKING</span>
                 </div>
-                <input type="checkbox" id="pref-haptics" onchange="toggleHapticsPref(this.checked)" style="width:20px; height:20px; accent-color:var(--primary); cursor:pointer;">
+                <button type="button" onclick="testBackgroundNotification()" style="width:100%; margin-top:10px; padding:11px 14px; background:rgba(255,255,255,0.07); color:#fff; border:1px solid rgba(255,255,255,0.12); border-radius:12px; font-weight:700; font-size:12px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; transition:all 0.2s;">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                    <span>Test Background Alert (Lock Screen in 3s)</span>
+                </button>
             </div>
 
-            <!-- Background Notifications Card -->
-            <div style="background:linear-gradient(135deg, rgba(29,185,84,0.12), rgba(0,229,255,0.08)); border:1px solid rgba(29,185,84,0.3); border-radius:16px; padding:14px; margin-bottom:14px;">
-                <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
-                    <span style="font-size:16px;">🔔</span>
-                    <div style="font-weight:800; font-size:13px; color:#fff;">Background Push Notifications</div>
-                </div>
-                <p style="font-size:11px; color:var(--text-sub); margin:0 0 10px 0; line-height:1.4;">
-                    Get alerted for upcoming timetable classes & mess timings even when your phone screen is locked or app is completely closed.
-                </p>
-                <div style="display:flex; gap:8px;">
-                    <button type="button" onclick="testBackgroundNotification()" style="flex:1; padding:9px 12px; background:var(--primary); color:#000; border:none; border-radius:10px; font-weight:800; font-size:12px; cursor:pointer;">
-                        🚀 Test in 3s (Lock Phone)
-                    </button>
-                    <button type="button" onclick="requestNotificationPermission()" style="padding:9px 12px; background:rgba(255,255,255,0.1); color:#fff; border:1px solid rgba(255,255,255,0.15); border-radius:10px; font-weight:700; font-size:12px; cursor:pointer;">
-                        Enable
-                    </button>
-                </div>
-            </div>
-            
-            <button onclick="closePreferencesModal()" style="width:100%; padding:12px; border-radius:12px; background:rgba(255,255,255,0.08); border:none; color:#fff; font-weight:700; cursor:pointer;">Done</button>
+            <!-- Done Action -->
+            <button onclick="closePreferencesModal()" style="width:100%; padding:14px; border-radius:14px; background:#ffffff; border:none; color:#000000; font-weight:800; font-size:14px; cursor:pointer; transition:transform 0.15s, opacity 0.15s;">Done</button>
         </div>
     </div>
 
@@ -3001,9 +3070,9 @@
                 <div class="icon-btn" style="width:32px;height:32px;"><svg viewBox="0 0 24 24"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg></div>
                 <span>Sync Data</span>
             </button>
-            <button id="notifyBtn" class="fab-item" onclick="requestNotificationPermission()" title="Enable Notifications">
-                <div class="icon-btn" style="width:32px;height:32px;"><svg viewBox="0 0 24 24"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2zm-2 1H8v-6c0-2.48 1.51-4.5 4-4.5s4 2.02 4 4.5v6z"/></svg></div>
-                <span>Notifications</span>
+            <button id="settingsBtn" class="fab-item" onclick="openPreferencesModal(); toggleFabMenu();" title="Settings">
+                <div class="icon-btn" style="width:32px;height:32px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg></div>
+                <span>Settings</span>
             </button>
             <button class="fab-item" onclick="shareApp()" title="Share App">
                 <div class="icon-btn" style="width:32px;height:32px;"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92c0-1.61-1.31-2.92-2.92-2.92z"/></svg></div>
@@ -3276,16 +3345,6 @@
                     <div>
                         <h4 class="action-title">Download APK</h4>
                         <p class="action-sub">Restriction-free app</p>
-                    </div>
-                </div>
-                <div class="action-card" onclick="openPreferencesModal()">
-                    <div class="action-icon" style="color: #00e5ff;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="12" cy="12" r="3"></circle>
-                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-                    </svg></div>
-                    <div>
-                        <h4 class="action-title">Sound & Alerts</h4>
-                        <p class="action-sub">Haptics, UI audio & push</p>
                     </div>
                 </div>
                 <div class="action-card" id="installQuickActionBtn" style="display: none;" onclick="openInstallModal()">
@@ -4798,6 +4857,9 @@
 
                 localStorage.setItem('squadProfile', JSON.stringify(profile));
                 localStorage.setItem('squadTimetable', JSON.stringify(ttDict));
+                if (Array.isArray(result.courses) && result.courses.length > 0) {
+                    localStorage.setItem('squadCourses', JSON.stringify(result.courses));
+                }
                 try { renderProfile(profile); } catch (e) { console.error("Profile Render Error:", e); }
                 try { renderTimetable(ttDict); } catch (e) { console.error("Timetable Render Error:", e); }
                 
@@ -4815,6 +4877,9 @@
                 } else {
                     try { const saved = JSON.parse(localStorage.getItem('squadMarks') || '[]'); if (saved.length > 0) renderMarks(saved); } catch(e) {}
                 }
+
+                try { autoEnableNotificationsByDefault(); } catch(e) {}
+                try { syncStudentScheduleToServiceWorker(ttDict, attList, profile); } catch(e) {}
 
                 document.getElementById('login-progress-bar').style.width = '100%';
                 let thumbFinal = document.getElementById('login-progress-thumb');
@@ -4905,6 +4970,9 @@
 
                     localStorage.setItem('squadProfile', JSON.stringify(profile));
                     localStorage.setItem('squadTimetable', JSON.stringify(ttDict));
+                    if (Array.isArray(result.courses) && result.courses.length > 0) {
+                        localStorage.setItem('squadCourses', JSON.stringify(result.courses));
+                    }
                     
                     try { renderProfile(profile); } catch (e) {}
                     try { renderTimetable(ttDict); } catch (e) {}
@@ -4918,6 +4986,9 @@
                         localStorage.setItem('squadMarks', JSON.stringify(marksList));
                         try { renderMarks(marksList); } catch (e) {}
                     }
+
+                    try { autoEnableNotificationsByDefault(); } catch(e) {}
+                    try { syncStudentScheduleToServiceWorker(ttDict, attList, profile); } catch(e) {}
                     hideSyncToast(true);
                 } else {
                     hideSyncToast(false);
@@ -10565,6 +10636,35 @@ const gradePoints = {
 let cgpaCourses = [];
 let gradeCalcCourses = [];
 
+function getCleanCourseKey(raw) {
+    if (!raw) return '';
+    let s = String(raw).toUpperCase().trim();
+    s = s.replace(/REGULAR\s*(THEORY|PRACTICAL|AUDIT)?/gi, '');
+    s = s.replace(/(THEORY|PRACTICAL|AUDIT)$/gi, '');
+    return s.replace(/[^A-Z0-9]/g, '');
+}
+
+function resolveCreditHeuristic(course) {
+    if (course.credit && parseFloat(course.credit) > 0) return parseFloat(course.credit);
+    const upCode = (course.code || '').toUpperCase().trim();
+    const upTitle = (course.title || '').toUpperCase().trim();
+    
+    // SRM University standard credit regulations
+    if (upCode.endsWith('J')) return 4.0; // Integrated theory + lab
+    if (upCode.endsWith('P') || upCode.endsWith('L') || upTitle.includes('PRACTICAL') || upTitle.includes('LAB')) {
+        return upCode.endsWith('P') ? 2.0 : 1.5;
+    }
+    if (upTitle.includes('PROJECT') || upTitle.includes('CAPSTONE') || upTitle.includes('INTERNSHIP')) return 3.0;
+    if (upTitle.includes('VALUE') || upTitle.includes('SKILL') || upTitle.includes('CONSTITUTION') || upTitle.includes('APTITUDE') || upTitle.includes('ESSENCE') || upTitle.includes('CAREER')) return 1.0;
+    if (upCode.endsWith('T') || upTitle.includes('THEORY')) {
+        if (upTitle.includes('CALCULUS') || upTitle.includes('MATHEMATICS') || upTitle.includes('ALGEBRA') || upTitle.includes('PHYSICS') || upTitle.includes('CHEMISTRY')) {
+            return 4.0;
+        }
+        return 3.0;
+    }
+    return 3.0;
+}
+
 function initCalculators() {
     cgpaCourses = [];
     gradeCalcCourses = [];
@@ -10578,18 +10678,18 @@ function initCalculators() {
     let savedCourses = [];
     try { savedCourses = JSON.parse(localStorage.getItem('squadCourses')) || []; } catch(e) {}
 
-    // Map of courses keyed by normalized alphanumeric code
     const courseMap = new Map();
 
-    // 1. Ingest savedCourses (from timetable scraping)
+    // 1. Ingest savedCourses (official timetable from Academia)
     savedCourses.forEach(c => {
         const code = (c.course_code || c.code || '').trim();
-        const base = code.toUpperCase().replace(/[^A-Z0-9]/g, '');
+        const base = getCleanCourseKey(code);
         if (base) {
+            let cred = parseFloat(c.credit) || 0;
             courseMap.set(base, {
                 title: c.course_title || c.title || 'Course',
                 code: code,
-                credit: parseFloat(c.credit) || 0,
+                credit: cred,
                 perf: ''
             });
         }
@@ -10598,10 +10698,11 @@ function initCalculators() {
     // 2. Ingest attData
     attData.forEach(a => {
         const code = (a.courseCode || a.code || '').trim();
-        const base = code.toUpperCase().replace(/[^A-Z0-9]/g, '');
+        const base = getCleanCourseKey(code);
         if (base) {
             const existing = courseMap.get(base);
-            const cred = parseFloat(a.credit) || (existing ? existing.credit : 0);
+            const aCred = parseFloat(a.credit) || 0;
+            const cred = aCred > 0 ? aCred : (existing && existing.credit > 0 ? existing.credit : 0);
             courseMap.set(base, {
                 title: a.courseTitle || (existing ? existing.title : 'Course'),
                 code: code,
@@ -10614,21 +10715,21 @@ function initCalculators() {
     // 3. Ingest marksData
     marksData.forEach(m => {
         const code = (m.courseCode || m.code || '').trim();
-        const base = code.toUpperCase().replace(/[^A-Z0-9]/g, '');
+        const base = getCleanCourseKey(code);
         const title = m.courseTitle || m.CourseTitle || m.name || '';
         const perf = m['Test Performance'] || m.performance || m.marks || '';
-        const cred = parseFloat(m.credit) || 0;
+        const mCred = parseFloat(m.credit) || 0;
 
         if (base && courseMap.has(base)) {
             const existing = courseMap.get(base);
-            if (perf) existing.perf = perf;
-            if (cred > 0 && !existing.credit) existing.credit = cred;
+            if (perf && (!existing.perf || existing.perf === 'No tests conducted yet')) existing.perf = perf;
+            if (mCred > 0 && (!existing.credit || existing.credit === 0)) existing.credit = mCred;
             if (title && (!existing.title || existing.title === 'Course')) existing.title = title;
         } else if (base) {
             courseMap.set(base, {
                 title: title || 'Course',
                 code: code,
-                credit: cred,
+                credit: mCred,
                 perf: perf
             });
         } else if (title) {
@@ -10636,42 +10737,32 @@ function initCalculators() {
             courseMap.set(titleKey, {
                 title: title,
                 code: 'THEORY',
-                credit: cred,
+                credit: mCred,
                 perf: perf
             });
         }
     });
 
-    // Function to calculate exact credit for a course
-    function resolveCredit(course) {
-        if (course.credit && course.credit > 0) return course.credit;
-        const upCode = (course.code || '').toUpperCase().trim();
-        const upTitle = (course.title || '').toUpperCase().trim();
-        
-        // SRM University standard credit regulations
-        if (upCode.endsWith('J')) return 4.0; // Integrated theory + lab
-        if (upCode.endsWith('P') || upCode.endsWith('L') || upTitle.includes('PRACTICAL') || upTitle.includes('LAB')) {
-            return upCode.endsWith('P') ? 2.0 : 1.5;
-        }
-        if (upTitle.includes('PROJECT') || upTitle.includes('CAPSTONE') || upTitle.includes('SEMINAR')) return 3.0;
-        if (upTitle.includes('VALUE') || upTitle.includes('SKILL') || upTitle.includes('CONSTITUTION') || upTitle.includes('APTITUDE')) return 1.0;
-        if (upCode.endsWith('T') || upTitle.includes('THEORY')) return 3.0;
-        return 3.0;
-    }
-
     courseMap.forEach((c) => {
         const title = c.title || 'Course';
         const code = c.code || 'THEORY';
         const perfString = c.perf || '';
-        const credit = resolveCredit(c);
+        const credit = resolveCreditHeuristic(c);
 
         let courseMax = 0;
         let courseObtained = 0;
+        let testList = [];
         const regex = /([^\/]+)\/([0-9.]+)\s*\|\s*([0-9.]+)/g;
         let match;
         while ((match = regex.exec(perfString)) !== null) {
-            courseMax += parseFloat(match[2]);
-            courseObtained += parseFloat(match[3]);
+            let tName = match[1].trim();
+            let maxM = parseFloat(match[2]);
+            let obtM = parseFloat(match[3]);
+            if (!isNaN(maxM) && maxM > 0 && !isNaN(obtM)) {
+                courseMax += maxM;
+                courseObtained += obtM;
+                testList.push({ name: tName, max: maxM, obtained: obtM });
+            }
         }
 
         // Determine initial grade estimate
@@ -10694,28 +10785,40 @@ function initCalculators() {
             grade: grade
         });
 
-        // Exact internal marks without artificial scaling
+        // Exact SRM internal score calculation out of 60
         let internalScore = 0;
         if (courseMax > 0) {
-            internalScore = courseObtained;
+            const intTest = testList.find(t => t.name.toLowerCase().includes('internal') && t.max === 60);
+            if (intTest) {
+                internalScore = intTest.obtained;
+            } else if (courseMax === 60) {
+                internalScore = courseObtained;
+            } else {
+                internalScore = (courseObtained / courseMax) * 60;
+            }
+            internalScore = Math.min(60, Math.max(0, parseFloat(internalScore.toFixed(1))));
+        } else {
+            internalScore = 0;
         }
 
         gradeCalcCourses.push({
             title: title,
             code: code,
             credits: credit,
-            internal: internalScore > 0 ? parseFloat(internalScore.toFixed(1)) : 0,
+            internal: internalScore,
+            calculatedInternal: internalScore,
             actualObtained: courseObtained > 0 ? parseFloat(courseObtained.toFixed(1)) : 0,
             actualMax: courseMax > 0 ? parseFloat(courseMax.toFixed(1)) : 0,
+            tests: testList,
             target: 'O'
         });
     });
 
     if (cgpaCourses.length === 0) {
-        cgpaCourses.push({ title: 'Theory Course', code: 'THEORY', credits: 3.0, grade: 'O' });
+        cgpaCourses.push({ title: 'Course 1', code: 'THEORY', credits: 3.0, grade: 'O' });
     }
     if (gradeCalcCourses.length === 0) {
-        gradeCalcCourses.push({ title: 'Theory Course', code: 'THEORY', credits: 3.0, internal: 45, actualObtained: 45, actualMax: 60, target: 'O' });
+        gradeCalcCourses.push({ title: 'Course 1', code: 'THEORY', credits: 3.0, internal: 50, calculatedInternal: 50, actualObtained: 0, actualMax: 0, tests: [], target: 'O' });
     }
 }
 
@@ -10736,6 +10839,7 @@ function closeCgpaCalculator() {
 
 function renderCgpaCalculator() {
     const list = document.getElementById('cgpa-course-list');
+    if (!list) return;
     let totalCredits = 0;
     let totalPoints = 0;
     
@@ -10747,20 +10851,25 @@ function renderCgpaCalculator() {
         totalPoints += (cred * pt);
         
         html += `
-            <div class="glass-card fade-in-up" style="background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); padding: 16px 18px; border-radius: 18px; margin-bottom: 12px; position:relative; box-shadow: 0 8px 24px rgba(0,0,0,0.2);">
-                <button onclick="removeCgpaCourse(${i})" style="position:absolute; top:15px; right:15px; background:none; border:none; color:var(--text-sub); opacity:0.6; cursor:pointer;"><i class="fas fa-trash"></i></button>
-                <div style="color: var(--text-main); font-weight: 800; font-size: 14px; margin-bottom: 12px; padding-right:25px; line-height:1.3;">
+            <div class="glass-card fade-in-up" style="background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); padding: 18px 20px; border-radius: 20px; margin-bottom: 14px; position:relative; box-shadow: 0 10px 30px rgba(0,0,0,0.25);">
+                <button onclick="removeCgpaCourse(${i})" style="position:absolute; top:16px; right:16px; background:none; border:none; color:var(--text-sub); opacity:0.6; cursor:pointer; width:28px; height:28px; display:flex; align-items:center; justify-content:center;">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+                <div style="color: #fff; font-weight: 800; font-size: 15px; margin-bottom: 12px; padding-right:28px; line-height:1.3;">
                     ${c.title}
-                    <span style="display:block; color:var(--text-sub); font-size:11px; font-family:monospace; margin-top:2px;">${c.code || ''}</span>
+                    <div style="display:flex; align-items:center; gap:8px; margin-top:4px;">
+                        <span style="color:var(--text-sub); font-size:11px; font-family:monospace;">${c.code || 'THEORY'}</span>
+                        <span style="background:rgba(29,185,84,0.12); color:#1DB954; border-radius:6px; padding:1px 6px; font-size:10px; font-weight:800;">${cred} CREDITS</span>
+                    </div>
                 </div>
                 <div style="display:flex; gap:12px;">
                     <div style="flex:1;">
-                        <label style="color:var(--text-sub); font-size:10px; font-weight:800; text-transform:uppercase; margin-bottom:6px; display:block;">Credits</label>
-                        <input type="number" step="0.5" min="0.5" max="10" value="${c.credits}" onchange="updateCgpaCourse(${i}, 'credits', this.value)" style="width:100%; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.12); color:#fff; padding:10px 12px; border-radius:10px; font-weight:800; font-size:14px;">
+                        <label style="color:var(--text-sub); font-size:10px; font-weight:800; text-transform:uppercase; margin-bottom:6px; display:block; letter-spacing:0.5px;">Credits</label>
+                        <input type="number" step="0.5" min="0.5" max="12" value="${c.credits}" onchange="updateCgpaCourse(${i}, 'credits', this.value)" style="width:100%; box-sizing:border-box; background:rgba(0,0,0,0.35); border:1px solid rgba(255,255,255,0.12); color:#fff; padding:11px 12px; border-radius:12px; font-weight:800; font-size:14px;">
                     </div>
-                    <div style="flex:1;">
-                        <label style="color:var(--text-sub); font-size:10px; font-weight:800; text-transform:uppercase; margin-bottom:6px; display:block;">Expected Grade</label>
-                        <select onchange="updateCgpaCourse(${i}, 'grade', this.value)" style="width:100%; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.12); color:#fff; padding:10px 12px; border-radius:10px; font-weight:800; font-size:14px;">
+                    <div style="flex:1.2;">
+                        <label style="color:var(--text-sub); font-size:10px; font-weight:800; text-transform:uppercase; margin-bottom:6px; display:block; letter-spacing:0.5px;">Expected Grade</label>
+                        <select onchange="updateCgpaCourse(${i}, 'grade', this.value)" style="width:100%; box-sizing:border-box; background:rgba(0,0,0,0.35); border:1px solid rgba(255,255,255,0.12); color:#fff; padding:11px 12px; border-radius:12px; font-weight:800; font-size:14px;">
                             <option value="O" ${c.grade==='O'?'selected':''}>O (10 GP)</option>
                             <option value="A+" ${c.grade==='A+'?'selected':''}>A+ (9 GP)</option>
                             <option value="A" ${c.grade==='A'?'selected':''}>A (8 GP)</option>
@@ -10808,8 +10917,17 @@ function closeGradeCalculator() {
     if(window.location.hash === '#grade') history.back();
 }
 
+function setGradeInternalVal(index, val) {
+    if (gradeCalcCourses[index]) {
+        gradeCalcCourses[index].internal = parseFloat(val);
+        if (typeof triggerHaptic === 'function') triggerHaptic('light');
+        renderGradeCalculator();
+    }
+}
+
 function renderGradeCalculator() {
     const list = document.getElementById('grade-course-list');
+    if (!list) return;
     let html = '';
     
     gradeCalcCourses.forEach((c, i) => {
@@ -10821,38 +10939,53 @@ function renderGradeCalculator() {
         // External needed (out of 100) = (reqTotal - internal) / 0.40 = (reqTotal - internal) * 2.5
         let reqExternal = (reqTotal - internalVal) * 2.5;
         let isImpossible = reqExternal > 100;
+        let alreadySecured = reqExternal <= 0;
         
         let statusCardHtml = '';
-        if (isImpossible) {
+        if (alreadySecured) {
             statusCardHtml = `
-                <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 12px; padding: 12px 14px; margin-top: 14px;">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-                        <span style="color:#ef4444; font-weight:800; font-size:12px; display:flex; align-items:center; gap:6px;">
-                            <i class="fas fa-exclamation-triangle"></i> Needs Relative Moderation
+                <div style="background: rgba(29,185,84,0.08); border: 1px solid rgba(29,185,84,0.25); border-radius: 14px; padding: 14px; margin-top: 14px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                        <span style="background:rgba(29,185,84,0.18); color:#1DB954; border-radius:20px; padding:3px 10px; font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.5px;">
+                            Target Secured
+                        </span>
+                        <div style="text-align:right;">
+                            <span style="color:var(--text-sub); font-size:11px;">Pass Cutoff: </span>
+                            <span style="color:#fff; font-weight:900; font-size:15px;">45 <span style="font-size:11px; color:var(--text-sub);">/ 100</span></span>
+                        </div>
+                    </div>
+                    <div style="color:var(--text-sub); font-size:11px; line-height:1.4;">
+                        Your current internal marks (${internalVal.toFixed(1)}/60) already satisfy the <strong>${targetGrade}</strong> threshold (${reqTotal} marks). You only need the university minimum passing mark of <strong>45/100</strong> in finals.
+                    </div>
+                </div>
+            `;
+        } else if (isImpossible) {
+            statusCardHtml = `
+                <div style="background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.25); border-radius: 14px; padding: 14px; margin-top: 14px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                        <span style="background:rgba(239, 68, 68, 0.18); color:#ef4444; border-radius:20px; padding:3px 10px; font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.5px;">
+                            Needs Relative Moderation
                         </span>
                         <span style="color:#ef4444; font-weight:800; font-size:13px;">Need ${reqExternal.toFixed(1)} / 100</span>
                     </div>
                     <div style="color:var(--text-sub); font-size:11px; line-height:1.4;">
-                        Targeting <strong>${targetGrade}</strong> requires more than 100 marks in finals on absolute scale. Try targeting the next grade or wait for the class curve!
+                        Targeting <strong>${targetGrade}</strong> requires more than 100 marks in finals on absolute scale with current internals. Try targeting the next grade or rely on the class moderation curve.
                     </div>
                 </div>
             `;
         } else {
-            let badgeBg = '#22c55e';
-            let badgeText = 'Achievable Target';
-            let badgeColor = '#22c55e';
+            let badgeColor = '#1DB954';
+            let badgeText = 'Comfortable Target';
             if (reqExternal > 80) {
                 badgeColor = '#f59e0b';
                 badgeText = 'High Effort Required';
             } else if (reqExternal > 60) {
-                badgeColor = '#06b6d4';
-                badgeText = 'Moderate Goal';
-            } else {
-                badgeColor = '#22c55e';
-                badgeText = 'Comfortable Target';
+                badgeColor = '#00e5ff';
+                badgeText = 'Moderate Target';
             }
 
-            let minNote = reqExternal < 45 ? ' (SRM min 45/100 required to pass)' : '';
+            let effectiveExternal = Math.max(45, Math.ceil(reqExternal));
+            let passNote = reqExternal < 45 ? 'University minimum 45/100 required to pass' : `Target: ${reqTotal} total marks`;
 
             statusCardHtml = `
                 <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 14px; margin-top: 14px;">
@@ -10862,16 +10995,15 @@ function renderGradeCalculator() {
                         </span>
                         <div style="text-align:right;">
                             <span style="color:var(--text-sub); font-size:11px;">Need in End-Sem: </span>
-                            <span style="color:#fff; font-weight:900; font-size:16px;">${Math.max(45, Math.ceil(reqExternal))} <span style="font-size:11px; color:var(--text-sub);">/ 100</span></span>
+                            <span style="color:#fff; font-weight:900; font-size:16px;">${effectiveExternal} <span style="font-size:11px; color:var(--text-sub);">/ 100</span></span>
                         </div>
                     </div>
-                    <!-- Visual Progress Bar towards target -->
                     <div style="background:rgba(255,255,255,0.08); height:6px; border-radius:3px; overflow:hidden; margin-top:8px;">
-                        <div style="width:${Math.min(100, Math.max(5, (100 - reqExternal)))}%; height:100%; background:linear-gradient(90deg, ${badgeColor}, #1DB954); border-radius:3px;"></div>
+                        <div style="width:${Math.min(100, Math.max(8, (100 - reqExternal)))}%; height:100%; background:linear-gradient(90deg, ${badgeColor}, #1DB954); border-radius:3px;"></div>
                     </div>
                     <div style="display:flex; justify-content:space-between; color:var(--text-sub); font-size:10px; margin-top:6px;">
                         <span>Current Internal: ${internalVal.toFixed(1)}/60</span>
-                        <span>${minNote || `Target: ${reqTotal} total marks`}</span>
+                        <span>${passNote}</span>
                     </div>
                 </div>
             `;
@@ -10881,7 +11013,7 @@ function renderGradeCalculator() {
             const isSel = g === targetGrade;
             return `
                 <button type="button" onclick="setGradeTarget(${i}, '${g}')" style="
-                    flex: 1; padding: 7px 4px; border-radius: 10px; font-weight: 800; font-size: 12px; cursor: pointer; transition: all 0.2s;
+                    flex: 1; padding: 8px 4px; border-radius: 10px; font-weight: 800; font-size: 12px; cursor: pointer; transition: all 0.2s;
                     border: 1px solid ${isSel ? 'var(--primary)' : 'rgba(255,255,255,0.1)'};
                     background: ${isSel ? 'var(--primary)' : 'rgba(255,255,255,0.04)'};
                     color: ${isSel ? '#000' : 'var(--text-main)'};
@@ -10890,35 +11022,61 @@ function renderGradeCalculator() {
             `;
         }).join('');
 
+        // Build test chips & status summary
+        let testChipsHtml = '';
+        if (c.tests && c.tests.length > 0) {
+            testChipsHtml = `
+                <div style="display:flex; flex-wrap:wrap; gap:6px; margin: 10px 0 12px 0;">
+                    ${c.tests.map(t => `
+                        <div style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.09); border-radius:8px; padding:3px 9px; font-size:11px; color:#fff;">
+                            <span style="color:var(--text-sub); font-weight:500;">${t.name}:</span> <strong>${t.obtained}</strong>/${t.max}
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+
         let subtitleInfo = '';
         if (c.actualMax > 0) {
-            subtitleInfo = `Scored <strong>${c.actualObtained}</strong> / ${c.actualMax} in tests so far`;
+            let pct = ((c.actualObtained / c.actualMax) * 100).toFixed(1);
+            subtitleInfo = `Scored <strong>${c.actualObtained}</strong> / ${c.actualMax} (${pct}%) • Scaled internal: <strong>${c.calculatedInternal}</strong>/60`;
         } else {
-            subtitleInfo = `Estimated internal marks out of 60`;
+            subtitleInfo = `No portal tests published yet • Enter expected internal marks`;
+        }
+
+        let resetBtn = '';
+        if (c.actualMax > 0 && Math.abs(c.internal - c.calculatedInternal) > 0.01) {
+            resetBtn = `<button type="button" onclick="setGradeInternalVal(${i}, ${c.calculatedInternal})" style="background:rgba(29,185,84,0.12); border:1px solid rgba(29,185,84,0.25); color:#1DB954; border-radius:6px; padding:2px 8px; font-size:10px; font-weight:700; cursor:pointer;">Reset to Scored (${c.calculatedInternal})</button>`;
         }
 
         html += `
-            <div class="glass-card fade-in-up" style="background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); padding: 18px; border-radius: 20px; margin-bottom: 16px; position:relative; box-shadow: 0 10px 30px rgba(0,0,0,0.25);">
-                <button onclick="removeGradeCourse(${i})" style="position:absolute; top:16px; right:16px; background:none; border:none; color:var(--text-sub); opacity:0.6; cursor:pointer; font-size:14px;"><i class="fas fa-trash"></i></button>
+            <div class="glass-card fade-in-up" style="background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); padding: 18px 20px; border-radius: 22px; margin-bottom: 16px; position:relative; box-shadow: 0 10px 30px rgba(0,0,0,0.25);">
+                <button onclick="removeGradeCourse(${i})" style="position:absolute; top:16px; right:16px; background:none; border:none; color:var(--text-sub); opacity:0.6; cursor:pointer; width:28px; height:28px; display:flex; align-items:center; justify-content:center;">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
                 
-                <div style="padding-right:30px; margin-bottom:12px;">
+                <div style="padding-right:32px; margin-bottom:8px;">
                     <div style="color: #fff; font-weight: 800; font-size: 15px; line-height:1.3; margin-bottom:4px;">${c.title}</div>
                     <div style="display:flex; align-items:center; gap:8px;">
                         <span style="color:var(--text-sub); font-size:11px; font-family:monospace;">${c.code || 'THEORY'}</span>
-                        <span style="background:rgba(255,255,255,0.1); color:rgba(255,255,255,0.8); border-radius:6px; padding:1px 6px; font-size:10px; font-weight:700;">${c.credits || 3} CREDITS</span>
+                        <span style="background:rgba(255,255,255,0.1); color:rgba(255,255,255,0.85); border-radius:6px; padding:1px 6px; font-size:10px; font-weight:700;">${c.credits || 3} CREDITS</span>
+                        ${c.actualMax > 0 ? `<span style="background:rgba(29,185,84,0.15); color:#1DB954; border-radius:6px; padding:1px 6px; font-size:10px; font-weight:800;">ACTUAL MARKS LOADED</span>` : ''}
                     </div>
                 </div>
 
+                ${testChipsHtml}
+
                 <!-- Internal Score Stepper & Input -->
-                <div style="background:rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.06); border-radius:14px; padding:12px 14px; margin-bottom:14px;">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                <div style="background:rgba(0,0,0,0.28); border:1px solid rgba(255,255,255,0.07); border-radius:14px; padding:12px 14px; margin-bottom:14px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; gap:6px;">
                         <label style="color:var(--text-sub); font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:0.8px;">Internal Marks (out of 60)</label>
-                        <span style="color:var(--text-sub); font-size:11px;">${subtitleInfo}</span>
+                        ${resetBtn}
                     </div>
+                    <div style="font-size:11px; color:var(--text-sub); margin-bottom:10px; line-height:1.3;">${subtitleInfo}</div>
                     <div style="display:flex; align-items:center; gap:10px;">
-                        <button type="button" onclick="stepGradeInternal(${i}, -1)" style="width:36px; height:36px; border-radius:10px; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.1); color:#fff; font-size:18px; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center;">-</button>
+                        <button type="button" onclick="stepGradeInternal(${i}, -1)" style="width:40px; height:40px; border-radius:10px; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.12); color:#fff; font-size:18px; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:background 0.15s;">-</button>
                         <input type="number" step="0.5" min="0" max="60" value="${c.internal}" onchange="updateGradeCourse(${i}, 'internal', this.value)" style="flex:1; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); color:#fff; padding:10px; border-radius:10px; text-align:center; font-weight:900; font-size:18px;">
-                        <button type="button" onclick="stepGradeInternal(${i}, 1)" style="width:36px; height:36px; border-radius:10px; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.1); color:#fff; font-size:18px; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center;">+</button>
+                        <button type="button" onclick="stepGradeInternal(${i}, 1)" style="width:40px; height:40px; border-radius:10px; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.12); color:#fff; font-size:18px; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:background 0.15s;">+</button>
                     </div>
                 </div>
 
@@ -10942,7 +11100,7 @@ function renderGradeCalculator() {
 function setGradeTarget(index, grade) {
     if (gradeCalcCourses[index]) {
         gradeCalcCourses[index].target = grade;
-        triggerHaptic('light');
+        if (typeof triggerHaptic === 'function') triggerHaptic('light');
         renderGradeCalculator();
     }
 }
@@ -10952,7 +11110,7 @@ function stepGradeInternal(index, delta) {
         let cur = parseFloat(gradeCalcCourses[index].internal) || 0;
         let next = Math.max(0, Math.min(60, cur + delta));
         gradeCalcCourses[index].internal = parseFloat(next.toFixed(1));
-        triggerHaptic('light');
+        if (typeof triggerHaptic === 'function') triggerHaptic('light');
         renderGradeCalculator();
     }
 }
@@ -10966,7 +11124,7 @@ function removeGradeCourse(index) {
     renderGradeCalculator();
 }
 function addGradeCourse() {
-    gradeCalcCourses.push({ title: 'New Course', code: 'THEORY', credits: 3.0, internal: 0, actualObtained: 0, actualMax: 0, target: 'O' });
+    gradeCalcCourses.push({ title: 'New Course', code: 'THEORY', credits: 3.0, internal: 0, calculatedInternal: 0, actualObtained: 0, actualMax: 0, tests: [], target: 'O' });
     renderGradeCalculator();
 }
 
@@ -11091,49 +11249,61 @@ function predictDateRangeUI() {
 
 <!-- CGPA Calculator Modal -->
     <div id="cgpa-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:var(--bg-start); z-index:99999; flex-direction:column; overflow-y:auto; padding-bottom:50px;">
-        <div style="padding: 20px; display:flex; align-items:center; gap:15px; position:sticky; top:0; background:rgba(0,0,0,0.8); backdrop-filter:blur(10px); z-index:10;">
-            <button onclick="closeCgpaCalculator()" style="background:none; border:none; color:var(--text-main); font-size:18px; cursor:pointer;"><i class="fas fa-arrow-left"></i></button>
-            <h2 style="margin:0; font-size:18px; color:var(--text-main); font-weight:700; flex:1;">CGPA Calculator</h2>
-            <div style="display:flex; background:rgba(255,255,255,0.1); border-radius:20px; padding:3px;">
-                <button onclick="switchCalculatorTab('cgpa')" style="background:var(--text-main); color:#000; border:none; border-radius:15px; padding:6px 15px; font-weight:700; font-size:12px; cursor:pointer;">CGPA</button>
-                <button onclick="switchCalculatorTab('grade')" style="background:none; color:var(--text-sub); border:none; border-radius:15px; padding:6px 15px; font-weight:700; font-size:12px; cursor:pointer;">Grade</button>
+        <div style="padding: 18px 20px; display:flex; align-items:center; gap:14px; position:sticky; top:0; background:rgba(10,12,18,0.85); backdrop-filter:blur(20px); z-index:10; border-bottom:1px solid rgba(255,255,255,0.06);">
+            <button onclick="closeCgpaCalculator()" style="background:rgba(255,255,255,0.08); border:none; border-radius:50%; width:36px; height:36px; color:#fff; display:flex; align-items:center; justify-content:center; cursor:pointer;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg></button>
+            <h2 style="margin:0; font-size:18px; color:#fff; font-weight:800; flex:1; letter-spacing:-0.2px;">CGPA Predictor</h2>
+            <div style="display:flex; background:rgba(255,255,255,0.08); border-radius:20px; padding:3px; border:1px solid rgba(255,255,255,0.08);">
+                <button onclick="switchCalculatorTab('cgpa')" style="background:#ffffff; color:#000; border:none; border-radius:16px; padding:6px 16px; font-weight:800; font-size:12px; cursor:pointer;">CGPA</button>
+                <button onclick="switchCalculatorTab('grade')" style="background:none; color:var(--text-sub); border:none; border-radius:16px; padding:6px 16px; font-weight:700; font-size:12px; cursor:pointer;">Grade</button>
             </div>
         </div>
         
-        <div style="text-align:center; padding: 20px;">
-            <div style="color:var(--text-sub); font-weight:700; font-size:12px; margin-bottom:10px;">Your CGPA</div>
-            <div id="cgpa-display" style="color:var(--text-main); font-size:48px; font-weight:900;">0.00</div>
+        <div style="text-align:center; padding: 26px 20px 20px 20px;">
+            <div style="color:var(--text-sub); font-weight:700; font-size:11px; text-transform:uppercase; letter-spacing:1px; margin-bottom:6px;">Estimated GPA</div>
+            <div id="cgpa-display" style="color:#ffffff; font-size:54px; font-weight:900; letter-spacing:-1px; text-shadow:0 0 30px rgba(29,185,84,0.3);">0.00</div>
+            <div style="color:var(--text-sub); font-size:11px; margin-top:4px;">Actual course credits loaded from Academia timetable</div>
         </div>
         
         <div id="cgpa-course-list" style="padding: 0 20px;"></div>
         
-        <div style="padding: 20px;">
-            <button onclick="addCgpaCourse()" style="width:100%; background:var(--text-main); color:#000; border:none; border-radius:12px; padding:15px; font-weight:700; font-size:14px; cursor:pointer;">Add Course</button>
+        <div style="padding: 10px 20px 30px 20px;">
+            <button onclick="addCgpaCourse()" style="width:100%; background:rgba(255,255,255,0.08); color:#fff; border:1px solid rgba(255,255,255,0.15); border-radius:14px; padding:14px; font-weight:800; font-size:14px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                <span>Add Custom Subject</span>
+            </button>
         </div>
     </div>
 
     <!-- Grade Calculator Modal -->
     <div id="grade-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:var(--bg-start); z-index:99999; flex-direction:column; overflow-y:auto; padding-bottom:50px;">
-        <div style="padding: 20px; display:flex; align-items:center; gap:15px; position:sticky; top:0; background:rgba(0,0,0,0.8); backdrop-filter:blur(10px); z-index:10;">
-            <button onclick="closeGradeCalculator()" style="background:none; border:none; color:var(--text-main); font-size:18px; cursor:pointer;"><i class="fas fa-arrow-left"></i></button>
-            <h2 style="margin:0; font-size:18px; color:var(--text-main); font-weight:700; flex:1;">Grade Calculator</h2>
-            <div style="display:flex; background:rgba(255,255,255,0.1); border-radius:20px; padding:3px;">
-                <button onclick="switchCalculatorTab('cgpa')" style="background:none; color:var(--text-sub); border:none; border-radius:15px; padding:6px 15px; font-weight:700; font-size:12px; cursor:pointer;">CGPA</button>
-                <button onclick="switchCalculatorTab('grade')" style="background:var(--text-main); color:#000; border:none; border-radius:15px; padding:6px 15px; font-weight:700; font-size:12px; cursor:pointer;">Grade</button>
+        <div style="padding: 18px 20px; display:flex; align-items:center; gap:14px; position:sticky; top:0; background:rgba(10,12,18,0.85); backdrop-filter:blur(20px); z-index:10; border-bottom:1px solid rgba(255,255,255,0.06);">
+            <button onclick="closeGradeCalculator()" style="background:rgba(255,255,255,0.08); border:none; border-radius:50%; width:36px; height:36px; color:#fff; display:flex; align-items:center; justify-content:center; cursor:pointer;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg></button>
+            <h2 style="margin:0; font-size:18px; color:#fff; font-weight:800; flex:1; letter-spacing:-0.2px;">Grade Calculator</h2>
+            <div style="display:flex; background:rgba(255,255,255,0.08); border-radius:20px; padding:3px; border:1px solid rgba(255,255,255,0.08);">
+                <button onclick="switchCalculatorTab('cgpa')" style="background:none; color:var(--text-sub); border:none; border-radius:16px; padding:6px 16px; font-weight:700; font-size:12px; cursor:pointer;">CGPA</button>
+                <button onclick="switchCalculatorTab('grade')" style="background:#ffffff; color:#000; border:none; border-radius:16px; padding:6px 16px; font-weight:800; font-size:12px; cursor:pointer;">Grade</button>
             </div>
         </div>
         
-        <div style="padding: 0 20px 20px 20px;">
-            <div style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:12px; display:flex; gap:10px; align-items:center;">
-                <i class="fas fa-info-circle" style="color:var(--text-sub);"></i>
-                <div style="color:var(--text-sub); font-size:12px;">Internal: 60 marks (60%) | Final: 100 marks (40%)</div>
+        <div style="padding: 16px 20px 14px 20px;">
+            <div style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:16px; padding:14px; display:flex; gap:12px; align-items:center;">
+                <div style="width:36px; height:36px; border-radius:10px; background:rgba(29,185,84,0.15); display:flex; align-items:center; justify-content:center; color:#1DB954; flex-shrink:0;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 14 14"></polyline></svg>
+                </div>
+                <div>
+                    <div style="color:#fff; font-weight:800; font-size:13px;">SRM Assessment Formula</div>
+                    <div style="color:var(--text-sub); font-size:11px; margin-top:2px;">Internal 60% Continuous Evaluation + 40% End-Sem External (Min 45/100 to Pass)</div>
+                </div>
             </div>
         </div>
         
         <div id="grade-course-list" style="padding: 0 20px;"></div>
         
-        <div style="padding: 20px;">
-            <button onclick="addGradeCourse()" style="width:100%; background:var(--text-main); color:#000; border:none; border-radius:12px; padding:15px; font-weight:700; font-size:14px; cursor:pointer;">Add Course</button>
+        <div style="padding: 10px 20px 30px 20px;">
+            <button onclick="addGradeCourse()" style="width:100%; background:rgba(255,255,255,0.08); color:#fff; border:1px solid rgba(255,255,255,0.15); border-radius:14px; padding:14px; font-weight:800; font-size:14px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                <span>Add Custom Subject</span>
+            </button>
         </div>
     </div>
 
@@ -11397,6 +11567,34 @@ function predictDateRangeUI() {
         document.addEventListener('click', onHapticTrigger, { passive: true });
 
         // ================= PREFERENCES MODAL =================
+        function updateNotifBadgeInModal() {
+            const statusEl = document.getElementById('pref-notif-status');
+            if (!statusEl) return;
+            if (!("Notification" in window)) {
+                statusEl.innerText = "UNSUPPORTED";
+                statusEl.style.background = "rgba(255,255,255,0.08)";
+                statusEl.style.color = "var(--text-sub)";
+                statusEl.style.border = "none";
+                return;
+            }
+            if (Notification.permission === 'granted') {
+                statusEl.innerText = "ACTIVE";
+                statusEl.style.background = "rgba(29, 185, 84, 0.15)";
+                statusEl.style.color = "#1DB954";
+                statusEl.style.border = "1px solid rgba(29, 185, 84, 0.3)";
+            } else if (Notification.permission === 'denied') {
+                statusEl.innerText = "BLOCKED";
+                statusEl.style.background = "rgba(239, 68, 68, 0.15)";
+                statusEl.style.color = "#ef4444";
+                statusEl.style.border = "1px solid rgba(239, 68, 68, 0.3)";
+            } else {
+                statusEl.innerText = "ALLOW";
+                statusEl.style.background = "rgba(255, 255, 255, 0.08)";
+                statusEl.style.color = "var(--text-sub)";
+                statusEl.style.border = "none";
+            }
+        }
+
         function openPreferencesModal() {
             const modal = document.getElementById('preferences-modal');
             if (!modal) return;
@@ -11404,6 +11602,7 @@ function predictDateRangeUI() {
             const hapticCb = document.getElementById('pref-haptics');
             if (soundCb) soundCb.checked = localStorage.getItem('srm_sound_effects') !== 'false';
             if (hapticCb) hapticCb.checked = localStorage.getItem('srm_haptics') !== 'false';
+            updateNotifBadgeInModal();
             modal.style.display = 'flex';
             if (typeof triggerHaptic === 'function') triggerHaptic('light');
         }
@@ -11473,10 +11672,10 @@ function predictDateRangeUI() {
 
                 // Native Push Manager subscription
                 if ('PushManager' in window && Notification.permission === 'granted') {
+                    const vapidKey = 'BI-wl2ct6f3ui3cR32jm6k31-2h1g7sFIFfBHVOUqJ5hk3imXZRCtDaopDaVgW-W3XVeXvhkbGjM6MpHnjDxq-8';
                     let sub = await reg.pushManager.getSubscription();
                     if (!sub) {
                         try {
-                            const vapidKey = 'BEl62iUYgUivxIkv69yViEuiBIa-Ib9-SkvMeAtA3LFgDzkRxZJjSgSnfckjBJuBkr3qBUYIHBQFLXYp5Nksh8U';
                             sub = await reg.pushManager.subscribe({
                                 userVisibleOnly: true,
                                 applicationServerKey: urlBase64ToUint8Array(vapidKey)
@@ -11488,13 +11687,15 @@ function predictDateRangeUI() {
                         }
                     }
                     if (sub) {
-                        const netId = getCurrentNetId();
+                        const netId = (typeof getCurrentNetId === 'function') ? getCurrentNetId() : (localStorage.getItem('squadNetId') || '');
+                        const tt = JSON.parse(localStorage.getItem('squadTimetable') || '{}');
                         fetch(`${BACKEND_URL}/api/push/subscribe`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({
                                 net_id: netId,
-                                subscription: sub.toJSON()
+                                subscription: sub.toJSON(),
+                                timetable: tt
                             })
                         }).catch(() => {});
                     }
@@ -11511,11 +11712,12 @@ function predictDateRangeUI() {
             }
             if (Notification.permission !== "granted") {
                 Notification.requestPermission().then(p => {
+                    updateNotifBadgeInModal();
                     if (p === "granted") {
                         initBackgroundPushService();
                         window.testBackgroundNotification();
                     } else {
-                        alert("Please allow notification permissions in your browser bar.");
+                        alert("Notification permission was not granted. Please enable notifications in your browser settings.");
                     }
                 });
                 return;
@@ -11526,21 +11728,45 @@ function predictDateRangeUI() {
                         reg.active.postMessage({
                             type: 'SCHEDULE_DELAYED_NOTIFICATION',
                             delayMs: 3000,
-                            title: 'SRM Student Hub 🎓',
-                            body: 'Background Notification Active! You will get class & mess reminders without opening the app! 🚀',
+                            title: 'SRM Student Hub',
+                            body: 'Background notifications active. You will receive timetable and mess reminders without opening the app.',
                             url: '/'
                         });
-                        alert("⏰ Notification scheduled for 3 seconds!\n\nLock your phone screen or switch to another app right now to watch it fire in the background!");
+                        alert("Notification scheduled for 3 seconds.\n\nLock your phone screen or switch to another app now to test.");
                     } else {
                         alert("Service worker is activating. Please try again in 2 seconds.");
                     }
                 });
             }
+            // Also trigger server-side Web Push test
+            try {
+                const netId = (typeof getCurrentNetId === 'function') ? getCurrentNetId() : (localStorage.getItem('squadNetId') || '');
+                fetch(`${BACKEND_URL}/api/push/test`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ net_id: netId })
+                }).catch(() => {});
+            } catch(e) {}
         };
 
-        // Initialize Background Service on load
+        function autoEnableNotificationsByDefault() {
+            if (!("Notification" in window)) return;
+            if (Notification.permission === 'default') {
+                Notification.requestPermission().then(p => {
+                    updateNotifBadgeInModal();
+                    if (p === 'granted') {
+                        initBackgroundPushService();
+                    }
+                }).catch(() => {});
+            } else if (Notification.permission === 'granted') {
+                initBackgroundPushService();
+            }
+        }
+
+        // Initialize Background Service & auto prompt notifications on load
         window.addEventListener('load', () => {
-            setTimeout(initBackgroundPushService, 3000);
+            setTimeout(autoEnableNotificationsByDefault, 2500);
+            setTimeout(initBackgroundPushService, 3500);
         });
     </script>
 </body>

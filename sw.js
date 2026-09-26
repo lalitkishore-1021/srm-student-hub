@@ -1,5 +1,5 @@
 // Change this version number every time you want to force phones to update!
-const CACHE_NAME = 'srm-hub-v54-sound-reactions-push'; 
+const CACHE_NAME = 'srm-hub-v55-clean-ui-push'; 
 
 const ASSETS_TO_CACHE = [
     '/',
@@ -42,7 +42,7 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
     const url = new URL(event.request.url);
 
-    // 🚨 CRITICAL BYPASS: Never cache API requests
+    // CRITICAL BYPASS: Never cache API requests
     if (url.pathname.startsWith('/api/')) {
         return; 
     }
@@ -81,7 +81,7 @@ self.addEventListener('message', (event) => {
     } else if (event.data.type === 'SCHEDULE_DELAYED_NOTIFICATION') {
         const delay = event.data.delayMs || 4000;
         const title = event.data.title || 'SRM Student Hub';
-        const body = event.data.body || 'Background notifications are working even when the app is closed! 🚀';
+        const body = event.data.body || 'Background notifications active. You will receive timetable and mess reminders without opening the app.';
         const url = event.data.url || '/';
         setTimeout(() => {
             self.registration.showNotification(title, {
@@ -120,7 +120,7 @@ self.addEventListener('push', (event) => {
             data = { title: 'SRM Student Hub', body: event.data.text() };
         }
     } else {
-        data = { title: 'SRM Student Hub', body: 'You have a new campus update!' };
+        data = { title: 'SRM Student Hub', body: 'You have a new campus update.' };
     }
 
     const title = data.title || 'SRM Student Hub';
@@ -214,21 +214,21 @@ async function checkAndTriggerBackgroundNotifications() {
 
     // 2. Mess timings notification
     if (timeFloat >= 7.3 && timeFloat < 7.7) {
-        self.registration.showNotification("Good Morning! ☀️ Breakfast Time", {
-            body: "Breakfast is being served right now in the mess!",
+        self.registration.showNotification("Breakfast Time - SRM Mess", {
+            body: "Breakfast is being served right now in the mess.",
             icon: '/images/app-icon.svg',
             tag: 'mess-breakfast',
             data: { url: '/#mess-view' }
         });
     } else if (timeFloat >= 12.3 && timeFloat < 12.8) {
-        self.registration.showNotification("Lunch Time Approaching! 🍛", {
-            body: "Time to take a break and grab lunch at the mess.",
+        self.registration.showNotification("Lunch Time - SRM Mess", {
+            body: "Lunch is being served right now in the hostel mess.",
             icon: '/images/app-icon.svg',
             tag: 'mess-lunch',
             data: { url: '/#mess-view' }
         });
     } else if (timeFloat >= 19.3 && timeFloat < 19.8) {
-        self.registration.showNotification("Dinner Time! 🍽️", {
+        self.registration.showNotification("Dinner Time - SRM Mess", {
             body: "Dinner is now being served in the hostel mess.",
             icon: '/images/app-icon.svg',
             tag: 'mess-dinner',

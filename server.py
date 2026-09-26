@@ -9,7 +9,7 @@ import json
 import requests
 import uuid
 import urllib.parse
-from datetime import datetime
+from datetime import datetime, timedelta
 from flask import Flask, request, jsonify, send_from_directory, Response, send_file, redirect
 from flask_compress import Compress
 
@@ -195,14 +195,15 @@ def init_db():
         cur.execute('''CREATE TABLE IF NOT EXISTS spotted_likes (
             id SERIAL PRIMARY KEY, post_id INTEGER NOT NULL, net_id TEXT NOT NULL, UNIQUE(post_id, net_id))''')
         cur.execute('''CREATE TABLE IF NOT EXISTS push_subscriptions (
-            id SERIAL PRIMARY KEY, net_id TEXT, endpoint TEXT UNIQUE NOT NULL, p256dh TEXT, auth TEXT, created_at TEXT)''')
+            id SERIAL PRIMARY KEY, net_id TEXT, endpoint TEXT UNIQUE NOT NULL, p256dh TEXT, auth TEXT, timetable_json TEXT, created_at TEXT)''')
 
         conn.commit()
         for table, col, ctype in [
             ('students', 'created_at', 'TEXT'),
             ('students', 'last_opened_at', 'TEXT'),
             ('music_hub', 'play_count', 'INTEGER DEFAULT 0'),
-            ('class_chats', 'reactions', "TEXT DEFAULT '{}'")
+            ('class_chats', 'reactions', "TEXT DEFAULT '{}'"),
+            ('push_subscriptions', 'timetable_json', 'TEXT')
         ]:
             try:
                 cur.execute(f"ALTER TABLE {table} ADD COLUMN {col} {ctype}")
@@ -300,13 +301,14 @@ def init_db():
         cur.execute('''CREATE TABLE IF NOT EXISTS spotted_likes (
             id SERIAL PRIMARY KEY, post_id INTEGER NOT NULL, net_id TEXT NOT NULL, UNIQUE(post_id, net_id))''')
         cur.execute('''CREATE TABLE IF NOT EXISTS push_subscriptions (
-            id INTEGER PRIMARY KEY AUTOINCREMENT, net_id TEXT, endpoint TEXT UNIQUE NOT NULL, p256dh TEXT, auth TEXT, created_at TEXT)''')
+            id INTEGER PRIMARY KEY AUTOINCREMENT, net_id TEXT, endpoint TEXT UNIQUE NOT NULL, p256dh TEXT, auth TEXT, timetable_json TEXT, created_at TEXT)''')
         
         for table, col, ctype in [
             ('students', 'created_at', 'TEXT'),
             ('students', 'last_opened_at', 'TEXT'),
             ('music_hub', 'play_count', 'INTEGER DEFAULT 0'),
-            ('class_chats', 'reactions', "TEXT DEFAULT '{}'")
+            ('class_chats', 'reactions', "TEXT DEFAULT '{}'"),
+            ('push_subscriptions', 'timetable_json', 'TEXT')
         ]:
             try:
                 cur.execute(f"ALTER TABLE {table} ADD COLUMN {col} {ctype}")
@@ -1951,6 +1953,78 @@ def react_chat():
         cur.close()
         conn.close()
 
+# ================= WEB PUSH & BACKGROUND NOTIFICATIONS =================
+VAPID_PUBLIC_KEY = 'BI-wl2ct6f3ui3cR32jm6k31-2h1g7sFIFfBHVOUqJ5hk3imXZRCtDaopDaVgW-W3XVeXvhkbGjM6MpHnjDxq-8'
+VAPID_PRIVATE_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'vapid_private.pem')
+VAPID_PRIVATE_PEM = """-----BEGIN PRIVATE KEY-----
+MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQg0FwtEDl9lX4zpSba
+cxLBD0e3gh20NRrx/6NsreZxFdmhRANCAASPsJdnLen97ot3Ed9o5upN9ftodYO7
+BSBXwR1TlKieYZN4pl2UQrQ2qKQ2lYFvlt11Xl74ZGxozOjKR54w8avv
+-----END PRIVATE KEY-----
+"""
+
+def ensure_vapid_file():
+    try:
+        if not os.path.exists(VAPID_PRIVATE_FILE):
+            with open(VAPID_PRIVATE_FILE, 'w') as f:
+                f.write(VAPID_PRIVATE_PEM.strip() + '\n')
+    except Exception as e:
+        print(f"[VAPID] Notice: {e}")
+
+ensure_vapid_file()
+
+def send_web_push(sub_dict, payload_dict):
+    """
+    Sends a genuine Web Push notification to a browser/OS push endpoint.
+    sub_dict: {'endpoint': ..., 'p256dh': ..., 'auth': ...}
+    payload_dict: {'title': ..., 'body': ..., 'url': ..., 'tag': ...}
+    """
+    endpoint = sub_dict.get('endpoint')
+    p256dh = sub_dict.get('p256dh')
+    auth = sub_dict.get('auth')
+    if not (endpoint and p256dh and auth):
+        return False, "Missing endpoint or key"
+    try:
+        from pywebpush import webpush, WebPushException
+        ensure_vapid_file()
+        subscription_info = {
+            "endpoint": endpoint,
+            "keys": {
+                "p256dh": p256dh,
+                "auth": auth
+            }
+        }
+        data_str = json.dumps(payload_dict)
+        webpush(
+            subscription_info=subscription_info,
+            data=data_str,
+            vapid_private_key=VAPID_PRIVATE_FILE,
+            vapid_claims={"sub": "mailto:support@srmhub.com"},
+            ttl=3600
+        )
+        return True, "Delivered"
+    except Exception as e:
+        status_code = getattr(getattr(e, 'response', None), 'status_code', None)
+        # 404 or 410 means subscription expired or uninstalled by user
+        if status_code in (404, 410):
+            try:
+                conn = get_db()
+                cur = conn.cursor()
+                if DATABASE_URL:
+                    cur.execute("DELETE FROM push_subscriptions WHERE endpoint = %s", (endpoint,))
+                else:
+                    cur.execute("DELETE FROM push_subscriptions WHERE endpoint = ?", (endpoint,))
+                conn.commit()
+                cur.close()
+                conn.close()
+            except Exception:
+                pass
+        return False, str(e)
+
+@app.route('/api/push/vapid-public-key', methods=['GET'])
+def get_vapid_public_key():
+    return jsonify({'publicKey': VAPID_PUBLIC_KEY})
+
 @app.route('/api/push/subscribe', methods=['POST'])
 def push_subscribe():
     data = request.json or {}
@@ -1960,6 +2034,8 @@ def push_subscribe():
     keys = subscription.get('keys') or {}
     p256dh = keys.get('p256dh', '')
     auth = keys.get('auth', '')
+    raw_tt = data.get('timetable')
+    timetable_json = json.dumps(raw_tt) if raw_tt else '{}'
     now = datetime.now().isoformat()
     
     if not endpoint:
@@ -1970,18 +2046,26 @@ def push_subscribe():
     try:
         if DATABASE_URL:
             cur.execute('''
-                INSERT INTO push_subscriptions (net_id, endpoint, p256dh, auth, created_at)
-                VALUES (%s, %s, %s, %s, %s)
+                INSERT INTO push_subscriptions (net_id, endpoint, p256dh, auth, timetable_json, created_at)
+                VALUES (%s, %s, %s, %s, %s, %s)
                 ON CONFLICT(endpoint) DO UPDATE SET
-                    net_id = EXCLUDED.net_id, p256dh = EXCLUDED.p256dh, auth = EXCLUDED.auth, created_at = EXCLUDED.created_at
-            ''', (net_id, endpoint, p256dh, auth, now))
+                    net_id = EXCLUDED.net_id,
+                    p256dh = EXCLUDED.p256dh,
+                    auth = EXCLUDED.auth,
+                    timetable_json = CASE WHEN EXCLUDED.timetable_json != '{}' THEN EXCLUDED.timetable_json ELSE push_subscriptions.timetable_json END,
+                    created_at = EXCLUDED.created_at
+            ''', (net_id, endpoint, p256dh, auth, timetable_json, now))
         else:
             cur.execute('''
-                INSERT INTO push_subscriptions (net_id, endpoint, p256dh, auth, created_at)
-                VALUES (?, ?, ?, ?, ?)
+                INSERT INTO push_subscriptions (net_id, endpoint, p256dh, auth, timetable_json, created_at)
+                VALUES (?, ?, ?, ?, ?, ?)
                 ON CONFLICT(endpoint) DO UPDATE SET
-                    net_id = excluded.net_id, p256dh = excluded.p256dh, auth = excluded.auth, created_at = excluded.created_at
-            ''', (net_id, endpoint, p256dh, auth, now))
+                    net_id = excluded.net_id,
+                    p256dh = excluded.p256dh,
+                    auth = excluded.auth,
+                    timetable_json = CASE WHEN excluded.timetable_json != '{}' THEN excluded.timetable_json ELSE push_subscriptions.timetable_json END,
+                    created_at = excluded.created_at
+            ''', (net_id, endpoint, p256dh, auth, timetable_json, now))
         conn.commit()
         return jsonify({'success': True, 'message': 'Subscribed successfully'})
     except Exception as e:
@@ -1992,7 +2076,172 @@ def push_subscribe():
 
 @app.route('/api/push/test', methods=['POST'])
 def push_test():
-    return jsonify({'success': True, 'message': 'Push service ready'})
+    data = request.json or {}
+    net_id = (data.get('net_id') or '').strip().lower()
+    
+    conn = get_db()
+    cur = conn.cursor()
+    try:
+        if DATABASE_URL:
+            if net_id:
+                cur.execute("SELECT endpoint, p256dh, auth FROM push_subscriptions WHERE net_id = %s ORDER BY id DESC LIMIT 5", (net_id,))
+            else:
+                cur.execute("SELECT endpoint, p256dh, auth FROM push_subscriptions ORDER BY id DESC LIMIT 5")
+        else:
+            if net_id:
+                cur.execute("SELECT endpoint, p256dh, auth FROM push_subscriptions WHERE net_id = ? ORDER BY id DESC LIMIT 5", (net_id,))
+            else:
+                cur.execute("SELECT endpoint, p256dh, auth FROM push_subscriptions ORDER BY id DESC LIMIT 5")
+        rows = cur.fetchall()
+        
+        sent = 0
+        errors = []
+        payload = {
+            'title': 'SRM Student Hub',
+            'body': 'Background notifications active. You will receive timetable and mess reminders without opening the app.',
+            'url': '/',
+            'tag': 'srm-test-push-' + str(int(time.time()))
+        }
+        for row in rows:
+            sub = {'endpoint': row[0], 'p256dh': row[1], 'auth': row[2]}
+            ok, msg = send_web_push(sub, payload)
+            if ok:
+                sent += 1
+            else:
+                errors.append(msg)
+                
+        return jsonify({'success': True, 'sent_count': sent, 'errors': errors})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        cur.close()
+        conn.close()
+
+# --- BACKGROUND SCHEDULED PUSH DISPATCHER ---
+_SENT_PUSH_ALERTS = set()
+_LAST_PUSH_DATE = None
+
+def _run_scheduled_push_dispatch():
+    global _SENT_PUSH_ALERTS, _LAST_PUSH_DATE
+    now_ist = datetime.utcnow() + timedelta(hours=5, minutes=30)
+    today_str = now_ist.strftime("%Y-%m-%d")
+    
+    # Reset daily sent cache at midnight
+    if _LAST_PUSH_DATE != today_str:
+        _SENT_PUSH_ALERTS.clear()
+        _LAST_PUSH_DATE = today_str
+
+    hour = now_ist.hour
+    minute = now_ist.minute
+    total_mins = hour * 60 + minute
+    weekday = now_ist.isoweekday() # 1=Mon .. 7=Sun
+
+    conn = get_db()
+    cur = conn.cursor()
+    try:
+        if DATABASE_URL:
+            cur.execute("SELECT endpoint, p256dh, auth, timetable_json, net_id FROM push_subscriptions")
+        else:
+            cur.execute("SELECT endpoint, p256dh, auth, timetable_json, net_id FROM push_subscriptions")
+        subs = cur.fetchall()
+    except Exception:
+        subs = []
+    finally:
+        cur.close()
+        conn.close()
+
+    if not subs:
+        return
+
+    # 1. Mess Alerts
+    mess_alert = None
+    if 450 <= total_mins <= 470: # 07:30 - 07:50
+        mess_alert = {
+            'tag': f"mess-breakfast-{today_str}",
+            'title': "Breakfast Time - SRM Mess",
+            'body': "Breakfast is being served right now in the hostel mess.",
+            'url': "/#mess-view"
+        }
+    elif 750 <= total_mins <= 770: # 12:30 - 12:50
+        mess_alert = {
+            'tag': f"mess-lunch-{today_str}",
+            'title': "Lunch Time - SRM Mess",
+            'body': "Lunch is being served right now in the hostel mess.",
+            'url': "/#mess-view"
+        }
+    elif 1000 <= total_mins <= 1020: # 16:40 - 17:00
+        mess_alert = {
+            'tag': f"mess-snacks-{today_str}",
+            'title': "Evening Snacks - SRM Mess",
+            'body': "Evening snacks and tea are ready in the mess.",
+            'url': "/#mess-view"
+        }
+    elif 1170 <= total_mins <= 1190: # 19:30 - 19:50
+        mess_alert = {
+            'tag': f"mess-dinner-{today_str}",
+            'title': "Dinner Time - SRM Mess",
+            'body': "Dinner is now being served in the hostel mess.",
+            'url': "/#mess-view"
+        }
+
+    for row in subs:
+        endpoint, p256dh, auth, tt_json, net_id = row[0], row[1], row[2], row[3], row[4]
+        sub = {'endpoint': endpoint, 'p256dh': p256dh, 'auth': auth}
+
+        # Send mess alert if due
+        if mess_alert:
+            alert_key = f"{endpoint}:{mess_alert['tag']}"
+            if alert_key not in _SENT_PUSH_ALERTS:
+                _SENT_PUSH_ALERTS.add(alert_key)
+                send_web_push(sub, mess_alert)
+
+        # 2. Timetable Alerts (Monday-Friday)
+        if weekday in (1, 2, 3, 4, 5) and tt_json:
+            try:
+                tt = json.loads(tt_json)
+                day_key = str(weekday)
+                day_classes = tt.get(day_key, [])
+                for c in day_classes:
+                    time_raw = c.get('time_from') or (c.get('time') or '').split('-')[0].strip()
+                    if not time_raw:
+                        continue
+                    m = re.match(r'(\d{1,2}):(\d{2})', time_raw)
+                    if m:
+                        ch = int(m.group(1))
+                        cm = int(m.group(2))
+                        if 1 <= ch <= 7:
+                            ch += 12 # 12-hour PM conversion
+                        class_mins = ch * 60 + cm
+                        diff = class_mins - total_mins
+                        if 10 <= diff <= 20: # 10 to 20 minutes before class
+                            subj = c.get('subject') or c.get('code') or 'Upcoming Class'
+                            room = c.get('room') or 'TBA'
+                            fac = c.get('faculty') or 'Faculty'
+                            c_tag = f"class-{c.get('code')}-{class_mins}-{today_str}"
+                            alert_key = f"{endpoint}:{c_tag}"
+                            if alert_key not in _SENT_PUSH_ALERTS:
+                                _SENT_PUSH_ALERTS.add(alert_key)
+                                send_web_push(sub, {
+                                    'title': f"Class in {diff}m: {subj[:28]}",
+                                    'body': f"Room {room} • {time_raw} - {fac[:24]}",
+                                    'url': "/#timetable-view",
+                                    'tag': c_tag
+                                })
+            except Exception:
+                pass
+
+def _background_push_dispatcher_loop():
+    # Wait 30 seconds after server boot before starting cycle
+    time.sleep(30)
+    while True:
+        try:
+            _run_scheduled_push_dispatch()
+        except Exception as e:
+            print(f"[PUSH DISPATCHER] error: {e}")
+        time.sleep(60)
+
+threading.Thread(target=_background_push_dispatcher_loop, daemon=True).start()
+
 
 @app.route('/api/spotted', methods=['GET'])
 def get_spotted():
