@@ -2924,6 +2924,16 @@
                     </div>
                     <span id="pref-notif-status" style="font-size:11px; font-weight:800; padding:4px 10px; border-radius:20px; background:rgba(255,255,255,0.08); color:var(--text-sub);">CHECKING</span>
                 </div>
+                <div style="margin-top:10px; padding:9px 12px; background:rgba(255,255,255,0.04); border-radius:12px; border:1px solid rgba(255,255,255,0.06); display:flex; align-items:center; justify-content:space-between;">
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>
+                        <span style="font-size:11.5px; color:#e2e8f0; font-weight:600;">Sound: <span style="color:#60a5fa; font-weight:700;">SRM Orbit Chime</span></span>
+                    </div>
+                    <button type="button" onclick="playNotificationSound()" style="background:rgba(96,165,250,0.15); border:1px solid rgba(96,165,250,0.3); color:#93c5fd; padding:4px 10px; border-radius:8px; font-size:11px; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:4px; transition:all 0.2s;">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                        <span>Play Chime</span>
+                    </button>
+                </div>
                 <button type="button" onclick="testBackgroundNotification()" style="width:100%; margin-top:10px; padding:11px 14px; background:rgba(255,255,255,0.07); color:#fff; border:1px solid rgba(255,255,255,0.12); border-radius:12px; font-weight:700; font-size:12px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; transition:all 0.2s;">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
                     <span>Test Background Alert (Lock Screen in 3s)</span>
@@ -4562,6 +4572,13 @@
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('sw.js').catch(err => console.log('SW Failed:', err));
+            });
+            navigator.serviceWorker.addEventListener('message', (event) => {
+                if (event.data && event.data.type === 'PLAY_NOTIFICATION_SOUND') {
+                    if (typeof playNotificationSound === 'function') {
+                        playNotificationSound();
+                    }
+                }
             });
         }
 
@@ -6420,6 +6437,9 @@ function checkAndShowHolidayBanner(viewId) {
         function closeLightbox() { document.getElementById("lightbox").style.display = "none"; }
 
         function triggerLocalNotification(title, body) {
+            if (typeof playNotificationSound === 'function') {
+                playNotificationSound();
+            }
             if (Notification.permission === 'granted' && navigator.serviceWorker) {
                 navigator.serviceWorker.ready.then(reg => reg.active.postMessage({ type: 'SHOW_NOTIFICATION', title, body }));
             }
@@ -11698,6 +11718,76 @@ function predictDateRangeUI() {
             } catch(e) {}
         };
 
+        window.synthNotificationSound = function() {
+            try {
+                const AudioCtxClass = window.AudioContext || window.webkitAudioContext;
+                if (!AudioCtxClass) return;
+                if (!window._srmAudioCtx) {
+                    window._srmAudioCtx = new AudioCtxClass();
+                }
+                const ctx = window._srmAudioCtx;
+                if (ctx.state === 'suspended') {
+                    ctx.resume();
+                }
+                const now = ctx.currentTime;
+                // Signature SRM Orbit Chime: D5 (587.33Hz) -> A5 (880.00Hz) -> D6 (1174.66Hz)
+                const notes = [
+                    { f: 587.33, t: 0.00, d: 0.32, gain: 0.16 },
+                    { f: 880.00, t: 0.11, d: 0.38, gain: 0.20 },
+                    { f: 1174.66, t: 0.22, d: 0.55, gain: 0.24 }
+                ];
+                notes.forEach(n => {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(n.f, now + n.t);
+                    
+                    const overtone = ctx.createOscillator();
+                    const overtoneGain = ctx.createGain();
+                    overtone.type = 'triangle';
+                    overtone.frequency.setValueAtTime(n.f * 2, now + n.t);
+                    overtoneGain.gain.setValueAtTime(n.gain * 0.15, now + n.t);
+                    overtoneGain.gain.exponentialRampToValueAtTime(0.0001, now + n.t + n.d * 0.65);
+
+                    gain.gain.setValueAtTime(n.gain, now + n.t);
+                    gain.gain.exponentialRampToValueAtTime(0.0001, now + n.t + n.d);
+
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    overtone.connect(overtoneGain);
+                    overtoneGain.connect(ctx.destination);
+
+                    osc.start(now + n.t);
+                    osc.stop(now + n.t + n.d + 0.05);
+                    overtone.start(now + n.t);
+                    overtone.stop(now + n.t + n.d + 0.05);
+                });
+            } catch(e) {}
+        };
+
+        let _srmNotificationAudio = null;
+        window.playNotificationSound = function() {
+            if (localStorage.getItem('srm_sound_effects') === 'false') return;
+            try {
+                if (typeof triggerHaptic === 'function') {
+                    triggerHaptic('notification');
+                }
+                if (!_srmNotificationAudio) {
+                    _srmNotificationAudio = new Audio('/audio/srm-notification.wav');
+                    _srmNotificationAudio.preload = 'auto';
+                }
+                _srmNotificationAudio.currentTime = 0;
+                const p = _srmNotificationAudio.play();
+                if (p !== undefined) {
+                    p.catch(err => {
+                        window.synthNotificationSound();
+                    });
+                }
+            } catch(e) {
+                window.synthNotificationSound();
+            }
+        };
+
         let lastHapticTime = 0;
         window.triggerHaptic = function(type = 'light') {
             if (localStorage.getItem('srm_haptics') === 'false') return;
@@ -11708,6 +11798,7 @@ function predictDateRangeUI() {
                     else if (type === 'pop') navigator.vibrate([22, 18, 32]);
                     else if (type === 'heavy') navigator.vibrate([45, 30, 45]);
                     else if (type === 'success') navigator.vibrate([30, 40, 60]);
+                    else if (type === 'notification') navigator.vibrate([120, 80, 120, 80, 240]);
                 }
             } catch(e) {}
         };
@@ -11886,6 +11977,9 @@ function predictDateRangeUI() {
                 });
                 return;
             }
+            if (typeof playNotificationSound === 'function') {
+                playNotificationSound();
+            }
             if ('serviceWorker' in navigator) {
                 navigator.serviceWorker.ready.then(reg => {
                     if (reg.active) {
@@ -11893,10 +11987,10 @@ function predictDateRangeUI() {
                             type: 'SCHEDULE_DELAYED_NOTIFICATION',
                             delayMs: 3000,
                             title: 'SRM Student Hub',
-                            body: 'Background notifications active. You will receive timetable and mess reminders without opening the app.',
+                            body: 'Background notifications active with custom SRM Orbit Chime. You will receive timetable and mess reminders without opening the app.',
                             url: '/'
                         });
-                        alert("Notification scheduled for 3 seconds.\n\nLock your phone screen or switch to another app now to test.");
+                        alert("Custom SRM notification sound played & alert scheduled for 3 seconds.\n\nLock your phone screen or switch to another app now to test background chime.");
                     } else {
                         alert("Service worker is activating. Please try again in 2 seconds.");
                     }

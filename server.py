@@ -2108,7 +2108,9 @@ def push_test():
             'title': 'SRM Student Hub',
             'body': 'Background notifications active. You will receive timetable and mess reminders without opening the app.',
             'url': '/',
-            'tag': 'srm-test-push-' + str(int(time.time()))
+            'tag': 'srm-test-push-' + str(int(time.time())),
+            'sound': '/audio/srm-notification.wav',
+            'silent': False
         }
         for row in rows:
             sub = {'endpoint': row[0], 'p256dh': row[1], 'auth': row[2]}
@@ -2168,28 +2170,36 @@ def _run_scheduled_push_dispatch():
             'tag': f"mess-breakfast-{today_str}",
             'title': "Breakfast Time - SRM Mess",
             'body': "Breakfast is being served right now in the hostel mess.",
-            'url': "/#mess-view"
+            'url': "/#mess-view",
+            'sound': '/audio/srm-notification.wav',
+            'silent': False
         }
     elif 750 <= total_mins <= 770: # 12:30 - 12:50
         mess_alert = {
             'tag': f"mess-lunch-{today_str}",
             'title': "Lunch Time - SRM Mess",
             'body': "Lunch is being served right now in the hostel mess.",
-            'url': "/#mess-view"
+            'url': "/#mess-view",
+            'sound': '/audio/srm-notification.wav',
+            'silent': False
         }
     elif 1000 <= total_mins <= 1020: # 16:40 - 17:00
         mess_alert = {
             'tag': f"mess-snacks-{today_str}",
             'title': "Evening Snacks - SRM Mess",
             'body': "Evening snacks and tea are ready in the mess.",
-            'url': "/#mess-view"
+            'url': "/#mess-view",
+            'sound': '/audio/srm-notification.wav',
+            'silent': False
         }
     elif 1170 <= total_mins <= 1190: # 19:30 - 19:50
         mess_alert = {
             'tag': f"mess-dinner-{today_str}",
             'title': "Dinner Time - SRM Mess",
             'body': "Dinner is now being served in the hostel mess.",
-            'url': "/#mess-view"
+            'url': "/#mess-view",
+            'sound': '/audio/srm-notification.wav',
+            'silent': False
         }
 
     for row in subs:
@@ -2233,7 +2243,9 @@ def _run_scheduled_push_dispatch():
                                     'title': f"Class in {diff}m: {subj[:28]}",
                                     'body': f"Room {room} • {time_raw} - {fac[:24]}",
                                     'url': "/#timetable-view",
-                                    'tag': c_tag
+                                    'tag': c_tag,
+                                    'sound': '/audio/srm-notification.wav',
+                                    'silent': False
                                 })
             except Exception:
                 pass
@@ -2531,14 +2543,14 @@ def serve_index():
 @app.route('/<path:path>')
 def serve_static(path):
     safe_paths = ['index.html', 'manifest.json', 'sw.js', 'robots.txt', 'sitemap.xml']
-    safe_folders = ['images', 'css', 'js', 'fonts', 'themes']
+    safe_folders = ['images', 'css', 'js', 'fonts', 'themes', 'audio']
     is_safe = path in safe_paths or any(path.startswith(f"{f}/") for f in safe_folders)
     if not is_safe:
         return "Access Denied", 403
         
     response = send_from_directory('.', path)
     # Aggressively cache static assets to save bandwidth
-    if path.startswith('images/') or path.endswith('.js') or path.endswith('.css'):
+    if path.startswith('images/') or path.startswith('audio/') or path.endswith('.js') or path.endswith('.css') or path.endswith('.wav') or path.endswith('.mp3'):
         response.headers['Cache-Control'] = 'public, max-age=31536000, immutable'
     elif path == 'index.html':
         response.headers['Cache-Control'] = 'no-cache, must-revalidate' # always revalidate HTML

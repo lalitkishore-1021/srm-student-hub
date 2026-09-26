@@ -1,12 +1,25 @@
 // Change this version number every time you want to force phones to update!
-const CACHE_NAME = 'srm-hub-v57-live-engine-train-tracker'; 
+const CACHE_NAME = 'srm-hub-v58-custom-notification-sound'; 
 
 const ASSETS_TO_CACHE = [
     '/',
     '/index.html',
     '/manifest.json',
-    '/images/app-icon.svg'
+    '/images/app-icon.svg',
+    '/audio/srm-notification.wav'
 ];
+
+function broadcastSoundToClients() {
+    try {
+        self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clients) => {
+            if (clients && clients.length) {
+                clients.forEach((client) => {
+                    client.postMessage({ type: 'PLAY_NOTIFICATION_SOUND' });
+                });
+            }
+        }).catch(() => {});
+    } catch(e) {}
+}
 
 // 1. INSTALL EVENT: Cache the core files and force the update immediately
 self.addEventListener('install', (event) => {
@@ -73,11 +86,14 @@ self.addEventListener('message', (event) => {
             body: event.data.body,
             icon: '/images/app-icon.svg',
             badge: '/images/app-icon.svg',
-            vibrate: [200, 100, 200],
+            sound: '/audio/srm-notification.wav',
+            silent: false,
+            vibrate: [120, 80, 120, 80, 240],
             requireInteraction: false,
             data: { url: event.data.url || '/' }
         };
         self.registration.showNotification(title, options);
+        broadcastSoundToClients();
     } else if (event.data.type === 'SCHEDULE_DELAYED_NOTIFICATION') {
         const delay = event.data.delayMs || 4000;
         const title = event.data.title || 'SRM Student Hub';
@@ -88,11 +104,14 @@ self.addEventListener('message', (event) => {
                 body: body,
                 icon: '/images/app-icon.svg',
                 badge: '/images/app-icon.svg',
+                sound: '/audio/srm-notification.wav',
+                silent: false,
                 tag: 'srm-bg-test',
                 renotify: true,
-                vibrate: [200, 100, 200],
+                vibrate: [120, 80, 120, 80, 240],
                 data: { url: url }
             });
+            broadcastSoundToClients();
         }, delay);
     } else if (event.data.type === 'UPDATE_SCHEDULE_CACHE') {
         caches.open('srm-offline-data').then(cache => {
@@ -128,12 +147,15 @@ self.addEventListener('push', (event) => {
         body: data.body || 'New notification received.',
         icon: data.icon || '/images/app-icon.svg',
         badge: '/images/app-icon.svg',
-        vibrate: [200, 100, 200],
+        sound: data.sound || '/audio/srm-notification.wav',
+        silent: false,
+        vibrate: [120, 80, 120, 80, 240],
         tag: data.tag || 'srm-push-' + Date.now(),
         renotify: true,
         data: { url: data.url || '/' }
     };
 
+    broadcastSoundToClients();
     event.waitUntil(self.registration.showNotification(title, options));
 });
 
@@ -199,11 +221,14 @@ async function checkAndTriggerBackgroundNotifications() {
                             body: `Room ${c.room || 'TBA'} • ${startTimeStr} - ${c.faculty || 'SRM Faculty'}`,
                             icon: '/images/app-icon.svg',
                             badge: '/images/app-icon.svg',
+                            sound: '/audio/srm-notification.wav',
+                            silent: false,
                             tag: 'class-alert-' + (c.code || startTimeStr),
                             renotify: true,
-                            vibrate: [200, 100, 200],
+                            vibrate: [120, 80, 120, 80, 240],
                             data: { url: '/#timetable-view' }
                         });
+                        broadcastSoundToClients();
                     }
                 }
             });
@@ -217,22 +242,37 @@ async function checkAndTriggerBackgroundNotifications() {
         self.registration.showNotification("Breakfast Time - SRM Mess", {
             body: "Breakfast is being served right now in the mess.",
             icon: '/images/app-icon.svg',
+            badge: '/images/app-icon.svg',
+            sound: '/audio/srm-notification.wav',
+            silent: false,
+            vibrate: [120, 80, 120, 80, 240],
             tag: 'mess-breakfast',
             data: { url: '/#mess-view' }
         });
+        broadcastSoundToClients();
     } else if (timeFloat >= 12.3 && timeFloat < 12.8) {
         self.registration.showNotification("Lunch Time - SRM Mess", {
             body: "Lunch is being served right now in the hostel mess.",
             icon: '/images/app-icon.svg',
+            badge: '/images/app-icon.svg',
+            sound: '/audio/srm-notification.wav',
+            silent: false,
+            vibrate: [120, 80, 120, 80, 240],
             tag: 'mess-lunch',
             data: { url: '/#mess-view' }
         });
+        broadcastSoundToClients();
     } else if (timeFloat >= 19.3 && timeFloat < 19.8) {
         self.registration.showNotification("Dinner Time - SRM Mess", {
             body: "Dinner is now being served in the hostel mess.",
             icon: '/images/app-icon.svg',
+            badge: '/images/app-icon.svg',
+            sound: '/audio/srm-notification.wav',
+            silent: false,
+            vibrate: [120, 80, 120, 80, 240],
             tag: 'mess-dinner',
             data: { url: '/#mess-view' }
         });
+        broadcastSoundToClients();
     }
 }
