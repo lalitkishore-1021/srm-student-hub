@@ -92,6 +92,10 @@ def strip_base64_images(items, table_name):
             item[col] = f"/api/image/{table_name}/{item['id']}"
     return items
 
+def clean_net_id(val):
+    if not val:
+        return ''
+    return str(val).split('@')[0].strip().lower()
 
 @app.route('/api/track_open', methods=['POST'])
 def track_open():
@@ -250,6 +254,11 @@ def init_db():
                 conn.commit()
             except Exception:
                 conn.rollback()
+        try:
+            cur.execute("ALTER TABLE campus_wall ADD COLUMN net_id TEXT")
+            conn.commit()
+        except Exception:
+            conn.rollback()
     else:
         cur.execute('''CREATE TABLE IF NOT EXISTS students (
             net_id TEXT PRIMARY KEY, name TEXT, register_no TEXT,
@@ -343,6 +352,11 @@ def init_db():
             conn.rollback()
         try:
             cur.execute("ALTER TABLE lost_found ADD COLUMN poster_name TEXT")
+            conn.commit()
+        except Exception:
+            conn.rollback()
+        try:
+            cur.execute("ALTER TABLE campus_wall ADD COLUMN net_id TEXT")
             conn.commit()
         except Exception:
             conn.rollback()
@@ -799,8 +813,8 @@ def delete_marketplace(item_id):
         if not row:
             return jsonify({'success': False, 'error': 'Item not found'}), 404
 
-        owner_id = (row[0] if DATABASE_URL else dict(row).get('net_id', '')).lower().strip()
-        if owner_id != net_id:
+        owner_id = (row[0] if DATABASE_URL else dict(row).get('net_id', '') or '')
+        if clean_net_id(owner_id) != clean_net_id(net_id):
             return jsonify({'success': False, 'error': 'You can only delete your own listings'}), 403
 
         if DATABASE_URL:
@@ -854,21 +868,22 @@ def get_wall():
 
 @app.route('/api/wall/submit', methods=['POST'])
 def submit_wall():
-    data = request.json
+    data = request.json or {}
     if not data or not data.get('message'):
         return jsonify({'success': False, 'error': 'Message required'}), 400
 
     conn = get_db()
     cur = conn.cursor()
     now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    net_id = (data.get('net_id') or '').strip().lower()
 
     try:
         if DATABASE_URL:
-            cur.execute("INSERT INTO campus_wall (message, author, created_at) VALUES (%s, %s, %s)",
-                       (data.get('message'), data.get('author', 'Anonymous'), now_str))
+            cur.execute("INSERT INTO campus_wall (message, author, net_id, created_at) VALUES (%s, %s, %s, %s)",
+                       (data.get('message'), data.get('author', 'Anonymous'), net_id, now_str))
         else:
-            cur.execute("INSERT INTO campus_wall (message, author, created_at) VALUES (?, ?, ?)",
-                       (data.get('message'), data.get('author', 'Anonymous'), now_str))
+            cur.execute("INSERT INTO campus_wall (message, author, net_id, created_at) VALUES (?, ?, ?, ?)",
+                       (data.get('message'), data.get('author', 'Anonymous'), net_id, now_str))
         conn.commit()
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -876,6 +891,42 @@ def submit_wall():
         cur.close()
         conn.close()
 
+    return jsonify({'success': True})
+
+@app.route('/api/wall/delete/<int:post_id>', methods=['DELETE', 'POST'])
+def delete_wall(post_id):
+    data = request.json or {}
+    net_id = (data.get('net_id') or '').strip().lower()
+    if not net_id:
+        return jsonify({'success': False, 'error': 'Authentication required'}), 401
+
+    conn = get_db()
+    cur = conn.cursor()
+    try:
+        if DATABASE_URL:
+            cur.execute("SELECT net_id FROM campus_wall WHERE id = %s", (post_id,))
+        else:
+            cur.execute("SELECT net_id FROM campus_wall WHERE id = ?", (post_id,))
+        row = cur.fetchone()
+        if not row:
+            return jsonify({'success': False, 'error': 'Post not found'}), 404
+
+        owner_id = (row[0] if DATABASE_URL else dict(row).get('net_id', '') or '')
+        if clean_net_id(owner_id) != clean_net_id(net_id):
+            return jsonify({'success': False, 'error': 'You can only delete your own posts'}), 403
+
+        if DATABASE_URL:
+            cur.execute("DELETE FROM wall_comments WHERE post_id = %s", (post_id,))
+            cur.execute("DELETE FROM campus_wall WHERE id = %s", (post_id,))
+        else:
+            cur.execute("DELETE FROM wall_comments WHERE post_id = ?", (post_id,))
+            cur.execute("DELETE FROM campus_wall WHERE id = ?", (post_id,))
+        conn.commit()
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        cur.close()
+        conn.close()
     return jsonify({'success': True})
 
 
@@ -996,8 +1047,8 @@ def delete_cab(cab_id):
         if not row:
             return jsonify({'success': False, 'error': 'Ride not found'}), 404
 
-        owner_id = (row[0] if DATABASE_URL else dict(row).get('net_id', '')).lower().strip()
-        if owner_id != net_id:
+        owner_id = (row[0] if DATABASE_URL else dict(row).get('net_id', '') or '')
+        if clean_net_id(owner_id) != clean_net_id(net_id):
             return jsonify({'success': False, 'error': 'You can only delete your own rides'}), 403
 
         if DATABASE_URL:
@@ -1765,40 +1816,57 @@ def post_chat(section):
 
 @app.route('/api/chat/delete/<int:msg_id>', methods=['POST'])
 def delete_chat(msg_id):
-    data = request.json
-    net_id = data.get('net_id', '').lower().strip()
+    data = request.json or {}
+    net_id = (data.get('net_id') or '').strip().lower()
     mode = data.get('mode', 'me') # 'me' or 'everyone'
+    sender_name_client = (data.get('sender_name') or '').strip().lower()
     
+    if not net_id:
+        return jsonify({'success': False, 'error': 'Authentication required'}), 401
+
     conn = get_db()
     cur = conn.cursor()
     try:
         if DATABASE_URL:
-            cur.execute("SELECT sender_net_id, deleted_by FROM class_chats WHERE id = %s", (msg_id,))
+            cur.execute("SELECT sender_net_id, deleted_by, sender_name FROM class_chats WHERE id = %s", (msg_id,))
         else:
-            cur.execute("SELECT sender_net_id, deleted_by FROM class_chats WHERE id = ?", (msg_id,))
+            cur.execute("SELECT sender_net_id, deleted_by, sender_name FROM class_chats WHERE id = ?", (msg_id,))
             
         row = cur.fetchone()
-        if not row: return jsonify({'success': False, 'error': 'Message not found'})
+        if not row: return jsonify({'success': False, 'error': 'Message not found'}), 404
         
-        sender = row[0]
+        sender = row[0] or ""
         deleted_by_list = row[1] or ""
+        sender_name_db = (row[2] or "").strip().lower() if len(row) > 2 else ""
         
         if mode == 'everyone':
-            if sender != net_id:
-                return jsonify({'success': False, 'error': 'Cannot delete others message for everyone'})
+            sender_clean = clean_net_id(sender)
+            net_clean = clean_net_id(net_id)
+            is_owner = False
+            if sender_clean and net_clean and sender_clean == net_clean:
+                is_owner = True
+            elif not sender_clean and sender_name_client and sender_name_db and sender_name_client == sender_name_db and sender_name_db != 'anonymous':
+                is_owner = True
+                
+            if not is_owner:
+                return jsonify({'success': False, 'error': 'Cannot delete others message for everyone'}), 403
             if DATABASE_URL:
-                cur.execute("UPDATE class_chats SET deleted_for_all = 1, message = ' This message was deleted', image_url = '' WHERE id = %s", (msg_id,))
+                cur.execute("UPDATE class_chats SET deleted_for_all = 1, message = 'This message was deleted', image_url = '', audio_url = '' WHERE id = %s", (msg_id,))
             else:
-                cur.execute("UPDATE class_chats SET deleted_for_all = 1, message = ' This message was deleted', image_url = '' WHERE id = ?", (msg_id,))
+                cur.execute("UPDATE class_chats SET deleted_for_all = 1, message = 'This message was deleted', image_url = '', audio_url = '' WHERE id = ?", (msg_id,))
         else:
-            new_deleted = deleted_by_list + f",{net_id}" if deleted_by_list else net_id
+            clean_list = [clean_net_id(x) for x in deleted_by_list.split(',') if clean_net_id(x)]
+            net_clean = clean_net_id(net_id)
+            if net_clean and net_clean not in clean_list:
+                clean_list.append(net_clean)
+            new_deleted = ",".join(clean_list)
             if DATABASE_URL:
                 cur.execute("UPDATE class_chats SET deleted_by = %s WHERE id = %s", (new_deleted, msg_id))
             else:
                 cur.execute("UPDATE class_chats SET deleted_by = ? WHERE id = ?", (new_deleted, msg_id))
         conn.commit()
     except Exception as e:
-        return jsonify({'success': False, 'error': str(e)})
+        return jsonify({'success': False, 'error': str(e)}), 500
     finally:
         cur.close()
         conn.close()
@@ -1837,6 +1905,44 @@ def post_spotted():
         conn.commit()
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)})
+    finally:
+        cur.close()
+        conn.close()
+    return jsonify({'success': True})
+
+@app.route('/api/spotted/delete/<int:post_id>', methods=['DELETE', 'POST'])
+def delete_spotted(post_id):
+    data = request.json or {}
+    net_id = (data.get('net_id') or '').strip().lower()
+    if not net_id:
+        return jsonify({'success': False, 'error': 'Authentication required'}), 401
+
+    conn = get_db()
+    cur = conn.cursor()
+    try:
+        if DATABASE_URL:
+            cur.execute("SELECT net_id FROM spotted_feed WHERE id = %s", (post_id,))
+        else:
+            cur.execute("SELECT net_id FROM spotted_feed WHERE id = ?", (post_id,))
+        row = cur.fetchone()
+        if not row:
+            return jsonify({'success': False, 'error': 'Post not found'}), 404
+
+        owner_id = (row[0] if DATABASE_URL else dict(row).get('net_id', '') or '')
+        if clean_net_id(owner_id) != clean_net_id(net_id):
+            return jsonify({'success': False, 'error': 'You can only delete your own posts'}), 403
+
+        if DATABASE_URL:
+            cur.execute("DELETE FROM spotted_comments WHERE post_id = %s", (post_id,))
+            cur.execute("DELETE FROM spotted_likes WHERE post_id = %s", (post_id,))
+            cur.execute("DELETE FROM spotted_feed WHERE id = %s", (post_id,))
+        else:
+            cur.execute("DELETE FROM spotted_comments WHERE post_id = ?", (post_id,))
+            cur.execute("DELETE FROM spotted_likes WHERE post_id = ?", (post_id,))
+            cur.execute("DELETE FROM spotted_feed WHERE id = ?", (post_id,))
+        conn.commit()
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
     finally:
         cur.close()
         conn.close()
