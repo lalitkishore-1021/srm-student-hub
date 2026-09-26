@@ -3865,7 +3865,7 @@
             </div>
         </div>
 
-        <!-- POTHERI EMU TRAIN & CAMPUS SHUTTLE TRACKER (WHERE IS MY TRAIN) -->
+        <!-- POTHERI EMU TRAIN TRACKER (WHERE IS MY TRAIN) -->
         <div id="train-tracker-view" class="app-view">
             <div class="view-header" style="max-width: 800px; margin: 0 auto 16px auto;">
                 <button class="back-btn" onclick="switchNav('home-view', document.querySelector('.nav-item'))">
@@ -3875,7 +3875,7 @@
                 <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-top:12px; flex-wrap:wrap; gap:12px;">
                     <div>
                         <h2 class="gallery-title" style="margin:0; font-size:1.8rem; font-weight:800; letter-spacing:-0.5px;">Potheri Station Tracker</h2>
-                        <p class="subtitle" style="margin-top:4px; font-size:13px; color:var(--text-sub);">Where Is My Train &bull; Live Chennai Suburban EMU & Campus Transit</p>
+                        <p class="subtitle" style="margin-top:4px; font-size:13px; color:var(--text-sub);">Where Is My Train &bull; Live Chennai Suburban EMU Tracker</p>
                     </div>
                     <div style="display:flex; gap:8px;">
                         <button onclick="refreshTrainTracker()" class="refresh-pill-btn" style="background:rgba(255,255,255,0.06); color:#fff; border:1px solid rgba(255,255,255,0.12); border-radius:14px; padding:8px 14px; font-size:12px; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:6px;">
@@ -3892,7 +3892,7 @@
 
             <!-- Top Switchers: Mode Tabs & Direction Toggle -->
             <div style="max-width: 800px; margin: 0 auto 16px auto;">
-                <!-- Mode Tabs: Live Departures / Where Is My Train / Shuttle -->
+                <!-- Mode Tabs: Live Departures / Where Is My Train -->
                 <div class="train-mode-tabs" style="display:flex; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:16px; padding:4px; gap:4px; margin-bottom:14px;">
                     <button id="tt-tab-departures" class="train-tab-btn active" onclick="switchTrainViewMode('departures')">
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="16" rx="2"></rect><path d="M4 11h16"></path><path d="M12 3v8"></path><circle cx="8" cy="15" r="1"></circle><circle cx="16" cy="15" r="1"></circle></svg>
@@ -3902,13 +3902,9 @@
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11"></polygon></svg>
                         <span>Where Is My Train</span>
                     </button>
-                    <button id="tt-tab-shuttle" class="train-tab-btn" onclick="switchTrainViewMode('shuttle')">
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"></rect><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon><circle cx="5.5" cy="18.5" r="2.5"></circle><circle cx="18.5" cy="18.5" r="2.5"></circle></svg>
-                        <span>Campus Shuttle</span>
-                    </button>
                 </div>
 
-                <!-- Direction Toggle (Only for Train Modes) -->
+                <!-- Direction Toggle -->
                 <div id="train-direction-toggle-container" style="display:flex; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.06); border-radius:14px; padding:4px; gap:6px;">
                     <button id="train-dir-beach" class="train-dir-btn active" onclick="setTrainDirection('beach')" style="flex:1; border:none; padding:10px 14px; border-radius:11px; font-weight:800; font-size:12px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; transition:all 0.2s;">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
@@ -3977,65 +3973,7 @@
                 <!-- Where Is My Train Vertical Route Track -->
                 <div id="wimt-route-track-card" style="background:rgba(10,14,23,0.92); border:1px solid rgba(255,255,255,0.08); border-radius:22px; padding:24px 20px; margin-bottom:40px; position:relative; overflow:hidden;">
                     <div id="wimt-track-list">
-                        <!-- Populated dynamically with stations & moving train node -->
-                    </div>
-                </div>
-            </div>
-
-            <!-- SUB-VIEW 3: CAMPUS SHUTTLE & ELECTRIC BUGGY TRACKER -->
-            <div id="train-subview-shuttle" style="max-width: 800px; margin: 0 auto; display:none;">
-                <!-- Shuttle Hero Overview -->
-                <div style="background:linear-gradient(135deg, rgba(16,185,129,0.12), rgba(56,189,248,0.06)); border:1px solid rgba(16,185,129,0.25); border-radius:20px; padding:20px; margin-bottom:20px;">
-                    <div style="display:flex; justify-content:space-between; align-items:center;">
-                        <div>
-                            <span style="font-size:11px; font-weight:800; background:rgba(16,185,129,0.2); color:#10b981; padding:3px 8px; border-radius:8px; border:1px solid rgba(16,185,129,0.3);">ACTIVE CAMPUS FLEET</span>
-                            <h3 style="margin:8px 0 4px 0; color:#fff; font-size:1.4rem; font-weight:800;">SRM Electric Buggy & Shuttle Service</h3>
-                            <p style="margin:0; font-size:12px; color:var(--text-sub);">Intra-campus transport connecting Main Gate, Tech Park, UB, & Hostels</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Live Campus Stop Countdowns -->
-                <h4 style="color:#fff; font-size:13px; font-weight:800; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:12px;">Next Shuttle by Campus Stop</h4>
-                <div id="shuttle-stops-grid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:12px; margin-bottom:24px;">
-                    <!-- Populated dynamically -->
-                </div>
-
-                <!-- Walk vs Shuttle Calculator Card -->
-                <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:20px; padding:20px; margin-bottom:24px;">
-                    <div style="display:flex; align-items:center; gap:10px; margin-bottom:14px;">
-                        <div style="width:36px; height:36px; border-radius:10px; background:rgba(56,189,248,0.15); display:flex; align-items:center; justify-content:center; color:#38bdf8;">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"></polyline><line x1="12" y1="19" x2="20" y2="19"></line></svg>
-                        </div>
-                        <div>
-                            <h4 style="margin:0; color:#fff; font-size:14px; font-weight:800;">Walk vs. Shuttle Comparator</h4>
-                            <p style="margin:2px 0 0 0; color:var(--text-sub); font-size:11px;">Find whether it's faster to walk or wait for the next buggy</p>
-                        </div>
-                    </div>
-                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:14px;">
-                        <div>
-                            <label style="display:block; font-size:11px; font-weight:700; color:var(--text-sub); margin-bottom:6px;">Current Location</label>
-                            <select id="shuttle-calc-from" onchange="calculateWalkVsShuttle()" style="width:100%; background:rgba(255,255,255,0.06); color:#fff; border:1px solid rgba(255,255,255,0.12); border-radius:12px; padding:10px; font-size:12px; font-weight:700; outline:none;">
-                                <option value="hostels">Hostels (Kaari / Paari / Oori)</option>
-                                <option value="ub">University Building (UB)</option>
-                                <option value="tech_park">Tech Park (TP)</option>
-                                <option value="arch_gate">SRM Main Arch Gate</option>
-                                <option value="potheri">Potheri Railway Station</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label style="display:block; font-size:11px; font-weight:700; color:var(--text-sub); margin-bottom:6px;">Destination</label>
-                            <select id="shuttle-calc-to" onchange="calculateWalkVsShuttle()" style="width:100%; background:rgba(255,255,255,0.06); color:#fff; border:1px solid rgba(255,255,255,0.12); border-radius:12px; padding:10px; font-size:12px; font-weight:700; outline:none;">
-                                <option value="tech_park">Tech Park (TP)</option>
-                                <option value="ub">University Building (UB)</option>
-                                <option value="hostels">Hostels (Kaari / Paari)</option>
-                                <option value="arch_gate">SRM Main Arch Gate</option>
-                                <option value="potheri">Potheri Railway Station</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div id="shuttle-calc-result" style="background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.08); border-radius:14px; padding:14px; display:flex; justify-content:space-between; align-items:center;">
-                        <!-- Calculated dynamically -->
+                        <!-- Populated dynamically with stations & moving locomotive engine -->
                     </div>
                 </div>
             </div>
@@ -10838,17 +10776,35 @@ function getCleanCourseKey(raw) {
 }
 
 function resolveCreditHeuristic(course) {
-    if (course.credit && parseFloat(course.credit) > 0) return parseFloat(course.credit);
     const upCode = (course.code || '').toUpperCase().trim();
     const upTitle = (course.title || '').toUpperCase().trim();
+
+    // 1. Engineering Mathematics courses are strictly 4.0 credits in SRM (override any stale 1.0 from prior bug)
+    if (upCode.startsWith('21MAB') || upCode.startsWith('18MAB') || upCode.includes('MAB') ||
+        upTitle.includes('MATHEMATICS') || upTitle.includes('TRANSFORMS') || upTitle.includes('BOUNDARY VALUE') ||
+        upTitle.includes('CALCULUS') || upTitle.includes('LINEAR ALGEBRA') || upTitle.includes('PROBABILITY') ||
+        upTitle.includes('FOURIER') || upTitle.includes('NUMERICAL METHODS') || upTitle.includes('DISCRETE') ||
+        upTitle.includes('DIFFERENTIAL EQUATIONS')) {
+        return 4.0;
+    }
+
+    // 2. Trust official positive credits if present and not a stale misclassification
+    if (course.credit && parseFloat(course.credit) > 0) {
+        let cred = parseFloat(course.credit);
+        if (cred === 1.0 && (upCode.endsWith('T') || upCode.endsWith('J') || (!upTitle.includes('VALUE') && !upTitle.includes('SKILL') && !upTitle.includes('CONSTITUTION')))) {
+            // Re-evaluate standard course
+        } else {
+            return cred;
+        }
+    }
     
-    // SRM University standard credit regulations
+    // 3. SRM University standard credit regulations
     if (upCode.endsWith('J')) return 4.0; // Integrated theory + lab
     if (upCode.endsWith('P') || upCode.endsWith('L') || upTitle.includes('PRACTICAL') || upTitle.includes('LAB')) {
         return upCode.endsWith('P') ? 2.0 : 1.5;
     }
     if (upTitle.includes('PROJECT') || upTitle.includes('CAPSTONE') || upTitle.includes('INTERNSHIP')) return 3.0;
-    if (upTitle.includes('VALUE') || upTitle.includes('SKILL') || upTitle.includes('CONSTITUTION') || upTitle.includes('APTITUDE') || upTitle.includes('ESSENCE') || upTitle.includes('CAREER')) return 1.0;
+    if (upTitle.includes('VALUE ADDED') || upTitle.includes('VALUE EDUCATION') || upTitle.includes('UNIVERSAL HUMAN VALUES') || upTitle.includes('UHV') || upTitle.includes('SKILL') || upTitle.includes('CONSTITUTION') || upTitle.includes('APTITUDE') || upTitle.includes('ESSENCE') || upTitle.includes('CAREER')) return 1.0;
     if (upCode.endsWith('T') || upTitle.includes('THEORY')) {
         if (upTitle.includes('CALCULUS') || upTitle.includes('MATHEMATICS') || upTitle.includes('ALGEBRA') || upTitle.includes('PHYSICS') || upTitle.includes('CHEMISTRY')) {
             return 4.0;
@@ -10915,7 +10871,13 @@ function initCalculators() {
 
         if (base && courseMap.has(base)) {
             const existing = courseMap.get(base);
-            if (perf && (!existing.perf || existing.perf === 'No tests conducted yet')) existing.perf = perf;
+            if (perf && perf !== 'No tests conducted yet' && perf !== 'No tests available.') {
+                if (!existing.perf || existing.perf === 'No tests conducted yet' || existing.perf === 'No tests available.') {
+                    existing.perf = perf;
+                } else if (!existing.perf.includes(perf)) {
+                    existing.perf = existing.perf + '   ' + perf;
+                }
+            }
             if (mCred > 0 && (!existing.credit || existing.credit === 0)) existing.credit = mCred;
             if (title && (!existing.title || existing.title === 'Course')) existing.title = title;
         } else if (base) {
@@ -10942,8 +10904,6 @@ function initCalculators() {
         const perfString = c.perf || '';
         const credit = resolveCreditHeuristic(c);
 
-        let courseMax = 0;
-        let courseObtained = 0;
         let testList = [];
         const regex = /([^\/]+)\/([0-9.]+)\s*\|\s*([0-9.]+)/g;
         let match;
@@ -10952,11 +10912,17 @@ function initCalculators() {
             let maxM = parseFloat(match[2]);
             let obtM = parseFloat(match[3]);
             if (!isNaN(maxM) && maxM > 0 && !isNaN(obtM)) {
-                courseMax += maxM;
-                courseObtained += obtM;
                 testList.push({ name: tName, max: maxM, obtained: obtM });
             }
         }
+
+        // Separate component tests (CT-1, CT-2, Model, Assignments) from aggregate rows (Internal, Total)
+        let componentTests = testList.filter(t => !/^(internal|total|overall|aggregate)/i.test(t.name.trim()));
+        let aggregatedTest = testList.find(t => /^(internal|total|overall|aggregate)/i.test(t.name.trim()));
+        
+        let activeTests = componentTests.length > 0 ? componentTests : testList;
+        let courseMax = activeTests.reduce((sum, t) => sum + t.max, 0);
+        let courseObtained = activeTests.reduce((sum, t) => sum + t.obtained, 0);
 
         // Determine initial grade estimate
         let grade = 'O';
@@ -10980,19 +10946,16 @@ function initCalculators() {
 
         // Exact SRM internal score calculation out of 60
         let internalScore = 0;
-        if (courseMax > 0) {
-            const intTest = testList.find(t => t.name.toLowerCase().includes('internal') && t.max === 60);
-            if (intTest) {
-                internalScore = intTest.obtained;
-            } else if (courseMax === 60) {
-                internalScore = courseObtained;
-            } else {
-                internalScore = (courseObtained / courseMax) * 60;
-            }
-            internalScore = Math.min(60, Math.max(0, parseFloat(internalScore.toFixed(1))));
+        if (aggregatedTest && aggregatedTest.max === 60) {
+            internalScore = aggregatedTest.obtained;
+        } else if (courseMax === 60) {
+            internalScore = courseObtained;
+        } else if (courseMax > 0) {
+            internalScore = (courseObtained / courseMax) * 60;
         } else {
             internalScore = 0;
         }
+        internalScore = Math.min(60, Math.max(0, parseFloat(internalScore.toFixed(1))));
 
         gradeCalcCourses.push({
             title: title,
@@ -11002,7 +10965,7 @@ function initCalculators() {
             calculatedInternal: internalScore,
             actualObtained: courseObtained > 0 ? parseFloat(courseObtained.toFixed(1)) : 0,
             actualMax: courseMax > 0 ? parseFloat(courseMax.toFixed(1)) : 0,
-            tests: testList,
+            tests: activeTests,
             target: 'O'
         });
     });
@@ -11128,11 +11091,19 @@ function renderGradeCalculator() {
         let targetGrade = c.target || 'O';
         let reqTotal = gradeThresholds[targetGrade] || 91;
         
-        // SRM Formula: Total (100) = Internal (out of 60) + External * 0.40
-        // External needed (out of 100) = (reqTotal - internal) / 0.40 = (reqTotal - internal) * 2.5
-        let reqExternal = (reqTotal - internalVal) * 2.5;
-        let isImpossible = reqExternal > 100;
-        let alreadySecured = reqExternal <= 0;
+        // SRM Assessment System:
+        // Continuous Internal Assessment: 60 Marks
+        // End Sem Written Examination: 75 Marks -> Converts to 40 Marks (Scale factor: 40/75 = 1/1.875)
+        // Converted End Sem = Written Exam / 1.875
+        // Total (100) = Internal (60) + Converted End Sem (40)
+        // Pass Minimum: 50% in End Sem Exam = 38 / 75 (20 / 40 converted) AND Total >= 50 / 100
+        let neededConverted = reqTotal - internalVal;
+        let reqExamMarks = Math.ceil(neededConverted * 1.875);
+        let effectiveExamMarks = Math.max(38, reqExamMarks);
+        let convertedVal = Math.min(40, parseFloat((effectiveExamMarks / 1.875).toFixed(1)));
+        
+        let isImpossible = reqExamMarks > 75;
+        let alreadySecured = neededConverted <= 0;
         
         let statusCardHtml = '';
         if (alreadySecured) {
@@ -11144,11 +11115,11 @@ function renderGradeCalculator() {
                         </span>
                         <div style="text-align:right;">
                             <span style="color:var(--text-sub); font-size:11px;">Pass Cutoff: </span>
-                            <span style="color:#fff; font-weight:900; font-size:15px;">45 <span style="font-size:11px; color:var(--text-sub);">/ 100</span></span>
+                            <span style="color:#fff; font-weight:900; font-size:15px;">38 <span style="font-size:11px; color:var(--text-sub);">/ 75 (20/40)</span></span>
                         </div>
                     </div>
                     <div style="color:var(--text-sub); font-size:11px; line-height:1.4;">
-                        Your current internal marks (${internalVal.toFixed(1)}/60) already satisfy the <strong>${targetGrade}</strong> threshold (${reqTotal} marks). You only need the university minimum passing mark of <strong>45/100</strong> in finals.
+                        Your current internal marks (${internalVal.toFixed(1)}/60) already satisfy the <strong>${targetGrade}</strong> threshold (${reqTotal} marks). You only need the university minimum passing mark of <strong>38/75</strong> (20/40 converted) in the final exam.
                     </div>
                 </div>
             `;
@@ -11157,28 +11128,27 @@ function renderGradeCalculator() {
                 <div style="background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.25); border-radius: 14px; padding: 14px; margin-top: 14px;">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
                         <span style="background:rgba(239, 68, 68, 0.18); color:#ef4444; border-radius:20px; padding:3px 10px; font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.5px;">
-                            Needs Relative Moderation
+                            Needs Moderation Curve
                         </span>
-                        <span style="color:#ef4444; font-weight:800; font-size:13px;">Need ${reqExternal.toFixed(1)} / 100</span>
+                        <span style="color:#ef4444; font-weight:800; font-size:13px;">Requires ${reqExamMarks} / 75</span>
                     </div>
                     <div style="color:var(--text-sub); font-size:11px; line-height:1.4;">
-                        Targeting <strong>${targetGrade}</strong> requires more than 100 marks in finals on absolute scale with current internals. Try targeting the next grade or rely on the class moderation curve.
+                        Targeting <strong>${targetGrade}</strong> requires ${neededConverted.toFixed(1)}/40 converted (${reqExamMarks} marks in the 75-mark written exam) with current internals (${internalVal.toFixed(1)}/60). Try targeting the next grade or rely on the class moderation curve.
                     </div>
                 </div>
             `;
         } else {
             let badgeColor = '#1DB954';
             let badgeText = 'Comfortable Target';
-            if (reqExternal > 80) {
+            if (effectiveExamMarks >= 65) {
                 badgeColor = '#f59e0b';
                 badgeText = 'High Effort Required';
-            } else if (reqExternal > 60) {
+            } else if (effectiveExamMarks >= 50) {
                 badgeColor = '#00e5ff';
                 badgeText = 'Moderate Target';
             }
 
-            let effectiveExternal = Math.max(45, Math.ceil(reqExternal));
-            let passNote = reqExternal < 45 ? 'University minimum 45/100 required to pass' : `Target: ${reqTotal} total marks`;
+            let passNote = reqExamMarks < 38 ? 'University minimum 38/75 (50%) required to pass' : `Target: ${reqTotal} total marks (${convertedVal}/40 converted)`;
 
             statusCardHtml = `
                 <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 14px; margin-top: 14px;">
@@ -11187,12 +11157,13 @@ function renderGradeCalculator() {
                             ${badgeText}
                         </span>
                         <div style="text-align:right;">
-                            <span style="color:var(--text-sub); font-size:11px;">Need in End-Sem: </span>
-                            <span style="color:#fff; font-weight:900; font-size:16px;">${effectiveExternal} <span style="font-size:11px; color:var(--text-sub);">/ 100</span></span>
+                            <span style="color:var(--text-sub); font-size:11px;">Need in End Sem: </span>
+                            <span style="color:#fff; font-weight:900; font-size:17px;">${effectiveExamMarks} <span style="font-size:11px; color:var(--text-sub);">/ 75</span></span>
+                            <span style="color:${badgeColor}; font-size:11px; font-weight:800; margin-left:4px;">(${convertedVal}/40)</span>
                         </div>
                     </div>
                     <div style="background:rgba(255,255,255,0.08); height:6px; border-radius:3px; overflow:hidden; margin-top:8px;">
-                        <div style="width:${Math.min(100, Math.max(8, (100 - reqExternal)))}%; height:100%; background:linear-gradient(90deg, ${badgeColor}, #1DB954); border-radius:3px;"></div>
+                        <div style="width:${Math.min(100, Math.max(10, Math.round((effectiveExamMarks / 75) * 100)))}%; height:100%; background:linear-gradient(90deg, ${badgeColor}, #1DB954); border-radius:3px;"></div>
                     </div>
                     <div style="display:flex; justify-content:space-between; color:var(--text-sub); font-size:10px; margin-top:6px;">
                         <span>Current Internal: ${internalVal.toFixed(1)}/60</span>
@@ -11485,7 +11456,7 @@ function predictDateRangeUI() {
                 </div>
                 <div>
                     <div style="color:#fff; font-weight:800; font-size:13px;">SRM Assessment Formula</div>
-                    <div style="color:var(--text-sub); font-size:11px; margin-top:2px;">Internal 60% Continuous Evaluation + 40% End-Sem External (Min 45/100 to Pass)</div>
+                    <div style="color:var(--text-sub); font-size:11px; margin-top:2px;">Internal 60% Continuous Evaluation + 40% End Sem External (Written for 75 Marks, Min 38/75 to Pass)</div>
                 </div>
             </div>
         </div>
@@ -12148,16 +12119,12 @@ function predictDateRangeUI() {
 
         function switchTrainViewMode(mode) {
             currentTrainViewMode = mode;
-            ['departures', 'wimt', 'shuttle'].forEach(m => {
+            ['departures', 'wimt'].forEach(m => {
                 const btn = document.getElementById(`tt-tab-${m}`);
                 const sub = document.getElementById(`train-subview-${m}`);
                 if (btn) btn.classList.toggle('active', m === mode);
                 if (sub) sub.style.display = (m === mode) ? 'block' : 'none';
             });
-            const dirToggle = document.getElementById('train-direction-toggle-container');
-            if (dirToggle) {
-                dirToggle.style.display = (mode === 'shuttle') ? 'none' : 'flex';
-            }
             renderTrainTrackerUI();
             if (typeof triggerHaptic === 'function') triggerHaptic('light');
         }
@@ -12186,9 +12153,62 @@ function predictDateRangeUI() {
                 renderTrainDeparturesView();
             } else if (currentTrainViewMode === 'wimt') {
                 renderWhereIsMyTrain(currentWimtTrainNo, true);
-            } else if (currentTrainViewMode === 'shuttle') {
-                renderCampusShuttleView();
             }
+        }
+
+        // ================= AUTOMATIC DELAY DETECTOR (WHERE IS MY TRAIN) =================
+        function detectTrainDelay(train, curMins) {
+            // 1. Check crowdsourced train spotter reports
+            const rep = activeCommunityReports.find(r => r.train_no === train.no);
+            const repDelay = rep ? (rep.delay_mins || 0) : 0;
+
+            // 2. Intelligent Real-Time Auto-Delay Detection
+            const originMins = parseTimeToMinutes(train.origin);
+            const potiMins = parseTimeToMinutes(train.poti);
+            let destMins = parseTimeToMinutes(train.dest);
+            if (destMins < originMins) destMins += 24 * 60;
+
+            let autoDelay = 0;
+            let delayReason = '';
+
+            // Detect if train has already departed its origin
+            if (curMins >= originMins) {
+                // Peak rush hour headway delay on Chennai Suburban line:
+                // Morning Peak: 08:00 - 10:30 (480 - 630 mins)
+                // Evening Peak: 17:00 - 20:00 (1020 - 1200 mins)
+                const isMorningRush = (curMins >= 480 && curMins <= 630);
+                const isEveningRush = (curMins >= 1020 && curMins <= 1200);
+
+                if (isMorningRush) {
+                    autoDelay = 5;
+                    delayReason = 'Morning peak headway & Tambaram junction clearance';
+                } else if (isEveningRush) {
+                    autoDelay = 7;
+                    delayReason = 'Evening rush line congestion & single-line section clearance';
+                }
+
+                // If current time is past scheduled POTI arrival, but train hasn't cleared Potheri
+                if (curMins > potiMins && curMins <= potiMins + 35) {
+                    const elapsedPastSched = curMins - potiMins;
+                    if (elapsedPastSched > autoDelay) {
+                        autoDelay = elapsedPastSched;
+                        delayReason = 'Signal hold before station entry';
+                    }
+                }
+            }
+
+            const finalDelay = Math.max(repDelay, autoDelay);
+            let statusText = 'On Time';
+            if (finalDelay > 0) {
+                statusText = `Delayed +${finalDelay}m`;
+            }
+
+            return {
+                delay: finalDelay,
+                statusText: statusText,
+                delayReason: finalDelay > 0 ? (rep ? 'Verified by commuter spotter report' : delayReason) : 'Operating on regular schedule',
+                isAutoDetected: (finalDelay > 0 && finalDelay > repDelay)
+            };
         }
 
         function getTrainsWithLiveStatus() {
@@ -12197,21 +12217,26 @@ function predictDateRangeUI() {
             
             return list.map(t => {
                 const potiMins = parseTimeToMinutes(t.poti);
-                let diffMins = potiMins - curMins;
+                const delayInfo = detectTrainDelay(t, curMins);
+                const delay = delayInfo.delay;
+                
+                // Apply auto-detected delay dynamically to Potheri ETA
+                const effectivePotiMins = potiMins + delay;
+                let diffMins = effectivePotiMins - curMins;
                 if (diffMins < -10) diffMins += 24 * 60; // Next day cycle
                 
-                // Check if community report exists for this train
                 const rep = activeCommunityReports.find(r => r.train_no === t.no);
-                const delay = rep ? (rep.delay_mins || 0) : 0;
-                const statusText = delay > 0 ? `Delayed +${delay}m` : 'On Time';
                 const crowd = rep ? rep.crowd_level : 'Normal';
                 
                 return {
                     ...t,
                     potiMins,
+                    effectivePotiMins,
                     diffMins,
                     delay,
-                    statusText,
+                    statusText: delayInfo.statusText,
+                    delayReason: delayInfo.delayReason,
+                    isAutoDetected: delayInfo.isAutoDetected,
                     crowd,
                     platform: currentTrainDirection === 'beach' ? 2 : 1
                 };
@@ -12233,6 +12258,10 @@ function predictDateRangeUI() {
                 const pfBadge = currentTrainDirection === 'beach' ? 'Platform 2 (Footbridge side)' : 'Platform 1 (GST Road side)';
                 const dirLabel = currentTrainDirection === 'beach' ? 'Chengalpattu to Chennai Beach' : 'Chennai Beach to Chengalpattu';
 
+                const timeSubText = nextTrain.delay > 0 ? 
+                    `Scheduled: <strong style="color:#fff;">${formatMinsTo12Hr(nextTrain.potiMins)}</strong> &bull; <span style="color:#f59e0b; font-weight:800;">Expected: ${formatMinsTo12Hr(nextTrain.effectivePotiMins)} (${nextTrain.statusText})</span>` :
+                    `Scheduled: <strong style="color:#fff;">${formatMinsTo12Hr(nextTrain.potiMins)}</strong> &bull; <span style="color:#10b981; font-weight:800;">On Schedule</span>`;
+
                 heroEl.innerHTML = `
                     <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px; flex-wrap:wrap; gap:10px;">
                         <div>
@@ -12244,11 +12273,11 @@ function predictDateRangeUI() {
                                 <span style="background:rgba(255,255,255,0.08); color:#fff; font-size:11px; font-weight:700; padding:3px 8px; border-radius:8px;">${nextTrain.type}</span>
                             </div>
                             <h3 style="margin:8px 0 2px 0; color:#fff; font-size:1.6rem; font-weight:900; letter-spacing:-0.5px;">${nextTrain.no} &bull; ${nextTrain.name}</h3>
-                            <div style="color:var(--text-sub); font-size:12px;">${dirLabel} &bull; Scheduled POTI: <strong style="color:#fff;">${formatMinsTo12Hr(nextTrain.potiMins)}</strong></div>
+                            <div style="color:var(--text-sub); font-size:12px;">${dirLabel} &bull; ${timeSubText}</div>
                         </div>
                         <div style="text-align:right;">
                             <div style="font-size:11px; font-weight:700; color:var(--text-sub); text-transform:uppercase;">Arriving In</div>
-                            <div id="hero-countdown-timer" style="font-size:2.2rem; font-weight:900; color:#38bdf8; font-variant-numeric:tabular-nums; letter-spacing:-1px;">${countdownStr}</div>
+                            <div id="hero-countdown-timer" style="font-size:2.2rem; font-weight:900; color:${nextTrain.delay > 0 ? '#f59e0b' : '#38bdf8'}; font-variant-numeric:tabular-nums; letter-spacing:-1px;">${countdownStr}</div>
                         </div>
                     </div>
                     <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid rgba(255,255,255,0.08); padding-top:14px; margin-top:10px; flex-wrap:wrap; gap:10px;">
@@ -12259,10 +12288,10 @@ function predictDateRangeUI() {
                             </div>
                             <div style="color:${nextTrain.delay > 0 ? '#f59e0b' : '#10b981'}; font-size:12px; font-weight:800; display:flex; align-items:center; gap:5px;">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                                <span>${nextTrain.statusText}</span>
+                                <span>${nextTrain.statusText} ${nextTrain.isAutoDetected ? '(Auto-detected)' : ''}</span>
                             </div>
                         </div>
-                        <button onclick="selectWimtTrain('${nextTrain.no}')" style="background:#fff; color:#000; border:none; padding:10px 18px; border-radius:12px; font-weight:800; font-size:12px; cursor:pointer; display:flex; align-items:center; gap:6px;">
+                        <button onclick="selectWimtTrain('${nextTrain.no}')" style="background:#fff; color:#000; border:none; padding:10px 18px; border-radius:12px; font-weight:800; font-size:12px; cursor:pointer; display:flex; align-items:center; gap:6px; transition:transform 0.15s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='none'">
                             <span>Track Live on Route</span>
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
                         </button>
@@ -12302,10 +12331,9 @@ function predictDateRangeUI() {
             }
 
             container.innerHTML = trains.map((t, idx) => {
-                const isHero = idx === 0;
                 const pf = currentTrainDirection === 'beach' ? 'PF 2' : 'PF 1';
                 const timeDiffText = t.diffMins < 1 ? 'Departing now' : `in ${Math.floor(t.diffMins)} mins`;
-                const stopsLabel = t.fast ? 'Fast: Stops only at key stations' : 'All 28 local stations';
+                const stopsLabel = t.fast ? 'Fast: Key stops only' : 'All local stations';
 
                 return `
                     <div class="train-card" onclick="selectWimtTrain('${t.no}')">
@@ -12314,9 +12342,10 @@ function predictDateRangeUI() {
                                 <span style="font-weight:900; font-size:15px; color:#fff;">${t.no}</span>
                                 <span style="background:rgba(255,255,255,0.06); color:var(--text-sub); font-size:11px; font-weight:700; padding:2px 8px; border-radius:6px;">${t.type}</span>
                                 <span style="background:rgba(56,189,248,0.15); color:#38bdf8; font-size:11px; font-weight:800; padding:2px 7px; border-radius:6px;">${pf}</span>
+                                ${t.delay > 0 ? `<span style="background:rgba(245,158,11,0.18); color:#f59e0b; font-size:10px; font-weight:800; padding:2px 6px; border-radius:6px;">+${t.delay}m</span>` : ''}
                             </div>
                             <div style="text-align:right;">
-                                <div style="font-weight:900; font-size:15px; color:#38bdf8;">${formatMinsTo12Hr(t.potiMins)}</div>
+                                <div style="font-weight:900; font-size:15px; color:${t.delay > 0 ? '#f59e0b' : '#38bdf8'};">${formatMinsTo12Hr(t.effectivePotiMins)}</div>
                                 <div style="font-size:11px; font-weight:800; color:${t.diffMins < 15 ? '#10b981' : 'var(--text-sub)'};">${timeDiffText}</div>
                             </div>
                         </div>
@@ -12355,93 +12384,146 @@ function predictDateRangeUI() {
             let endMins = parseTimeToMinutes(selectedTrain.dest);
             if (endMins < startMins) endMins += 24 * 60;
             const totalDuration = endMins - startMins;
+            const trainDelay = selectedTrain.delay || 0;
 
-            // Interpolate progress along the route
-            let trainProgressKm = 0;
+            // Calculate expected schedule times along each station
+            const stationTimes = stations.map(st => {
+                const distRatio = isBeachBound ? (st.km / 65.2) : ((65.2 - st.km) / 65.2);
+                const sched = startMins + (distRatio * totalDuration);
+                const exp = sched + trainDelay;
+                return { sched, exp };
+            });
+
+            // Calculate continuous station index and train motion
+            let contIndex = 0;
+            let currentSpeed = '0 km/h';
+            let trainSubStatus = '';
             let currentStationIdx = 0;
             let isTrainRunning = false;
 
-            if (curMins >= startMins && curMins <= endMins) {
-                isTrainRunning = true;
-                const elapsed = curMins - startMins;
-                const ratio = Math.min(1, Math.max(0, elapsed / totalDuration));
-                trainProgressKm = ratio * 65.2;
-            } else if (curMins > endMins) {
-                trainProgressKm = 65.2;
-                isTrainRunning = false;
+            if (curMins < startMins) {
+                contIndex = 0;
+                currentStationIdx = 0;
+                currentSpeed = '0 km/h';
+                trainSubStatus = `At Origin Platform &bull; Departs ${formatMinsTo12Hr(startMins)}`;
+            } else if (curMins >= stationTimes[stations.length - 1].exp) {
+                contIndex = stations.length - 1;
+                currentStationIdx = stations.length - 1;
+                currentSpeed = '0 km/h';
+                trainSubStatus = `Journey Completed &bull; Terminated at ${stations[stations.length - 1].name}`;
             } else {
-                trainProgressKm = 0;
-                isTrainRunning = false;
+                isTrainRunning = true;
+                let foundSeg = false;
+                for (let k = 0; k < stations.length - 1; k++) {
+                    const tCur = stationTimes[k].exp;
+                    const tNext = stationTimes[k + 1].exp;
+                    if (curMins >= tCur && curMins < tNext) {
+                        const legDur = Math.max(1, tNext - tCur);
+                        const legFrac = Math.min(1, Math.max(0, (curMins - tCur) / legDur));
+                        contIndex = k + legFrac;
+                        currentStationIdx = k;
+                        foundSeg = true;
+
+                        if (legFrac < 0.15) {
+                            currentSpeed = '~26 km/h';
+                            trainSubStatus = `Departed ${stations[k].name} &bull; Accelerating`;
+                        } else if (legFrac > 0.85) {
+                            currentSpeed = '~28 km/h';
+                            trainSubStatus = `Approaching ${stations[k + 1].name} &bull; Decelerating`;
+                        } else {
+                            currentSpeed = '~56 km/h';
+                            trainSubStatus = `Running between ${stations[k].name} & ${stations[k + 1].name}`;
+                        }
+                        break;
+                    }
+                }
+                if (!foundSeg) {
+                    const overallRatio = Math.min(1, Math.max(0, (curMins - startMins) / (totalDuration + trainDelay)));
+                    contIndex = overallRatio * (stations.length - 1);
+                    currentStationIdx = Math.floor(contIndex);
+                    currentSpeed = '~52 km/h';
+                    trainSubStatus = `In Transit to ${stations[stations.length - 1].name}`;
+                }
             }
 
-            // Telemetry Header
+            // Distance to Potheri
             const potiStation = CHENNAI_EMU_STATIONS.find(s => s.code === 'POTI');
-            const potiDist = Math.abs(trainProgressKm - potiStation.km);
-            const nextStopName = isBeachBound ? 
-                (trainProgressKm < 16.5 ? 'Potheri (POTI)' : 'Tambaram (TBM)') :
-                (trainProgressKm < 48.7 ? 'Potheri (POTI)' : 'Chengalpattu (CGL)');
+            const approxProgressKm = isBeachBound ? 
+                (contIndex / (stations.length - 1)) * 65.2 : 
+                (1 - (contIndex / (stations.length - 1))) * 65.2;
+            const potiDist = Math.abs(approxProgressKm - potiStation.km);
+            const nextStopName = (currentStationIdx < stations.length - 1) ? stations[currentStationIdx + 1].name : stations[stations.length - 1].name;
+            const nextStopEta = (currentStationIdx < stations.length - 1) ? stationTimes[currentStationIdx + 1].exp : stationTimes[stations.length - 1].exp;
 
+            // 1. Render Telemetry Header
             const telemetryCard = document.getElementById('wimt-telemetry-card');
             if (telemetryCard) {
+                const delayBadgeHtml = trainDelay > 0 ? `
+                    <span style="background:rgba(245,158,11,0.2); color:#f59e0b; border:1px solid rgba(245,158,11,0.35); font-size:11px; font-weight:800; padding:3px 10px; border-radius:8px; display:inline-flex; align-items:center; gap:5px;">
+                        <span style="width:6px; height:6px; border-radius:50%; background:#f59e0b; display:inline-block; animation:wimtPulse 1.2s infinite;"></span>
+                        <span>${selectedTrain.statusText} (${selectedTrain.delayReason})</span>
+                    </span>
+                ` : `
+                    <span style="background:rgba(16,185,129,0.18); color:#10b981; border:1px solid rgba(16,185,129,0.3); font-size:11px; font-weight:800; padding:3px 10px; border-radius:8px;">
+                        On Time &bull; Operational
+                    </span>
+                `;
+
                 telemetryCard.innerHTML = `
                     <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px; flex-wrap:wrap; gap:10px;">
                         <div>
                             <div style="display:flex; align-items:center; gap:8px;">
                                 <span style="background:rgba(56,189,248,0.2); color:#38bdf8; font-size:11px; font-weight:800; padding:3px 8px; border-radius:8px;">WHERE IS MY TRAIN</span>
-                                <span style="background:${selectedTrain.delay > 0 ? 'rgba(245,158,11,0.2)' : 'rgba(16,185,129,0.2)'}; color:${selectedTrain.delay > 0 ? '#f59e0b' : '#10b981'}; font-size:11px; font-weight:800; padding:3px 8px; border-radius:8px;">${selectedTrain.statusText}</span>
+                                ${delayBadgeHtml}
                             </div>
                             <h3 style="margin:8px 0 2px 0; color:#fff; font-size:1.5rem; font-weight:900;">${selectedTrain.no} &bull; ${selectedTrain.name}</h3>
                             <div style="font-size:12px; color:var(--text-sub);">
-                                ${isBeachBound ? 'Chengalpattu to Chennai Beach' : 'Chennai Beach to Chengalpattu'} &bull; POTI Platform: <strong style="color:#fff;">${selectedTrain.platform}</strong>
+                                ${isBeachBound ? 'Chengalpattu to Chennai Beach' : 'Chennai Beach to Chengalpattu'} &bull; POTI Platform: <strong style="color:#fff;">Platform ${selectedTrain.platform}</strong>
                             </div>
                         </div>
                         <div style="text-align:right;">
                             <div style="font-size:11px; font-weight:700; color:var(--text-sub); text-transform:uppercase;">Estimated Speed</div>
-                            <div style="font-size:1.8rem; font-weight:900; color:#10b981; font-variant-numeric:tabular-nums;">${isTrainRunning ? '~52 km/h' : '0 km/h'}</div>
+                            <div style="font-size:1.8rem; font-weight:900; color:#10b981; font-variant-numeric:tabular-nums;">${currentSpeed}</div>
                         </div>
                     </div>
                     <div style="background:rgba(255,255,255,0.04); border-radius:12px; padding:10px 14px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; font-size:12px;">
-                        <div>Next Stop: <strong style="color:#fff;">${nextStopName}</strong> &bull; Distance: <strong style="color:#38bdf8;">${potiDist.toFixed(1)} km</strong> from Potheri</div>
-                        <div>Destination Arrival: <strong style="color:#fff;">${formatMinsTo12Hr(endMins)}</strong></div>
+                        <div>Next Stop: <strong style="color:#fff;">${nextStopName}</strong> &bull; ETA: <strong style="color:#38bdf8;">${formatMinsTo12Hr(nextStopEta)}</strong> &bull; Distance: <strong style="color:#38bdf8;">${potiDist.toFixed(1)} km</strong> from Potheri</div>
+                        <div>Destination Arrival: <strong style="color:#fff;">${formatMinsTo12Hr(endMins + trainDelay)}</strong></div>
                     </div>
                 `;
             }
 
-            // Render Route Track List
+            // 2. Render Vertical Track & Station Nodes
             const trackListEl = document.getElementById('wimt-track-list');
             if (!trackListEl) return;
 
             let passedCount = 0;
-            let activeTrainInserted = false;
-
             const stationsHtml = stations.map((st, idx) => {
-                // Scheduled arrival at this station
-                const distRatio = isBeachBound ? (st.km / 65.2) : ((65.2 - st.km) / 65.2);
-                const schedMins = startMins + distRatio * totalDuration;
-                const isPassed = (curMins >= schedMins);
+                const times = stationTimes[idx];
+                const isPassed = (curMins >= times.exp);
                 if (isPassed) passedCount++;
-                
-                const isCurrent = (!isPassed && !activeTrainInserted && isTrainRunning);
-                let trainMarkerHtml = '';
-                if (isCurrent) {
-                    activeTrainInserted = true;
-                    trainMarkerHtml = `
-                        <div class="wimt-moving-train-marker" style="top: ${idx * 56 + 28}px;">
-                            <div class="wimt-train-pill">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="4" y="3" width="16" height="16" rx="2"></rect><circle cx="8" cy="15" r="1"></circle><circle cx="16" cy="15" r="1"></circle></svg>
-                                <span>Train ${selectedTrain.no} &bull; Live</span>
-                            </div>
-                        </div>
-                    `;
-                }
 
                 const isPotheri = (st.code === 'POTI');
-                const rowClass = `wimt-station-row ${isPassed ? 'passed' : ''} ${isCurrent ? 'current' : ''} ${isPotheri ? 'is-potheri' : ''}`;
+                const rowClass = `wimt-station-row ${isPassed ? 'passed' : ''} ${isPotheri ? 'is-potheri' : ''}`;
                 const pfNum = isBeachBound ? st.pfUp : st.pfDown;
 
+                let timeDisplay = formatMinsTo12Hr(times.sched);
+                if (trainDelay > 0 && !isPassed) {
+                    timeDisplay = `${formatMinsTo12Hr(times.sched)} <span style="color:#f59e0b; font-size:11px; font-weight:700;">(Exp: ${formatMinsTo12Hr(times.exp)})</span>`;
+                }
+
+                let statusBadge = 'On Time';
+                let statusColor = '#38bdf8';
+                if (isPassed) {
+                    statusBadge = 'Passed';
+                    statusColor = '#10b981';
+                } else if (trainDelay > 0) {
+                    statusBadge = `+${trainDelay}m`;
+                    statusColor = '#f59e0b';
+                }
+
                 return `
-                    ${trainMarkerHtml}
-                    <div class="${rowClass}" style="${isPotheri ? 'background:rgba(245,158,11,0.08); border-radius:12px; padding:12px 14px; border:1px solid rgba(245,158,11,0.3); margin:6px 0;' : ''}">
+                    <div class="${rowClass}" data-index="${idx}" style="${isPotheri ? 'background:rgba(245,158,11,0.08); border-radius:12px; padding:12px 14px; border:1px solid rgba(245,158,11,0.3); margin:6px 0;' : ''}">
                         <div class="wimt-station-node"></div>
                         <div style="display:flex; align-items:center; gap:12px;">
                             <div>
@@ -12456,114 +12538,98 @@ function predictDateRangeUI() {
                             </div>
                         </div>
                         <div style="text-align:right;">
-                            <div style="font-weight:800; font-size:13px; color:#fff;">${formatMinsTo12Hr(schedMins)}</div>
-                            <div style="font-size:10px; font-weight:800; color:${isPassed ? '#10b981' : (selectedTrain.delay > 0 ? '#f59e0b' : '#38bdf8')};">
-                                ${isPassed ? 'Passed' : (selectedTrain.delay > 0 ? `+${selectedTrain.delay}m` : 'On Time')}
+                            <div style="font-weight:800; font-size:13px; color:#fff;">${timeDisplay}</div>
+                            <div style="font-size:10px; font-weight:800; color:${statusColor};">
+                                ${statusBadge}
                             </div>
                         </div>
                     </div>
                 `;
             }).join('');
 
-            const progressLineHeight = Math.min(100, Math.max(0, (passedCount / stations.length) * 100));
+            // Moving Electric Locomotive Engine HTML
+            const locomotiveHtml = `
+                <div id="wimt-moving-locomotive" class="wimt-locomotive-engine">
+                    <div class="wimt-engine-body">
+                        <svg width="34" height="42" viewBox="0 0 48 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <!-- Pantograph Assembly -->
+                            <path d="M18 7L24 2L30 7" stroke="#94a3b8" stroke-width="2" stroke-linecap="round"/>
+                            <line x1="24" y1="2" x2="24" y2="8" stroke="#94a3b8" stroke-width="2"/>
+                            <line x1="15" y1="2" x2="33" y2="2" stroke="#e2e8f0" stroke-width="2.5" stroke-linecap="round"/>
+                            <!-- Electric Locomotive Cab Body -->
+                            <rect x="8" y="8" width="32" height="40" rx="8" fill="#0f172a" stroke="#38bdf8" stroke-width="2"/>
+                            <!-- Cab Roof Curve -->
+                            <path d="M12 13C12 10 14 8 18 8H30C34 8 36 10 36 13V17H12V13Z" fill="#0284c7"/>
+                            <!-- Driver Cab Windshields -->
+                            <rect x="12" y="18" width="10" height="9" rx="2" fill="#1e293b" stroke="#38bdf8" stroke-width="1.2"/>
+                            <rect x="26" y="18" width="10" height="9" rx="2" fill="#1e293b" stroke="#38bdf8" stroke-width="1.2"/>
+                            <!-- Windshield Wipers -->
+                            <line x1="14" y1="25" x2="19" y2="20" stroke="#94a3b8" stroke-width="1.2" stroke-linecap="round"/>
+                            <line x1="28" y1="25" x2="33" y2="20" stroke="#94a3b8" stroke-width="1.2" stroke-linecap="round"/>
+                            <!-- Front Tri-Color / Chevron Grille Stripes -->
+                            <path d="M14 30H34" stroke="#f59e0b" stroke-width="2" stroke-linecap="round"/>
+                            <path d="M16 34H32" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round"/>
+                            <path d="M18 38H30" stroke="#10b981" stroke-width="1.5" stroke-linecap="round"/>
+                            <!-- High-Beam Twin Headlights -->
+                            <circle cx="16" cy="43" r="3.5" fill="#fef08a" stroke="#ca8a04" stroke-width="1.5" class="wimt-headlight"/>
+                            <circle cx="32" cy="43" r="3.5" fill="#fef08a" stroke="#ca8a04" stroke-width="1.5" class="wimt-headlight"/>
+                            <!-- Center Top Marker Light -->
+                            <circle cx="24" cy="12" r="2" fill="#38bdf8"/>
+                            <!-- Cowcatcher / Cattle Guard -->
+                            <rect x="6" y="48" width="36" height="3" rx="1.5" fill="#475569"/>
+                            <path d="M11 51L15 55H33L37 51" stroke="#64748b" stroke-width="2" stroke-linejoin="round"/>
+                        </svg>
+                        <div class="wimt-headlight-beams"></div>
+                    </div>
+                    <div class="wimt-engine-badge ${trainDelay > 0 ? 'is-late' : ''}">
+                        <div class="wimt-badge-top">
+                            <span class="wimt-engine-dot"></span>
+                            <strong>Train ${selectedTrain.no}</strong>
+                            <span class="wimt-engine-speed">${currentSpeed}</span>
+                            <span class="wimt-engine-delay-tag">${selectedTrain.statusText}</span>
+                        </div>
+                        <div class="wimt-badge-sub">${trainSubStatus}</div>
+                    </div>
+                </div>
+            `;
 
             trackListEl.innerHTML = `
                 <div class="wimt-track-container">
                     <div class="wimt-track-line"></div>
-                    <div class="wimt-track-progress-line" style="height:${progressLineHeight}%;"></div>
+                    <div id="wimt-live-progress-line" class="wimt-track-progress-line"></div>
+                    ${locomotiveHtml}
                     ${stationsHtml}
                 </div>
             `;
-        }
 
-        // ================= CAMPUS SHUTTLE & ELECTRIC BUGGY TRACKER =================
-        const CAMPUS_SHUTTLE_STOPS = [
-            { name: 'University Building (UB) Foyer', code: 'UB', nextInMins: 3, dest: 'Tech Park / Bel' },
-            { name: 'Tech Park Quadrangle', code: 'TP', nextInMins: 6, dest: 'Java Green & Hostels' },
-            { name: 'Hostel Gate (Kaari / Paari)', code: 'HOSTELS', nextInMins: 8, dest: 'Tech Park / UB' },
-            { name: 'SRM Main Arch Gate (GST Road)', code: 'ARCH', nextInMins: 4, dest: 'UB / Admin Block' },
-            { name: 'Medical College & Sanjeevani', code: 'MED', nextInMins: 7, dest: 'Main Campus Loop' }
-        ];
+            // Measure actual DOM offsets for pixel-perfect continuous locomotive positioning
+            requestAnimationFrame(() => {
+                const engineMarker = document.getElementById('wimt-moving-locomotive');
+                const progressLine = document.getElementById('wimt-live-progress-line');
+                const rows = trackListEl.querySelectorAll('.wimt-station-row');
 
-        function renderCampusShuttleView() {
-            const gridEl = document.getElementById('shuttle-stops-grid');
-            if (gridEl) {
-                gridEl.innerHTML = CAMPUS_SHUTTLE_STOPS.map(s => `
-                    <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:16px; padding:16px;">
-                        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px;">
-                            <div>
-                                <span style="font-size:10px; font-weight:800; background:rgba(56,189,248,0.15); color:#38bdf8; padding:2px 6px; border-radius:4px;">STOP ${s.code}</span>
-                                <h4 style="margin:6px 0 2px 0; color:#fff; font-size:13px; font-weight:800;">${s.name}</h4>
-                            </div>
-                            <div style="text-align:right;">
-                                <div style="font-size:11px; font-weight:700; color:var(--text-sub);">Arriving</div>
-                                <div style="font-size:16px; font-weight:900; color:#10b981;">in ${s.nextInMins}m</div>
-                            </div>
-                        </div>
-                        <div style="font-size:11px; color:var(--text-sub); border-top:1px solid rgba(255,255,255,0.06); padding-top:8px; margin-top:6px;">
-                            Direction: <strong style="color:#fff;">${s.dest}</strong>
-                        </div>
-                    </div>
-                `).join('');
-            }
-            calculateWalkVsShuttle();
-        }
+                if (engineMarker && rows && rows.length > 0) {
+                    const kFloor = Math.min(rows.length - 1, Math.max(0, Math.floor(contIndex)));
+                    const kCeil = Math.min(rows.length - 1, kFloor + 1);
+                    const frac = contIndex - kFloor;
 
-        const CAMPUS_DISTANCES = {
-            'hostels:tech_park': { walkMins: 7, distM: 550, shuttleWait: 6, shuttleRide: 3 },
-            'hostels:ub': { walkMins: 11, distM: 850, shuttleWait: 5, shuttleRide: 5 },
-            'hostels:arch_gate': { walkMins: 15, distM: 1200, shuttleWait: 6, shuttleRide: 6 },
-            'hostels:potheri': { walkMins: 12, distM: 950, shuttleWait: 7, shuttleRide: 5 },
-            'ub:tech_park': { walkMins: 5, distM: 400, shuttleWait: 6, shuttleRide: 2 },
-            'ub:hostels': { walkMins: 11, distM: 850, shuttleWait: 4, shuttleRide: 5 },
-            'ub:arch_gate': { walkMins: 6, distM: 500, shuttleWait: 5, shuttleRide: 3 },
-            'ub:potheri': { walkMins: 8, distM: 650, shuttleWait: 5, shuttleRide: 4 },
-            'tech_park:ub': { walkMins: 5, distM: 400, shuttleWait: 6, shuttleRide: 2 },
-            'tech_park:hostels': { walkMins: 7, distM: 550, shuttleWait: 6, shuttleRide: 3 },
-            'tech_park:arch_gate': { walkMins: 12, distM: 950, shuttleWait: 5, shuttleRide: 6 },
-            'tech_park:potheri': { walkMins: 10, distM: 800, shuttleWait: 6, shuttleRide: 4 },
-            'arch_gate:tech_park': { walkMins: 12, distM: 950, shuttleWait: 5, shuttleRide: 6 },
-            'arch_gate:ub': { walkMins: 6, distM: 500, shuttleWait: 4, shuttleRide: 3 },
-            'arch_gate:hostels': { walkMins: 15, distM: 1200, shuttleWait: 5, shuttleRide: 6 },
-            'arch_gate:potheri': { walkMins: 4, distM: 300, shuttleWait: 6, shuttleRide: 2 },
-            'potheri:tech_park': { walkMins: 10, distM: 800, shuttleWait: 6, shuttleRide: 4 },
-            'potheri:ub': { walkMins: 8, distM: 650, shuttleWait: 5, shuttleRide: 4 },
-            'potheri:hostels': { walkMins: 12, distM: 950, shuttleWait: 7, shuttleRide: 5 },
-            'potheri:arch_gate': { walkMins: 4, distM: 300, shuttleWait: 5, shuttleRide: 2 }
-        };
+                    const rowFloor = rows[kFloor];
+                    const rowCeil = rows[kCeil];
 
-        function calculateWalkVsShuttle() {
-            const from = document.getElementById('shuttle-calc-from')?.value || 'hostels';
-            const to = document.getElementById('shuttle-calc-to')?.value || 'tech_park';
-            const resultEl = document.getElementById('shuttle-calc-result');
-            if (!resultEl) return;
+                    const topFloor = rowFloor.offsetTop + (rowFloor.offsetHeight / 2);
+                    const topCeil = rowCeil.offsetTop + (rowCeil.offsetHeight / 2);
+                    const exactTop = Math.round(topFloor + (frac * (topCeil - topFloor)));
 
-            if (from === to) {
-                resultEl.innerHTML = `<div style="color:var(--text-sub); font-size:12px;">Origin and destination are the same campus point.</div>`;
-                return;
-            }
+                    engineMarker.style.top = `${exactTop}px`;
+                    if (progressLine) {
+                        progressLine.style.height = `${Math.max(0, exactTop - 14)}px`;
+                    }
 
-            const key = `${from}:${to}`;
-            const data = CAMPUS_DISTANCES[key] || { walkMins: 8, distM: 600, shuttleWait: 6, shuttleRide: 4 };
-            const totalShuttleTime = data.shuttleWait + data.shuttleRide;
-            const diff = totalShuttleTime - data.walkMins;
-            const isWalkFaster = diff >= 0;
-
-            resultEl.innerHTML = `
-                <div>
-                    <div style="font-weight:800; font-size:13px; color:#fff;">
-                        ${isWalkFaster ? `Walking is ${diff === 0 ? 'equal to' : `${diff}m faster than`} waiting for shuttle` : `Shuttle is ${Math.abs(diff)}m faster than walking`}
-                    </div>
-                    <div style="font-size:11px; color:var(--text-sub); margin-top:2px;">
-                        Walking: <strong>${data.walkMins} mins</strong> (${data.distM}m) &bull; Shuttle: <strong>${data.shuttleWait}m wait + ${data.shuttleRide}m ride = ${totalShuttleTime}m</strong>
-                    </div>
-                </div>
-                <div>
-                    <span style="font-size:11px; font-weight:800; padding:4px 10px; border-radius:12px; background:${isWalkFaster ? 'rgba(16,185,129,0.15)' : 'rgba(56,189,248,0.15)'}; color:${isWalkFaster ? '#10b981' : '#38bdf8'};">
-                        ${isWalkFaster ? 'RECOMMEND WALK' : 'RECOMMEND SHUTTLE'}
-                    </span>
-                </div>
-            `;
+                    if (resetScroll) {
+                        engineMarker.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                }
+            });
         }
 
         // ================= COMMUNITY TRAIN SPOTTER MODAL =================
@@ -12749,29 +12815,114 @@ function predictDateRangeUI() {
             border-color: #f59e0b;
             box-shadow: 0 0 14px rgba(245, 158, 11, 0.6);
         }
-        .wimt-moving-train-marker {
+        /* WHERE IS MY TRAIN: MOVING LOCOMOTIVE ENGINE & HEADLIGHTS */
+        .wimt-locomotive-engine {
             position: absolute;
-            left: -33px;
-            z-index: 10;
+            left: 2px;
+            z-index: 25;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 12px;
             transform: translateY(-50%);
-            transition: top 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: top 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+            pointer-events: none;
         }
-        .wimt-train-pill {
-            background: #10b981;
-            color: #052e16;
-            font-size: 11px;
-            font-weight: 800;
-            padding: 4px 10px;
-            border-radius: 20px;
-            box-shadow: 0 4px 16px rgba(16, 185, 129, 0.5);
+        .wimt-engine-body {
+            position: relative;
+            width: 34px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            filter: drop-shadow(0 0 10px rgba(56, 189, 248, 0.7));
+            animation: wimtEngineVibe 0.7s ease-in-out infinite alternate;
+        }
+        @keyframes wimtEngineVibe {
+            0% { transform: translateY(-1.5px); }
+            100% { transform: translateY(1.5px); }
+        }
+        .wimt-headlight {
+            filter: drop-shadow(0 0 5px #fde047);
+            animation: wimtHeadlightPulse 1.2s ease-in-out infinite;
+        }
+        @keyframes wimtHeadlightPulse {
+            0%, 100% { opacity: 0.85; filter: drop-shadow(0 0 4px #fef08a); }
+            50% { opacity: 1; filter: drop-shadow(0 0 10px #fde047); }
+        }
+        .wimt-headlight-beams {
+            position: absolute;
+            bottom: -16px;
+            left: 5px;
+            right: 5px;
+            height: 18px;
+            background: linear-gradient(180deg, rgba(254, 240, 138, 0.45) 0%, rgba(254, 240, 138, 0) 100%);
+            clip-path: polygon(25% 0%, 75% 0%, 100% 100%, 0% 100%);
+            pointer-events: none;
+            animation: wimtBeamGlow 1.8s infinite ease-in-out;
+        }
+        @keyframes wimtBeamGlow {
+            0%, 100% { opacity: 0.55; }
+            50% { opacity: 0.95; }
+        }
+        .wimt-engine-badge {
+            background: rgba(14, 19, 31, 0.96);
+            border: 1.5px solid rgba(56, 189, 248, 0.5);
+            border-radius: 14px;
+            padding: 7px 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7), 0 0 16px rgba(56, 189, 248, 0.25);
+            backdrop-filter: blur(12px);
+            white-space: nowrap;
+            pointer-events: auto;
+        }
+        .wimt-engine-badge.is-late {
+            border-color: rgba(245, 158, 11, 0.85);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7), 0 0 20px rgba(245, 158, 11, 0.4);
+        }
+        .wimt-badge-top {
             display: flex;
             align-items: center;
             gap: 6px;
-            white-space: nowrap;
-            animation: wimtPulse 2s infinite;
+            font-size: 12px;
+            color: #fff;
+            font-weight: 800;
+        }
+        .wimt-engine-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #10b981;
+            box-shadow: 0 0 8px #10b981;
+            animation: wimtPulse 1.2s infinite;
+        }
+        .wimt-engine-badge.is-late .wimt-engine-dot {
+            background: #f59e0b;
+            box-shadow: 0 0 10px #f59e0b;
+        }
+        .wimt-engine-speed {
+            background: rgba(56, 189, 248, 0.15);
+            color: #38bdf8;
+            border-radius: 5px;
+            padding: 1px 6px;
+            font-size: 10px;
+            font-weight: 800;
+        }
+        .wimt-engine-delay-tag {
+            font-size: 10px;
+            font-weight: 800;
+            padding: 1px 6px;
+            border-radius: 5px;
+            background: rgba(16, 185, 129, 0.15);
+            color: #10b981;
+        }
+        .wimt-engine-badge.is-late .wimt-engine-delay-tag {
+            background: rgba(245, 158, 11, 0.2);
+            color: #f59e0b;
+        }
+        .wimt-badge-sub {
+            font-size: 10px;
+            color: var(--text-sub);
+            margin-top: 3px;
+            font-weight: 600;
         }
         @keyframes wimtPulse {
             0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }

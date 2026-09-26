@@ -113,15 +113,28 @@ def get_course_credit(code, title, timetable_courses=None):
                     return float(cred)
 
     # Standard SRM University credit heuristics
-    if clean_code.endswith('J'):
-        return 4.0 # Integrated Theory & Practical
-    elif clean_code.endswith('P') or clean_code.endswith('L') or 'LAB' in clean_title or 'PRACTICAL' in clean_title:
-        return 2.0 if clean_code.endswith('P') else 1.5
-    elif 'PROJECT' in clean_title or 'SEMINAR' in clean_title or 'CAPSTONE' in clean_title:
+    clean_code_upper = clean_code.upper()
+    clean_title_upper = clean_title.upper()
+
+    # 1. Engineering Mathematics courses are strictly 4.0 credits in SRM
+    if (clean_code_upper.startswith('21MAB') or clean_code_upper.startswith('18MAB') or 'MAB' in clean_code_upper or
+        'MATHEMATICS' in clean_title_upper or 'TRANSFORMS' in clean_title_upper or 'BOUNDARY VALUE' in clean_title_upper or
+        'CALCULUS' in clean_title_upper or 'LINEAR ALGEBRA' in clean_title_upper or 'PROBABILITY' in clean_title_upper or
+        'FOURIER' in clean_title_upper or 'NUMERICAL METHODS' in clean_title_upper or 'DISCRETE' in clean_title_upper or
+        'DIFFERENTIAL EQUATIONS' in clean_title_upper):
+        return 4.0
+
+    # 2. Integrated Theory & Practical courses (ends with J)
+    if clean_code_upper.endswith('J'):
+        return 4.0
+    elif clean_code_upper.endswith('P') or clean_code_upper.endswith('L') or 'LAB' in clean_title_upper or 'PRACTICAL' in clean_title_upper:
+        return 2.0 if clean_code_upper.endswith('P') else 1.5
+    elif 'PROJECT' in clean_title_upper or 'SEMINAR' in clean_title_upper or 'CAPSTONE' in clean_title_upper:
         return 3.0
-    elif 'CONSTITUTION' in clean_title or 'VALUE' in clean_title or 'SKILL' in clean_title or 'APTITUDE' in clean_title:
+    elif ('VALUE ADDED' in clean_title_upper or 'VALUE EDUCATION' in clean_title_upper or 'UNIVERSAL HUMAN VALUES' in clean_title_upper or
+          'UHV' in clean_title_upper or 'SKILL' in clean_title_upper or 'CONSTITUTION' in clean_title_upper or 'APTITUDE' in clean_title_upper):
         return 1.0
-    elif clean_code.endswith('T') or 'THEORY' in clean_title:
+    elif clean_code_upper.endswith('T') or 'THEORY' in clean_title_upper:
         return 3.0
     return 3.0
 

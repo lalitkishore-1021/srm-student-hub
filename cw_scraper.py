@@ -29,10 +29,21 @@ def scrape_campusweb(netid, pwd):
             code = (item.get('subjectcode', '') or '').strip().upper()
             title = (item.get('subjectdesc', '') or '').strip().upper()
             credit = 3.0
-            if code.endswith('J'): credit = 4.0
-            elif code.endswith('P') or code.endswith('L') or 'LAB' in title or 'PRACTICAL' in title: credit = 2.0 if code.endswith('P') else 1.5
-            elif 'PROJECT' in title or 'SEMINAR' in title: credit = 3.0
-            elif 'VALUE' in title or 'SKILL' in title or 'CONSTITUTION' in title: credit = 1.0
+            if (code.startswith('21MAB') or code.startswith('18MAB') or 'MAB' in code or
+                'MATHEMATICS' in title or 'TRANSFORMS' in title or 'BOUNDARY VALUE' in title or
+                'CALCULUS' in title or 'LINEAR ALGEBRA' in title or 'PROBABILITY' in title or
+                'FOURIER' in title or 'NUMERICAL METHODS' in title or 'DISCRETE' in title or
+                'DIFFERENTIAL EQUATIONS' in title):
+                credit = 4.0
+            elif code.endswith('J'):
+                credit = 4.0
+            elif code.endswith('P') or code.endswith('L') or 'LAB' in title or 'PRACTICAL' in title:
+                credit = 2.0 if code.endswith('P') else 1.5
+            elif 'PROJECT' in title or 'SEMINAR' in title or 'CAPSTONE' in title:
+                credit = 3.0
+            elif ('VALUE ADDED' in title or 'VALUE EDUCATION' in title or 'UNIVERSAL HUMAN VALUES' in title or
+                  'UHV' in title or 'SKILL' in title or 'CONSTITUTION' in title or 'APTITUDE' in title):
+                credit = 1.0
             
             att_data.append({
                 "courseTitle": item.get('subjectdesc', ''),
