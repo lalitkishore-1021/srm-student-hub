@@ -3319,6 +3319,23 @@
                         <p class="action-sub">Anonymous campus feed</p>
                     </div>
                 </div>
+                <div class="action-card" onclick="openTrainTracker()">
+                    <div class="action-icon" style="color: #38bdf8;">
+                        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="4" y="3" width="16" height="16" rx="2"></rect>
+                            <path d="M4 11h16"></path>
+                            <path d="M12 3v8"></path>
+                            <path d="m8 19-2 3"></path>
+                            <path d="m16 19 2 3"></path>
+                            <circle cx="8" cy="15" r="1"></circle>
+                            <circle cx="16" cy="15" r="1"></circle>
+                        </svg>
+                    </div>
+                    <div>
+                        <h4 class="action-title">Potheri Train Tracker</h4>
+                        <p class="action-sub">Where is my train & live EMU</p>
+                    </div>
+                </div>
                 <div class="action-card" onclick="openClassChat()">
                     <div class="action-icon" style="color: #00cc66;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
@@ -3845,6 +3862,182 @@
             <div id="chat-image-preview-container" style="display:none; flex-shrink: 0; max-width: 600px; margin: 5px auto 0; background: rgba(0,0,0,0.5); padding: 10px; border-radius: 15px; position: relative; width: 100%;">
                 <img id="chat-image-preview" src="" style="max-height: 100px; border-radius: 10px;">
                 <button onclick="clearChatImage()" style="position: absolute; top: -5px; right: -5px; background: #ff4757; color: white; border: none; border-radius: 50%; width: 25px; height: 25px; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center;"></button>
+            </div>
+        </div>
+
+        <!-- POTHERI EMU TRAIN & CAMPUS SHUTTLE TRACKER (WHERE IS MY TRAIN) -->
+        <div id="train-tracker-view" class="app-view">
+            <div class="view-header" style="max-width: 800px; margin: 0 auto 16px auto;">
+                <button class="back-btn" onclick="switchNav('home-view', document.querySelector('.nav-item'))">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 4px;"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+                    <span>Back to Home</span>
+                </button>
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-top:12px; flex-wrap:wrap; gap:12px;">
+                    <div>
+                        <h2 class="gallery-title" style="margin:0; font-size:1.8rem; font-weight:800; letter-spacing:-0.5px;">Potheri Station Tracker</h2>
+                        <p class="subtitle" style="margin-top:4px; font-size:13px; color:var(--text-sub);">Where Is My Train &bull; Live Chennai Suburban EMU & Campus Transit</p>
+                    </div>
+                    <div style="display:flex; gap:8px;">
+                        <button onclick="refreshTrainTracker()" class="refresh-pill-btn" style="background:rgba(255,255,255,0.06); color:#fff; border:1px solid rgba(255,255,255,0.12); border-radius:14px; padding:8px 14px; font-size:12px; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:6px;">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+                            <span>Live Sync</span>
+                        </button>
+                        <button onclick="openTrainReportModal()" style="background:rgba(56,189,248,0.15); color:#38bdf8; border:1px solid rgba(56,189,248,0.3); border-radius:14px; padding:8px 14px; font-size:12px; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:6px;">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+                            <span>Spot Train</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Top Switchers: Mode Tabs & Direction Toggle -->
+            <div style="max-width: 800px; margin: 0 auto 16px auto;">
+                <!-- Mode Tabs: Live Departures / Where Is My Train / Shuttle -->
+                <div class="train-mode-tabs" style="display:flex; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:16px; padding:4px; gap:4px; margin-bottom:14px;">
+                    <button id="tt-tab-departures" class="train-tab-btn active" onclick="switchTrainViewMode('departures')">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="16" rx="2"></rect><path d="M4 11h16"></path><path d="M12 3v8"></path><circle cx="8" cy="15" r="1"></circle><circle cx="16" cy="15" r="1"></circle></svg>
+                        <span>Departures</span>
+                    </button>
+                    <button id="tt-tab-wimt" class="train-tab-btn" onclick="switchTrainViewMode('wimt')">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11"></polygon></svg>
+                        <span>Where Is My Train</span>
+                    </button>
+                    <button id="tt-tab-shuttle" class="train-tab-btn" onclick="switchTrainViewMode('shuttle')">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"></rect><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon><circle cx="5.5" cy="18.5" r="2.5"></circle><circle cx="18.5" cy="18.5" r="2.5"></circle></svg>
+                        <span>Campus Shuttle</span>
+                    </button>
+                </div>
+
+                <!-- Direction Toggle (Only for Train Modes) -->
+                <div id="train-direction-toggle-container" style="display:flex; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.06); border-radius:14px; padding:4px; gap:6px;">
+                    <button id="train-dir-beach" class="train-dir-btn active" onclick="setTrainDirection('beach')" style="flex:1; border:none; padding:10px 14px; border-radius:11px; font-weight:800; font-size:12px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; transition:all 0.2s;">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+                        <span>To Chennai Beach / Tambaram (PF 2)</span>
+                    </button>
+                    <button id="train-dir-cgl" class="train-dir-btn" onclick="setTrainDirection('cgl')" style="flex:1; border:none; padding:10px 14px; border-radius:11px; font-weight:800; font-size:12px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; transition:all 0.2s;">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+                        <span>To Chengalpattu (PF 1)</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- SUB-VIEW 1: LIVE DEPARTURES BOARD -->
+            <div id="train-subview-departures" style="max-width: 800px; margin: 0 auto;">
+                <!-- Hero Spotlight: Next Upcoming Train -->
+                <div id="train-hero-card" class="train-hero-box" style="background: linear-gradient(135deg, rgba(56, 189, 248, 0.12), rgba(16, 185, 129, 0.08)); border:1px solid rgba(56, 189, 248, 0.25); border-radius:20px; padding:20px; margin-bottom:20px; position:relative; overflow:hidden;">
+                    <!-- Rendered dynamically -->
+                </div>
+
+                <!-- Station Quick Info Bar -->
+                <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); border-radius:16px; padding:14px 18px; margin-bottom:20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+                    <div style="display:flex; align-items:center; gap:12px;">
+                        <div style="width:38px; height:38px; border-radius:10px; background:rgba(56,189,248,0.15); display:flex; align-items:center; justify-content:center; color:#38bdf8;">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                        </div>
+                        <div>
+                            <div style="color:#fff; font-weight:800; font-size:13px;">Potheri Station &bull; Code: POTI</div>
+                            <div style="color:var(--text-sub); font-size:11px; margin-top:2px;">SRM Main Gate Footbridge Ramp &bull; Double Track Broad Gauge</div>
+                        </div>
+                    </div>
+                    <div id="train-filter-chips" style="display:flex; gap:6px;">
+                        <button class="train-filter-chip active" onclick="filterUpcomingTrains('all', this)">All</button>
+                        <button class="train-filter-chip" onclick="filterUpcomingTrains('fast', this)">Fast Only</button>
+                        <button class="train-filter-chip" onclick="filterUpcomingTrains('peak', this)">Next 2 Hours</button>
+                    </div>
+                </div>
+
+                <!-- Departures List -->
+                <div id="train-departures-list" style="display:flex; flex-direction:column; gap:12px; margin-bottom:40px;">
+                    <!-- Populated dynamically -->
+                </div>
+            </div>
+
+            <!-- SUB-VIEW 2: "WHERE IS MY TRAIN" LIVE VISUAL ROUTE -->
+            <div id="train-subview-wimt" style="max-width: 800px; margin: 0 auto; display:none;">
+                <!-- Active Selected Train Telemetry Header -->
+                <div id="wimt-telemetry-card" style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:20px; padding:18px 20px; margin-bottom:18px;">
+                    <!-- Populated dynamically -->
+                </div>
+
+                <!-- Train Selector Dropdown / Pills -->
+                <div style="margin-bottom:16px; display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+                    <div style="font-size:12px; font-weight:800; color:var(--text-sub); text-transform:uppercase; letter-spacing:0.5px;">Live Train Route & Platform Map</div>
+                    <div style="display:flex; gap:8px;">
+                        <button onclick="setArrivalAlarm()" class="wimt-action-pill" style="background:rgba(245,158,11,0.15); color:#f59e0b; border:1px solid rgba(245,158,11,0.3); border-radius:20px; padding:6px 12px; font-size:11px; font-weight:800; cursor:pointer; display:flex; align-items:center; gap:5px;">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+                            <span>Set Potheri Alarm</span>
+                        </button>
+                        <button onclick="openTrainReportModal()" class="wimt-action-pill" style="background:rgba(56,189,248,0.15); color:#38bdf8; border:1px solid rgba(56,189,248,0.3); border-radius:20px; padding:6px 12px; font-size:11px; font-weight:800; cursor:pointer; display:flex; align-items:center; gap:5px;">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 14 14"></polyline></svg>
+                            <span>Report Position</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Where Is My Train Vertical Route Track -->
+                <div id="wimt-route-track-card" style="background:rgba(10,14,23,0.92); border:1px solid rgba(255,255,255,0.08); border-radius:22px; padding:24px 20px; margin-bottom:40px; position:relative; overflow:hidden;">
+                    <div id="wimt-track-list">
+                        <!-- Populated dynamically with stations & moving train node -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- SUB-VIEW 3: CAMPUS SHUTTLE & ELECTRIC BUGGY TRACKER -->
+            <div id="train-subview-shuttle" style="max-width: 800px; margin: 0 auto; display:none;">
+                <!-- Shuttle Hero Overview -->
+                <div style="background:linear-gradient(135deg, rgba(16,185,129,0.12), rgba(56,189,248,0.06)); border:1px solid rgba(16,185,129,0.25); border-radius:20px; padding:20px; margin-bottom:20px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <div>
+                            <span style="font-size:11px; font-weight:800; background:rgba(16,185,129,0.2); color:#10b981; padding:3px 8px; border-radius:8px; border:1px solid rgba(16,185,129,0.3);">ACTIVE CAMPUS FLEET</span>
+                            <h3 style="margin:8px 0 4px 0; color:#fff; font-size:1.4rem; font-weight:800;">SRM Electric Buggy & Shuttle Service</h3>
+                            <p style="margin:0; font-size:12px; color:var(--text-sub);">Intra-campus transport connecting Main Gate, Tech Park, UB, & Hostels</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Live Campus Stop Countdowns -->
+                <h4 style="color:#fff; font-size:13px; font-weight:800; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:12px;">Next Shuttle by Campus Stop</h4>
+                <div id="shuttle-stops-grid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:12px; margin-bottom:24px;">
+                    <!-- Populated dynamically -->
+                </div>
+
+                <!-- Walk vs Shuttle Calculator Card -->
+                <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:20px; padding:20px; margin-bottom:24px;">
+                    <div style="display:flex; align-items:center; gap:10px; margin-bottom:14px;">
+                        <div style="width:36px; height:36px; border-radius:10px; background:rgba(56,189,248,0.15); display:flex; align-items:center; justify-content:center; color:#38bdf8;">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"></polyline><line x1="12" y1="19" x2="20" y2="19"></line></svg>
+                        </div>
+                        <div>
+                            <h4 style="margin:0; color:#fff; font-size:14px; font-weight:800;">Walk vs. Shuttle Comparator</h4>
+                            <p style="margin:2px 0 0 0; color:var(--text-sub); font-size:11px;">Find whether it's faster to walk or wait for the next buggy</p>
+                        </div>
+                    </div>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:14px;">
+                        <div>
+                            <label style="display:block; font-size:11px; font-weight:700; color:var(--text-sub); margin-bottom:6px;">Current Location</label>
+                            <select id="shuttle-calc-from" onchange="calculateWalkVsShuttle()" style="width:100%; background:rgba(255,255,255,0.06); color:#fff; border:1px solid rgba(255,255,255,0.12); border-radius:12px; padding:10px; font-size:12px; font-weight:700; outline:none;">
+                                <option value="hostels">Hostels (Kaari / Paari / Oori)</option>
+                                <option value="ub">University Building (UB)</option>
+                                <option value="tech_park">Tech Park (TP)</option>
+                                <option value="arch_gate">SRM Main Arch Gate</option>
+                                <option value="potheri">Potheri Railway Station</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="display:block; font-size:11px; font-weight:700; color:var(--text-sub); margin-bottom:6px;">Destination</label>
+                            <select id="shuttle-calc-to" onchange="calculateWalkVsShuttle()" style="width:100%; background:rgba(255,255,255,0.06); color:#fff; border:1px solid rgba(255,255,255,0.12); border-radius:12px; padding:10px; font-size:12px; font-weight:700; outline:none;">
+                                <option value="tech_park">Tech Park (TP)</option>
+                                <option value="ub">University Building (UB)</option>
+                                <option value="hostels">Hostels (Kaari / Paari)</option>
+                                <option value="arch_gate">SRM Main Arch Gate</option>
+                                <option value="potheri">Potheri Railway Station</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div id="shuttle-calc-result" style="background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.08); border-radius:14px; padding:14px; display:flex; justify-content:space-between; align-items:center;">
+                        <!-- Calculated dynamically -->
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -11768,7 +11961,883 @@ function predictDateRangeUI() {
             setTimeout(autoEnableNotificationsByDefault, 2500);
             setTimeout(initBackgroundPushService, 3500);
         });
+
+        // ================= POTHERI EMU TRAIN TRACKER & "WHERE IS MY TRAIN" =================
+        const CHENNAI_EMU_STATIONS = [
+            { code: 'CGL', name: 'Chengalpattu Jn', km: 0, pfUp: 1, pfDown: 2, isMajor: true },
+            { code: 'PWU', name: 'Paranur', km: 5.0, pfUp: 2, pfDown: 1 },
+            { code: 'SKL', name: 'Singaperumal Koil', km: 8.2, pfUp: 2, pfDown: 1 },
+            { code: 'MMNK', name: 'Maraimalai Nagar', km: 12.1, pfUp: 2, pfDown: 1 },
+            { code: 'CTM', name: 'Kattangulathur', km: 14.8, pfUp: 2, pfDown: 1 },
+            { code: 'POTI', name: 'Potheri (SRM)', km: 16.5, pfUp: 2, pfDown: 1, isSrm: true },
+            { code: 'GI', name: 'Guduvancheri', km: 20.0, pfUp: 2, pfDown: 1 },
+            { code: 'UPM', name: 'Urapakkam', km: 23.2, pfUp: 2, pfDown: 1 },
+            { code: 'VDR', name: 'Vandalur', km: 26.1, pfUp: 2, pfDown: 1 },
+            { code: 'PRGL', name: 'Perungalathur', km: 29.3, pfUp: 2, pfDown: 1 },
+            { code: 'TBM', name: 'Tambaram', km: 33.0, pfUp: 3, pfDown: 1, isMajor: true },
+            { code: 'TBMS', name: 'Tambaram Sanatorium', km: 35.1, pfUp: 2, pfDown: 1 },
+            { code: 'CMP', name: 'Chromepet', km: 37.2, pfUp: 2, pfDown: 1 },
+            { code: 'PV', name: 'Pallavaram', km: 39.0, pfUp: 2, pfDown: 1 },
+            { code: 'TLM', name: 'Tirusulam (Airport)', km: 41.2, pfUp: 2, pfDown: 1, isAirport: true },
+            { code: 'MN', name: 'Minambakkam', km: 42.4, pfUp: 2, pfDown: 1 },
+            { code: 'PZA', name: 'Palavanthangal', km: 43.8, pfUp: 2, pfDown: 1 },
+            { code: 'STM', name: 'St. Thomas Mount', km: 46.1, pfUp: 3, pfDown: 1 },
+            { code: 'GDY', name: 'Guindy', km: 48.3, pfUp: 2, pfDown: 1, isMajor: true },
+            { code: 'SP', name: 'Saidapet', km: 51.0, pfUp: 2, pfDown: 1 },
+            { code: 'MBM', name: 'Mambalam (T. Nagar)', km: 53.2, pfUp: 3, pfDown: 1, isMajor: true },
+            { code: 'MKK', name: 'Kodambakkam', km: 55.0, pfUp: 2, pfDown: 1 },
+            { code: 'NBK', name: 'Nungambakkam', km: 56.6, pfUp: 2, pfDown: 1 },
+            { code: 'MSC', name: 'Chetpet', km: 58.2, pfUp: 2, pfDown: 1 },
+            { code: 'MS', name: 'Chennai Egmore', km: 60.5, pfUp: 10, pfDown: 11, isMajor: true },
+            { code: 'MPK', name: 'Chennai Park', km: 62.1, pfUp: 2, pfDown: 1 },
+            { code: 'MSF', name: 'Chennai Fort', km: 63.8, pfUp: 2, pfDown: 1 },
+            { code: 'MSB', name: 'Chennai Beach', km: 65.2, pfUp: 1, pfDown: 4, isTerminus: true }
+        ];
+
+        const CHENNAI_EMU_TRAINS = {
+            beach: [
+                { no: '40502', name: 'Chengalpattu - Chennai Beach Local', poti: '04:30', origin: '04:05', dest: '05:48', type: 'Regular', fast: false },
+                { no: '40504', name: 'Chengalpattu - Chennai Beach Local', poti: '05:10', origin: '04:45', dest: '06:30', type: 'Regular', fast: false },
+                { no: '40506', name: 'Chengalpattu - Chennai Beach Local', poti: '05:45', origin: '05:20', dest: '07:05', type: 'Regular', fast: false },
+                { no: '40508', name: 'Chengalpattu - Chennai Beach Local', poti: '06:15', origin: '05:50', dest: '07:35', type: 'Regular', fast: false },
+                { no: '40510', name: 'Chengalpattu - Chennai Beach Local', poti: '06:45', origin: '06:20', dest: '08:05', type: 'Regular', fast: false },
+                { no: '40512', name: 'Chengalpattu - Chennai Beach Fast EMU', poti: '07:10', origin: '06:45', dest: '08:20', type: 'Fast EMU', fast: true },
+                { no: '40514', name: 'Chengalpattu - Chennai Beach Local', poti: '07:35', origin: '07:10', dest: '08:55', type: 'Regular', fast: false },
+                { no: '40516', name: 'Chengalpattu - Chennai Beach Fast EMU', poti: '07:55', origin: '07:30', dest: '09:05', type: 'Fast EMU', fast: true },
+                { no: '40518', name: 'Chengalpattu - Chennai Beach Local', poti: '08:15', origin: '07:50', dest: '09:35', type: 'Regular', fast: false },
+                { no: '40520', name: 'Chengalpattu - Chennai Beach Local', poti: '08:35', origin: '08:10', dest: '09:55', type: 'Regular', fast: false },
+                { no: '40522', name: 'Chengalpattu - Chennai Beach Fast EMU', poti: '08:55', origin: '08:30', dest: '10:05', type: 'Fast EMU', fast: true },
+                { no: '40524', name: 'Chengalpattu - Chennai Beach Local', poti: '09:20', origin: '08:55', dest: '10:40', type: 'Regular', fast: false },
+                { no: '40526', name: 'Chengalpattu - Tambaram Local', poti: '09:45', origin: '09:20', dest: '10:10', type: 'Tambaram Local', fast: false },
+                { no: '40528', name: 'Chengalpattu - Chennai Beach Local', poti: '10:15', origin: '09:50', dest: '11:35', type: 'Regular', fast: false },
+                { no: '40530', name: 'Chengalpattu - Chennai Beach Local', poti: '10:45', origin: '10:20', dest: '12:05', type: 'Regular', fast: false },
+                { no: '40532', name: 'Chengalpattu - Chennai Beach Local', poti: '11:20', origin: '10:55', dest: '12:40', type: 'Regular', fast: false },
+                { no: '40534', name: 'Chengalpattu - Chennai Beach Local', poti: '11:55', origin: '11:30', dest: '13:15', type: 'Regular', fast: false },
+                { no: '40536', name: 'Chengalpattu - Chennai Beach Local', poti: '12:30', origin: '12:05', dest: '13:50', type: 'Regular', fast: false },
+                { no: '40538', name: 'Chengalpattu - Chennai Beach Local', poti: '13:05', origin: '12:40', dest: '14:25', type: 'Regular', fast: false },
+                { no: '40540', name: 'Chengalpattu - Chennai Beach Local', poti: '13:45', origin: '13:20', dest: '15:05', type: 'Regular', fast: false },
+                { no: '40542', name: 'Chengalpattu - Chennai Beach Local', poti: '14:20', origin: '13:55', dest: '15:40', type: 'Regular', fast: false },
+                { no: '40544', name: 'Chengalpattu - Chennai Beach Local', poti: '15:00', origin: '14:35', dest: '16:20', type: 'Regular', fast: false },
+                { no: '40546', name: 'Chengalpattu - Chennai Beach Local', poti: '15:35', origin: '15:10', dest: '16:55', type: 'Regular', fast: false },
+                { no: '40548', name: 'Chengalpattu - Chennai Beach Fast EMU', poti: '16:10', origin: '15:45', dest: '17:20', type: 'Fast EMU', fast: true },
+                { no: '40550', name: 'Chengalpattu - Chennai Beach Local', poti: '16:40', origin: '16:15', dest: '18:00', type: 'Regular', fast: false },
+                { no: '40552', name: 'Chengalpattu - Chennai Beach Local', poti: '17:05', origin: '16:40', dest: '18:25', type: 'Regular', fast: false },
+                { no: '40554', name: 'Chengalpattu - Chennai Beach Fast EMU', poti: '17:30', origin: '17:05', dest: '18:40', type: 'Fast EMU', fast: true },
+                { no: '40556', name: 'Chengalpattu - Chennai Beach Local', poti: '17:55', origin: '17:30', dest: '19:15', type: 'Regular', fast: false },
+                { no: '40558', name: 'Chengalpattu - Chennai Beach Local', poti: '18:20', origin: '17:55', dest: '19:40', type: 'Regular', fast: false },
+                { no: '40560', name: 'Chengalpattu - Chennai Beach Local', poti: '18:45', origin: '18:20', dest: '20:05', type: 'Regular', fast: false },
+                { no: '40562', name: 'Chengalpattu - Chennai Beach Local', poti: '19:15', origin: '18:50', dest: '20:35', type: 'Regular', fast: false },
+                { no: '40564', name: 'Chengalpattu - Chennai Beach Local', poti: '19:45', origin: '19:20', dest: '21:05', type: 'Regular', fast: false },
+                { no: '40566', name: 'Chengalpattu - Chennai Beach Local', poti: '20:15', origin: '19:50', dest: '21:35', type: 'Regular', fast: false },
+                { no: '40568', name: 'Chengalpattu - Chennai Beach Local', poti: '20:45', origin: '20:20', dest: '22:05', type: 'Regular', fast: false },
+                { no: '40570', name: 'Chengalpattu - Chennai Beach Local', poti: '21:15', origin: '20:50', dest: '22:35', type: 'Regular', fast: false },
+                { no: '40572', name: 'Chengalpattu - Chennai Beach Local', poti: '21:50', origin: '21:25', dest: '23:10', type: 'Regular', fast: false },
+                { no: '40574', name: 'Chengalpattu - Chennai Beach Local', poti: '22:30', origin: '22:05', dest: '23:50', type: 'Night Local', fast: false },
+                { no: '40576', name: 'Chengalpattu - Tambaram Local', poti: '23:15', origin: '22:50', dest: '23:40', type: 'Last Local', fast: false }
+            ],
+            cgl: [
+                { no: '40701', name: 'Chennai Beach - Chengalpattu Local', poti: '05:00', origin: '03:45', dest: '05:25', type: 'Regular', fast: false },
+                { no: '40703', name: 'Chennai Beach - Chengalpattu Local', poti: '05:40', origin: '04:20', dest: '06:05', type: 'Regular', fast: false },
+                { no: '40705', name: 'Chennai Beach - Chengalpattu Local', poti: '06:15', origin: '04:55', dest: '06:40', type: 'Regular', fast: false },
+                { no: '40707', name: 'Chennai Beach - Chengalpattu Local', poti: '06:50', origin: '05:30', dest: '07:15', type: 'Regular', fast: false },
+                { no: '40709', name: 'Chennai Beach - Chengalpattu Local', poti: '07:25', origin: '06:05', dest: '07:50', type: 'Regular', fast: false },
+                { no: '40711', name: 'Chennai Beach - Chengalpattu Local', poti: '08:00', origin: '06:40', dest: '08:25', type: 'Regular', fast: false },
+                { no: '40713', name: 'Chennai Beach - Chengalpattu Fast EMU', poti: '08:25', origin: '07:10', dest: '08:50', type: 'Fast EMU', fast: true },
+                { no: '40715', name: 'Chennai Beach - Chengalpattu Local', poti: '08:50', origin: '07:30', dest: '09:15', type: 'Regular', fast: false },
+                { no: '40717', name: 'Chennai Beach - Chengalpattu Local', poti: '09:15', origin: '07:55', dest: '09:40', type: 'Regular', fast: false },
+                { no: '40719', name: 'Chennai Beach - Chengalpattu Local', poti: '09:40', origin: '08:20', dest: '10:05', type: 'Regular', fast: false },
+                { no: '40721', name: 'Chennai Beach - Chengalpattu Local', poti: '10:05', origin: '08:45', dest: '10:30', type: 'Regular', fast: false },
+                { no: '40723', name: 'Chennai Beach - Chengalpattu Local', poti: '10:35', origin: '09:15', dest: '11:00', type: 'Regular', fast: false },
+                { no: '40725', name: 'Chennai Beach - Chengalpattu Local', poti: '11:10', origin: '09:50', dest: '11:35', type: 'Regular', fast: false },
+                { no: '40727', name: 'Chennai Beach - Chengalpattu Local', poti: '11:45', origin: '10:25', dest: '12:10', type: 'Regular', fast: false },
+                { no: '40729', name: 'Chennai Beach - Chengalpattu Local', poti: '12:20', origin: '11:00', dest: '12:45', type: 'Regular', fast: false },
+                { no: '40731', name: 'Chennai Beach - Chengalpattu Local', poti: '13:00', origin: '11:40', dest: '13:25', type: 'Regular', fast: false },
+                { no: '40733', name: 'Chennai Beach - Chengalpattu Local', poti: '13:40', origin: '12:20', dest: '14:05', type: 'Regular', fast: false },
+                { no: '40735', name: 'Chennai Beach - Chengalpattu Local', poti: '14:15', origin: '12:55', dest: '14:40', type: 'Regular', fast: false },
+                { no: '40737', name: 'Chennai Beach - Chengalpattu Local', poti: '14:50', origin: '13:30', dest: '15:15', type: 'Regular', fast: false },
+                { no: '40739', name: 'Chennai Beach - Chengalpattu Local', poti: '15:25', origin: '14:05', dest: '15:50', type: 'Regular', fast: false },
+                { no: '40741', name: 'Chennai Beach - Chengalpattu Local', poti: '16:00', origin: '14:40', dest: '16:25', type: 'Regular', fast: false },
+                { no: '40743', name: 'Chennai Beach - Chengalpattu Fast EMU', poti: '16:30', origin: '15:15', dest: '16:55', type: 'Fast EMU', fast: true },
+                { no: '40745', name: 'Chennai Beach - Chengalpattu Local', poti: '17:00', origin: '15:40', dest: '17:25', type: 'Regular', fast: false },
+                { no: '40747', name: 'Chennai Beach - Chengalpattu Local', poti: '17:25', origin: '16:05', dest: '17:50', type: 'Regular', fast: false },
+                { no: '40749', name: 'Chennai Beach - Chengalpattu Local', poti: '17:50', origin: '16:30', dest: '18:15', type: 'Regular', fast: false },
+                { no: '40751', name: 'Chennai Beach - Chengalpattu Fast EMU', poti: '18:15', origin: '17:00', dest: '18:40', type: 'Fast EMU', fast: true },
+                { no: '40753', name: 'Chennai Beach - Chengalpattu Local', poti: '18:40', origin: '17:20', dest: '19:05', type: 'Regular', fast: false },
+                { no: '40755', name: 'Chennai Beach - Chengalpattu Local', poti: '19:05', origin: '17:45', dest: '19:30', type: 'Regular', fast: false },
+                { no: '40757', name: 'Chennai Beach - Chengalpattu Local', poti: '19:35', origin: '18:15', dest: '20:00', type: 'Regular', fast: false },
+                { no: '40759', name: 'Chennai Beach - Chengalpattu Local', poti: '20:05', origin: '18:45', dest: '20:30', type: 'Regular', fast: false },
+                { no: '40761', name: 'Chennai Beach - Chengalpattu Local', poti: '20:35', origin: '19:15', dest: '21:00', type: 'Regular', fast: false },
+                { no: '40763', name: 'Chennai Beach - Chengalpattu Local', poti: '21:10', origin: '19:50', dest: '21:35', type: 'Regular', fast: false },
+                { no: '40765', name: 'Chennai Beach - Chengalpattu Local', poti: '21:45', origin: '20:25', dest: '22:10', type: 'Regular', fast: false },
+                { no: '40767', name: 'Chennai Beach - Chengalpattu Local', poti: '22:20', origin: '21:00', dest: '22:45', type: 'Regular', fast: false },
+                { no: '40769', name: 'Chennai Beach - Chengalpattu Local', poti: '23:00', origin: '21:40', dest: '23:25', type: 'Night Local', fast: false },
+                { no: '40771', name: 'Chennai Beach - Chengalpattu Local', poti: '23:45', origin: '22:25', dest: '00:10', type: 'Last Local', fast: false }
+            ]
+        };
+
+        let currentTrainDirection = 'beach';
+        let currentTrainViewMode = 'departures';
+        let currentWimtTrainNo = null;
+        let currentTrainFilter = 'all';
+        let trainTrackerTimer = null;
+        let activeCommunityReports = [];
+
+        function parseTimeToMinutes(str) {
+            if (!str) return 0;
+            const parts = str.split(':');
+            return parseInt(parts[0], 10) * 60 + parseInt(parts[1], 10);
+        }
+
+        function formatMinsTo12Hr(totalMins) {
+            let m = Math.floor(totalMins) % (24 * 60);
+            if (m < 0) m += 24 * 60;
+            let hh = Math.floor(m / 60);
+            const mm = Math.floor(m % 60);
+            const ampm = hh >= 12 ? 'PM' : 'AM';
+            hh = hh % 12;
+            if (hh === 0) hh = 12;
+            return `${hh.toString().padStart(2, '0')}:${mm.toString().padStart(2, '0')} ${ampm}`;
+        }
+
+        function getLiveIstMinutes() {
+            const now = new Date();
+            // User local time is already IST on campus
+            return now.getHours() * 60 + now.getMinutes() + (now.getSeconds() / 60);
+        }
+
+        window.openTrainTracker = function() {
+            switchView('train-tracker-view');
+            initTrainTracker();
+        };
+
+        function initTrainTracker() {
+            fetchCommunityTrainReports();
+            renderTrainTrackerUI();
+            if (trainTrackerTimer) clearInterval(trainTrackerTimer);
+            trainTrackerTimer = setInterval(() => {
+                const view = document.getElementById('train-tracker-view');
+                if (view && view.classList.contains('active')) {
+                    if (currentTrainViewMode === 'departures') {
+                        updateDeparturesCountdowns();
+                    } else if (currentTrainViewMode === 'wimt') {
+                        renderWhereIsMyTrain(currentWimtTrainNo, false);
+                    }
+                }
+            }, 1000);
+        }
+
+        function refreshTrainTracker() {
+            fetchCommunityTrainReports();
+            renderTrainTrackerUI();
+            if (typeof triggerHaptic === 'function') triggerHaptic('light');
+        }
+
+        function fetchCommunityTrainReports() {
+            fetch(`${BACKEND_URL}/api/trains/report`)
+                .then(r => r.json())
+                .then(data => {
+                    if (data && data.success && Array.isArray(data.reports)) {
+                        activeCommunityReports = data.reports;
+                        if (currentTrainViewMode === 'wimt') {
+                            renderWhereIsMyTrain(currentWimtTrainNo, false);
+                        }
+                    }
+                })
+                .catch(() => {});
+        }
+
+        function switchTrainViewMode(mode) {
+            currentTrainViewMode = mode;
+            ['departures', 'wimt', 'shuttle'].forEach(m => {
+                const btn = document.getElementById(`tt-tab-${m}`);
+                const sub = document.getElementById(`train-subview-${m}`);
+                if (btn) btn.classList.toggle('active', m === mode);
+                if (sub) sub.style.display = (m === mode) ? 'block' : 'none';
+            });
+            const dirToggle = document.getElementById('train-direction-toggle-container');
+            if (dirToggle) {
+                dirToggle.style.display = (mode === 'shuttle') ? 'none' : 'flex';
+            }
+            renderTrainTrackerUI();
+            if (typeof triggerHaptic === 'function') triggerHaptic('light');
+        }
+
+        function setTrainDirection(dir) {
+            currentTrainDirection = dir;
+            const bBtn = document.getElementById('train-dir-beach');
+            const cBtn = document.getElementById('train-dir-cgl');
+            if (bBtn) bBtn.classList.toggle('active', dir === 'beach');
+            if (cBtn) cBtn.classList.toggle('active', dir === 'cgl');
+            renderTrainTrackerUI();
+            if (typeof triggerHaptic === 'function') triggerHaptic('light');
+        }
+
+        function filterUpcomingTrains(filterType, btnEl) {
+            currentTrainFilter = filterType;
+            if (btnEl && btnEl.parentElement) {
+                btnEl.parentElement.querySelectorAll('.train-filter-chip').forEach(c => c.classList.remove('active'));
+                btnEl.classList.add('active');
+            }
+            renderTrainDeparturesList();
+        }
+
+        function renderTrainTrackerUI() {
+            if (currentTrainViewMode === 'departures') {
+                renderTrainDeparturesView();
+            } else if (currentTrainViewMode === 'wimt') {
+                renderWhereIsMyTrain(currentWimtTrainNo, true);
+            } else if (currentTrainViewMode === 'shuttle') {
+                renderCampusShuttleView();
+            }
+        }
+
+        function getTrainsWithLiveStatus() {
+            const list = CHENNAI_EMU_TRAINS[currentTrainDirection] || [];
+            const curMins = getLiveIstMinutes();
+            
+            return list.map(t => {
+                const potiMins = parseTimeToMinutes(t.poti);
+                let diffMins = potiMins - curMins;
+                if (diffMins < -10) diffMins += 24 * 60; // Next day cycle
+                
+                // Check if community report exists for this train
+                const rep = activeCommunityReports.find(r => r.train_no === t.no);
+                const delay = rep ? (rep.delay_mins || 0) : 0;
+                const statusText = delay > 0 ? `Delayed +${delay}m` : 'On Time';
+                const crowd = rep ? rep.crowd_level : 'Normal';
+                
+                return {
+                    ...t,
+                    potiMins,
+                    diffMins,
+                    delay,
+                    statusText,
+                    crowd,
+                    platform: currentTrainDirection === 'beach' ? 2 : 1
+                };
+            }).sort((a, b) => a.diffMins - b.diffMins);
+        }
+
+        function renderTrainDeparturesView() {
+            const trains = getTrainsWithLiveStatus();
+            const nextTrain = trains.find(t => t.diffMins >= -1) || trains[0];
+            
+            // 1. Render Hero Spotlight
+            const heroEl = document.getElementById('train-hero-card');
+            if (heroEl && nextTrain) {
+                const diffSec = Math.max(0, Math.floor(nextTrain.diffMins * 60));
+                const mm = Math.floor(diffSec / 60);
+                const ss = diffSec % 60;
+                const countdownStr = `${mm.toString().padStart(2, '0')}m ${ss.toString().padStart(2, '0')}s`;
+                
+                const pfBadge = currentTrainDirection === 'beach' ? 'Platform 2 (Footbridge side)' : 'Platform 1 (GST Road side)';
+                const dirLabel = currentTrainDirection === 'beach' ? 'Chengalpattu to Chennai Beach' : 'Chennai Beach to Chengalpattu';
+
+                heroEl.innerHTML = `
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px; flex-wrap:wrap; gap:10px;">
+                        <div>
+                            <div style="display:flex; align-items:center; gap:8px;">
+                                <span style="background:#10b981; color:#052e16; font-size:11px; font-weight:800; padding:3px 10px; border-radius:20px; display:inline-flex; align-items:center; gap:5px;">
+                                    <span style="width:6px; height:6px; border-radius:50%; background:#052e16; display:inline-block; animation:wimtPulse 1.5s infinite;"></span>
+                                    <span>NEXT ARRIVAL AT POTHERI</span>
+                                </span>
+                                <span style="background:rgba(255,255,255,0.08); color:#fff; font-size:11px; font-weight:700; padding:3px 8px; border-radius:8px;">${nextTrain.type}</span>
+                            </div>
+                            <h3 style="margin:8px 0 2px 0; color:#fff; font-size:1.6rem; font-weight:900; letter-spacing:-0.5px;">${nextTrain.no} &bull; ${nextTrain.name}</h3>
+                            <div style="color:var(--text-sub); font-size:12px;">${dirLabel} &bull; Scheduled POTI: <strong style="color:#fff;">${formatMinsTo12Hr(nextTrain.potiMins)}</strong></div>
+                        </div>
+                        <div style="text-align:right;">
+                            <div style="font-size:11px; font-weight:700; color:var(--text-sub); text-transform:uppercase;">Arriving In</div>
+                            <div id="hero-countdown-timer" style="font-size:2.2rem; font-weight:900; color:#38bdf8; font-variant-numeric:tabular-nums; letter-spacing:-1px;">${countdownStr}</div>
+                        </div>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid rgba(255,255,255,0.08); padding-top:14px; margin-top:10px; flex-wrap:wrap; gap:10px;">
+                        <div style="display:flex; align-items:center; gap:14px;">
+                            <div style="background:rgba(56,189,248,0.15); color:#38bdf8; border:1px solid rgba(56,189,248,0.3); border-radius:10px; padding:6px 12px; font-size:12px; font-weight:800; display:flex; align-items:center; gap:6px;">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="4" y="3" width="16" height="16" rx="2"></rect><circle cx="8" cy="15" r="1"></circle><circle cx="16" cy="15" r="1"></circle></svg>
+                                <span>${pfBadge}</span>
+                            </div>
+                            <div style="color:${nextTrain.delay > 0 ? '#f59e0b' : '#10b981'}; font-size:12px; font-weight:800; display:flex; align-items:center; gap:5px;">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                <span>${nextTrain.statusText}</span>
+                            </div>
+                        </div>
+                        <button onclick="selectWimtTrain('${nextTrain.no}')" style="background:#fff; color:#000; border:none; padding:10px 18px; border-radius:12px; font-weight:800; font-size:12px; cursor:pointer; display:flex; align-items:center; gap:6px;">
+                            <span>Track Live on Route</span>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+                        </button>
+                    </div>
+                `;
+            }
+            renderTrainDeparturesList();
+        }
+
+        function updateDeparturesCountdowns() {
+            const trains = getTrainsWithLiveStatus();
+            const nextTrain = trains.find(t => t.diffMins >= -1) || trains[0];
+            const heroTimerEl = document.getElementById('hero-countdown-timer');
+            if (heroTimerEl && nextTrain) {
+                const diffSec = Math.max(0, Math.floor(nextTrain.diffMins * 60));
+                const mm = Math.floor(diffSec / 60);
+                const ss = diffSec % 60;
+                heroTimerEl.innerText = `${mm.toString().padStart(2, '0')}m ${ss.toString().padStart(2, '0')}s`;
+            }
+        }
+
+        function renderTrainDeparturesList() {
+            const container = document.getElementById('train-departures-list');
+            if (!container) return;
+            
+            let trains = getTrainsWithLiveStatus();
+            
+            if (currentTrainFilter === 'fast') {
+                trains = trains.filter(t => t.fast);
+            } else if (currentTrainFilter === 'peak') {
+                trains = trains.filter(t => t.diffMins <= 120 && t.diffMins >= 0);
+            }
+
+            if (trains.length === 0) {
+                container.innerHTML = `<div style="text-align:center; padding:40px; color:var(--text-sub); font-size:13px;">No trains found for this filter.</div>`;
+                return;
+            }
+
+            container.innerHTML = trains.map((t, idx) => {
+                const isHero = idx === 0;
+                const pf = currentTrainDirection === 'beach' ? 'PF 2' : 'PF 1';
+                const timeDiffText = t.diffMins < 1 ? 'Departing now' : `in ${Math.floor(t.diffMins)} mins`;
+                const stopsLabel = t.fast ? 'Fast: Stops only at key stations' : 'All 28 local stations';
+
+                return `
+                    <div class="train-card" onclick="selectWimtTrain('${t.no}')">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                            <div style="display:flex; align-items:center; gap:8px;">
+                                <span style="font-weight:900; font-size:15px; color:#fff;">${t.no}</span>
+                                <span style="background:rgba(255,255,255,0.06); color:var(--text-sub); font-size:11px; font-weight:700; padding:2px 8px; border-radius:6px;">${t.type}</span>
+                                <span style="background:rgba(56,189,248,0.15); color:#38bdf8; font-size:11px; font-weight:800; padding:2px 7px; border-radius:6px;">${pf}</span>
+                            </div>
+                            <div style="text-align:right;">
+                                <div style="font-weight:900; font-size:15px; color:#38bdf8;">${formatMinsTo12Hr(t.potiMins)}</div>
+                                <div style="font-size:11px; font-weight:800; color:${t.diffMins < 15 ? '#10b981' : 'var(--text-sub)'};">${timeDiffText}</div>
+                            </div>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; align-items:center; font-size:12px; color:var(--text-sub);">
+                            <div>${t.name} &bull; <span style="color:rgba(255,255,255,0.5);">${stopsLabel}</span></div>
+                            <div style="color:#fff; font-weight:700; display:flex; align-items:center; gap:4px;">
+                                <span>Track</span>
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function selectWimtTrain(trainNo) {
+            currentWimtTrainNo = trainNo;
+            switchTrainViewMode('wimt');
+        }
+
+        // ================= "WHERE IS MY TRAIN" ROUTE VISUALIZER =================
+        function renderWhereIsMyTrain(targetTrainNo, resetScroll = false) {
+            const trains = getTrainsWithLiveStatus();
+            let selectedTrain = trains.find(t => t.no === targetTrainNo);
+            if (!selectedTrain) {
+                selectedTrain = trains.find(t => t.diffMins >= -5) || trains[0];
+                currentWimtTrainNo = selectedTrain ? selectedTrain.no : null;
+            }
+            if (!selectedTrain) return;
+
+            const curMins = getLiveIstMinutes();
+            const isBeachBound = (currentTrainDirection === 'beach');
+            const stations = isBeachBound ? [...CHENNAI_EMU_STATIONS] : [...CHENNAI_EMU_STATIONS].reverse();
+            
+            const startMins = parseTimeToMinutes(selectedTrain.origin);
+            let endMins = parseTimeToMinutes(selectedTrain.dest);
+            if (endMins < startMins) endMins += 24 * 60;
+            const totalDuration = endMins - startMins;
+
+            // Interpolate progress along the route
+            let trainProgressKm = 0;
+            let currentStationIdx = 0;
+            let isTrainRunning = false;
+
+            if (curMins >= startMins && curMins <= endMins) {
+                isTrainRunning = true;
+                const elapsed = curMins - startMins;
+                const ratio = Math.min(1, Math.max(0, elapsed / totalDuration));
+                trainProgressKm = ratio * 65.2;
+            } else if (curMins > endMins) {
+                trainProgressKm = 65.2;
+                isTrainRunning = false;
+            } else {
+                trainProgressKm = 0;
+                isTrainRunning = false;
+            }
+
+            // Telemetry Header
+            const potiStation = CHENNAI_EMU_STATIONS.find(s => s.code === 'POTI');
+            const potiDist = Math.abs(trainProgressKm - potiStation.km);
+            const nextStopName = isBeachBound ? 
+                (trainProgressKm < 16.5 ? 'Potheri (POTI)' : 'Tambaram (TBM)') :
+                (trainProgressKm < 48.7 ? 'Potheri (POTI)' : 'Chengalpattu (CGL)');
+
+            const telemetryCard = document.getElementById('wimt-telemetry-card');
+            if (telemetryCard) {
+                telemetryCard.innerHTML = `
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px; flex-wrap:wrap; gap:10px;">
+                        <div>
+                            <div style="display:flex; align-items:center; gap:8px;">
+                                <span style="background:rgba(56,189,248,0.2); color:#38bdf8; font-size:11px; font-weight:800; padding:3px 8px; border-radius:8px;">WHERE IS MY TRAIN</span>
+                                <span style="background:${selectedTrain.delay > 0 ? 'rgba(245,158,11,0.2)' : 'rgba(16,185,129,0.2)'}; color:${selectedTrain.delay > 0 ? '#f59e0b' : '#10b981'}; font-size:11px; font-weight:800; padding:3px 8px; border-radius:8px;">${selectedTrain.statusText}</span>
+                            </div>
+                            <h3 style="margin:8px 0 2px 0; color:#fff; font-size:1.5rem; font-weight:900;">${selectedTrain.no} &bull; ${selectedTrain.name}</h3>
+                            <div style="font-size:12px; color:var(--text-sub);">
+                                ${isBeachBound ? 'Chengalpattu to Chennai Beach' : 'Chennai Beach to Chengalpattu'} &bull; POTI Platform: <strong style="color:#fff;">${selectedTrain.platform}</strong>
+                            </div>
+                        </div>
+                        <div style="text-align:right;">
+                            <div style="font-size:11px; font-weight:700; color:var(--text-sub); text-transform:uppercase;">Estimated Speed</div>
+                            <div style="font-size:1.8rem; font-weight:900; color:#10b981; font-variant-numeric:tabular-nums;">${isTrainRunning ? '~52 km/h' : '0 km/h'}</div>
+                        </div>
+                    </div>
+                    <div style="background:rgba(255,255,255,0.04); border-radius:12px; padding:10px 14px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; font-size:12px;">
+                        <div>Next Stop: <strong style="color:#fff;">${nextStopName}</strong> &bull; Distance: <strong style="color:#38bdf8;">${potiDist.toFixed(1)} km</strong> from Potheri</div>
+                        <div>Destination Arrival: <strong style="color:#fff;">${formatMinsTo12Hr(endMins)}</strong></div>
+                    </div>
+                `;
+            }
+
+            // Render Route Track List
+            const trackListEl = document.getElementById('wimt-track-list');
+            if (!trackListEl) return;
+
+            let passedCount = 0;
+            let activeTrainInserted = false;
+
+            const stationsHtml = stations.map((st, idx) => {
+                // Scheduled arrival at this station
+                const distRatio = isBeachBound ? (st.km / 65.2) : ((65.2 - st.km) / 65.2);
+                const schedMins = startMins + distRatio * totalDuration;
+                const isPassed = (curMins >= schedMins);
+                if (isPassed) passedCount++;
+                
+                const isCurrent = (!isPassed && !activeTrainInserted && isTrainRunning);
+                let trainMarkerHtml = '';
+                if (isCurrent) {
+                    activeTrainInserted = true;
+                    trainMarkerHtml = `
+                        <div class="wimt-moving-train-marker" style="top: ${idx * 56 + 28}px;">
+                            <div class="wimt-train-pill">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="4" y="3" width="16" height="16" rx="2"></rect><circle cx="8" cy="15" r="1"></circle><circle cx="16" cy="15" r="1"></circle></svg>
+                                <span>Train ${selectedTrain.no} &bull; Live</span>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                const isPotheri = (st.code === 'POTI');
+                const rowClass = `wimt-station-row ${isPassed ? 'passed' : ''} ${isCurrent ? 'current' : ''} ${isPotheri ? 'is-potheri' : ''}`;
+                const pfNum = isBeachBound ? st.pfUp : st.pfDown;
+
+                return `
+                    ${trainMarkerHtml}
+                    <div class="${rowClass}" style="${isPotheri ? 'background:rgba(245,158,11,0.08); border-radius:12px; padding:12px 14px; border:1px solid rgba(245,158,11,0.3); margin:6px 0;' : ''}">
+                        <div class="wimt-station-node"></div>
+                        <div style="display:flex; align-items:center; gap:12px;">
+                            <div>
+                                <div style="display:flex; align-items:center; gap:8px;">
+                                    <strong style="color:#fff; font-size:${isPotheri ? '14px' : '13px'};">${st.name}</strong>
+                                    <span style="font-size:10px; font-weight:800; color:var(--text-sub); background:rgba(255,255,255,0.06); padding:1px 6px; border-radius:4px;">${st.code}</span>
+                                    ${isPotheri ? '<span style="font-size:10px; font-weight:800; color:#f59e0b; background:rgba(245,158,11,0.2); padding:1px 6px; border-radius:4px;">SRM HUB</span>' : ''}
+                                </div>
+                                <div style="font-size:11px; color:var(--text-sub); margin-top:2px;">
+                                    ${st.km.toFixed(1)} km &bull; Platform ${pfNum}
+                                </div>
+                            </div>
+                        </div>
+                        <div style="text-align:right;">
+                            <div style="font-weight:800; font-size:13px; color:#fff;">${formatMinsTo12Hr(schedMins)}</div>
+                            <div style="font-size:10px; font-weight:800; color:${isPassed ? '#10b981' : (selectedTrain.delay > 0 ? '#f59e0b' : '#38bdf8')};">
+                                ${isPassed ? 'Passed' : (selectedTrain.delay > 0 ? `+${selectedTrain.delay}m` : 'On Time')}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            const progressLineHeight = Math.min(100, Math.max(0, (passedCount / stations.length) * 100));
+
+            trackListEl.innerHTML = `
+                <div class="wimt-track-container">
+                    <div class="wimt-track-line"></div>
+                    <div class="wimt-track-progress-line" style="height:${progressLineHeight}%;"></div>
+                    ${stationsHtml}
+                </div>
+            `;
+        }
+
+        // ================= CAMPUS SHUTTLE & ELECTRIC BUGGY TRACKER =================
+        const CAMPUS_SHUTTLE_STOPS = [
+            { name: 'University Building (UB) Foyer', code: 'UB', nextInMins: 3, dest: 'Tech Park / Bel' },
+            { name: 'Tech Park Quadrangle', code: 'TP', nextInMins: 6, dest: 'Java Green & Hostels' },
+            { name: 'Hostel Gate (Kaari / Paari)', code: 'HOSTELS', nextInMins: 8, dest: 'Tech Park / UB' },
+            { name: 'SRM Main Arch Gate (GST Road)', code: 'ARCH', nextInMins: 4, dest: 'UB / Admin Block' },
+            { name: 'Medical College & Sanjeevani', code: 'MED', nextInMins: 7, dest: 'Main Campus Loop' }
+        ];
+
+        function renderCampusShuttleView() {
+            const gridEl = document.getElementById('shuttle-stops-grid');
+            if (gridEl) {
+                gridEl.innerHTML = CAMPUS_SHUTTLE_STOPS.map(s => `
+                    <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:16px; padding:16px;">
+                        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px;">
+                            <div>
+                                <span style="font-size:10px; font-weight:800; background:rgba(56,189,248,0.15); color:#38bdf8; padding:2px 6px; border-radius:4px;">STOP ${s.code}</span>
+                                <h4 style="margin:6px 0 2px 0; color:#fff; font-size:13px; font-weight:800;">${s.name}</h4>
+                            </div>
+                            <div style="text-align:right;">
+                                <div style="font-size:11px; font-weight:700; color:var(--text-sub);">Arriving</div>
+                                <div style="font-size:16px; font-weight:900; color:#10b981;">in ${s.nextInMins}m</div>
+                            </div>
+                        </div>
+                        <div style="font-size:11px; color:var(--text-sub); border-top:1px solid rgba(255,255,255,0.06); padding-top:8px; margin-top:6px;">
+                            Direction: <strong style="color:#fff;">${s.dest}</strong>
+                        </div>
+                    </div>
+                `).join('');
+            }
+            calculateWalkVsShuttle();
+        }
+
+        const CAMPUS_DISTANCES = {
+            'hostels:tech_park': { walkMins: 7, distM: 550, shuttleWait: 6, shuttleRide: 3 },
+            'hostels:ub': { walkMins: 11, distM: 850, shuttleWait: 5, shuttleRide: 5 },
+            'hostels:arch_gate': { walkMins: 15, distM: 1200, shuttleWait: 6, shuttleRide: 6 },
+            'hostels:potheri': { walkMins: 12, distM: 950, shuttleWait: 7, shuttleRide: 5 },
+            'ub:tech_park': { walkMins: 5, distM: 400, shuttleWait: 6, shuttleRide: 2 },
+            'ub:hostels': { walkMins: 11, distM: 850, shuttleWait: 4, shuttleRide: 5 },
+            'ub:arch_gate': { walkMins: 6, distM: 500, shuttleWait: 5, shuttleRide: 3 },
+            'ub:potheri': { walkMins: 8, distM: 650, shuttleWait: 5, shuttleRide: 4 },
+            'tech_park:ub': { walkMins: 5, distM: 400, shuttleWait: 6, shuttleRide: 2 },
+            'tech_park:hostels': { walkMins: 7, distM: 550, shuttleWait: 6, shuttleRide: 3 },
+            'tech_park:arch_gate': { walkMins: 12, distM: 950, shuttleWait: 5, shuttleRide: 6 },
+            'tech_park:potheri': { walkMins: 10, distM: 800, shuttleWait: 6, shuttleRide: 4 },
+            'arch_gate:tech_park': { walkMins: 12, distM: 950, shuttleWait: 5, shuttleRide: 6 },
+            'arch_gate:ub': { walkMins: 6, distM: 500, shuttleWait: 4, shuttleRide: 3 },
+            'arch_gate:hostels': { walkMins: 15, distM: 1200, shuttleWait: 5, shuttleRide: 6 },
+            'arch_gate:potheri': { walkMins: 4, distM: 300, shuttleWait: 6, shuttleRide: 2 },
+            'potheri:tech_park': { walkMins: 10, distM: 800, shuttleWait: 6, shuttleRide: 4 },
+            'potheri:ub': { walkMins: 8, distM: 650, shuttleWait: 5, shuttleRide: 4 },
+            'potheri:hostels': { walkMins: 12, distM: 950, shuttleWait: 7, shuttleRide: 5 },
+            'potheri:arch_gate': { walkMins: 4, distM: 300, shuttleWait: 5, shuttleRide: 2 }
+        };
+
+        function calculateWalkVsShuttle() {
+            const from = document.getElementById('shuttle-calc-from')?.value || 'hostels';
+            const to = document.getElementById('shuttle-calc-to')?.value || 'tech_park';
+            const resultEl = document.getElementById('shuttle-calc-result');
+            if (!resultEl) return;
+
+            if (from === to) {
+                resultEl.innerHTML = `<div style="color:var(--text-sub); font-size:12px;">Origin and destination are the same campus point.</div>`;
+                return;
+            }
+
+            const key = `${from}:${to}`;
+            const data = CAMPUS_DISTANCES[key] || { walkMins: 8, distM: 600, shuttleWait: 6, shuttleRide: 4 };
+            const totalShuttleTime = data.shuttleWait + data.shuttleRide;
+            const diff = totalShuttleTime - data.walkMins;
+            const isWalkFaster = diff >= 0;
+
+            resultEl.innerHTML = `
+                <div>
+                    <div style="font-weight:800; font-size:13px; color:#fff;">
+                        ${isWalkFaster ? `Walking is ${diff === 0 ? 'equal to' : `${diff}m faster than`} waiting for shuttle` : `Shuttle is ${Math.abs(diff)}m faster than walking`}
+                    </div>
+                    <div style="font-size:11px; color:var(--text-sub); margin-top:2px;">
+                        Walking: <strong>${data.walkMins} mins</strong> (${data.distM}m) &bull; Shuttle: <strong>${data.shuttleWait}m wait + ${data.shuttleRide}m ride = ${totalShuttleTime}m</strong>
+                    </div>
+                </div>
+                <div>
+                    <span style="font-size:11px; font-weight:800; padding:4px 10px; border-radius:12px; background:${isWalkFaster ? 'rgba(16,185,129,0.15)' : 'rgba(56,189,248,0.15)'}; color:${isWalkFaster ? '#10b981' : '#38bdf8'};">
+                        ${isWalkFaster ? 'RECOMMEND WALK' : 'RECOMMEND SHUTTLE'}
+                    </span>
+                </div>
+            `;
+        }
+
+        // ================= COMMUNITY TRAIN SPOTTER MODAL =================
+        function openTrainReportModal() {
+            const modal = document.getElementById('train-report-modal');
+            if (modal) modal.style.display = 'flex';
+            if (typeof triggerHaptic === 'function') triggerHaptic('light');
+        }
+
+        function closeTrainReportModal() {
+            const modal = document.getElementById('train-report-modal');
+            if (modal) modal.style.display = 'none';
+        }
+
+        function submitTrainReport() {
+            const station = document.getElementById('report-train-station')?.value || 'POTI';
+            const delay = parseInt(document.getElementById('report-train-delay')?.value || '0', 10);
+            const crowd = document.getElementById('report-train-crowd')?.value || 'Normal';
+            const netId = (typeof getCurrentNetId === 'function') ? getCurrentNetId() : (localStorage.getItem('squadNetId') || 'Student');
+
+            fetch(`${BACKEND_URL}/api/trains/report`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    train_no: currentWimtTrainNo || '40508',
+                    direction: currentTrainDirection,
+                    station_code: station,
+                    status: delay > 0 ? `Delayed +${delay}m` : 'On Time',
+                    delay_mins: delay,
+                    crowd_level: crowd,
+                    net_id: netId
+                })
+            })
+            .then(r => r.json())
+            .then(data => {
+                closeTrainReportModal();
+                alert('Train location report recorded. Thank you for helping SRM peers.');
+                fetchCommunityTrainReports();
+            })
+            .catch(() => {
+                closeTrainReportModal();
+                alert('Report submitted locally.');
+            });
+        }
+
+        function setArrivalAlarm() {
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.ready.then(reg => {
+                    if (reg.active) {
+                        reg.active.postMessage({
+                            type: 'SCHEDULE_DELAYED_NOTIFICATION',
+                            delayMs: 5000,
+                            title: 'Potheri Station Approach Alert',
+                            body: 'Your train is now approaching Potheri (POTI). Prepare to deboard at Platform 2.',
+                            url: '/#train-tracker-view'
+                        });
+                        alert('Arrival alert scheduled. You will receive a background alert as your train approaches Potheri.');
+                    }
+                });
+            } else {
+                alert('Alarm active for Potheri station.');
+            }
+        }
     </script>
+    <style>
+        .train-tab-btn {
+            flex: 1;
+            background: transparent;
+            color: var(--text-sub);
+            border: none;
+            padding: 10px 12px;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            transition: all 0.2s ease;
+        }
+        .train-tab-btn.active {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+        .train-dir-btn {
+            background: transparent;
+            color: var(--text-sub);
+        }
+        .train-dir-btn.active {
+            background: rgba(56, 189, 248, 0.15);
+            color: #38bdf8;
+            border: 1px solid rgba(56, 189, 248, 0.3) !important;
+        }
+        .train-filter-chip {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-sub);
+            border-radius: 14px;
+            padding: 4px 12px;
+            font-size: 11px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .train-filter-chip.active {
+            background: rgba(255, 255, 255, 0.15);
+            color: #fff;
+            border-color: rgba(255, 255, 255, 0.25);
+        }
+        .train-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 18px;
+            padding: 16px 18px;
+            transition: transform 0.18s, border-color 0.18s, background 0.18s;
+            cursor: pointer;
+        }
+        .train-card:hover {
+            transform: translateY(-2px);
+            border-color: rgba(56, 189, 248, 0.3);
+            background: rgba(255, 255, 255, 0.05);
+        }
+        
+        /* WHERE IS MY TRAIN VERTICAL ROUTE TRACK */
+        .wimt-track-container {
+            position: relative;
+            padding-left: 36px;
+        }
+        .wimt-track-line {
+            position: absolute;
+            left: 17px;
+            top: 14px;
+            bottom: 14px;
+            width: 4px;
+            background: rgba(255, 255, 255, 0.12);
+            border-radius: 2px;
+            z-index: 1;
+        }
+        .wimt-track-progress-line {
+            position: absolute;
+            left: 17px;
+            top: 14px;
+            width: 4px;
+            background: linear-gradient(180deg, #10b981, #38bdf8);
+            border-radius: 2px;
+            z-index: 2;
+            transition: height 0.5s ease;
+        }
+        .wimt-station-row {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 0;
+            z-index: 3;
+        }
+        .wimt-station-node {
+            position: absolute;
+            left: -27px;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #0a0e17;
+            border: 3px solid rgba(255, 255, 255, 0.25);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+        .wimt-station-row.passed .wimt-station-node {
+            border-color: #10b981;
+            background: #10b981;
+        }
+        .wimt-station-row.current .wimt-station-node {
+            border-color: #38bdf8;
+            background: #38bdf8;
+            box-shadow: 0 0 12px #38bdf8;
+            transform: scale(1.25);
+        }
+        .wimt-station-row.is-potheri .wimt-station-node {
+            border-color: #f59e0b;
+            box-shadow: 0 0 14px rgba(245, 158, 11, 0.6);
+        }
+        .wimt-moving-train-marker {
+            position: absolute;
+            left: -33px;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transform: translateY(-50%);
+            transition: top 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .wimt-train-pill {
+            background: #10b981;
+            color: #052e16;
+            font-size: 11px;
+            font-weight: 800;
+            padding: 4px 10px;
+            border-radius: 20px;
+            box-shadow: 0 4px 16px rgba(16, 185, 129, 0.5);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+            animation: wimtPulse 2s infinite;
+        }
+        @keyframes wimtPulse {
+            0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+    </style>
+
+    <!-- Community Train Spotter Modal -->
+    <div id="train-report-modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.75); backdrop-filter:blur(10px); z-index:99999; align-items:center; justify-content:center; padding:16px;">
+        <div style="background:#0e131f; border:1px solid rgba(255,255,255,0.1); border-radius:24px; max-width:440px; width:100%; padding:24px; box-shadow:0 24px 60px rgba(0,0,0,0.8); position:relative;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <div style="width:36px; height:36px; border-radius:10px; background:rgba(56,189,248,0.15); display:flex; align-items:center; justify-content:center; color:#38bdf8;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+                    </div>
+                    <div>
+                        <h3 style="margin:0; color:#fff; font-size:16px; font-weight:800;">Spot Train Live</h3>
+                        <p style="margin:2px 0 0 0; color:var(--text-sub); font-size:11px;">Help SRM peers track local EMU delays</p>
+                    </div>
+                </div>
+                <button onclick="closeTrainReportModal()" style="background:rgba(255,255,255,0.06); border:none; color:#fff; width:30px; height:30px; border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:pointer;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+            </div>
+
+            <div style="display:flex; flex-direction:column; gap:14px; margin-bottom:20px;">
+                <div>
+                    <label style="display:block; font-size:11px; font-weight:700; color:var(--text-sub); margin-bottom:6px;">Current Station</label>
+                    <select id="report-train-station" style="width:100%; background:rgba(255,255,255,0.06); color:#fff; border:1px solid rgba(255,255,255,0.12); border-radius:12px; padding:10px; font-size:12px; font-weight:700; outline:none;">
+                        <option value="POTI">Potheri (POTI) - SRM Campus</option>
+                        <option value="CTM">Kattangulathur (CTM)</option>
+                        <option value="MMNK">Maraimalai Nagar (MMNK)</option>
+                        <option value="SKL">Singaperumal Koil (SKL)</option>
+                        <option value="GI">Guduvancheri (GI)</option>
+                        <option value="UPM">Urapakkam (UPM)</option>
+                        <option value="VDR">Vandalur (VDR)</option>
+                        <option value="TBM">Tambaram (TBM)</option>
+                        <option value="CGL">Chengalpattu (CGL)</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="display:block; font-size:11px; font-weight:700; color:var(--text-sub); margin-bottom:6px;">Running Status</label>
+                    <select id="report-train-delay" style="width:100%; background:rgba(255,255,255,0.06); color:#fff; border:1px solid rgba(255,255,255,0.12); border-radius:12px; padding:10px; font-size:12px; font-weight:700; outline:none;">
+                        <option value="0">On Time (Normal)</option>
+                        <option value="5">Delayed ~5 Minutes</option>
+                        <option value="10">Delayed ~10 Minutes</option>
+                        <option value="15">Delayed ~15+ Minutes</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="display:block; font-size:11px; font-weight:700; color:var(--text-sub); margin-bottom:6px;">Crowd Level</label>
+                    <select id="report-train-crowd" style="width:100%; background:rgba(255,255,255,0.06); color:#fff; border:1px solid rgba(255,255,255,0.12); border-radius:12px; padding:10px; font-size:12px; font-weight:700; outline:none;">
+                        <option value="Low">Seats Available (Comfortable)</option>
+                        <option value="Normal">Moderate Rush (Standing Space)</option>
+                        <option value="Heavy">Heavy Rush (Packed Doorway)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div style="display:flex; gap:10px;">
+                <button onclick="closeTrainReportModal()" style="flex:1; background:rgba(255,255,255,0.06); border:none; color:#fff; padding:12px; border-radius:14px; font-weight:700; font-size:13px; cursor:pointer;">Cancel</button>
+                <button onclick="submitTrainReport()" style="flex:1; background:#38bdf8; border:none; color:#000; padding:12px; border-radius:14px; font-weight:800; font-size:13px; cursor:pointer;">Submit Report</button>
+            </div>
+        </div>
+    </div>
 </body>
 
 </html>
