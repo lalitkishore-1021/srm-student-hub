@@ -3960,31 +3960,69 @@
 
             <!-- SUB-VIEW 2: "WHERE IS MY TRAIN" LIVE VISUAL ROUTE -->
             <div id="train-subview-wimt" style="max-width: 800px; margin: 0 auto; display:none;">
-                <!-- Active Selected Train Telemetry Header -->
-                <div id="wimt-telemetry-card" style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:20px; padding:18px 20px; margin-bottom:18px;">
+                <!-- 1. Upcoming Trains Horizontal Quick Selector Carousel -->
+                <div style="margin-bottom:16px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; padding:0 2px;">
+                        <div style="display:flex; align-items:center; gap:6px;">
+                            <span style="width:7px; height:7px; border-radius:50%; background:#38bdf8; display:inline-block; animation:wimtPulse 1.4s infinite;"></span>
+                            <span style="font-size:11px; font-weight:800; color:var(--text-sub); text-transform:uppercase; letter-spacing:0.5px;">Select Train to Track Live</span>
+                        </div>
+                        <span id="wimt-selected-train-pill" style="font-size:11px; font-weight:800; color:#38bdf8; background:rgba(56,189,248,0.12); padding:2px 8px; border-radius:12px; border:1px solid rgba(56,189,248,0.25);">Live Satellite Radar</span>
+                    </div>
+                    <div id="wimt-trains-carousel" class="wimt-carousel-track">
+                        <!-- Populated dynamically with upcoming trains -->
+                    </div>
+                </div>
+
+                <!-- 2. Active Selected Train Telemetry Cockpit -->
+                <div id="wimt-telemetry-card" class="wimt-cockpit-card" style="margin-bottom:18px;">
                     <!-- Populated dynamically -->
                 </div>
 
-                <!-- Train Selector Dropdown / Pills -->
-                <div style="margin-bottom:16px; display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
-                    <div style="font-size:12px; font-weight:800; color:var(--text-sub); text-transform:uppercase; letter-spacing:0.5px;">Live Train Route & Platform Map</div>
-                    <div style="display:flex; gap:8px;">
-                        <button onclick="setArrivalAlarm()" class="wimt-action-pill" style="background:rgba(245,158,11,0.15); color:#f59e0b; border:1px solid rgba(245,158,11,0.3); border-radius:20px; padding:6px 12px; font-size:11px; font-weight:800; cursor:pointer; display:flex; align-items:center; gap:5px;">
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
-                            <span>Set Potheri Alarm</span>
+                <!-- 3. Where Is My Train Track Controls Bar -->
+                <div style="margin-bottom:14px; display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; padding:0 2px;">
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+                        <span style="font-size:12px; font-weight:800; color:#fff; letter-spacing:0.3px;">Live Route & Station Headway</span>
+                    </div>
+                    <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                        <button type="button" onclick="scrollToLocomotive()" class="wimt-action-pill" style="background:rgba(56,189,248,0.15); color:#38bdf8; border:1px solid rgba(56,189,248,0.3); border-radius:20px; padding:6px 12px; font-size:11px; font-weight:800; cursor:pointer; display:flex; align-items:center; gap:5px; transition:all 0.2s;">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"></circle><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon></svg>
+                            <span>Locate Train</span>
                         </button>
-                        <button onclick="openTrainReportModal()" class="wimt-action-pill" style="background:rgba(56,189,248,0.15); color:#38bdf8; border:1px solid rgba(56,189,248,0.3); border-radius:20px; padding:6px 12px; font-size:11px; font-weight:800; cursor:pointer; display:flex; align-items:center; gap:5px;">
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 14 14"></polyline></svg>
-                            <span>Report Position</span>
+                        <button type="button" onclick="scrollToPotheri()" class="wimt-action-pill" style="background:rgba(245,158,11,0.15); color:#f59e0b; border:1px solid rgba(245,158,11,0.3); border-radius:20px; padding:6px 12px; font-size:11px; font-weight:800; cursor:pointer; display:flex; align-items:center; gap:5px; transition:all 0.2s;">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2L2 7l10 5 10-5-10-5z"></path><path d="M2 17l10 5 10-5"></path><path d="M2 12l10 5 10-5"></path></svg>
+                            <span>SRM Potheri</span>
+                        </button>
+                        <button type="button" onclick="setArrivalAlarm()" class="wimt-action-pill" style="background:rgba(255,255,255,0.06); color:#fff; border:1px solid rgba(255,255,255,0.12); border-radius:20px; padding:6px 12px; font-size:11px; font-weight:800; cursor:pointer; display:flex; align-items:center; gap:5px; transition:all 0.2s;">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+                            <span>Set Alarm</span>
+                        </button>
+                        <button type="button" onclick="openTrainReportModal()" class="wimt-action-pill" style="background:rgba(255,255,255,0.06); color:var(--text-sub); border:1px solid rgba(255,255,255,0.1); border-radius:20px; padding:6px 12px; font-size:11px; font-weight:800; cursor:pointer; display:flex; align-items:center; gap:5px; transition:all 0.2s;">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 14 14"></polyline></svg>
+                            <span>Spot / Report</span>
                         </button>
                     </div>
                 </div>
 
-                <!-- Where Is My Train Vertical Route Track -->
-                <div id="wimt-route-track-card" style="background:rgba(10,14,23,0.92); border:1px solid rgba(255,255,255,0.08); border-radius:22px; padding:24px 20px; margin-bottom:40px; position:relative; overflow:hidden;">
+                <!-- 4. Where Is My Train Vertical Route Track -->
+                <div id="wimt-route-track-card" class="wimt-track-card" style="margin-bottom:40px;">
                     <div id="wimt-track-list">
                         <!-- Populated dynamically with stations & moving locomotive engine -->
                     </div>
+                </div>
+
+                <!-- 5. Floating Quick-Jump Dock for Mobile/Desktop -->
+                <div id="wimt-floating-dock" class="wimt-floating-dock">
+                    <button type="button" onclick="scrollToLocomotive()" class="wimt-dock-btn">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"></circle><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon></svg>
+                        <span>Locate Train</span>
+                    </button>
+                    <div id="wimt-dock-status" class="wimt-dock-status">Live Tracking</div>
+                    <button type="button" onclick="scrollToPotheri()" class="wimt-dock-btn srm">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2L2 7l10 5 10-5-10-5z"></path><path d="M2 17l10 5 10-5"></path><path d="M2 12l10 5 10-5"></path></svg>
+                        <span>SRM POTI</span>
+                    </button>
                 </div>
             </div>
         </div>
@@ -12458,6 +12496,50 @@ function predictDateRangeUI() {
         function selectWimtTrain(trainNo) {
             currentWimtTrainNo = trainNo;
             switchTrainViewMode('wimt');
+            if (typeof triggerHaptic === 'function') triggerHaptic('light');
+        }
+
+        window.scrollToLocomotive = function() {
+            const engine = document.getElementById('wimt-moving-locomotive');
+            if (engine) {
+                engine.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                if (typeof triggerHaptic === 'function') triggerHaptic('light');
+            }
+        };
+
+        window.scrollToPotheri = function() {
+            const potiEl = document.querySelector('.wimt-station-row.is-potheri');
+            if (potiEl) {
+                potiEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                if (typeof triggerHaptic === 'function') triggerHaptic('light');
+            }
+        };
+
+        function renderWimtTrainCarousel(trains, selectedTrainNo) {
+            const carouselEl = document.getElementById('wimt-trains-carousel');
+            if (!carouselEl) return;
+            carouselEl.innerHTML = trains.map(t => {
+                const isSelected = (t.no === selectedTrainNo);
+                const timeDiffText = t.diffMins < 1 ? 'Departing now' : `in ${Math.floor(t.diffMins)}m`;
+                const pf = currentTrainDirection === 'beach' ? 'PF 2' : 'PF 1';
+                const isDelay = (t.delay > 0);
+                return `
+                    <div class="wimt-carousel-card ${isSelected ? 'active' : ''}" onclick="selectWimtTrain('${t.no}')">
+                        <div style="display:flex; justify-content:space-between; align-items:center; gap:6px;">
+                            <span style="font-size:13px; font-weight:900; color:#fff; letter-spacing:-0.2px;">${t.no}</span>
+                            <span style="font-size:9.5px; font-weight:800; padding:1.5px 5.5px; border-radius:5px; ${isDelay ? 'background:rgba(245,158,11,0.22); color:#fbbf24; border:1px solid rgba(245,158,11,0.4);' : 'background:rgba(16,185,129,0.18); color:#10b981; border:1px solid rgba(16,185,129,0.3);'}">${isDelay ? `+${t.delay}m` : 'On Time'}</span>
+                        </div>
+                        <div style="font-size:11px; color:var(--text-sub); margin-top:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                            ${t.name.replace('Chengalpattu - ', '').replace('Chennai Beach - ', '')}
+                        </div>
+                        <div style="display:flex; justify-content:space-between; align-items:baseline; margin-top:6px;">
+                            <span style="font-size:12px; font-weight:800; color:#fff;">${formatMinsTo12Hr(t.effectivePotiMins)}</span>
+                            <span style="font-size:10px; font-weight:700; color:#38bdf8;">${timeDiffText} &bull; ${pf}</span>
+                        </div>
+                        ${isSelected ? '<div class="wimt-card-active-indicator"></div>' : ''}
+                    </div>
+                `;
+            }).join('');
         }
 
         // ================= "WHERE IS MY TRAIN" ROUTE VISUALIZER =================
@@ -12469,6 +12551,9 @@ function predictDateRangeUI() {
                 currentWimtTrainNo = selectedTrain ? selectedTrain.no : null;
             }
             if (!selectedTrain) return;
+
+            // 1. Render Top Carousel
+            renderWimtTrainCarousel(trains, selectedTrain.no);
 
             const curMins = getLiveIstMinutes();
             const isBeachBound = (currentTrainDirection === 'beach');
@@ -12519,14 +12604,14 @@ function predictDateRangeUI() {
                         foundSeg = true;
 
                         if (legFrac < 0.15) {
-                            currentSpeed = '~26 km/h';
+                            currentSpeed = '~28 km/h';
                             trainSubStatus = `Departed ${stations[k].name} &bull; Accelerating`;
                         } else if (legFrac > 0.85) {
-                            currentSpeed = '~28 km/h';
+                            currentSpeed = '~26 km/h';
                             trainSubStatus = `Approaching ${stations[k + 1].name} &bull; Decelerating`;
                         } else {
-                            currentSpeed = '~56 km/h';
-                            trainSubStatus = `Running between ${stations[k].name} & ${stations[k + 1].name}`;
+                            currentSpeed = '~58 km/h';
+                            trainSubStatus = `Cruising between ${stations[k].name} & ${stations[k + 1].name}`;
                         }
                         break;
                     }
@@ -12535,12 +12620,12 @@ function predictDateRangeUI() {
                     const overallRatio = Math.min(1, Math.max(0, (curMins - startMins) / (totalDuration + trainDelay)));
                     contIndex = overallRatio * (stations.length - 1);
                     currentStationIdx = Math.floor(contIndex);
-                    currentSpeed = '~52 km/h';
+                    currentSpeed = '~54 km/h';
                     trainSubStatus = `In Transit to ${stations[stations.length - 1].name}`;
                 }
             }
 
-            // Distance to Potheri
+            // Distance & ETA to Potheri
             const potiStation = CHENNAI_EMU_STATIONS.find(s => s.code === 'POTI');
             const approxProgressKm = isBeachBound ? 
                 (contIndex / (stations.length - 1)) * 65.2 : 
@@ -12549,45 +12634,123 @@ function predictDateRangeUI() {
             const nextStopName = (currentStationIdx < stations.length - 1) ? stations[currentStationIdx + 1].name : stations[stations.length - 1].name;
             const nextStopEta = (currentStationIdx < stations.length - 1) ? stationTimes[currentStationIdx + 1].exp : stationTimes[stations.length - 1].exp;
 
-            // 1. Render Telemetry Header
+            const potiIdxInList = stations.findIndex(s => s.code === 'POTI');
+            const potiExpTime = (potiIdxInList >= 0) ? stationTimes[potiIdxInList].exp : (parseTimeToMinutes(selectedTrain.poti) + trainDelay);
+            const potiDiffMins = potiExpTime - curMins;
+            const potiDiffSec = Math.max(0, Math.floor(potiDiffMins * 60));
+            const potiMin = Math.floor(potiDiffSec / 60);
+            const potiSec = potiDiffSec % 60;
+            let potiCountdownStr = '';
+            if (potiDiffMins < -2) {
+                potiCountdownStr = 'Departed POTI';
+            } else if (potiDiffMins <= 0.5) {
+                potiCountdownStr = 'At Platform 2';
+            } else {
+                potiCountdownStr = `${potiMin}m ${potiSec.toString().padStart(2, '0')}s`;
+            }
+
+            const journeyPct = Math.min(100, Math.max(0, (contIndex / (stations.length - 1)) * 100));
+
+            // 2. Render Telemetry Cockpit Header
             const telemetryCard = document.getElementById('wimt-telemetry-card');
             if (telemetryCard) {
                 const delayBadgeHtml = trainDelay > 0 ? `
-                    <span style="background:rgba(245,158,11,0.2); color:#f59e0b; border:1px solid rgba(245,158,11,0.35); font-size:11px; font-weight:800; padding:3px 10px; border-radius:8px; display:inline-flex; align-items:center; gap:5px;">
+                    <span style="background:rgba(245,158,11,0.2); color:#fbbf24; border:1px solid rgba(245,158,11,0.4); font-size:11px; font-weight:800; padding:3px 10px; border-radius:8px; display:inline-flex; align-items:center; gap:5px;">
                         <span style="width:6px; height:6px; border-radius:50%; background:#f59e0b; display:inline-block; animation:wimtPulse 1.2s infinite;"></span>
                         <span>${selectedTrain.statusText} (${selectedTrain.delayReason})</span>
                     </span>
                 ` : `
-                    <span style="background:rgba(16,185,129,0.18); color:#10b981; border:1px solid rgba(16,185,129,0.3); font-size:11px; font-weight:800; padding:3px 10px; border-radius:8px;">
-                        On Time &bull; Operational
+                    <span style="background:rgba(16,185,129,0.18); color:#10b981; border:1px solid rgba(16,185,129,0.35); font-size:11px; font-weight:800; padding:3px 10px; border-radius:8px; display:inline-flex; align-items:center; gap:5px;">
+                        <span style="width:6px; height:6px; border-radius:50%; background:#10b981; display:inline-block;"></span>
+                        <span>On Time &bull; Optimal Headway</span>
                     </span>
                 `;
 
                 telemetryCard.innerHTML = `
-                    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px; flex-wrap:wrap; gap:10px;">
-                        <div>
-                            <div style="display:flex; align-items:center; gap:8px;">
-                                <span style="background:rgba(56,189,248,0.2); color:#38bdf8; font-size:11px; font-weight:800; padding:3px 8px; border-radius:8px;">WHERE IS MY TRAIN</span>
-                                ${delayBadgeHtml}
+                    <!-- Route Progress Flight Bar -->
+                    <div class="wimt-flight-bar-container">
+                        <div style="display:flex; justify-content:space-between; align-items:center; font-size:11px; font-weight:800; color:#fff;">
+                            <div style="display:flex; align-items:center; gap:6px;">
+                                <span style="width:6px; height:6px; border-radius:50%; background:#10b981;"></span>
+                                <span>${stations[0].name} (${formatMinsTo12Hr(startMins)})</span>
                             </div>
-                            <h3 style="margin:8px 0 2px 0; color:#fff; font-size:1.5rem; font-weight:900;">${selectedTrain.no} &bull; ${selectedTrain.name}</h3>
+                            <div style="display:flex; align-items:center; gap:5px; background:rgba(56,189,248,0.15); color:#38bdf8; padding:2px 8px; border-radius:10px; font-size:10px; border:1px solid rgba(56,189,248,0.3);">
+                                <span>${journeyPct.toFixed(0)}% Journey Completed</span>
+                            </div>
+                            <div style="display:flex; align-items:center; gap:6px;">
+                                <span>${stations[stations.length - 1].name} (${formatMinsTo12Hr(endMins + trainDelay)})</span>
+                                <span style="width:6px; height:6px; border-radius:50%; background:#38bdf8;"></span>
+                            </div>
+                        </div>
+                        <div class="wimt-flight-track">
+                            <div class="wimt-flight-fill" style="width: ${journeyPct}%;"></div>
+                            <div class="wimt-flight-marker" style="left: ${journeyPct}%;">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"><rect x="4" y="3" width="16" height="16" rx="2"></rect><circle cx="8" cy="15" r="1"></circle><circle cx="16" cy="15" r="1"></circle></svg>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Train Identity & Hero Countdown -->
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:14px; flex-wrap:wrap; gap:12px;">
+                        <div>
+                            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                                <span style="background:rgba(56,189,248,0.2); color:#38bdf8; font-size:11px; font-weight:800; padding:3px 8px; border-radius:8px; display:inline-flex; align-items:center; gap:5px;">
+                                    <span style="width:6px; height:6px; border-radius:50%; background:#38bdf8; display:inline-block; animation:wimtPulse 1.4s infinite;"></span>
+                                    <span>WHERE IS MY TRAIN</span>
+                                </span>
+                                ${delayBadgeHtml}
+                                <span style="background:rgba(255,255,255,0.08); color:#fff; font-size:11px; font-weight:700; padding:3px 8px; border-radius:8px;">${selectedTrain.type}</span>
+                            </div>
+                            <h3 style="margin:8px 0 3px 0; color:#fff; font-size:1.6rem; font-weight:900; letter-spacing:-0.4px;">${selectedTrain.no} &bull; ${selectedTrain.name}</h3>
                             <div style="font-size:12px; color:var(--text-sub);">
-                                ${isBeachBound ? 'Chengalpattu to Chennai Beach' : 'Chennai Beach to Chengalpattu'} &bull; POTI Platform: <strong style="color:#fff;">Platform ${selectedTrain.platform}</strong>
+                                ${isBeachBound ? 'Chengalpattu to Chennai Beach' : 'Chennai Beach to Chengalpattu'} &bull; POTI Platform: <strong style="color:#fff;">Platform ${selectedTrain.platform} (${isBeachBound ? 'Footbridge to Campus Main Gate' : 'GST Road Side'})</strong>
                             </div>
                         </div>
                         <div style="text-align:right;">
-                            <div style="font-size:11px; font-weight:700; color:var(--text-sub); text-transform:uppercase;">Estimated Speed</div>
-                            <div style="font-size:1.8rem; font-weight:900; color:#10b981; font-variant-numeric:tabular-nums;">${currentSpeed}</div>
+                            <div style="font-size:11px; font-weight:700; color:var(--text-sub); text-transform:uppercase;">Arrival at Potheri</div>
+                            <div id="wimt-cockpit-poti-timer" style="font-size:2.1rem; font-weight:900; color:${trainDelay > 0 ? '#f59e0b' : '#38bdf8'}; font-variant-numeric:tabular-nums; letter-spacing:-1px;">${potiCountdownStr}</div>
                         </div>
                     </div>
-                    <div style="background:rgba(255,255,255,0.04); border-radius:12px; padding:10px 14px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; font-size:12px;">
-                        <div>Next Stop: <strong style="color:#fff;">${nextStopName}</strong> &bull; ETA: <strong style="color:#38bdf8;">${formatMinsTo12Hr(nextStopEta)}</strong> &bull; Distance: <strong style="color:#38bdf8;">${potiDist.toFixed(1)} km</strong> from Potheri</div>
-                        <div>Destination Arrival: <strong style="color:#fff;">${formatMinsTo12Hr(endMins + trainDelay)}</strong></div>
+
+                    <!-- 4 Telemetry Metrics Grid -->
+                    <div class="wimt-gauge-grid">
+                        <div class="wimt-gauge-tile">
+                            <div class="wimt-gauge-label">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2.5"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                                <span>Live Speed</span>
+                            </div>
+                            <div class="wimt-gauge-val" style="color:#10b981;">${currentSpeed}</div>
+                            <div class="wimt-gauge-sub">${isTrainRunning ? 'Cruising Headway' : 'Station Dwell'}</div>
+                        </div>
+                        <div class="wimt-gauge-tile">
+                            <div class="wimt-gauge-label">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2.5"><rect x="4" y="3" width="16" height="16" rx="2"></rect><circle cx="8" cy="15" r="1"></circle><circle cx="16" cy="15" r="1"></circle></svg>
+                                <span>Next Stop</span>
+                            </div>
+                            <div class="wimt-gauge-val" style="font-size:1.05rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${nextStopName}</div>
+                            <div class="wimt-gauge-sub">ETA ${formatMinsTo12Hr(nextStopEta)} (${Math.max(0, Math.round(nextStopEta - curMins))}m)</div>
+                        </div>
+                        <div class="wimt-gauge-tile">
+                            <div class="wimt-gauge-label">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                                <span>Distance to POTI</span>
+                            </div>
+                            <div class="wimt-gauge-val" style="color:#f59e0b;">${potiDist.toFixed(1)} km</div>
+                            <div class="wimt-gauge-sub">${isBeachBound ? 'From Chengalpattu' : 'From Tambaram'}</div>
+                        </div>
+                        <div class="wimt-gauge-tile">
+                            <div class="wimt-gauge-label">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="${trainDelay > 0 ? '#f59e0b' : '#38bdf8'}" stroke-width="2.5"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 14 14"></polyline></svg>
+                                <span>Schedule</span>
+                            </div>
+                            <div class="wimt-gauge-val" style="font-size:1.05rem; color:${trainDelay > 0 ? '#f59e0b' : '#38bdf8'};">${selectedTrain.statusText}</div>
+                            <div class="wimt-gauge-sub">${selectedTrain.delayReason}</div>
+                        </div>
                     </div>
                 `;
             }
 
-            // 2. Render Vertical Track & Station Nodes
+            // 3. Render Vertical Track & Station Nodes
             const trackListEl = document.getElementById('wimt-track-list');
             if (!trackListEl) return;
 
@@ -12598,7 +12761,9 @@ function predictDateRangeUI() {
                 if (isPassed) passedCount++;
 
                 const isPotheri = (st.code === 'POTI');
-                const rowClass = `wimt-station-row ${isPassed ? 'passed' : ''} ${isPotheri ? 'is-potheri' : ''}`;
+                const isJunction = st.isMajor;
+                const isAirport = st.isAirport;
+                const isNextApproaching = (idx === currentStationIdx + 1 && isTrainRunning);
                 const pfNum = isBeachBound ? st.pfUp : st.pfDown;
 
                 let timeDisplay = formatMinsTo12Hr(times.sched);
@@ -12616,15 +12781,44 @@ function predictDateRangeUI() {
                     statusColor = '#f59e0b';
                 }
 
+                if (isPotheri) {
+                    return `
+                        <div class="wimt-station-row is-potheri" data-index="${idx}" style="background: linear-gradient(135deg, rgba(245,158,11,0.14), rgba(245,158,11,0.04)); border: 1.5px solid rgba(245,158,11,0.45); border-radius: 16px; padding: 14px 16px; margin: 8px 0; box-shadow: 0 8px 24px rgba(245,158,11,0.15);">
+                            <div class="wimt-station-node"></div>
+                            <div style="display:flex; align-items:center; gap:12px;">
+                                <div>
+                                    <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+                                        <strong style="color:#fff; font-size:15px; letter-spacing:-0.2px;">Potheri (SRM University)</strong>
+                                        <span style="font-size:10px; font-weight:800; color:#fbbf24; background:rgba(245,158,11,0.25); border:1px solid rgba(245,158,11,0.4); padding:2px 7px; border-radius:6px;">SRM HUB</span>
+                                        <span style="font-size:10px; font-weight:800; color:var(--text-sub); background:rgba(255,255,255,0.08); padding:2px 6px; border-radius:6px;">POTI</span>
+                                    </div>
+                                    <div style="font-size:11.5px; color:#fde68a; margin-top:3px; font-weight:600;">
+                                        Platform 2 &bull; Direct Footbridge Stairs to SRM Tech Park & Campus Main Gate
+                                    </div>
+                                    <div style="font-size:10.5px; color:rgba(255,255,255,0.5); margin-top:2px;">
+                                        ${st.km.toFixed(1)} km &bull; Smart Card Ticket Kiosks &bull; Double Track
+                                    </div>
+                                </div>
+                            </div>
+                            <div style="text-align:right;">
+                                <div style="font-weight:900; font-size:14px; color:#fff;">${timeDisplay}</div>
+                                <div style="font-size:11px; font-weight:800; color:${statusColor}; margin-top:2px;">${statusBadge}</div>
+                            </div>
+                        </div>
+                    `;
+                }
+
                 return `
-                    <div class="${rowClass}" data-index="${idx}" style="${isPotheri ? 'background:rgba(245,158,11,0.08); border-radius:12px; padding:12px 14px; border:1px solid rgba(245,158,11,0.3); margin:6px 0;' : ''}">
-                        <div class="wimt-station-node"></div>
+                    <div class="wimt-station-row ${isPassed ? 'passed' : ''} ${isNextApproaching ? 'next-approaching' : ''}" data-index="${idx}">
+                        <div class="wimt-station-node ${isJunction ? 'is-junction' : ''}"></div>
                         <div style="display:flex; align-items:center; gap:12px;">
                             <div>
-                                <div style="display:flex; align-items:center; gap:8px;">
-                                    <strong style="color:#fff; font-size:${isPotheri ? '14px' : '13px'};">${st.name}</strong>
+                                <div style="display:flex; align-items:center; gap:7px;">
+                                    <strong style="color:${isPassed ? 'rgba(255,255,255,0.6)' : '#fff'}; font-size:13.5px;">${st.name}</strong>
                                     <span style="font-size:10px; font-weight:800; color:var(--text-sub); background:rgba(255,255,255,0.06); padding:1px 6px; border-radius:4px;">${st.code}</span>
-                                    ${isPotheri ? '<span style="font-size:10px; font-weight:800; color:#f59e0b; background:rgba(245,158,11,0.2); padding:1px 6px; border-radius:4px;">SRM HUB</span>' : ''}
+                                    ${isJunction ? '<span style="font-size:9.5px; font-weight:800; color:#38bdf8; background:rgba(56,189,248,0.15); padding:1px 5px; border-radius:4px;">JUNCTION</span>' : ''}
+                                    ${isAirport ? '<span style="font-size:9.5px; font-weight:800; color:#a78bfa; background:rgba(167,139,250,0.15); padding:1px 5px; border-radius:4px;">AIRPORT</span>' : ''}
+                                    ${isNextApproaching ? '<span style="font-size:9.5px; font-weight:800; color:#10b981; background:rgba(16,185,129,0.18); padding:1px 5px; border-radius:4px;">NEXT STOP</span>' : ''}
                                 </div>
                                 <div style="font-size:11px; color:var(--text-sub); margin-top:2px;">
                                     ${st.km.toFixed(1)} km &bull; Platform ${pfNum}
@@ -12632,8 +12826,8 @@ function predictDateRangeUI() {
                             </div>
                         </div>
                         <div style="text-align:right;">
-                            <div style="font-weight:800; font-size:13px; color:#fff;">${timeDisplay}</div>
-                            <div style="font-size:10px; font-weight:800; color:${statusColor};">
+                            <div style="font-weight:800; font-size:13px; color:${isPassed ? 'rgba(255,255,255,0.6)' : '#fff'};">${timeDisplay}</div>
+                            <div style="font-size:10px; font-weight:800; color:${statusColor}; margin-top:1px;">
                                 ${statusBadge}
                             </div>
                         </div>
@@ -12689,17 +12883,27 @@ function predictDateRangeUI() {
 
             trackListEl.innerHTML = `
                 <div class="wimt-track-container">
-                    <div class="wimt-track-line"></div>
-                    <div id="wimt-live-progress-line" class="wimt-track-progress-line"></div>
+                    <div class="wimt-rail-bed"></div>
+                    <div class="wimt-rail-line-left"></div>
+                    <div class="wimt-rail-line-right"></div>
+                    <div id="wimt-live-progress-left" class="wimt-rail-progress-left"></div>
+                    <div id="wimt-live-progress-right" class="wimt-rail-progress-right"></div>
                     ${locomotiveHtml}
                     ${stationsHtml}
                 </div>
             `;
 
+            // Update floating dock status
+            const dockStatusEl = document.getElementById('wimt-dock-status');
+            if (dockStatusEl) {
+                dockStatusEl.innerText = `${selectedTrain.no} • ${currentSpeed} • ${potiDist.toFixed(1)} km to POTI`;
+            }
+
             // Measure actual DOM offsets for pixel-perfect continuous locomotive positioning
             requestAnimationFrame(() => {
                 const engineMarker = document.getElementById('wimt-moving-locomotive');
-                const progressLine = document.getElementById('wimt-live-progress-line');
+                const progressLeft = document.getElementById('wimt-live-progress-left');
+                const progressRight = document.getElementById('wimt-live-progress-right');
                 const rows = trackListEl.querySelectorAll('.wimt-station-row');
 
                 if (engineMarker && rows && rows.length > 0) {
@@ -12715,9 +12919,9 @@ function predictDateRangeUI() {
                     const exactTop = Math.round(topFloor + (frac * (topCeil - topFloor)));
 
                     engineMarker.style.top = `${exactTop}px`;
-                    if (progressLine) {
-                        progressLine.style.height = `${Math.max(0, exactTop - 14)}px`;
-                    }
+                    const lineH = `${Math.max(0, exactTop - 16)}px`;
+                    if (progressLeft) progressLeft.style.height = lineH;
+                    if (progressRight) progressRight.style.height = lineH;
 
                     if (resetScroll) {
                         engineMarker.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -12770,17 +12974,20 @@ function predictDateRangeUI() {
         }
 
         function setArrivalAlarm() {
+            if (typeof playNotificationSound === 'function') {
+                playNotificationSound();
+            }
             if ('serviceWorker' in navigator) {
                 navigator.serviceWorker.ready.then(reg => {
                     if (reg.active) {
                         reg.active.postMessage({
                             type: 'SCHEDULE_DELAYED_NOTIFICATION',
-                            delayMs: 5000,
+                            delayMs: 3000,
                             title: 'Potheri Station Approach Alert',
                             body: 'Your train is now approaching Potheri (POTI). Prepare to deboard at Platform 2.',
                             url: '/#train-tracker-view'
                         });
-                        alert('Arrival alert scheduled. You will receive a background alert as your train approaches Potheri.');
+                        alert('Potheri approach alarm activated with custom SRM Orbit Chime.\n\nYou will receive an alert as your train nears Potheri station.');
                     }
                 });
             } else {
@@ -12794,30 +13001,31 @@ function predictDateRangeUI() {
             background: transparent;
             color: var(--text-sub);
             border: none;
-            padding: 10px 12px;
+            padding: 10px 14px;
             border-radius: 12px;
-            font-weight: 700;
+            font-weight: 800;
             font-size: 12px;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 6px;
-            transition: all 0.2s ease;
+            gap: 7px;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
         }
         .train-tab-btn.active {
-            background: rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.12);
             color: #fff;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
         }
         .train-dir-btn {
             background: transparent;
             color: var(--text-sub);
         }
         .train-dir-btn.active {
-            background: rgba(56, 189, 248, 0.15);
+            background: rgba(56, 189, 248, 0.16);
             color: #38bdf8;
-            border: 1px solid rgba(56, 189, 248, 0.3) !important;
+            border: 1px solid rgba(56, 189, 248, 0.35) !important;
+            box-shadow: 0 4px 14px rgba(56, 189, 248, 0.15);
         }
         .train-filter-chip {
             background: rgba(255, 255, 255, 0.05);
@@ -12831,9 +13039,9 @@ function predictDateRangeUI() {
             transition: all 0.2s;
         }
         .train-filter-chip.active {
-            background: rgba(255, 255, 255, 0.15);
+            background: rgba(255, 255, 255, 0.16);
             color: #fff;
-            border-color: rgba(255, 255, 255, 0.25);
+            border-color: rgba(255, 255, 255, 0.3);
         }
         .train-card {
             background: rgba(255, 255, 255, 0.03);
@@ -12845,46 +13053,228 @@ function predictDateRangeUI() {
         }
         .train-card:hover {
             transform: translateY(-2px);
-            border-color: rgba(56, 189, 248, 0.3);
-            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(56, 189, 248, 0.35);
+            background: rgba(255, 255, 255, 0.06);
         }
         
-        /* WHERE IS MY TRAIN VERTICAL ROUTE TRACK */
+        /* WHERE IS MY TRAIN: ULTRA PREMIUM ENHANCEMENTS */
+        .wimt-carousel-track {
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            padding: 4px 2px 10px 2px;
+            scroll-behavior: smooth;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+        }
+        .wimt-carousel-track::-webkit-scrollbar {
+            display: none;
+        }
+        .wimt-carousel-card {
+            flex: 0 0 175px;
+            background: rgba(255, 255, 255, 0.035);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            padding: 12px 14px;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            user-select: none;
+        }
+        .wimt-carousel-card:hover {
+            background: rgba(255, 255, 255, 0.07);
+            border-color: rgba(56, 189, 248, 0.35);
+            transform: translateY(-2px);
+        }
+        .wimt-carousel-card.active {
+            background: linear-gradient(135deg, rgba(56, 189, 248, 0.16), rgba(16, 185, 129, 0.08));
+            border: 1.5px solid #38bdf8;
+            box-shadow: 0 8px 24px rgba(56, 189, 248, 0.25), 0 0 12px rgba(56, 189, 248, 0.15);
+            transform: translateY(-2px);
+        }
+        .wimt-card-active-indicator {
+            position: absolute;
+            bottom: -1px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 34px;
+            height: 3px;
+            border-radius: 3px 3px 0 0;
+            background: #38bdf8;
+            box-shadow: 0 0 8px #38bdf8;
+        }
+
+        .wimt-cockpit-card {
+            background: linear-gradient(145deg, rgba(15, 23, 42, 0.95), rgba(10, 15, 29, 0.98));
+            border: 1px solid rgba(56, 189, 248, 0.22);
+            border-radius: 24px;
+            padding: 22px 24px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.65), 0 0 30px rgba(56, 189, 248, 0.08);
+            backdrop-filter: blur(20px);
+            position: relative;
+            overflow: hidden;
+        }
+        .wimt-cockpit-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(56, 189, 248, 0.6), transparent);
+        }
+
+        .wimt-flight-bar-container {
+            background: rgba(0, 0, 0, 0.35);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 14px;
+            padding: 12px 16px;
+            margin-bottom: 18px;
+        }
+        .wimt-flight-track {
+            position: relative;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 2px;
+            margin: 12px 0 8px 0;
+        }
+        .wimt-flight-fill {
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            background: linear-gradient(90deg, #10b981, #38bdf8);
+            border-radius: 2px;
+            transition: width 0.6s ease;
+        }
+        .wimt-flight-marker {
+            position: absolute;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: #0284c7;
+            border: 2px solid #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 10px #38bdf8;
+            transition: left 0.6s ease;
+        }
+
+        .wimt-gauge-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 10px;
+            margin-top: 16px;
+        }
+        .wimt-gauge-tile {
+            background: rgba(255, 255, 255, 0.035);
+            border: 1px solid rgba(255, 255, 255, 0.07);
+            border-radius: 14px;
+            padding: 12px 14px;
+            transition: border-color 0.2s;
+        }
+        .wimt-gauge-tile:hover {
+            border-color: rgba(56, 189, 248, 0.3);
+        }
+        .wimt-gauge-label {
+            font-size: 10.5px;
+            font-weight: 700;
+            color: var(--text-sub);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            margin-bottom: 4px;
+        }
+        .wimt-gauge-val {
+            font-size: 1.25rem;
+            font-weight: 900;
+            color: #fff;
+            font-variant-numeric: tabular-nums;
+        }
+        .wimt-gauge-sub {
+            font-size: 10.5px;
+            color: var(--text-sub);
+            margin-top: 2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .wimt-track-card {
+            background: rgba(10, 14, 23, 0.94);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 24px;
+            padding: 26px 20px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7);
+            position: relative;
+            overflow: hidden;
+        }
+
         .wimt-track-container {
             position: relative;
-            padding-left: 36px;
+            padding-left: 48px;
         }
-        .wimt-track-line {
+        /* Double-rail track bed with sleepers */
+        .wimt-rail-bed {
             position: absolute;
-            left: 17px;
-            top: 14px;
-            bottom: 14px;
-            width: 4px;
-            background: rgba(255, 255, 255, 0.12);
-            border-radius: 2px;
+            left: 20px;
+            top: 16px;
+            bottom: 16px;
+            width: 14px;
+            background: repeating-linear-gradient(180deg, rgba(255,255,255,0.06) 0px, rgba(255,255,255,0.06) 2px, transparent 2px, transparent 12px);
             z-index: 1;
+            border-radius: 2px;
         }
-        .wimt-track-progress-line {
+        .wimt-rail-line-left {
             position: absolute;
-            left: 17px;
-            top: 14px;
-            width: 4px;
-            background: linear-gradient(180deg, #10b981, #38bdf8);
+            left: 22px;
+            top: 16px;
+            bottom: 16px;
+            width: 2.5px;
+            background: rgba(255, 255, 255, 0.16);
             border-radius: 2px;
             z-index: 2;
-            transition: height 0.5s ease;
         }
+        .wimt-rail-line-right {
+            position: absolute;
+            left: 29px;
+            top: 16px;
+            bottom: 16px;
+            width: 2.5px;
+            background: rgba(255, 255, 255, 0.16);
+            border-radius: 2px;
+            z-index: 2;
+        }
+        .wimt-rail-progress-left, .wimt-rail-progress-right {
+            position: absolute;
+            top: 16px;
+            width: 2.5px;
+            background: linear-gradient(180deg, #10b981 0%, #38bdf8 100%);
+            border-radius: 2px;
+            z-index: 3;
+            transition: height 0.6s ease;
+            box-shadow: 0 0 6px rgba(56, 189, 248, 0.6);
+        }
+        .wimt-rail-progress-left { left: 22px; }
+        .wimt-rail-progress-right { left: 29px; }
+
         .wimt-station-row {
             position: relative;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 12px 0;
-            z-index: 3;
+            padding: 13px 0;
+            z-index: 5;
+            transition: background 0.2s;
         }
         .wimt-station-node {
             position: absolute;
-            left: -27px;
+            left: -33px;
             width: 18px;
             height: 18px;
             border-radius: 50%;
@@ -12894,21 +13284,58 @@ function predictDateRangeUI() {
             align-items: center;
             justify-content: center;
             transition: all 0.3s;
+            z-index: 6;
+        }
+        .wimt-station-node.is-junction {
+            width: 22px;
+            height: 22px;
+            left: -35px;
+            border-width: 3.5px;
+            border-color: rgba(255, 255, 255, 0.4);
+            box-shadow: inset 0 0 0 2px #0a0e17, inset 0 0 0 4px rgba(255,255,255,0.4);
         }
         .wimt-station-row.passed .wimt-station-node {
             border-color: #10b981;
             background: #10b981;
+            box-shadow: 0 0 8px rgba(16, 185, 129, 0.4);
         }
-        .wimt-station-row.current .wimt-station-node {
+        .wimt-station-row.passed .wimt-station-node::after {
+            content: '';
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #fff;
+        }
+        .wimt-station-row.current .wimt-station-node,
+        .wimt-station-row.next-approaching .wimt-station-node {
             border-color: #38bdf8;
+            background: #0a0e17;
+            box-shadow: 0 0 14px #38bdf8;
+            transform: scale(1.3);
+        }
+        .wimt-station-row.current .wimt-station-node::after,
+        .wimt-station-row.next-approaching .wimt-station-node::after {
+            content: '';
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
             background: #38bdf8;
-            box-shadow: 0 0 12px #38bdf8;
-            transform: scale(1.25);
+            animation: wimtPulse 1s infinite;
         }
         .wimt-station-row.is-potheri .wimt-station-node {
-            border-color: #f59e0b;
-            box-shadow: 0 0 14px rgba(245, 158, 11, 0.6);
+            border-color: #f59e0b !important;
+            background: #f59e0b !important;
+            box-shadow: 0 0 18px rgba(245, 158, 11, 0.8) !important;
+            transform: scale(1.25);
         }
+        .wimt-station-row.is-potheri .wimt-station-node::after {
+            content: '';
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #fff;
+        }
+
         /* WHERE IS MY TRAIN: MOVING LOCOMOTIVE ENGINE & HEADLIGHTS */
         .wimt-locomotive-engine {
             position: absolute;
@@ -12928,7 +13355,7 @@ function predictDateRangeUI() {
             display: flex;
             align-items: center;
             justify-content: center;
-            filter: drop-shadow(0 0 10px rgba(56, 189, 248, 0.7));
+            filter: drop-shadow(0 0 12px rgba(56, 189, 248, 0.75));
             animation: wimtEngineVibe 0.7s ease-in-out infinite alternate;
         }
         @keyframes wimtEngineVibe {
@@ -12936,7 +13363,7 @@ function predictDateRangeUI() {
             100% { transform: translateY(1.5px); }
         }
         .wimt-headlight {
-            filter: drop-shadow(0 0 5px #fde047);
+            filter: drop-shadow(0 0 6px #fde047);
             animation: wimtHeadlightPulse 1.2s ease-in-out infinite;
         }
         @keyframes wimtHeadlightPulse {
@@ -13018,6 +13445,64 @@ function predictDateRangeUI() {
             margin-top: 3px;
             font-weight: 600;
         }
+
+        .wimt-floating-dock {
+            position: fixed;
+            bottom: 84px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(14, 20, 33, 0.95);
+            border: 1px solid rgba(56, 189, 248, 0.35);
+            border-radius: 30px;
+            padding: 6px 10px;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.75), 0 0 20px rgba(56, 189, 248, 0.2);
+            backdrop-filter: blur(16px);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            z-index: 1000;
+            max-width: 92%;
+        }
+        .wimt-dock-btn {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            color: #fff;
+            padding: 7px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 800;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        .wimt-dock-btn:hover {
+            background: rgba(56, 189, 248, 0.2);
+            border-color: #38bdf8;
+            color: #38bdf8;
+        }
+        .wimt-dock-btn.srm {
+            background: rgba(245, 158, 11, 0.18);
+            border-color: rgba(245, 158, 11, 0.4);
+            color: #fbbf24;
+        }
+        .wimt-dock-btn.srm:hover {
+            background: rgba(245, 158, 11, 0.3);
+            border-color: #fbbf24;
+        }
+        .wimt-dock-status {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--text-sub);
+            padding: 0 6px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 220px;
+        }
+
         @keyframes wimtPulse {
             0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
             70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
