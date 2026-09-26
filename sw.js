@@ -1,5 +1,5 @@
 // Change this version number every time you want to force phones to update!
-const CACHE_NAME = 'srm-hub-v51-background-music-fix'; 
+const CACHE_NAME = 'srm-hub-v52-remove-music-swipe'; 
 
 const ASSETS_TO_CACHE = [
     '/',

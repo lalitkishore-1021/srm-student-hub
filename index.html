@@ -8895,30 +8895,7 @@ function checkAndShowHolidayBanner(viewId) {
             if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
         }, { once: true });
         
-        // Fullscreen Swipe Logic
-        let touchstartX = 0;
-        let touchendX = 0;
-        
-        window.addEventListener('load', () => {
-            const fsContainer = document.getElementById('music-fullscreen');
-            if(fsContainer) {
-                fsContainer.addEventListener('touchstart', e => {
-                    touchstartX = e.changedTouches[0].screenX;
-                });
-                fsContainer.addEventListener('touchend', e => {
-                    touchendX = e.changedTouches[0].screenX;
-                    const cover = document.getElementById('fs-cover');
-                    if (touchendX < touchstartX - 50) {
-                        cover.classList.add('swipe-left');
-                        setTimeout(() => { nextMusicTrack(); cover.classList.remove('swipe-left'); }, 300);
-                    }
-                    if (touchendX > touchstartX + 50) {
-                        cover.classList.add('swipe-right');
-                        setTimeout(() => { prevMusicTrack(); cover.classList.remove('swipe-right'); }, 300);
-                    }
-                });
-            }
-        });
+
 
     </script>
 
