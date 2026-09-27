@@ -474,6 +474,50 @@ def save_student_to_db(net_id, name, register_no, att_data, marks_data, is_mock=
         print(f"[DB] save_student_to_db error: {e}")
 
 
+def get_cached_student_profile(net_id):
+    if not net_id:
+        return None
+    try:
+        conn = get_db()
+        cur = conn.cursor()
+        clean_id = net_id.lower().strip()
+        if DATABASE_URL:
+            cur.execute("SELECT name, register_no FROM students WHERE lower(net_id) = %s LIMIT 1", (clean_id,))
+        else:
+            cur.execute("SELECT name, register_no FROM students WHERE lower(net_id) = ? LIMIT 1", (clean_id,))
+        row = cur.fetchone()
+        cur.close()
+        conn.close()
+        if row and row[0]:
+            name_val = str(row[0]).strip()
+            if name_val and 'offline' not in name_val.lower() and name_val.lower() != 'student':
+                return {'name': name_val, 'reg_no': str(row[1]).strip() if row[1] else net_id.upper()}
+    except Exception as e:
+        print(f"[RECOVERY] Profile lookup error: {e}")
+    return None
+
+
+def get_cached_timetable_for_student(net_id):
+    if not net_id:
+        return {}
+    try:
+        conn = get_db()
+        cur = conn.cursor()
+        clean_id = net_id.lower().strip()
+        if DATABASE_URL:
+            cur.execute("SELECT timetable_json FROM push_subscriptions WHERE lower(net_id) = %s AND timetable_json IS NOT NULL AND timetable_json != '{}' ORDER BY id DESC LIMIT 1", (clean_id,))
+        else:
+            cur.execute("SELECT timetable_json FROM push_subscriptions WHERE lower(net_id) = ? AND timetable_json IS NOT NULL AND timetable_json != '{}' ORDER BY id DESC LIMIT 1", (clean_id,))
+        row = cur.fetchone()
+        cur.close()
+        conn.close()
+        if row and row[0]:
+            parsed = json.loads(row[0])
+            if isinstance(parsed, dict) and any(len(v) > 0 for v in parsed.values() if isinstance(v, list)):
+                return parsed
+    except Exception as e:
+        print(f"[RECOVERY] Timetable cache lookup error: {e}")
+    return {}
 
 
 def scrape_academia_worker(reg_no, pwd, batch, out_queue):
@@ -567,25 +611,48 @@ def start_session():
                     sync_jobs[sid] = {'status': 'failed', 'result': {'success': False, 'error': final_err}, 'timestamp': time.time()}
                     return
             
+            raw_reg = reg_no or ''
+            net_id = raw_reg.split('@')[0].strip()
+
             # Override with CampusWeb attendance & marks if available
             if cw_res and cw_res.get('success'):
-                if not result.get('profile'):
-                    raw_reg = reg_no or ''
-                    net_id = raw_reg.split('@')[0].upper()
-                    result['profile'] = {'name': 'STUDENT (Academia Offline)', 'regNo': net_id, 'course': 'Partial Data Synced', 'department': ''}
                 if cw_res.get('attendance') and len(cw_res.get('attendance')) > 0:
                     result['data'] = cw_res.get('attendance')
                     result['is_mock_attendance'] = False
                 if cw_res.get('marks') and len(cw_res.get('marks')) > 0:
                     result['marks'] = cw_res.get('marks')
-            
+
+            # Ensure profile has a real student name (never 'STUDENT (Academia Offline)')
+            cached_prof = get_cached_student_profile(net_id)
+            profile = result.get('profile') or {}
+            curr_name = profile.get('name', '').strip()
+
+            if not curr_name or 'offline' in curr_name.lower() or curr_name.lower() == 'student':
+                if cached_prof:
+                    profile['name'] = cached_prof['name']
+                    profile['regNo'] = cached_prof.get('reg_no', net_id.upper())
+                else:
+                    profile['name'] = net_id.upper()
+                    profile['regNo'] = net_id.upper()
+                if not profile.get('course'):
+                    profile['course'] = 'SRM University'
+                result['profile'] = profile
+
+            # Timetable resilience: if scraped timetable has 0 classes, restore from push_subscriptions
+            curr_tt = result.get('timetable') or {}
+            tt_classes_count = sum(len(v) for v in curr_tt.values() if isinstance(v, list))
+            if tt_classes_count == 0:
+                cached_tt = get_cached_timetable_for_student(net_id)
+                if cached_tt:
+                    result['timetable'] = cached_tt
+                    print(f"[{net_id}] Restored cached timetable with {sum(len(v) for v in cached_tt.values() if isinstance(v, list))} classes")
+
             if result.get('success'):
-                profile = result.get('profile', {})
-                raw_reg = reg_no or ''
-                net_id = raw_reg.split('@')[0]
-                register_no = profile.get('reg_no', net_id.upper())
-                name = profile.get('name', 'Student')
-                save_student_to_db(net_id, name, register_no, result.get('data', []), result.get('marks', []), is_mock=result.get('is_mock_attendance', False))
+                save_prof = result.get('profile', {})
+                register_no = save_prof.get('reg_no', save_prof.get('regNo', net_id.upper()))
+                name = save_prof.get('name', net_id.upper())
+                if 'offline' not in name.lower() and name.lower() != 'student':
+                    save_student_to_db(net_id, name, register_no, result.get('data', []), result.get('marks', []), is_mock=result.get('is_mock_attendance', False))
             sync_jobs[sid] = {'status': 'completed', 'result': result, 'timestamp': time.time()}
         except queue.Empty:
             sync_jobs[sid] = {'status': 'failed', 'result': {'success': False, 'error': 'Background task crashed or timed out.'}, 'timestamp': time.time()}

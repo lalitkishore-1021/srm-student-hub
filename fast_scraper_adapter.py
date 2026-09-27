@@ -264,9 +264,10 @@ def run_fast_scraper(email, password, out_queue):
         fa = advisors.get('faculty_advisor', {})
         aa = advisors.get('academic_advisor', {})
         
+        clean_net_id = email.split('@')[0].upper()
         profile = {
-            "name": student_info.get("name", "Student"),
-            "reg_no": student_info.get("registration_number", ""),
+            "name": student_info.get("name") or clean_net_id,
+            "reg_no": student_info.get("registration_number") or clean_net_id,
             "program": student_info.get("program", ""),
             "department": student_info.get("department", ""),
             "semester": student_info.get("semester", ""),

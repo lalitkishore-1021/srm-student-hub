@@ -4780,10 +4780,22 @@
         }
 
         function renderProfile(profile) {
-            if (!profile || !profile.name) return;
+            if (!profile) return;
+            let displayName = (profile.name || '').trim();
+            if (displayName.toLowerCase().includes('offline')) {
+                const savedProf = JSON.parse(localStorage.getItem('squadProfile') || '{}');
+                if (savedProf.name && !savedProf.name.toLowerCase().includes('offline')) {
+                    displayName = savedProf.name;
+                } else {
+                    const netId = (profile.regNo || localStorage.getItem('squadNetId') || localStorage.getItem('syncRegNo') || '').split('@')[0];
+                    displayName = netId.toUpperCase() || 'STUDENT';
+                }
+            }
+            if (!displayName) displayName = 'STUDENT';
+
             const nameEl = document.querySelector('.id-name');
             const regEl = document.querySelector('.id-reg');
-            if (nameEl) nameEl.innerText = (profile.name || 'STUDENT').toUpperCase();
+            if (nameEl) nameEl.innerText = displayName.toUpperCase();
             if (regEl) regEl.innerText = (profile.regNo || '').toUpperCase();
 
             // Use specific IDs for detail spans
@@ -4881,6 +4893,8 @@
                 try { renderAttendance(savedAtt); } catch (e) { console.error("Attendance render failed:", e); }
                 try { renderMarks(savedMarks); } catch (e) { console.error("Marks render failed:", e); }
                 try { renderTimetable(savedTT); } catch (e) { console.error("Timetable render failed:", e); }
+
+                setTimeout(checkAndAutoRecoverTimetable, 2000);
             } catch (e) {
                 console.error("Critical error loading saved data:", e);
             }
@@ -4920,6 +4934,55 @@
                     if (typeof triggerHaptic === 'function') triggerHaptic('success');
                 }
                 setTimeout(() => toast.remove(), 3000);
+            }
+        }
+
+        function showAutoRecoveryToast(msg) {
+            let toast = document.getElementById('sync-toast');
+            if (!toast) {
+                toast = document.createElement('div');
+                toast.id = 'sync-toast';
+                document.body.appendChild(toast);
+            }
+            toast.innerHTML = `<div class="css-loader" style="width:15px;height:15px;margin:0 10px 0 0;border-width:2px;"></div> ${msg || 'Restoring timetable data...'}`;
+            toast.style.cssText = `position:fixed; top:20px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,0.85); color:#fff; padding:10px 20px; border-radius:20px; font-size:0.9rem; z-index:99999; display:flex; align-items:center; border:1px solid var(--primary); font-family:'Montserrat', sans-serif; box-shadow:0 4px 12px rgba(0,0,0,0.3);`;
+        }
+
+        function triggerTimetableRecovery() {
+            const regNo = localStorage.getItem("syncRegNo");
+            const pwd = localStorage.getItem("syncPwd");
+            if (!regNo || !pwd) {
+                alert("Please log in again to sync timetable details.");
+                return;
+            }
+            showAutoRecoveryToast("Re-syncing timetable from portal...");
+            backgroundSync();
+        }
+
+        function checkAndAutoRecoverTimetable() {
+            if (!isLoggedIn) return;
+            try {
+                const savedTT = JSON.parse(localStorage.getItem('squadTimetable') || '{}');
+                const hasClasses = savedTT && Object.values(savedTT).some(arr => Array.isArray(arr) && arr.length > 0);
+                const savedProf = JSON.parse(localStorage.getItem('squadProfile') || '{}');
+                const isOfflineProf = savedProf && savedProf.name && (savedProf.name.toLowerCase().includes('offline') || savedProf.name.toLowerCase() === 'student');
+
+                if (!hasClasses || isOfflineProf) {
+                    const regNo = localStorage.getItem("syncRegNo");
+                    const pwd = localStorage.getItem("syncPwd");
+                    if (regNo && pwd) {
+                        const now = Date.now();
+                        const lastRecovery = parseInt(localStorage.getItem('lastAutoRecoveryAttempt') || '0', 10);
+                        if (now - lastRecovery > 60000) {
+                            localStorage.setItem('lastAutoRecoveryAttempt', now.toString());
+                            console.log("[AutoRecovery] Timetable missing or placeholder profile detected. Initiating background re-sync...");
+                            showAutoRecoveryToast("Restoring timetable details...");
+                            backgroundSync();
+                        }
+                    }
+                }
+            } catch(e) {
+                console.error("Timetable recovery check error:", e);
             }
         }
 
@@ -5060,13 +5123,36 @@
                 const ttDict = result.timetable || {};
                 const profile = result.profile || {};
 
-                localStorage.setItem('squadProfile', JSON.stringify(profile));
-                localStorage.setItem('squadTimetable', JSON.stringify(ttDict));
+                // Safe Profile update: reject offline/student dummy names if valid cached profile exists
+                const existingProf = JSON.parse(localStorage.getItem('squadProfile') || '{}');
+                const isDummyProf = !profile.name || profile.name.toLowerCase().includes('offline') || profile.name.toLowerCase() === 'student';
+                if (!isDummyProf) {
+                    localStorage.setItem('squadProfile', JSON.stringify(profile));
+                    try { renderProfile(profile); } catch (e) { console.error("Profile Render Error:", e); }
+                } else if (existingProf && existingProf.name && !existingProf.name.toLowerCase().includes('offline') && existingProf.name.toLowerCase() !== 'student') {
+                    try { renderProfile(existingProf); } catch (e) {}
+                } else if (profile && profile.name) {
+                    localStorage.setItem('squadProfile', JSON.stringify(profile));
+                    try { renderProfile(profile); } catch (e) {}
+                }
+
+                // Safe Timetable update: do not overwrite existing timetable if new timetable has 0 classes
+                const existingTT = JSON.parse(localStorage.getItem('squadTimetable') || '{}');
+                const newHasClasses = ttDict && Object.values(ttDict).some(arr => Array.isArray(arr) && arr.length > 0);
+                const oldHasClasses = existingTT && Object.values(existingTT).some(arr => Array.isArray(arr) && arr.length > 0);
+
+                if (newHasClasses) {
+                    localStorage.setItem('squadTimetable', JSON.stringify(ttDict));
+                    try { renderTimetable(ttDict); } catch (e) { console.error("Timetable Render Error:", e); }
+                } else if (oldHasClasses) {
+                    try { renderTimetable(existingTT); } catch (e) {}
+                } else {
+                    localStorage.setItem('squadTimetable', JSON.stringify(ttDict));
+                    try { renderTimetable(ttDict); } catch (e) {}
+                }
                 if (Array.isArray(result.courses) && result.courses.length > 0) {
                     localStorage.setItem('squadCourses', JSON.stringify(result.courses));
                 }
-                try { renderProfile(profile); } catch (e) { console.error("Profile Render Error:", e); }
-                try { renderTimetable(ttDict); } catch (e) { console.error("Timetable Render Error:", e); }
                 try { initBackgroundPushService(); } catch(e) {}
                 
                 // Only overwrite attendance/marks if server returned real data
@@ -5174,14 +5260,30 @@
                     const ttDict = result.timetable || {};
                     const profile = result.profile || {};
 
-                    localStorage.setItem('squadProfile', JSON.stringify(profile));
-                    localStorage.setItem('squadTimetable', JSON.stringify(ttDict));
+                    // Safe Profile update
+                    const existingProf = JSON.parse(localStorage.getItem('squadProfile') || '{}');
+                    const isDummyProf = !profile.name || profile.name.toLowerCase().includes('offline') || profile.name.toLowerCase() === 'student';
+                    if (!isDummyProf) {
+                        localStorage.setItem('squadProfile', JSON.stringify(profile));
+                        try { renderProfile(profile); } catch (e) {}
+                    } else if (existingProf && existingProf.name && !existingProf.name.toLowerCase().includes('offline') && existingProf.name.toLowerCase() !== 'student') {
+                        try { renderProfile(existingProf); } catch (e) {}
+                    }
+
+                    // Safe Timetable update
+                    const existingTT = JSON.parse(localStorage.getItem('squadTimetable') || '{}');
+                    const newHasClasses = ttDict && Object.values(ttDict).some(arr => Array.isArray(arr) && arr.length > 0);
+                    const oldHasClasses = existingTT && Object.values(existingTT).some(arr => Array.isArray(arr) && arr.length > 0);
+
+                    if (newHasClasses) {
+                        localStorage.setItem('squadTimetable', JSON.stringify(ttDict));
+                        try { renderTimetable(ttDict); } catch (e) {}
+                    } else if (oldHasClasses) {
+                        try { renderTimetable(existingTT); } catch (e) {}
+                    }
                     if (Array.isArray(result.courses) && result.courses.length > 0) {
                         localStorage.setItem('squadCourses', JSON.stringify(result.courses));
                     }
-                    
-                    try { renderProfile(profile); } catch (e) {}
-                    try { renderTimetable(ttDict); } catch (e) {}
                     
                     // Only overwrite attendance/marks if server returned real data
                     if (attList.length > 0) {
@@ -5695,8 +5797,11 @@
             if (!hasClasses) {
                 noData.style.display = 'block';
                 grid.style.display = 'none';
-                noData.querySelector('h3').innerText = "No Classes Found";
-                noData.querySelector('p').innerHTML = "The scraper found zero classes. Your batch is automatically detected from your profile.";
+                noData.querySelector('h3').innerText = "Timetable Not Available";
+                noData.querySelector('p').innerHTML = "Timetable details are not loaded yet.<br><button onclick='triggerTimetableRecovery()' style='margin-top:14px;padding:9px 20px;border-radius:12px;background:var(--primary);color:#fff;border:none;font-weight:700;font-size:0.9rem;cursor:pointer;box-shadow:0 4px 12px rgba(255,107,107,0.3);'>Sync Timetable Now</button>";
+                
+                // Automatically attempt recovery if student credentials are saved
+                setTimeout(checkAndAutoRecoverTimetable, 1000);
                 return;
             }
 

@@ -103,13 +103,13 @@ def fetch_all_data_with_retry(client, max_retries: int = 2, save_debug_html: boo
             )
             
             if attendance_failed or timetable_failed:
-                print("\n" + "⚠"*30)
-                print("[PARSE ERROR] Data corruption detected!")
+                print("\n" + "="*30)
+                print("[PARSE WARNING] Partial data parse issue detected")
                 if attendance_failed:
-                    print("✗ [DATA] Attendance parsing failed")
+                    print("[DATA] Attendance parsing issue")
                 if timetable_failed:
-                    print("✗ [DATA] Timetable parsing failed")
-                print("⚠"*30 + "\n")
+                    print("[DATA] Timetable parsing issue")
+                print("="*30 + "\n")
                 
                 # DEBUG: Save HTML to file if debugging is enabled
                 if save_debug_html:
@@ -126,7 +126,7 @@ def fetch_all_data_with_retry(client, max_retries: int = 2, save_debug_html: boo
                             print(f"[DEBUG] Saved attendance HTML to debug_html/attendance_failed_attempt_{attempt + 1}.html")
                         
                         if timetable_failed:
-                            url = f'{client.BASE_URL}/srm_university/academia-academic-services/page/My_Time_Table_2023_24'
+                            url = f'{client.BASE_URL}/srm_university/academia-academic-services/page/My_Time_Table_2024_25'
                             response = client.session.get(url, headers=client._get_page_headers())
                             with open(f"debug_html/timetable_failed_attempt_{attempt + 1}.html", "w", encoding="utf-8") as f:
                                 f.write(response.text)
@@ -138,14 +138,26 @@ def fetch_all_data_with_retry(client, max_retries: int = 2, save_debug_html: boo
                     print(f"[RETRY] Will retry with FULL re-authentication (attempt {attempt + 2}/{max_retries})...")
                     continue
                 else:
-                    print("[RETRY] Max retries reached - returning partial data")
-                    return {
-                        "success": False,
-                        "error": "Parse failures after retries",
-                        "day_order": day_order,
-                        "attendance_data": attendance_data,
-                        "timetable_data": timetable_data
-                    }
+                    print("[RETRY] Max retries reached - evaluating available partial data")
+                    has_valid_att = attendance_data and isinstance(attendance_data, dict) and not attendance_data.get('error')
+                    has_valid_tt = timetable_data and isinstance(timetable_data, dict) and not timetable_data.get('error')
+                    
+                    if has_valid_att or has_valid_tt or day_order:
+                        print("[RETRY] Returning valid partial data to maintain app continuity")
+                        return {
+                            "success": True,
+                            "day_order": day_order,
+                            "attendance_data": attendance_data if has_valid_att else None,
+                            "timetable_data": timetable_data if has_valid_tt else None
+                        }
+                    else:
+                        return {
+                            "success": False,
+                            "error": "Parse failures after retries",
+                            "day_order": day_order,
+                            "attendance_data": None,
+                            "timetable_data": None
+                        }
             
             # --- SUCCESS ---
             print("✓ [DATA] All data retrieved and parsed successfully")

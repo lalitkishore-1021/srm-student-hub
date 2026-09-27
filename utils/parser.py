@@ -195,32 +195,33 @@ def parse_attendance(html_content: str) -> Dict[str, Any]:
 #helper function for parsing timetable data
 def parse_timetable(html_content: str) -> Dict[str, Any]:
     """Parse timetable HTML to structured JSON with course information"""
-    
-    # Extract from the JavaScript escaped content
-    match = re.search(r"innerHTML = pageSanitizer\.sanitize\('(.+?)'\);", html_content, re.DOTALL)
-    if not match:
+    if not html_content or not isinstance(html_content, str):
         return {"error": "Could not parse HTML"}
     
-    # Unescape the JavaScript string - handle \xNN hex escapes
-
-    escaped_html = match.group(1)
-
-    # Handle JS escape sequences manually
-    html_decoded = escaped_html
-    html_decoded = html_decoded.replace("\\'", "'")
-    html_decoded = html_decoded.replace('\\"', '"')
-    html_decoded = html_decoded.replace('\\/', '/')
-    html_decoded = html_decoded.replace('\\-', '-')
-    html_decoded = html_decoded.replace('\\n', '\n')
-    html_decoded = html_decoded.replace('\\t', '\t')
-    html_decoded = html_decoded.replace('\\r', '\r')
-
-    # Handle \xNN hex escapes
-    html_decoded = re.sub(
-        r'\\x([0-9a-fA-F]{2})',
-        lambda m: chr(int(m.group(1), 16)),
-        html_decoded
-    )
+    html_decoded = html_content
+    # Extract from the JavaScript escaped content if present
+    match = re.search(r"innerHTML\s*=\s*pageSanitizer\.sanitize\(['\"](.+?)['\"]\);", html_content, re.DOTALL)
+    if match:
+        escaped_html = match.group(1)
+        html_decoded = escaped_html
+        html_decoded = html_decoded.replace("\\'", "'")
+        html_decoded = html_decoded.replace('\\"', '"')
+        html_decoded = html_decoded.replace('\\/', '/')
+        html_decoded = html_decoded.replace('\\-', '-')
+        html_decoded = html_decoded.replace('\\n', '\n')
+        html_decoded = html_decoded.replace('\\t', '\t')
+        html_decoded = html_decoded.replace('\\r', '\r')
+        html_decoded = re.sub(
+            r'\\x([0-9a-fA-F]{2})',
+            lambda m: chr(int(m.group(1), 16)),
+            html_decoded
+        )
+    elif '\\x' in html_decoded:
+        html_decoded = re.sub(
+            r'\\x([0-9a-fA-F]{2})',
+            lambda m: chr(int(m.group(1), 16)),
+            html_decoded
+        )
     
     soup = BeautifulSoup(html_decoded, 'html.parser')
     
@@ -269,9 +270,8 @@ def parse_timetable(html_content: str) -> Dict[str, Any]:
     
     # Find and parse course data using regex from the decoded HTML
     course_pattern = r'<td>\s*(\d+)\s*</td>\s*<td>(.*?)</td>\s*<td>(.*?)</td>\s*<td>(.*?)</td>\s*<td>(.*?)</td>\s*<td>(.*?)</td>\s*<td>(.*?)</td>\s*<td>(.*?)</td>\s*<td[^>]*>(.*?)</td>\s*<td>(.*?)</td>\s*<td>(.*?)</td>'
-    
     courses_found = re.findall(course_pattern, html_decoded, re.DOTALL)
-    unique_courses=[]
+    unique_courses = []
     
     import re as regex_mod
     def clean_html(text):
@@ -304,7 +304,6 @@ def parse_timetable(html_content: str) -> Dict[str, Any]:
             }
             
             data['courses'].append(course)
-            #check if same code already edit before adding:
             if course['course_code'] not in unique_courses:
                 data['total_credits'] += credit_val
                 unique_courses.append(course['course_code'])
@@ -312,6 +311,52 @@ def parse_timetable(html_content: str) -> Dict[str, Any]:
         except Exception as e:
             print(f"Error parsing course: {e}")
             continue
+
+    # Fallback: If regex returned 0 courses, parse table rows via BeautifulSoup DOM
+    if len(data['courses']) == 0:
+        for table in all_tables:
+            for tr in table.find_all('tr'):
+                tds = tr.find_all('td')
+                if len(tds) >= 10:
+                    texts = [td.get_text(separator=' ', strip=True) for td in tds]
+                    if texts[0].isdigit() and len(texts[1]) >= 3:
+                        s_no = texts[0]
+                        course_code = texts[1]
+                        course_title = texts[2]
+                        credit = texts[3] if len(texts) > 3 else "0"
+                        regn_type = texts[4] if len(texts) > 4 else ""
+                        category = texts[5] if len(texts) > 5 else ""
+                        course_type = texts[6] if len(texts) > 6 else ""
+                        faculty_name = texts[7] if len(texts) > 7 else ""
+                        slot = texts[8] if len(texts) > 8 else ""
+                        room_no = texts[9] if len(texts) > 9 else ""
+                        academic_year = texts[10] if len(texts) > 10 else ""
+                        
+                        credit_clean = str(credit).strip()
+                        try:
+                            credit_val = float(credit_clean) if credit_clean else 0.0
+                            if credit_val.is_integer():
+                                credit_val = int(credit_val)
+                        except:
+                            credit_val = 0
+                        
+                        course = {
+                            's_no': s_no,
+                            'course_code': course_code.strip(),
+                            'course_title': course_title.strip(),
+                            'credit': credit_val,
+                            'regn_type': regn_type.strip(),
+                            'category': category.strip(),
+                            'course_type': course_type.strip(),
+                            'faculty_name': faculty_name.strip(),
+                            'slot': slot.strip(),
+                            'room_no': room_no.strip(),
+                            'academic_year': academic_year.strip()
+                        }
+                        data['courses'].append(course)
+                        if course['course_code'] not in unique_courses:
+                            data['total_credits'] += credit_val
+                            unique_courses.append(course['course_code'])
     
     # Parse advisors
     for table in soup.find_all('table'):

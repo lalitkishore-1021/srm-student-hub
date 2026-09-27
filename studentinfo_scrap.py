@@ -532,21 +532,59 @@ class AcademiaClient:
             return None
     
     def get_timetable(self) -> Optional[Dict[str, Any]]:
-        """Fetch and parse timetable data"""
+        """Fetch and parse timetable data with dynamic slug discovery and multi-year fallback"""
         print("Fetching timetable data...")
         
-        url = f'{self.BASE_URL}/srm_university/academia-academic-services/page/My_Time_Table_2023_24'
+        candidate_slugs = [
+            'My_Time_Table_2024_25',
+            'My_Time_Table_2025_26',
+            'My_Time_Table_2024_25_Even',
+            'My_Time_Table_2024_25_Odd',
+            'My_Time_Table_2025_26_Even',
+            'My_Time_Table_2025_26_Odd',
+            'My_Time_Table',
+            'My_Time_Table_2023_24'
+        ]
         
+        # Try dynamic slug discovery from WELCOME page
         try:
-            response = self.session.get(url, headers=self._get_page_headers())
-            response.raise_for_status()
-            
-            print(f"✓ Timetable data retrieved (Status: {response.status_code})\n")
-            return parse_timetable(response.text)
-                
-        except Exception as e:
-            print(f"✗ Failed to fetch timetable: {str(e)}\n")
-            return None
+            welcome_url = f'{self.BASE_URL}/srm_university/academia-academic-services/page/WELCOME'
+            w_res = self.session.get(welcome_url, headers=self._get_page_headers(), timeout=10)
+            if w_res.status_code == 200:
+                discovered = re.findall(r'My_Time_Table[a-zA-Z0-9_]*', w_res.text)
+                for d_slug in reversed(discovered):
+                    if d_slug in candidate_slugs:
+                        candidate_slugs.remove(d_slug)
+                    candidate_slugs.insert(0, d_slug)
+                if discovered:
+                    print(f"[TIMETABLE] Discovered menu slugs: {list(dict.fromkeys(discovered))}")
+        except Exception as we:
+            print(f"[TIMETABLE] Welcome menu scan note: {we}")
+
+        last_parsed = None
+        for slug in candidate_slugs:
+            url = f'{self.BASE_URL}/srm_university/academia-academic-services/page/{slug}'
+            try:
+                response = self.session.get(url, headers=self._get_page_headers(), timeout=15)
+                if response.status_code == 200 and len(response.text.strip()) > 100:
+                    parsed = parse_timetable(response.text)
+                    if parsed and not parsed.get("error"):
+                        courses = parsed.get("courses", [])
+                        if len(courses) > 0:
+                            print(f"[DATA] Timetable data retrieved from {slug} (Status: {response.status_code}, Courses: {len(courses)})\n")
+                            return parsed
+                        elif not last_parsed:
+                            last_parsed = parsed
+            except Exception as e:
+                print(f"[TIMETABLE] Error trying {slug}: {str(e)}")
+                continue
+
+        if last_parsed:
+            print("[DATA] Returning timetable data with student info\n")
+            return last_parsed
+
+        print("[DATA] Failed to fetch timetable: No valid timetable page found\n")
+        return None
         
     def get_day_order(self) -> Optional[int]:
         """Fetch current day order from welcome page"""
