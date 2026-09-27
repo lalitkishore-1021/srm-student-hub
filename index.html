@@ -12093,6 +12093,12 @@ function predictDateRangeUI() {
                 if ('PushManager' in window && Notification.permission === 'granted') {
                     const vapidKey = 'BI-wl2ct6f3ui3cR32jm6k31-2h1g7sFIFfBHVOUqJ5hk3imXZRCtDaopDaVgW-W3XVeXvhkbGjM6MpHnjDxq-8';
                     let sub = await reg.pushManager.getSubscription();
+                    if (sub && !sub.options.applicationServerKey) {
+                        try {
+                            await sub.unsubscribe();
+                            sub = null;
+                        } catch(ue) {}
+                    }
                     if (!sub) {
                         try {
                             sub = await reg.pushManager.subscribe({
@@ -12100,9 +12106,7 @@ function predictDateRangeUI() {
                                 applicationServerKey: urlBase64ToUint8Array(vapidKey)
                             });
                         } catch(e1) {
-                            try {
-                                sub = await reg.pushManager.subscribe({ userVisibleOnly: true });
-                            } catch(e2) {}
+                            console.warn("Push subscription attempt:", e1);
                         }
                     }
                     if (sub) {
@@ -12124,7 +12128,7 @@ function predictDateRangeUI() {
             }
         }
 
-        window.testBackgroundNotification = function() {
+        window.testBackgroundNotification = async function() {
             if (!("Notification" in window)) {
                 alert("Your browser does not support notifications.");
                 return;
@@ -12141,34 +12145,65 @@ function predictDateRangeUI() {
                 });
                 return;
             }
+
             if (typeof playNotificationSound === 'function') {
                 playNotificationSound();
             }
-            if ('serviceWorker' in navigator) {
-                navigator.serviceWorker.ready.then(reg => {
+
+            // Ensure Push Subscription is ready and get subscription object
+            let sub = null;
+            try {
+                if ('serviceWorker' in navigator) {
+                    const reg = await navigator.serviceWorker.ready;
+                    if ('PushManager' in window) {
+                        const vapidKey = 'BI-wl2ct6f3ui3cR32jm6k31-2h1g7sFIFfBHVOUqJ5hk3imXZRCtDaopDaVgW-W3XVeXvhkbGjM6MpHnjDxq-8';
+                        sub = await reg.pushManager.getSubscription();
+                        if (!sub) {
+                            try {
+                                sub = await reg.pushManager.subscribe({
+                                    userVisibleOnly: true,
+                                    applicationServerKey: urlBase64ToUint8Array(vapidKey)
+                                });
+                            } catch(se1) {
+                                console.warn("PushManager subscribe retry:", se1);
+                            }
+                        }
+                    }
+
+                    // Local SW delayed notification (30s)
                     if (reg.active) {
                         reg.active.postMessage({
                             type: 'SCHEDULE_DELAYED_NOTIFICATION',
-                            delayMs: 3000,
+                            delayMs: 30000,
                             title: 'SRM Student Hub',
-                            body: 'Background notifications active with custom SRM Orbit Chime. You will receive timetable and mess reminders without opening the app.',
+                            body: 'Background notifications working! You will receive timetable and mess reminders without opening the app.',
                             url: '/'
                         });
-                        alert("Custom SRM notification sound played & alert scheduled for 3 seconds.\n\nLock your phone screen or switch to another app now to test background chime.");
-                    } else {
-                        alert("Service worker is activating. Please try again in 2 seconds.");
                     }
-                });
+                }
+            } catch(e) {
+                console.warn("SW ready check error:", e);
             }
-            // Also trigger server-side Web Push test
+
+            // Trigger server-side Web Push test with 30s delay
+            const netId = (typeof getCurrentNetId === 'function') ? getCurrentNetId() : (localStorage.getItem('squadNetId') || '');
+            const tt = JSON.parse(localStorage.getItem('squadTimetable') || '{}');
             try {
-                const netId = (typeof getCurrentNetId === 'function') ? getCurrentNetId() : (localStorage.getItem('squadNetId') || '');
                 fetch(`${BACKEND_URL}/api/push/test`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ net_id: netId })
+                    body: JSON.stringify({
+                        net_id: netId,
+                        delay_seconds: 30,
+                        subscription: sub ? sub.toJSON() : null,
+                        timetable: tt,
+                        title: 'SRM Student Hub',
+                        body: 'Background notification delivered! You will receive timetable and mess reminders without opening the app.'
+                    })
                 }).catch(() => {});
             } catch(e) {}
+
+            alert("30-Second Background Test Scheduled!\n\n1. Swipe away and remove SRM Student Hub from your recent apps (close the app completely).\n2. Wait 30 seconds.\n3. Your phone will receive the notification even though the app is completely closed!");
         };
 
         window.requestNotificationPermissionUserGesture = function() {
@@ -13190,17 +13225,37 @@ function predictDateRangeUI() {
                 playNotificationSound();
             }
             if ('serviceWorker' in navigator) {
-                navigator.serviceWorker.ready.then(reg => {
+                navigator.serviceWorker.ready.then(async reg => {
+                    let sub = null;
+                    if ('PushManager' in window) {
+                        try { sub = await reg.pushManager.getSubscription(); } catch(e) {}
+                    }
                     if (reg.active) {
                         reg.active.postMessage({
                             type: 'SCHEDULE_DELAYED_NOTIFICATION',
-                            delayMs: 3000,
+                            delayMs: 30000,
                             title: 'Potheri Station Approach Alert',
                             body: 'Your train is now approaching Potheri (POTI). Prepare to deboard at Platform 2.',
                             url: '/#train-tracker-view'
                         });
-                        alert('Potheri approach alarm activated with custom SRM Orbit Chime.\n\nYou will receive an alert as your train nears Potheri station.');
                     }
+                    try {
+                        const netId = (typeof getCurrentNetId === 'function') ? getCurrentNetId() : (localStorage.getItem('squadNetId') || '');
+                        fetch(`${BACKEND_URL}/api/push/test`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                net_id: netId,
+                                delay_seconds: 30,
+                                subscription: sub ? sub.toJSON() : null,
+                                title: 'Potheri Station Approach Alert',
+                                body: 'Your train is now approaching Potheri (POTI). Prepare to deboard at Platform 2.',
+                                url: '/#train-tracker-view'
+                            })
+                        }).catch(() => {});
+                    } catch(e) {}
+
+                    alert('Potheri approach alarm scheduled for 30 seconds!\n\nYou can close the app or remove it from recents. The alert will arrive in 30 seconds.');
                 });
             } else {
                 alert('Alarm active for Potheri station.');

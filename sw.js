@@ -1,5 +1,5 @@
 // Change this version number every time you want to force phones to update!
-const CACHE_NAME = 'srm-hub-v58-custom-notification-sound'; 
+const CACHE_NAME = 'srm-hub-v59-30s-bg-push'; 
 
 const ASSETS_TO_CACHE = [
     '/',
@@ -95,24 +95,29 @@ self.addEventListener('message', (event) => {
         self.registration.showNotification(title, options);
         broadcastSoundToClients();
     } else if (event.data.type === 'SCHEDULE_DELAYED_NOTIFICATION') {
-        const delay = event.data.delayMs || 4000;
+        const delay = event.data.delayMs || 30000;
         const title = event.data.title || 'SRM Student Hub';
         const body = event.data.body || 'Background notifications active. You will receive timetable and mess reminders without opening the app.';
         const url = event.data.url || '/';
-        setTimeout(() => {
-            self.registration.showNotification(title, {
-                body: body,
-                icon: '/images/app-icon.svg',
-                badge: '/images/app-icon.svg',
-                sound: '/audio/srm-notification.wav',
-                silent: false,
-                tag: 'srm-bg-test',
-                renotify: true,
-                vibrate: [120, 80, 120, 80, 240],
-                data: { url: url }
-            });
-            broadcastSoundToClients();
-        }, delay);
+        const p = new Promise(resolve => {
+            setTimeout(() => {
+                self.registration.showNotification(title, {
+                    body: body,
+                    icon: '/images/app-icon.svg',
+                    badge: '/images/app-icon.svg',
+                    sound: '/audio/srm-notification.wav',
+                    silent: false,
+                    tag: 'srm-bg-test-' + Date.now(),
+                    renotify: true,
+                    vibrate: [120, 80, 120, 80, 240],
+                    data: { url: url }
+                }).then(resolve).catch(resolve);
+                broadcastSoundToClients();
+            }, delay);
+        });
+        if (event.waitUntil) {
+            event.waitUntil(p);
+        }
     } else if (event.data.type === 'UPDATE_SCHEDULE_CACHE') {
         caches.open('srm-offline-data').then(cache => {
             const dataToStore = {

@@ -2153,7 +2153,60 @@ def push_subscribe():
 def push_test():
     data = request.json or {}
     net_id = (data.get('net_id') or '').strip().lower()
-    
+    delay_seconds = int(data.get('delay_seconds') or data.get('delay') or 0)
+    raw_sub = data.get('subscription')
+    raw_tt = data.get('timetable')
+    custom_title = data.get('title') or 'SRM Student Hub'
+    custom_body = data.get('body') or 'Background notification delivered! Timetable & mess alerts active without opening the app.'
+    custom_url = data.get('url') or '/'
+
+    # Upsert subscription into DB if passed directly
+    if raw_sub and isinstance(raw_sub, dict):
+        endpoint = raw_sub.get('endpoint', '')
+        keys = raw_sub.get('keys') or {}
+        p256dh = keys.get('p256dh', '')
+        auth = keys.get('auth', '')
+        if endpoint and p256dh and auth:
+            try:
+                conn = get_db()
+                cur = conn.cursor()
+                now = datetime.now().isoformat()
+                tt_json = json.dumps(raw_tt) if raw_tt else '{}'
+                if DATABASE_URL:
+                    cur.execute('''
+                        INSERT INTO push_subscriptions (net_id, endpoint, p256dh, auth, timetable_json, created_at)
+                        VALUES (%s, %s, %s, %s, %s, %s)
+                        ON CONFLICT(endpoint) DO UPDATE SET
+                            net_id = EXCLUDED.net_id,
+                            p256dh = EXCLUDED.p256dh,
+                            auth = EXCLUDED.auth,
+                            timetable_json = CASE WHEN EXCLUDED.timetable_json != '{}' THEN EXCLUDED.timetable_json ELSE push_subscriptions.timetable_json END,
+                            created_at = EXCLUDED.created_at
+                    ''', (net_id, endpoint, p256dh, auth, tt_json, now))
+                else:
+                    cur.execute('''
+                        INSERT INTO push_subscriptions (net_id, endpoint, p256dh, auth, timetable_json, created_at)
+                        VALUES (?, ?, ?, ?, ?, ?)
+                        ON CONFLICT(endpoint) DO UPDATE SET
+                            net_id = excluded.net_id,
+                            p256dh = excluded.p256dh,
+                            auth = excluded.auth,
+                            timetable_json = CASE WHEN excluded.timetable_json != '{}' THEN excluded.timetable_json ELSE push_subscriptions.timetable_json END,
+                            created_at = excluded.created_at
+                    ''', (net_id, endpoint, p256dh, auth, tt_json, now))
+                conn.commit()
+                cur.close()
+                conn.close()
+            except Exception as dbe:
+                print(f"[PUSH TEST] Upsert notice: {dbe}")
+
+    target_subs = []
+    if raw_sub and isinstance(raw_sub, dict):
+        ep = raw_sub.get('endpoint', '')
+        keys = raw_sub.get('keys') or {}
+        if ep and keys.get('p256dh') and keys.get('auth'):
+            target_subs.append({'endpoint': ep, 'p256dh': keys['p256dh'], 'auth': keys['auth']})
+
     conn = get_db()
     cur = conn.cursor()
     try:
@@ -2168,31 +2221,48 @@ def push_test():
             else:
                 cur.execute("SELECT endpoint, p256dh, auth FROM push_subscriptions ORDER BY id DESC LIMIT 5")
         rows = cur.fetchall()
-        
+        for row in rows:
+            if not any(s['endpoint'] == row[0] for s in target_subs):
+                target_subs.append({'endpoint': row[0], 'p256dh': row[1], 'auth': row[2]})
+    finally:
+        cur.close()
+        conn.close()
+
+    payload = {
+        'title': custom_title,
+        'body': custom_body,
+        'url': custom_url,
+        'tag': 'srm-test-push-' + str(int(time.time())),
+        'sound': '/audio/srm-notification.wav',
+        'silent': False
+    }
+
+    if delay_seconds > 0:
+        def _delayed_push_thread(subs, pl, delay):
+            print(f"[PUSH TEST] Scheduled delayed Web Push: waiting {delay}s before delivery...")
+            time.sleep(delay)
+            for s in subs:
+                ok, msg = send_web_push(s, pl)
+                print(f"[PUSH TEST] Delayed push sent ({delay}s): ok={ok}, msg={msg}")
+
+        threading.Thread(target=_delayed_push_thread, args=(target_subs, payload, delay_seconds), daemon=True).start()
+        return jsonify({
+            'success': True,
+            'scheduled': True,
+            'delay_seconds': delay_seconds,
+            'subscriber_count': len(target_subs),
+            'message': f'Web Push scheduled in {delay_seconds} seconds. Remove app from recents now to test!'
+        })
+    else:
         sent = 0
         errors = []
-        payload = {
-            'title': 'SRM Student Hub',
-            'body': 'Background notifications active. You will receive timetable and mess reminders without opening the app.',
-            'url': '/',
-            'tag': 'srm-test-push-' + str(int(time.time())),
-            'sound': '/audio/srm-notification.wav',
-            'silent': False
-        }
-        for row in rows:
-            sub = {'endpoint': row[0], 'p256dh': row[1], 'auth': row[2]}
-            ok, msg = send_web_push(sub, payload)
+        for s in target_subs:
+            ok, msg = send_web_push(s, payload)
             if ok:
                 sent += 1
             else:
                 errors.append(msg)
-                
         return jsonify({'success': True, 'sent_count': sent, 'errors': errors})
-    except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
-    finally:
-        cur.close()
-        conn.close()
 
 # --- BACKGROUND SCHEDULED PUSH DISPATCHER ---
 _SENT_PUSH_ALERTS = set()
