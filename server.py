@@ -2218,9 +2218,9 @@ def _run_scheduled_push_dispatch():
             try:
                 tt = json.loads(tt_json)
                 day_key = str(weekday)
-                day_classes = tt.get(day_key, [])
+                day_classes = tt.get(day_key) or tt.get(f'Day {day_key}') or tt.get(f'day_{day_key}') or []
                 for c in day_classes:
-                    time_raw = c.get('time_from') or (c.get('time') or '').split('-')[0].strip()
+                    time_raw = c.get('time_from') or c.get('start_time') or (c.get('time') or '').split('-')[0].strip()
                     if not time_raw:
                         continue
                     m = re.match(r'(\d{1,2}):(\d{2})', time_raw)
@@ -2232,13 +2232,15 @@ def _run_scheduled_push_dispatch():
                         class_mins = ch * 60 + cm
                         diff = class_mins - total_mins
                         if 10 <= diff <= 20: # 10 to 20 minutes before class
-                            subj = c.get('subject') or c.get('code') or 'Upcoming Class'
+                            subj = c.get('subject') or c.get('title') or c.get('course') or c.get('code') or 'Upcoming Class'
                             room = c.get('room') or 'TBA'
                             fac = c.get('faculty') or 'Faculty'
-                            c_tag = f"class-{c.get('code')}-{class_mins}-{today_str}"
+                            c_code = c.get('code') or c.get('title') or 'CLASS'
+                            c_tag = f"class-{c_code}-{class_mins}-{today_str}"
                             alert_key = f"{endpoint}:{c_tag}"
                             if alert_key not in _SENT_PUSH_ALERTS:
                                 _SENT_PUSH_ALERTS.add(alert_key)
+                                print(f"[PUSH DISPATCHER] Sending class reminder to {net_id}: {subj} in {diff}m")
                                 send_web_push(sub, {
                                     'title': f"Class in {diff}m: {subj[:28]}",
                                     'body': f"Room {room} • {time_raw} - {fac[:24]}",
@@ -2247,8 +2249,8 @@ def _run_scheduled_push_dispatch():
                                     'sound': '/audio/srm-notification.wav',
                                     'silent': False
                                 })
-            except Exception:
-                pass
+            except Exception as e:
+                print(f"[PUSH DISPATCHER] Timetable parse error: {e}")
 
 def _background_push_dispatcher_loop():
     # Wait 30 seconds after server boot before starting cycle

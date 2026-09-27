@@ -9,3 +9,5 @@ beautifulsoup4==4.12.3
 Flask-Compress==1.14
 curl_cffi==0.7.1
 playwright-stealth==2.0.3
+pywebpush==2.0.1
+cryptography>=41.0.0

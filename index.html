@@ -2922,7 +2922,7 @@
                             <div style="font-size:11px; color:var(--text-sub); margin-top:2px;">Timetable reminders when app is closed</div>
                         </div>
                     </div>
-                    <span id="pref-notif-status" style="font-size:11px; font-weight:800; padding:4px 10px; border-radius:20px; background:rgba(255,255,255,0.08); color:var(--text-sub);">CHECKING</span>
+                    <span id="pref-notif-status" onclick="requestNotificationPermissionUserGesture()" style="font-size:11px; font-weight:800; padding:4px 10px; border-radius:20px; background:rgba(255,255,255,0.08); color:var(--text-sub); cursor:pointer;">CHECKING</span>
                 </div>
                 <div style="margin-top:10px; padding:9px 12px; background:rgba(255,255,255,0.04); border-radius:12px; border:1px solid rgba(255,255,255,0.06); display:flex; align-items:center; justify-content:space-between;">
                     <div style="display:flex; align-items:center; gap:8px;">
@@ -3145,6 +3145,21 @@
                 </div>
 
                 <div id="auth-dashboard" style="display: none;">
+                    <div id="notif-permission-banner" style="display:none; margin: 0 0 16px 0; padding: 13px 15px; background: linear-gradient(135deg, rgba(56,189,248,0.12), rgba(30,58,138,0.22)); border: 1px solid rgba(56,189,248,0.3); border-radius: 16px; justify-content: space-between; align-items: center; gap: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.3);">
+                        <div style="display:flex; align-items:center; gap:12px;">
+                            <div style="width:36px; height:36px; border-radius:10px; background:rgba(56,189,248,0.2); display:flex; align-items:center; justify-content:center; color:#38bdf8; flex-shrink:0;">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+                            </div>
+                            <div>
+                                <div style="font-weight:800; font-size:13px; color:#fff;">Background Reminders</div>
+                                <div style="font-size:11px; color:var(--text-sub); margin-top:2px;">Get timetable and mess alerts even when app is closed</div>
+                            </div>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <button type="button" onclick="requestNotificationPermissionUserGesture()" style="background:#38bdf8; color:#000; border:none; padding:8px 14px; border-radius:10px; font-weight:800; font-size:11px; cursor:pointer; white-space:nowrap; transition:transform 0.15s;" onmouseover="this.style.transform='scale(1.04)'" onmouseout="this.style.transform='none'">Enable</button>
+                            <button type="button" onclick="dismissNotifBanner()" style="background:transparent; color:var(--text-sub); border:none; padding:4px 8px; cursor:pointer; font-size:18px; line-height:1;">&times;</button>
+                        </div>
+                    </div>
                     <div class="id-card" data-tilt data-tilt-glare="true" data-tilt-max-glare="0.5" data-tilt-scale="1.05" data-tilt-speed="400">
                         <div class="id-card-top">
                             <div class="id-avatar story-ring" onclick="openStoryMode()">
@@ -5052,6 +5067,7 @@
                 }
                 try { renderProfile(profile); } catch (e) { console.error("Profile Render Error:", e); }
                 try { renderTimetable(ttDict); } catch (e) { console.error("Timetable Render Error:", e); }
+                try { initBackgroundPushService(); } catch(e) {}
                 
                 // Only overwrite attendance/marks if server returned real data
                 if (attList.length > 0) {
@@ -5177,7 +5193,8 @@
                         try { renderMarks(marksList); } catch (e) {}
                     }
 
-                    try { autoEnableNotificationsByDefault(); } catch(e) {}
+                    try { checkAndShowNotificationBanner(); } catch(e) {}
+                    try { initBackgroundPushService(); } catch(e) {}
                     try { syncStudentScheduleToServiceWorker(ttDict, attList, profile); } catch(e) {}
                     hideSyncToast(true);
                 } else {
@@ -12049,15 +12066,39 @@ function predictDateRangeUI() {
             } catch(e) {}
         };
 
-        function autoEnableNotificationsByDefault() {
+        window.requestNotificationPermissionUserGesture = function() {
+            if (!("Notification" in window)) {
+                alert("Your browser does not support notifications.");
+                return;
+            }
+            Notification.requestPermission().then(p => {
+                updateNotifBadgeInModal();
+                const banner = document.getElementById('notif-permission-banner');
+                if (banner) banner.style.display = 'none';
+                if (p === 'granted') {
+                    initBackgroundPushService();
+                    if (typeof playNotificationSound === 'function') playNotificationSound();
+                    if (typeof showToast === 'function') showToast('Background notifications active');
+                } else if (p === 'denied') {
+                    alert('Notifications are blocked in your browser settings. Please enable them in site settings to receive reminders when the app is closed.');
+                }
+            }).catch(err => {
+                console.warn('requestPermission error:', err);
+            });
+        };
+
+        window.dismissNotifBanner = function() {
+            const banner = document.getElementById('notif-permission-banner');
+            if (banner) banner.style.display = 'none';
+            sessionStorage.setItem('dismissed_notif_banner', 'true');
+        };
+
+        function checkAndShowNotificationBanner() {
             if (!("Notification" in window)) return;
+            if (sessionStorage.getItem('dismissed_notif_banner') === 'true') return;
             if (Notification.permission === 'default') {
-                Notification.requestPermission().then(p => {
-                    updateNotifBadgeInModal();
-                    if (p === 'granted') {
-                        initBackgroundPushService();
-                    }
-                }).catch(() => {});
+                const banner = document.getElementById('notif-permission-banner');
+                if (banner) banner.style.display = 'flex';
             } else if (Notification.permission === 'granted') {
                 initBackgroundPushService();
             }
@@ -12065,7 +12106,7 @@ function predictDateRangeUI() {
 
         // Initialize Background Service & auto prompt notifications on load
         window.addEventListener('load', () => {
-            setTimeout(autoEnableNotificationsByDefault, 2500);
+            setTimeout(checkAndShowNotificationBanner, 2000);
             setTimeout(initBackgroundPushService, 3500);
         });
 
@@ -12229,7 +12270,7 @@ function predictDateRangeUI() {
                         updateDeparturesCountdowns();
                     } else if (currentTrainViewMode === 'wimt') {
                         wimtLivePollTicks++;
-                        if (wimtLivePollTicks % 30 === 0 && currentWimtTrainNo) {
+                        if (wimtLivePollTicks % 15 === 0 && currentWimtTrainNo) {
                             fetchRealLiveTrainStatus(currentWimtTrainNo, true);
                         }
                         renderWhereIsMyTrain(currentWimtTrainNo, false);
@@ -12321,7 +12362,7 @@ function predictDateRangeUI() {
         function fetchRealLiveTrainStatus(trainNo, forceRefresh = false, callback = null) {
             if (!trainNo) return;
             const now = Date.now();
-            if (!forceRefresh && liveTrainDataCache[trainNo] && (now - (lastTrainLiveFetchTime[trainNo] || 0) < 30000)) {
+            if (!forceRefresh && liveTrainDataCache[trainNo] && (now - (lastTrainLiveFetchTime[trainNo] || 0) < 15000)) {
                 if (typeof callback === 'function') callback(liveTrainDataCache[trainNo]);
                 return;
             }
@@ -12611,9 +12652,10 @@ function predictDateRangeUI() {
             // REAL RAILWAY DATA RESOLUTION
             const actualDelay = isLiveActive ? (liveData.delay_mins || 0) : (selectedTrain.delay || 0);
             const liveStatusText = isLiveActive ? (liveData.delay_text || (actualDelay > 0 ? `Delayed +${actualDelay}m` : 'On Time')) : selectedTrain.statusText;
-            const liveStatusHeadline = isLiveActive ? (liveData.status_headline || liveData.status) : (liveData ? 'Live data unavailable' : 'Connecting to railway live feed...');
-            const lastUpdatedText = isLiveActive ? `Last updated: ${liveData.last_updated} • NTES Official Live Feed` : (liveData ? 'Live data unavailable from railway control • Timetable schedule shown' : 'Connecting to railway radar...');
-            const sourceBadgeText = isLiveActive ? (liveData.source || 'Indian Railways NTES Official Feed') : 'Indian Railways Timetable';
+            const liveStatusHeadline = isLiveActive ? (liveData.status_headline || liveData.status) : (liveData ? 'Live telemetry pending from control' : 'Connecting to railway radar...');
+            const sourceName = (liveData && liveData.source) ? liveData.source : 'Indian Railways Live Feed';
+            const lastUpdatedText = isLiveActive ? `Last updated: ${liveData.last_updated} • ${sourceName}` : (liveData ? 'Live telemetry pending • Scheduled timetable active' : 'Scanning live railway radar...');
+            const sourceBadgeText = isLiveActive ? sourceName : 'Indian Railways Timetable';
 
             // SPEED: Display speed ONLY when provided by API telemetry. Never fake km/h!
             const speedDisplay = (isLiveActive && liveData.speed != null) ? `${liveData.speed} km/h` : 'Not Reported';
@@ -12713,16 +12755,16 @@ function predictDateRangeUI() {
                 const delayBadgeHtml = isLiveActive ? (actualDelay > 0 ? `
                     <span style="background:rgba(245,158,11,0.2); color:#fbbf24; border:1px solid rgba(245,158,11,0.4); font-size:11px; font-weight:800; padding:3px 10px; border-radius:8px; display:inline-flex; align-items:center; gap:5px;">
                         <span style="width:6px; height:6px; border-radius:50%; background:#f59e0b; display:inline-block; animation:wimtPulse 1.2s infinite;"></span>
-                        <span>${liveStatusText} (NTES Live)</span>
+                        <span>${liveStatusText} (Live)</span>
                     </span>
                 ` : `
                     <span style="background:rgba(16,185,129,0.18); color:#10b981; border:1px solid rgba(16,185,129,0.35); font-size:11px; font-weight:800; padding:3px 10px; border-radius:8px; display:inline-flex; align-items:center; gap:5px;">
                         <span style="width:6px; height:6px; border-radius:50%; background:#10b981; display:inline-block;"></span>
-                        <span>On Time (NTES Verified)</span>
+                        <span>On Time (Live Radar)</span>
                     </span>
                 `) : `
                     <span style="background:rgba(255,255,255,0.08); color:var(--text-sub); border:1px solid rgba(255,255,255,0.15); font-size:11px; font-weight:700; padding:3px 10px; border-radius:8px; display:inline-flex; align-items:center; gap:5px;">
-                        <span>Live data unavailable</span>
+                        <span>Live telemetry pending</span>
                     </span>
                 `;
 
@@ -12804,7 +12846,7 @@ function predictDateRangeUI() {
                                 <span>Schedule Delay</span>
                             </div>
                             <div class="wimt-gauge-val" style="font-size:1.05rem; color:${actualDelay > 0 ? '#f59e0b' : '#38bdf8'};">${liveStatusText}</div>
-                            <div class="wimt-gauge-sub">${isLiveActive ? 'Indian Railways Feed' : 'Live Feed Pending'}</div>
+                            <div class="wimt-gauge-sub">${isLiveActive ? 'Live Radar Feed' : 'Live Feed Pending'}</div>
                         </div>
                     </div>
                 `;
