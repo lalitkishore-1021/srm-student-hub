@@ -2936,7 +2936,7 @@
                 </div>
                 <button type="button" onclick="testBackgroundNotification()" style="width:100%; margin-top:10px; padding:11px 14px; background:rgba(255,255,255,0.07); color:#fff; border:1px solid rgba(255,255,255,0.12); border-radius:12px; font-weight:700; font-size:12px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; transition:all 0.2s;">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-                    <span>Test Background Alert (Lock Screen in 3s)</span>
+                    <span>Test Background Alert (Lock Screen in 30s)</span>
                 </button>
             </div>
 
@@ -11614,8 +11614,11 @@ function predictDateRangeUI() {
     
     <script>
         function closeAdPopup(e) {
-            e.stopPropagation();
-            document.getElementById('ad-popup').style.display = 'none';
+            if (e && typeof e.stopPropagation === 'function') {
+                e.stopPropagation();
+            }
+            const popup = document.getElementById('ad-popup');
+            if (popup) popup.style.display = 'none';
         }
         
         function openMusicLoungeFromAd(e) {
