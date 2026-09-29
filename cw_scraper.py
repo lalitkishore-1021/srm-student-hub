@@ -6,13 +6,50 @@ def scrape_campusweb(netid, pwd):
         if '@' in netid:
             netid = netid.split('@')[0]
             
+        session = requests.Session()
+        session.headers.update({
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+            'Accept': 'application/json, text/plain, */*',
+            'Content-Type': 'application/json'
+        })
+        
+        # 1. Attempt session establishment on campusapi
+        try:
+            session.post(
+                'https://campusapi.fly.dev/api/student-portal/login',
+                json={'net_id': netid, 'password': pwd},
+                timeout=10
+            )
+        except Exception:
+            pass
+
         import concurrent.futures
         
         def fetch_att():
-            return requests.post('https://campusapi.fly.dev/api/student-portal/attendance', json={'net_id': netid, 'password': pwd}, timeout=25).json()
+            try:
+                res = session.post(
+                    'https://campusapi.fly.dev/api/student-portal/attendance',
+                    json={'net_id': netid, 'password': pwd},
+                    timeout=12
+                )
+                if res.status_code == 200:
+                    return res.json()
+            except Exception:
+                pass
+            return {}
             
         def fetch_marks():
-            return requests.post('https://campusapi.fly.dev/api/student-portal/marks', json={'net_id': netid, 'password': pwd}, timeout=25).json()
+            try:
+                res = session.post(
+                    'https://campusapi.fly.dev/api/student-portal/marks',
+                    json={'net_id': netid, 'password': pwd},
+                    timeout=12
+                )
+                if res.status_code == 200:
+                    return res.json()
+            except Exception:
+                pass
+            return {}
             
         with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
             future_att = executor.submit(fetch_att)
@@ -21,8 +58,8 @@ def scrape_campusweb(netid, pwd):
             att_json = future_att.result()
             marks_json = future_marks.result()
             
-        if att_json.get('status') != 'success':
-            return {"success": False, "error": att_json.get('message', 'Invalid Credentials or Academia Down')}
+        if not att_json or att_json.get('status') != 'success':
+            return {"success": False, "error": (att_json or {}).get('message', 'CampusWeb API unavailable')}
             
         att_data = []
         for item in att_json.get('attendance', []):

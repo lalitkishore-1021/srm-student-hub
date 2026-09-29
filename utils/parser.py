@@ -6,32 +6,34 @@ from bs4 import BeautifulSoup
 def parse_attendance(html_content: str) -> Dict[str, Any]:
     """Parse attendance HTML to structured JSON matching desired format"""
     
-    # Extract from the JavaScript escaped content
-    match = re.search(r"innerHTML = pageSanitizer\.sanitize\('(.+?)'\);", html_content, re.DOTALL)
-    if not match:
+    if not html_content or not isinstance(html_content, str):
         return {"error": "Could not parse HTML"}
-    
-    # Unescape the JavaScript string
 
-    escaped_html = match.group(1)
+    html_decoded = html_content
+    # Extract from the JavaScript escaped content if present
+    match = re.search(r"innerHTML\s*=\s*pageSanitizer\.sanitize\(['\"](.+?)['\"]\);", html_content, re.DOTALL)
+    if match:
+        escaped_html = match.group(1)
+        html_decoded = escaped_html
+        html_decoded = html_decoded.replace("\\'", "'")
+        html_decoded = html_decoded.replace('\\"', '"')
+        html_decoded = html_decoded.replace('\\/', '/')
+        html_decoded = html_decoded.replace('\\-', '-')
+        html_decoded = html_decoded.replace('\\n', '\n')
+        html_decoded = html_decoded.replace('\\t', '\t')
+        html_decoded = html_decoded.replace('\\r', '\r')
+        html_decoded = re.sub(
+            r'\\x([0-9a-fA-F]{2})',
+            lambda m: chr(int(m.group(1), 16)),
+            html_decoded
+        )
+    elif '\\x' in html_decoded:
+        html_decoded = re.sub(
+            r'\\x([0-9a-fA-F]{2})',
+            lambda m: chr(int(m.group(1), 16)),
+            html_decoded
+        )
 
-    # Handle JS escape sequences manually
-    html_decoded = escaped_html
-    html_decoded = html_decoded.replace("\\'", "'")
-    html_decoded = html_decoded.replace('\\"', '"')
-    html_decoded = html_decoded.replace('\\/', '/')
-    html_decoded = html_decoded.replace('\\-', '-')
-    html_decoded = html_decoded.replace('\\n', '\n')
-    html_decoded = html_decoded.replace('\\t', '\t')
-    html_decoded = html_decoded.replace('\\r', '\r')
-
-    # Handle \xNN hex escapes
-    html_decoded = re.sub(
-        r'\\x([0-9a-fA-F]{2})',
-        lambda m: chr(int(m.group(1), 16)),
-        html_decoded
-    )
-    
     soup = BeautifulSoup(html_decoded, 'html.parser')
     
     data = {

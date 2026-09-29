@@ -79,8 +79,12 @@ def fetch_all_data_with_retry(client, max_retries: int = 2, save_debug_html: boo
                 day_order = 4
 
             # --- ATTENDANCE ---
-            print("[DATA] Skipping attendance fetch from Academia (Disabled by user request due to 403 errors)")
-            attendance_data = None
+            print("[DATA] Fetching attendance data...")
+            try:
+                attendance_data = client.get_attendance()
+            except Exception as att_err:
+                print(f"✗ [DATA] Attendance fetch failed: {att_err}")
+                attendance_data = None
             
             # --- TIMETABLE ---
             print("[DATA] Fetching timetable data...")

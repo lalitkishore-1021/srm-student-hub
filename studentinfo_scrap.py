@@ -515,21 +515,60 @@ class AcademiaClient:
         }
     
     def get_attendance(self) -> Optional[Dict[str, Any]]:
-        """Fetch and parse attendance data"""
+        """Fetch and parse attendance data with dynamic slug discovery and multi-year fallback"""
         print("Fetching attendance data...")
         
-        url = f'{self.BASE_URL}/srm_university/academia-academic-services/page/My_Attendance'
+        candidate_slugs = [
+            'My_Attendance',
+            'My_Attendance_2024_25',
+            'My_Attendance_2023_24',
+            'My_Attendance_2025_26',
+            'My_Attendance_2024_25_Even',
+            'My_Attendance_2024_25_Odd',
+            'My_Attendance_2023_24_Even',
+            'My_Attendance_2023_24_Odd',
+            'Attendance'
+        ]
         
+        # Try dynamic slug discovery from WELCOME page
         try:
-            response = self.session.get(url, headers=self._get_page_headers())
-            response.raise_for_status()
-            
-            print(f"✓ Attendance data retrieved (Status: {response.status_code})\n")
-            return parse_attendance(response.text)
-                
-        except Exception as e:
-            print(f"✗ Failed to fetch attendance: {str(e)}\n")
-            return None
+            welcome_url = f'{self.BASE_URL}/srm_university/academia-academic-services/page/WELCOME'
+            w_res = self.session.get(welcome_url, headers=self._get_page_headers(), timeout=10)
+            if w_res.status_code == 200:
+                discovered = re.findall(r'(?:My_)?Attendance[a-zA-Z0-9_]*', w_res.text)
+                for d_slug in reversed(discovered):
+                    if d_slug in candidate_slugs:
+                        candidate_slugs.remove(d_slug)
+                    candidate_slugs.insert(0, d_slug)
+                if discovered:
+                    print(f"[ATTENDANCE] Discovered menu slugs: {list(dict.fromkeys(discovered))}")
+        except Exception as we:
+            print(f"[ATTENDANCE] Welcome menu scan note: {we}")
+
+        last_parsed = None
+        for slug in candidate_slugs:
+            url = f'{self.BASE_URL}/srm_university/academia-academic-services/page/{slug}'
+            try:
+                response = self.session.get(url, headers=self._get_page_headers(), timeout=15)
+                if response.status_code == 200 and len(response.text.strip()) > 100:
+                    parsed = parse_attendance(response.text)
+                    if parsed and not parsed.get("error"):
+                        courses = parsed.get("attendance", {}).get("courses", {})
+                        if len(courses) > 0 or len(parsed.get("student_info", {})) > 0:
+                            print(f"✓ Attendance data retrieved from {slug} (Status: {response.status_code}, Courses: {len(courses)})\n")
+                            return parsed
+                        elif not last_parsed:
+                            last_parsed = parsed
+            except Exception as e:
+                print(f"[ATTENDANCE] Error trying {slug}: {str(e)}")
+                continue
+
+        if last_parsed:
+            print("[DATA] Returning attendance data with student info\n")
+            return last_parsed
+
+        print("✗ Failed to fetch attendance: No valid attendance page found\n")
+        return None
     
     def get_timetable(self) -> Optional[Dict[str, Any]]:
         """Fetch and parse timetable data with dynamic slug discovery and multi-year fallback"""

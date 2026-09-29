@@ -196,11 +196,6 @@ def init_db():
             id SERIAL PRIMARY KEY, post_id INTEGER NOT NULL, net_id TEXT NOT NULL, UNIQUE(post_id, net_id))''')
         cur.execute('''CREATE TABLE IF NOT EXISTS push_subscriptions (
             id SERIAL PRIMARY KEY, net_id TEXT, endpoint TEXT UNIQUE NOT NULL, p256dh TEXT, auth TEXT, timetable_json TEXT, created_at TEXT)''')
-        cur.execute('''CREATE TABLE IF NOT EXISTS train_reports (
-            id SERIAL PRIMARY KEY, train_no TEXT NOT NULL, direction TEXT, station_code TEXT NOT NULL,
-            status TEXT NOT NULL, delay_mins INTEGER DEFAULT 0, crowd_level TEXT,
-            reported_by TEXT, created_at TEXT)''')
-
         conn.commit()
         for table, col, ctype in [
             ('students', 'created_at', 'TEXT'),
@@ -306,10 +301,6 @@ def init_db():
             id SERIAL PRIMARY KEY, post_id INTEGER NOT NULL, net_id TEXT NOT NULL, UNIQUE(post_id, net_id))''')
         cur.execute('''CREATE TABLE IF NOT EXISTS push_subscriptions (
             id INTEGER PRIMARY KEY AUTOINCREMENT, net_id TEXT, endpoint TEXT UNIQUE NOT NULL, p256dh TEXT, auth TEXT, timetable_json TEXT, created_at TEXT)''')
-        cur.execute('''CREATE TABLE IF NOT EXISTS train_reports (
-            id INTEGER PRIMARY KEY AUTOINCREMENT, train_no TEXT NOT NULL, direction TEXT, station_code TEXT NOT NULL,
-            status TEXT NOT NULL, delay_mins INTEGER DEFAULT 0, crowd_level TEXT,
-            reported_by TEXT, created_at TEXT)''')
         
         for table, col, ctype in [
             ('students', 'created_at', 'TEXT'),
@@ -2401,87 +2392,7 @@ def _background_push_dispatcher_loop():
 
 threading.Thread(target=_background_push_dispatcher_loop, daemon=True).start()
 
-# ================= POTHERI EMU TRAIN REPORTS API =================
-@app.route('/api/trains/report', methods=['GET', 'POST'])
-def handle_train_reports():
-    conn = get_db()
-    cur = conn.cursor()
-    try:
-        if request.method == 'POST':
-            data = request.json or {}
-            train_no = str(data.get('train_no') or '40508').strip()
-            direction = str(data.get('direction') or 'beach').strip().lower()
-            station_code = str(data.get('station_code') or 'POTI').strip().upper()
-            status = str(data.get('status') or 'On Time').strip()
-            delay_mins = int(data.get('delay_mins') or 0)
-            crowd_level = str(data.get('crowd_level') or 'Normal').strip()
-            reported_by = str(data.get('net_id') or 'Student').strip().lower()
-            now = datetime.now().isoformat()
-            
-            if DATABASE_URL:
-                cur.execute('''
-                    INSERT INTO train_reports (train_no, direction, station_code, status, delay_mins, crowd_level, reported_by, created_at)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-                ''', (train_no, direction, station_code, status, delay_mins, crowd_level, reported_by, now))
-            else:
-                cur.execute('''
-                    INSERT INTO train_reports (train_no, direction, station_code, status, delay_mins, crowd_level, reported_by, created_at)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                ''', (train_no, direction, station_code, status, delay_mins, crowd_level, reported_by, now))
-            conn.commit()
-            return jsonify({'success': True, 'message': 'Report logged successfully'})
-        else:
-            if DATABASE_URL:
-                cur.execute('''
-                    SELECT train_no, direction, station_code, status, delay_mins, crowd_level, reported_by, created_at
-                    FROM train_reports
-                    ORDER BY id DESC LIMIT 50
-                ''')
-            else:
-                cur.execute('''
-                    SELECT train_no, direction, station_code, status, delay_mins, crowd_level, reported_by, created_at
-                    FROM train_reports
-                    ORDER BY id DESC LIMIT 50
-                ''')
-            rows = cur.fetchall()
-            reports = []
-            for r in rows:
-                reports.append({
-                    'train_no': r[0],
-                    'direction': r[1],
-                    'station_code': r[2],
-                    'status': r[3],
-                    'delay_mins': r[4],
-                    'crowd_level': r[5],
-                    'reported_by': r[6],
-                    'created_at': r[7]
-                })
-            return jsonify({'success': True, 'reports': reports})
-    except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
-    finally:
-        cur.close()
-        conn.close()
 
-# ================= REAL LIVE TRAIN STATUS API (NTES / RAPIDAPI) =================
-@app.route('/api/trains/live-status/<train_no>', methods=['GET'])
-@app.route('/api/trains/live-status', methods=['GET'])
-def get_train_live_status_endpoint(train_no=None):
-    if not train_no:
-        train_no = request.args.get('train_no', '40508')
-    try:
-        from utils.railway_service import get_live_train_status
-        result = get_live_train_status(train_no)
-        return jsonify(result)
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'is_live': False,
-            'train_no': str(train_no),
-            'status': 'Live data unavailable',
-            'error': str(e),
-            'stale_message': 'Live data unavailable from railway control'
-        }), 200
 
 @app.route('/api/spotted', methods=['GET'])
 def get_spotted():
