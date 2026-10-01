@@ -5508,67 +5508,68 @@
     else if (overallPercent >= 55) overallGrade = 'B';
     else if (overallPercent >= 50) overallGrade = 'C';
 
-    // Helper for color based on percent
     const getColorForPercent = (p) => {
         if(p >= 80) return '#10b981'; // Green
         if(p >= 60) return '#f59e0b'; // Yellow
         return '#ef4444'; // Red
     };
 
-    const overallColor = getColorForPercent(overallPercent);
+    const rgbForPercent = (p) => {
+        if(p >= 80) return '16, 185, 129';
+        if(p >= 60) return '245, 158, 11';
+        return '239, 68, 68';
+    };
 
-    // Top Summary Card (Modern Glassmorphism with Gradient)
+    // Top Summary Card (Attendance Style - Premium Blue Glow)
     let html = `
-        <div class="glass-card fade-in-up" style="background: linear-gradient(135deg, rgba(30,30,40,0.9), rgba(15,15,20,0.95)); border: 1px solid rgba(255,255,255,0.08); border-radius: 24px; padding: 0; margin-bottom: 25px; box-shadow: 0 15px 35px rgba(0,0,0,0.4); position: relative; overflow: hidden;">
+        <div class="glass-card fade-in-up" style="background: linear-gradient(135deg, var(--accent), var(--accent-hover)); border:none; border-radius: 24px; padding: 25px; margin-bottom: 25px; box-shadow: 0 15px 35px rgba(44, 95, 158, 0.2); position: relative; overflow: hidden;">
+            <!-- Background decor -->
+            <div style="position:absolute; top:-20px; right:-20px; width:100px; height:100px; background:rgba(255,255,255,0.05); border-radius:50%;"></div>
             
-            <!-- Animated background gradient blob -->
-            <div style="position:absolute; top:-50px; right:-50px; width:200px; height:200px; background: radial-gradient(circle, ${overallColor}40 0%, transparent 70%); border-radius:50%; opacity: 0.6; pointer-events:none;"></div>
-            
-            <div style="padding: 25px 25px 15px 25px; position:relative; z-index:1;">
-                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px;">
-                    <div>
-                        <div style="color: rgba(255,255,255,0.6); font-size: 11px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 4px;">Academic Performance</div>
-                        <div style="display: flex; align-items: baseline; gap: 4px;">
-                            <span style="font-size: 52px; font-weight: 900; color: #fff; letter-spacing: -1.5px; text-shadow: 0 2px 10px rgba(0,0,0,0.5);">${overallPercent.toFixed(1)}</span>
-                            <span style="font-size: 24px; font-weight: 700; color: ${overallColor};">%</span>
-                        </div>
-                    </div>
-                    <div style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: inset 0 2px 5px rgba(0,0,0,0.5);">
-                        <i class="fas fa-trophy" style="color: ${overallColor}; font-size: 18px;"></i>
-                    </div>
-                </div>
-                
-                <div style="display: flex; justify-content: space-between; background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.05); border-radius: 16px; padding: 16px; margin-bottom: 20px;">
-                    <div style="text-align: center; flex: 1;">
-                        <div style="color: #fff; font-size: 20px; font-weight: 800;">${estCGPA.toFixed(2)}</div>
-                        <div style="color: rgba(255,255,255,0.5); font-size: 9px; font-weight: 700; letter-spacing: 1px; margin-top: 6px; text-transform: uppercase;">Est. CGPA</div>
-                    </div>
-                    <div style="width: 1px; background: rgba(255,255,255,0.1); margin: 0 10px;"></div>
-                    <div style="text-align: center; flex: 1;">
-                        <div style="color: #fff; font-size: 20px; font-weight: 800;">${grandTotalObtained.toFixed(1)}<span style="font-size: 11px; color:rgba(255,255,255,0.4); font-weight:600;">/${grandTotalMax}</span></div>
-                        <div style="color: rgba(255,255,255,0.5); font-size: 9px; font-weight: 700; letter-spacing: 1px; margin-top: 6px; text-transform: uppercase;">Total Score</div>
-                    </div>
-                    <div style="width: 1px; background: rgba(255,255,255,0.1); margin: 0 10px;"></div>
-                    <div style="text-align: center; flex: 1;">
-                        <div style="color: ${overallColor}; font-size: 20px; font-weight: 900;">${overallGrade}</div>
-                        <div style="color: rgba(255,255,255,0.5); font-size: 9px; font-weight: 700; letter-spacing: 1px; margin-top: 6px; text-transform: uppercase;">Avg Grade</div>
-                    </div>
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px; position:relative; z-index:1;">
+                <div style="color: rgba(255,255,255,0.7); font-size: 11px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase;">Academic Performance</div>
+                <div style="background: rgba(255,255,255,0.2); width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                    <i class="fas fa-trophy" style="color: #fff; font-size: 12px;"></i>
                 </div>
             </div>
             
-            <button onclick="openCgpaCalculator()" style="width: 100%; background: rgba(255,255,255,0.03); border: none; border-top: 1px solid rgba(255,255,255,0.08); padding: 18px; color: #fff; font-weight: 700; font-size: 14px; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; transition: background 0.3s;">
-                <i class="fas fa-calculator" style="color: rgba(255,255,255,0.6);"></i> Launch CGPA Calculator
+            <div style="display: flex; align-items: baseline; margin-bottom: 30px; position:relative; z-index:1;">
+                <span style="font-size: 48px; font-weight: 900; color: #fff; letter-spacing: -1.5px;">${overallPercent.toFixed(1)}</span>
+                <span style="font-size: 22px; font-weight: 700; color: rgba(255,255,255,0.6); margin-left: 4px;">%</span>
+            </div>
+            
+            <div style="display: flex; justify-content: space-between; background: rgba(0,0,0,0.15); border-radius: 16px; padding: 15px; margin-bottom: 15px; position:relative; z-index:1;">
+                <div style="text-align: center; flex: 1;">
+                    <div style="color: #fff; font-size: 18px; font-weight: 800;">${estCGPA.toFixed(2)}</div>
+                    <div style="color: rgba(255,255,255,0.5); font-size: 9px; font-weight: 700; letter-spacing: 0.5px; margin-top: 4px; text-transform: uppercase;">Est. CGPA</div>
+                </div>
+                <div style="width: 1px; background: rgba(255,255,255,0.1); margin: 0 10px;"></div>
+                <div style="text-align: center; flex: 1;">
+                    <div style="color: #fff; font-size: 18px; font-weight: 800;">${grandTotalObtained.toFixed(1)}</div>
+                    <div style="color: rgba(255,255,255,0.5); font-size: 9px; font-weight: 700; letter-spacing: 0.5px; margin-top: 4px; text-transform: uppercase;">Score / ${grandTotalMax}</div>
+                </div>
+                <div style="width: 1px; background: rgba(255,255,255,0.1); margin: 0 10px;"></div>
+                <div style="text-align: center; flex: 1;">
+                    <div style="color: #fff; font-size: 18px; font-weight: 800;">${overallGrade}</div>
+                    <div style="color: rgba(255,255,255,0.5); font-size: 9px; font-weight: 700; letter-spacing: 0.5px; margin-top: 4px; text-transform: uppercase;">Avg Grade</div>
+                </div>
+            </div>
+            
+            <button onclick="openCgpaCalculator()" style="width: 100%; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.1); border-radius: 14px; padding: 14px; color: #fff; font-weight: 700; font-size: 14px; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; transition: all 0.2s; position:relative; z-index:1;">
+                <i class="fas fa-calculator"></i> Launch CGPA Calculator
             </button>
         </div>
     `;
 
-    parsedCourses.forEach((c, i) => {
-        let shortName = c.title.length > 35 ? c.title.substring(0, 35) + '...' : c.title;
+    parsedCourses.forEach((c, index) => {
+        let shortName = c.title.length > 30 ? c.title.substring(0, 30) + '...' : c.title;
         let testRows = '';
         const courseColor = getColorForPercent(c.percent);
+        const courseRGB = rgbForPercent(c.percent);
         
         c.tests.forEach(t => {
             const testColor = getColorForPercent(t.percent);
+            const testRGB = rgbForPercent(t.percent);
             testRows += `
                 <div style="padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.03);">
                     <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 6px;">
@@ -5576,11 +5577,12 @@
                             <div style="color: var(--text-main); font-size: 13px; font-weight: 700;">${t.testName}</div>
                             <div style="color: rgba(255,255,255,0.4); font-size: 11px; margin-top: 2px;">${t.obtained} / ${t.max} marks</div>
                         </div>
-                        <div style="color: ${testColor}; font-size: 13px; font-weight: 800; background: ${testColor}15; padding: 4px 10px; border-radius: 8px;">${t.percent.toFixed(0)}%</div>
+                        <div style="color: ${testColor}; font-size: 14px; font-weight: 800; text-shadow: 0 0 12px rgba(${testRGB}, 0.8);">${t.percent.toFixed(0)}%</div>
                     </div>
-                    <!-- Mini Progress Bar for Test -->
-                    <div style="width: 100%; background: rgba(255,255,255,0.05); height: 4px; border-radius: 2px; overflow: hidden; margin-top: 8px;">
-                        <div style="height: 100%; width: ${t.percent}%; background: ${testColor}; border-radius: 2px; box-shadow: 0 0 5px ${testColor}80;"></div>
+                    <!-- Thin Glow Line Graph for Test -->
+                    <div style="position: relative; height: 10px; margin-top: 10px;">
+                        <div style="position: absolute; top: 4px; left: 0; right: 0; height: 2px; background: rgba(255,255,255,0.1); border-radius: 2px;"></div>
+                        <div style="position: absolute; top: 4px; left: 0; width: ${t.percent}%; height: 2px; background: ${testColor}; border-radius: 2px; box-shadow: 0 0 10px ${testColor};"></div>
                     </div>
                 </div>
             `;
@@ -5594,31 +5596,32 @@
         }
 
         html += `
-            <div class="glass-card fade-in-up" style="animation-delay: ${i * 0.05}s; background: linear-gradient(180deg, rgba(20,20,25,0.8), rgba(15,15,20,0.9)); border: 1px solid rgba(255,255,255,0.05); border-radius: 20px; margin-bottom: 20px; overflow: hidden; position: relative;">
+            <div class="glass-card fade-in-up" style="animation-delay: ${index * 0.05}s; border: 1px solid rgba(255,255,255,0.05); background: var(--bg-card); border-radius: 20px; padding: 20px; margin-bottom: 15px; position: relative; overflow: hidden;">
                 
-                <!-- Dynamic Left Indicator -->
-                <div style="position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: ${courseColor}; box-shadow: 2px 0 10px ${courseColor}40;"></div>
+                <!-- Thin White Left indicator accent like Attendance -->
+                <div style="position: absolute; left: 0; top: 25px; bottom: 25px; width: 3px; background: rgba(255,255,255,0.8); border-radius: 0 4px 4px 0;"></div>
                 
-                <div style="padding: 22px 22px 15px 24px;">
-                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
-                        <div style="flex: 1; padding-right: 15px;">
-                            <div style="color: #fff; font-weight: 800; font-size: 14px; margin-bottom: 6px; line-height: 1.4; letter-spacing: 0.2px;">${shortName}</div>
-                            <div style="display: inline-block; background: rgba(255,255,255,0.08); padding: 3px 8px; border-radius: 6px; color: rgba(255,255,255,0.6); font-size: 9px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase;">${c.code}</div>
-                        </div>
-                        <div style="text-align: right;">
-                            <div style="color: ${courseColor}; font-weight: 900; font-size: 22px; text-shadow: 0 0 10px ${courseColor}30;">${c.percent.toFixed(0)}%</div>
-                            <div style="color: rgba(255,255,255,0.5); font-size: 11px; font-weight: 700; margin-top: 4px;">${c.obtained.toFixed(1)} <span style="font-size:9px; color:rgba(255,255,255,0.3);">/ ${c.max}</span></div>
-                        </div>
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; padding-left: 10px; margin-bottom: 15px;">
+                    <div style="flex: 1; padding-right: 15px;">
+                        <div style="color: var(--text-main); font-weight: 700; font-size: 15px; margin-bottom: 4px; line-height: 1.3;">${shortName}</div>
+                        <div style="color: var(--text-sub); font-size: 10px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase;">${c.code}</div>
                     </div>
-                    
-                    <!-- Course Overall Progress Bar -->
-                    <div style="width: 100%; background: rgba(255,255,255,0.05); height: 6px; border-radius: 3px; overflow: hidden; margin-top: 15px; margin-bottom: 5px;">
-                        <div style="height: 100%; width: ${c.percent}%; background: ${courseColor}; border-radius: 3px; transition: width 1s ease-out; box-shadow: 0 0 8px ${courseColor}80;"></div>
+                    <div style="text-align: right;">
+                        <div style="color: ${courseColor}; font-weight: 900; font-size: 20px; text-shadow: 0 0 12px rgba(${courseRGB}, 0.8);">${c.percent.toFixed(0)}%</div>
+                        <div style="color: rgba(255,255,255,0.5); font-size: 11px; font-weight: 700; margin-top: 4px;">${c.obtained.toFixed(1)} <span style="font-size:9px; color:rgba(255,255,255,0.3);">/ ${c.max}</span></div>
                     </div>
                 </div>
                 
-                <div style="padding: 0 22px 18px 24px;">
-                    <div style="color: rgba(255,255,255,0.4); font-size: 10px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; display: flex; align-items: center; gap: 8px; margin-top: 10px; margin-bottom: 5px;">
+                <!-- Thin Glow Line Graph for Overall Course -->
+                <div style="position: relative; height: 20px; margin-top: 5px; margin-left: 10px; margin-bottom: 10px;">
+                    <!-- Base line -->
+                    <div style="position: absolute; top: 9px; left: 0; right: 0; height: 2px; background: rgba(255,255,255,0.1); border-radius: 2px;"></div>
+                    <!-- Fill line with glow -->
+                    <div style="position: absolute; top: 9px; left: 0; width: ${c.percent}%; height: 2px; background: ${courseColor}; border-radius: 2px; box-shadow: 0 0 10px ${courseColor}; transition: width 1s ease-out;"></div>
+                </div>
+                
+                <div style="padding: 0 0 0 10px;">
+                    <div style="color: rgba(255,255,255,0.4); font-size: 10px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; display: flex; align-items: center; gap: 8px; margin-top: 15px; margin-bottom: 5px;">
                         <i class="fas fa-list-ul"></i> Assessment Breakdown
                     </div>
                     <div style="border-top: 1px dashed rgba(255,255,255,0.08); margin-top: 10px;">
