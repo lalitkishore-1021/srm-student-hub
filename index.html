@@ -3004,23 +3004,53 @@
 
     <!-- Movies View -->
     <div id="movies-view" class="app-view">
-        <div class="top-nav" style="background: rgba(10, 10, 12, 0.95); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(255, 255, 255, 0.08); justify-content: space-between; height: 56px; padding: 0 16px; flex-shrink: 0; z-index: 10;">
-            <div style="display: flex; align-items: center; gap: 12px; cursor: pointer;" onclick="switchView('home-view')">
-                <div style="background: rgba(255,255,255,0.1); width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; transition: background 0.2s;">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+        <div class="top-nav" style="background: rgba(10, 10, 12, 0.95); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(255, 255, 255, 0.08); display: flex; justify-content: space-between; align-items: center; flex-wrap: nowrap; height: 56px; padding: 0 16px; flex-shrink: 0; z-index: 10;">
+            <!-- Left: Back Button & Title -->
+            <div style="display: flex; align-items: center; gap: 12px; cursor: pointer; min-width: 0;" onclick="switchView('home-view')">
+                <div style="background: rgba(255,255,255,0.1); width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; flex-shrink: 0;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
                 </div>
-                <div>
-                    <h2 style="font-size: 1.15rem; font-weight: 800; color: #fff; letter-spacing: -0.5px; margin: 0; line-height: 1.2;">Movies Hub</h2>
-                    <span style="font-size: 10px; color: rgba(255,255,255,0.5); font-weight: 600; letter-spacing: 0.5px;">STREAMING THEATER</span>
+                <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                    <h2 style="font-size: 1.1rem; font-weight: 800; color: #fff; letter-spacing: -0.5px; margin: 0; line-height: 1.2;">Movies Hub</h2>
+                    <span id="movies-server-label" style="font-size: 9.5px; color: #10b981; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase;">SERVER 1 (FREEKZ)</span>
                 </div>
             </div>
-            <div style="display: flex; align-items: center; gap: 8px;">
-                <div style="background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.3); color: #10b981; padding: 5px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; display: flex; align-items: center; gap: 5px;">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                    <span>Ad Shield</span>
+
+            <!-- Right Controls: Server Switcher & Ad Shield & Reload -->
+            <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
+                <!-- Server Switcher Pill -->
+                <div style="position: relative;">
+                    <button type="button" onclick="toggleServerMenu()" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); color: #fff; padding: 5px 10px; border-radius: 18px; font-size: 11px; font-weight: 700; display: flex; align-items: center; gap: 5px; cursor: pointer;">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect><rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect><line x1="6" y1="6" x2="6.01" y2="6"></line><line x1="6" y1="18" x2="6.01" y2="18"></line></svg>
+                        <span>Servers</span>
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                    </button>
+                    <!-- Server Dropdown Menu -->
+                    <div id="movies-server-dropdown" style="display: none; position: absolute; right: 0; top: 38px; background: #181920; border: 1px solid rgba(255,255,255,0.15); border-radius: 14px; padding: 6px; width: 195px; box-shadow: 0 10px 30px rgba(0,0,0,0.85); z-index: 100;">
+                        <div onclick="switchMovieServer('freekz')" style="padding: 8px 12px; border-radius: 8px; cursor: pointer; color: #fff; font-size: 12px; font-weight: 600; display: flex; justify-content: space-between; align-items: center;" onmouseover="this.style.background='rgba(255,255,255,0.08)'" onmouseout="this.style.background='transparent'">
+                            <span>Server 1: Freekz</span>
+                            <span style="font-size: 9px; color: #10b981; font-weight: 700;">DEFAULT</span>
+                        </div>
+                        <div onclick="switchMovieServer('vidsrc')" style="padding: 8px 12px; border-radius: 8px; cursor: pointer; color: #fff; font-size: 12px; font-weight: 600; display: flex; justify-content: space-between; align-items: center;" onmouseover="this.style.background='rgba(255,255,255,0.08)'" onmouseout="this.style.background='transparent'">
+                            <span>Server 2: VidSrc</span>
+                            <span style="font-size: 9px; color: #60a5fa; font-weight: 700;">UNBLOCKED</span>
+                        </div>
+                        <div onclick="switchMovieServer('superembed')" style="padding: 8px 12px; border-radius: 8px; cursor: pointer; color: #fff; font-size: 12px; font-weight: 600; display: flex; justify-content: space-between; align-items: center;" onmouseover="this.style.background='rgba(255,255,255,0.08)'" onmouseout="this.style.background='transparent'">
+                            <span>Server 3: StreamHD</span>
+                            <span style="font-size: 9px; color: #a78bfa; font-weight: 700;">MIRROR</span>
+                        </div>
+                    </div>
                 </div>
-                <button type="button" onclick="reloadMoviesIframe()" title="Refresh Stream" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.1); width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; cursor: pointer;">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+
+                <!-- Ad Shield Toggle -->
+                <button type="button" id="ad-shield-toggle-btn" onclick="toggleAdShield()" title="Toggle Ad Shield (Blocks Popups)" style="background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.35); color: #10b981; padding: 5px 10px; border-radius: 18px; font-size: 11px; font-weight: 700; display: flex; align-items: center; gap: 5px; cursor: pointer;">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                    <span id="ad-shield-status-text">Shield: ON</span>
+                </button>
+
+                <!-- Refresh Button -->
+                <button type="button" onclick="reloadMoviesIframe()" title="Refresh" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; cursor: pointer;">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
                 </button>
             </div>
         </div>
@@ -4556,12 +4586,83 @@
             if (pushToHistory) history.pushState({ viewId: viewId }, '', `#${viewId}`);
         }
 
+        const MOVIE_SERVERS = {
+            freekz: { name: 'Server 1: Freekz', url: 'https://freekz.to/', tag: 'SERVER 1 (FREEKZ)' },
+            vidsrc: { name: 'Server 2: VidSrc', url: 'https://vidsrc.pm/', tag: 'SERVER 2 (VIDSRC)' },
+            superembed: { name: 'Server 3: StreamHD', url: 'https://superembed.stream/', tag: 'SERVER 3 (STREAMHD)' }
+        };
+
+        let currentMovieServerKey = 'freekz';
+        let isAdShieldActive = true;
+
+        function toggleServerMenu() {
+            const menu = document.getElementById('movies-server-dropdown');
+            if (menu) {
+                menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+            }
+        }
+
+        function switchMovieServer(key) {
+            const server = MOVIE_SERVERS[key];
+            if (!server) return;
+            currentMovieServerKey = key;
+            const frame = document.getElementById('movies-iframe');
+            if (frame) {
+                frame.src = server.url;
+            }
+            const label = document.getElementById('movies-server-label');
+            if (label) label.innerText = server.tag;
+            const menu = document.getElementById('movies-server-dropdown');
+            if (menu) menu.style.display = 'none';
+            if (typeof triggerHaptic === 'function') triggerHaptic('light');
+        }
+
+        function toggleAdShield() {
+            isAdShieldActive = !isAdShieldActive;
+            const frame = document.getElementById('movies-iframe');
+            const btn = document.getElementById('ad-shield-toggle-btn');
+            const statusText = document.getElementById('ad-shield-status-text');
+
+            if (isAdShieldActive) {
+                if (frame) frame.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-forms allow-presentation');
+                if (btn) {
+                    btn.style.background = 'rgba(16, 185, 129, 0.15)';
+                    btn.style.borderColor = 'rgba(16, 185, 129, 0.35)';
+                    btn.style.color = '#10b981';
+                }
+                if (statusText) statusText.innerText = 'Shield: ON';
+            } else {
+                if (frame) frame.removeAttribute('sandbox');
+                if (btn) {
+                    btn.style.background = 'rgba(239, 68, 68, 0.15)';
+                    btn.style.borderColor = 'rgba(239, 68, 68, 0.35)';
+                    btn.style.color = '#ef4444';
+                }
+                if (statusText) statusText.innerText = 'Shield: OFF';
+            }
+            if (frame) {
+                const s = MOVIE_SERVERS[currentMovieServerKey] || MOVIE_SERVERS['freekz'];
+                frame.src = s.url;
+            }
+            if (typeof triggerHaptic === 'function') triggerHaptic('medium');
+        }
+
         function reloadMoviesIframe() {
             const frame = document.getElementById('movies-iframe');
             if (frame) {
-                frame.src = 'https://freekz.to/';
+                const s = MOVIE_SERVERS[currentMovieServerKey] || MOVIE_SERVERS['freekz'];
+                frame.src = s.url;
             }
+            if (typeof triggerHaptic === 'function') triggerHaptic('light');
         }
+
+        document.addEventListener('click', (e) => {
+            const menu = document.getElementById('movies-server-dropdown');
+            const btn = e.target.closest('button');
+            if (menu && menu.style.display === 'block' && (!btn || !btn.getAttribute('onclick')?.includes('toggleServerMenu'))) {
+                menu.style.display = 'none';
+            }
+        });
 
         function switchNav(viewId, element) {
             if (typeof playUiSound === 'function') playUiSound('tab');
