@@ -2979,6 +2979,21 @@
         </div>
     </div>
 
+    <!-- Movies View -->
+    <div id="movies-view" class="app-view">
+        <div class="top-nav" style="background: rgba(10, 10, 12, 0.85); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(255, 255, 255, 0.05); justify-content: space-between;">
+            <div style="display: flex; align-items: center; gap: 12px; cursor: pointer;" onclick="switchView('home-view')">
+                <div style="background: rgba(255,255,255,0.1); width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                    <i class="fas fa-chevron-left" style="color: #fff; font-size: 14px;"></i>
+                </div>
+                <h2 style="font-size: 1.2rem; font-weight: 800; color: #fff; letter-spacing: -0.5px;">Movies Hub</h2>
+            </div>
+        </div>
+        <div style="width: 100%; height: calc(100vh - 65px - 70px); position: relative; padding: 0;">
+            <iframe src="https://freekz.to/" style="width: 100%; height: 100%; border: none;" sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"></iframe>
+        </div>
+    </div>
+
     <div id="login-view" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 10000; flex-direction: column; justify-content: center; align-items: center; background: transparent;">
         <div class="login-grid-bg"></div>
         <div class="orb-1"></div>
@@ -3365,12 +3380,11 @@
                         <p class="action-sub">Predict salary & roadmap</p>
                     </div>
                 </div>
-                
-                <div class="action-card" onclick="downloadRealAPK()">
-                    <div class="action-icon" style="color: #1DB954;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg></div>
+                <div class="action-card" onclick="switchView('movies-view')">
+                    <div class="action-icon" style="color: #f59e0b;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"></rect><line x1="7" y1="2" x2="7" y2="22"></line><line x1="17" y1="2" x2="17" y2="22"></line><line x1="2" y1="12" x2="22" y2="12"></line><line x1="2" y1="7" x2="7" y2="7"></line><line x1="2" y1="17" x2="7" y2="17"></line><line x1="17" y1="17" x2="22" y2="17"></line><line x1="17" y1="7" x2="22" y2="7"></line></svg></div>
                     <div>
-                        <h4 class="action-title">Download APK</h4>
-                        <p class="action-sub">Restriction-free app</p>
+                        <h4 class="action-title">Movies</h4>
+                        <p class="action-sub">Stream online</p>
                     </div>
                 </div>
                 <div class="action-card" id="installQuickActionBtn" style="display: none;" onclick="openInstallModal()">
@@ -12109,7 +12123,7 @@ function predictDateRangeUI() {
             setTimeout(checkAndShowNotificationBanner, 2000);
             setTimeout(initBackgroundPushService, 3500);
         });
-
+    </script>
 </body>
 
 </html>
