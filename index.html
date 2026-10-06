@@ -466,6 +466,29 @@
             display: flex !important;
         }
 
+        #movies-view.active {
+            display: flex !important;
+            flex-direction: column;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            width: 100%;
+            height: 100vh;
+            height: 100dvh;
+            z-index: 9999;
+            background: #0b0c10;
+            padding: 0;
+            margin: 0;
+            overflow: hidden;
+            animation: none;
+        }
+
+        body.in-movies-hub .app-nav,
+        body:has(#movies-view.active) .app-nav {
+            display: none !important;
+        }
+
         @keyframes fadeIn {
             from {
                 opacity: 0;
@@ -2981,16 +3004,34 @@
 
     <!-- Movies View -->
     <div id="movies-view" class="app-view">
-        <div class="top-nav" style="background: rgba(10, 10, 12, 0.85); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(255, 255, 255, 0.05); justify-content: space-between;">
+        <div class="top-nav" style="background: rgba(10, 10, 12, 0.95); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(255, 255, 255, 0.08); justify-content: space-between; height: 56px; padding: 0 16px; flex-shrink: 0; z-index: 10;">
             <div style="display: flex; align-items: center; gap: 12px; cursor: pointer;" onclick="switchView('home-view')">
-                <div style="background: rgba(255,255,255,0.1); width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff;">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                <div style="background: rgba(255,255,255,0.1); width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; transition: background 0.2s;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
                 </div>
-                <h2 style="font-size: 1.2rem; font-weight: 800; color: #fff; letter-spacing: -0.5px;">Movies Hub</h2>
+                <div>
+                    <h2 style="font-size: 1.15rem; font-weight: 800; color: #fff; letter-spacing: -0.5px; margin: 0; line-height: 1.2;">Movies Hub</h2>
+                    <span style="font-size: 10px; color: rgba(255,255,255,0.5); font-weight: 600; letter-spacing: 0.5px;">STREAMING THEATER</span>
+                </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <div style="background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.3); color: #10b981; padding: 5px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; display: flex; align-items: center; gap: 5px;">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                    <span>Ad Shield</span>
+                </div>
+                <button type="button" onclick="reloadMoviesIframe()" title="Refresh Stream" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.1); width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; cursor: pointer;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+                </button>
             </div>
         </div>
-        <div style="width: 100%; height: calc(100vh - 65px - 70px); position: relative; padding: 0;">
-            <iframe src="https://freekz.to/" style="width: 100%; height: 100%; border: none;"></iframe>
+        <div style="flex: 1; width: 100%; height: calc(100% - 56px); position: relative; padding: 0; margin: 0; background: #000; overflow: hidden;">
+            <iframe id="movies-iframe" 
+                    src="https://freekz.to/" 
+                    style="width: 100%; height: 100%; border: none; display: block;" 
+                    sandbox="allow-scripts allow-same-origin allow-forms allow-presentation" 
+                    allow="fullscreen; autoplay; picture-in-picture; encrypted-media" 
+                    allowfullscreen>
+            </iframe>
         </div>
     </div>
 
@@ -4488,7 +4529,8 @@
 
         function switchView(viewId, pushToHistory = true) {
             document.querySelectorAll('.app-view').forEach(view => { view.classList.remove('active'); });
-            document.getElementById(viewId).classList.add('active');
+            const targetView = document.getElementById(viewId);
+            if (targetView) targetView.classList.add('active');
             
             const aiFab = document.getElementById('ai-fab');
             if (aiFab) {
@@ -4498,9 +4540,27 @@
                     aiFab.classList.add('hidden-fab');
                 }
             }
+
+            const appNav = document.querySelector('.app-nav');
+            if (viewId === 'movies-view') {
+                document.body.classList.add('in-movies-hub');
+                if (appNav) appNav.style.setProperty('display', 'none', 'important');
+            } else {
+                document.body.classList.remove('in-movies-hub');
+                if (appNav && typeof isLoggedIn !== 'undefined' && isLoggedIn) {
+                    appNav.style.display = 'flex';
+                }
+            }
             
             window.scrollTo({ top: 0, behavior: 'smooth' });
             if (pushToHistory) history.pushState({ viewId: viewId }, '', `#${viewId}`);
+        }
+
+        function reloadMoviesIframe() {
+            const frame = document.getElementById('movies-iframe');
+            if (frame) {
+                frame.src = 'https://freekz.to/';
+            }
         }
 
         function switchNav(viewId, element) {
