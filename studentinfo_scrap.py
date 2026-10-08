@@ -104,21 +104,21 @@ class AcademiaClient:
             """ print(f"[DEBUG] Current cookies: {list(self.session.cookies.keys())}") """
             if 'iamcsr' in self.session.cookies:
                 self.csrf_token = self.session.cookies.get('iamcsr')
-                print("✓ CSRF Token obtained")
+                print("[OK] CSRF Token obtained")
                 """ print(f"[DEBUG] CSRF Token value: {self.csrf_token[:20]}..." if len(self.csrf_token) > 20 else f"[DEBUG] CSRF Token value: {self.csrf_token}") """
             else:
-                print("⚠ Warning: No CSRF token found in cookies")
+                print("[WARN] Warning: No CSRF token found in cookies")
                 """ print(f"[DEBUG] Available cookies: {dict(self.session.cookies)}") """
             
             # Extract JSESSIONID if present
             if 'JSESSIONID' in self.session.cookies:
-                print("✓ Session ID obtained")
+                print("[OK] Session ID obtained")
                 """ print(f"[DEBUG] JSESSIONID: {self.session.cookies.get('JSESSIONID')[:20]}...") """
             else:
                 print("[DEBUG] JSESSIONID not found in cookies")
                 
         except Exception as e:
-            print(f"⚠ Warning: Failed to initialize session: {str(e)}")
+            print(f"[WARN] Warning: Failed to initialize session: {str(e)}")
             print(f"[DEBUG] Exception type: {type(e).__name__}")
             print(f"[DEBUG] Exception details: {repr(e)}")
     
@@ -175,17 +175,17 @@ class AcademiaClient:
             # print(f"[DEBUG] Full response data: {json.dumps(lookup_data, indent=2)}")
             self.identifier = lookup_data.get('lookup', {}).get('identifier')
             self.digest = lookup_data.get('lookup', {}).get('digest')
-            # print(f"✓ User identifier: {self.identifier}")
+            # print(f"[OK] User identifier: {self.identifier}")
             # print(f"[DEBUG] Identifier extracted: {self.identifier is not None}")
-            # print(f"✓ User digest: {self.digest}")
+            # print(f"[OK] User digest: {self.digest}")
             # print(f"[DEBUG] Digest extracted: {self.digest is not None}")
             
             if self.identifier and self.digest:
-                print("✓ Lookup successful")
-                print("✓ Digest obtained\n")
+                print("[OK] Lookup successful")
+                print("[OK] Digest obtained\n")
                 return True
             else:
-                print("✗ Failed to get user identifier or digest")
+                print("[FAIL] Failed to get user identifier or digest")
                 # print(f"[DEBUG] Identifier is None: {self.identifier is None}")
                 # print(f"[DEBUG] Digest is None: {self.digest is None}")
                 # print(f"[DEBUG] 'lookup' key in response: {'lookup' in lookup_data}")
@@ -195,12 +195,12 @@ class AcademiaClient:
                 return False
                 
         except json.JSONDecodeError as e:
-            print(f"✗ Lookup failed: JSON parsing error")
+            print(f"[FAIL] Lookup failed: JSON parsing error")
             # print(f"[DEBUG] JSONDecodeError: {str(e)}")
             # print(f"[DEBUG] Response text: {response.text[:500]}...")
             return False
         except Exception as e:
-            print(f"✗ Lookup failed: {str(e)}")
+            print(f"[FAIL] Lookup failed: {str(e)}")
             print(f"[DEBUG] Exception type: {type(e).__name__}")
             print(f"[DEBUG] Exception traceback: {repr(e)}")
             print()
@@ -214,9 +214,9 @@ class AcademiaClient:
         try:
             response = self.session.get(redirect_uri)
             response.raise_for_status()
-            print("✓ Visited sessions reminder page")
+            print("[OK] Visited sessions reminder page")
         except Exception as e:
-            print(f"⚠ Warning: Failed to visit announcement page: {str(e)}")
+            print(f"[WARN] Warning: Failed to visit announcement page: {str(e)}")
         
         # Now close active sessions
         delete_url = f'{self.BASE_URL}/accounts/p/40-10002227248/webclient/v1/account/self/user/self/activesessions'
@@ -227,9 +227,9 @@ class AcademiaClient:
         try:
             response = self.session.delete(delete_url, headers=headers)
             response.raise_for_status()
-            print(f"✓ Active sessions deleted (Status: {response.status_code})")
+            print(f"[OK] Active sessions deleted (Status: {response.status_code})")
         except Exception as e:
-            print(f"⚠ Warning: Failed to delete sessions: {str(e)}")
+            print(f"[WARN] Warning: Failed to delete sessions: {str(e)}")
             # Continue anyway as this might not be critical
         
         # Visit the /next endpoint to confirm session closure
@@ -258,11 +258,11 @@ class AcademiaClient:
         try:
             response = self.session.get(next_url, params=next_params, headers=next_headers)
             response.raise_for_status()
-            print(f"✓ Session closure confirmed (Status: {response.status_code})\n")
+            print(f"[OK] Session closure confirmed (Status: {response.status_code})\n")
             return True
                 
         except Exception as e:
-            print(f"✗ Failed to confirm session closure: {str(e)}\n")
+            print(f"[FAIL] Failed to confirm session closure: {str(e)}\n")
             return False
         
 
@@ -274,9 +274,9 @@ class AcademiaClient:
         try:
             response = self.session.get(redirect_uri)
             response.raise_for_status()
-            print("✓ Visited blocked sessions page")
+            print("[OK] Visited blocked sessions page")
         except Exception as e:
-            print(f"⚠ Warning: Failed to visit announcement page: {str(e)}")
+            print(f"[WARN] Warning: Failed to visit announcement page: {str(e)}")
         
         # Delete blocked sessions
         delete_url = f'{self.BASE_URL}/accounts/p/40-10002227248/webclient/v1/announcement/pre/blocksessions'
@@ -287,10 +287,10 @@ class AcademiaClient:
         try:
             response = self.session.delete(delete_url, headers=headers)
             response.raise_for_status()
-            print(f"✓ Blocked sessions deleted (Status: {response.status_code})\n")
+            print(f"[OK] Blocked sessions deleted (Status: {response.status_code})\n")
             return True
         except Exception as e:
-            print(f"✗ Failed to delete blocked sessions: {str(e)}\n")
+            print(f"[FAIL] Failed to delete blocked sessions: {str(e)}\n")
             return False
         
 
@@ -299,7 +299,7 @@ class AcademiaClient:
     def login(self) -> dict:
         """Login with password using digest from lookup"""
         if not self.identifier or not self.digest:
-            print("✗ No identifier/digest found. Run lookup_user() first.\n")
+            print("[FAIL] No identifier/digest found. Run lookup_user() first.\n")
             return {
                 "success": False,
                 "message": "No identifier/digest found"
@@ -340,7 +340,7 @@ class AcademiaClient:
                 handled = handle_login_response(login_data)
                 if handled.get("success") is False:
                     self.last_error = handled.get("message")
-                    print(f"✗ Login failed: {self.last_error}\n")
+                    print(f"[FAIL] Login failed: {self.last_error}\n")
 
                     return {
                         "success": False,
@@ -358,7 +358,7 @@ class AcademiaClient:
 
                 # Handle successful login
                 if code in ['SI200', 'SIGIN_SUCCESS'] or inner_code == 'SIGIN_SUCCESS':
-                    print("✓ Login successful!\n")
+                    print("[OK] Login successful!\n")
                     return {"success": True}
 
                 # Handle post-announcement redirection
@@ -366,7 +366,7 @@ class AcademiaClient:
                     code in ['POST_ANNOUCEMENT_REDIRECTION', 'SI302', 'SI303']
                     or inner_code == 'POST_ANNOUCEMENT_REDIRECTION'
                 ):
-                    print(f"✓ Login successful - handling redirect (code: {code})...")
+                    print(f"[OK] Login successful - handling redirect (code: {code})...")
                     redirect_uri = passwordauth.get('redirect_uri')
 
                     if redirect_uri:
@@ -409,36 +409,36 @@ class AcademiaClient:
                                 )
 
                                 if final_response.status_code == 200:
-                                    print("✓ Login flow completed successfully!\n")
+                                    print("[OK] Login flow completed successfully!\n")
                                     return {"success": True}
                                 else:
-                                    print(f"⚠ Warning: Unusual status code: {final_response.status_code}")
+                                    print(f"[WARN] Warning: Unusual status code: {final_response.status_code}")
                                     return {"success": True}
 
                             except Exception as e:
-                                print(f"⚠ Warning: Final redirect failed: {str(e)}")
+                                print(f"[WARN] Warning: Final redirect failed: {str(e)}")
                                 return {"success": True}
 
                         else:
-                            print("✗ Failed to close sessions\n")
+                            print("[FAIL] Failed to close sessions\n")
                             return {"success": False}
 
                     else:
-                        print("✗ No redirect_uri found in response\n")
+                        print("[FAIL] No redirect_uri found in response\n")
                         return {"success": False}
 
                 # Handle legacy error block 
                 elif 'error' in login_data:
                     error_msg = login_data.get('error', {}).get('message', 'Unknown error')
                     self.last_error = error_msg
-                    print(f"✗ Login failed: {error_msg}\n")
+                    print(f"[FAIL] Login failed: {error_msg}\n")
                     return {
                         "success": False,
                         "message": error_msg
                     }
 
                 else:
-                    print(f"⚠ Unexpected response code: {code}")
+                    print(f"[WARN] Unexpected response code: {code}")
                     print(f"Response: {json.dumps(login_data, indent=2)}\n")
                     return {
                         "success": False,
@@ -447,14 +447,14 @@ class AcademiaClient:
                     }
 
             else:
-                print(f"✗ Login failed with status code: {response.status_code}\n")
+                print(f"[FAIL] Login failed with status code: {response.status_code}\n")
                 return {
                     "success": False,
                     "message": f"HTTP {response.status_code}"
                 }
 
         except Exception as e:
-            print(f"✗ Login failed: {str(e)}\n")
+            print(f"[FAIL] Login failed: {str(e)}\n")
             return {
                 "success": False,
                 "message": str(e)
@@ -487,18 +487,18 @@ class AcademiaClient:
         try:
             response = self.session.get(url, headers=headers, params=params)
             if response.status_code in [200, 302, 303]:
-                print("✓ Logout successful!\n")
+                print("[OK] Logout successful!\n")
                 self.session.cookies.clear()  # NOW we clear cookies
                 self.identifier = None
                 self.digest = None
                 self.csrf_token = None
                 return True
             else:
-                print(f"✗ Logout failed with status: {response.status_code}\n")
+                print(f"[FAIL] Logout failed with status: {response.status_code}\n")
                 return False
                 
         except Exception as e:
-            print(f"✗ Logout failed: {str(e)}\n")
+            print(f"[FAIL] Logout failed: {str(e)}\n")
             return False
     
     def _get_page_headers(self) -> Dict[str, str]:
@@ -555,7 +555,7 @@ class AcademiaClient:
                     if parsed and not parsed.get("error"):
                         courses = parsed.get("attendance", {}).get("courses", {})
                         if len(courses) > 0 or len(parsed.get("student_info", {})) > 0:
-                            print(f"✓ Attendance data retrieved from {slug} (Status: {response.status_code}, Courses: {len(courses)})\n")
+                            print(f"[OK] Attendance data retrieved from {slug} (Status: {response.status_code}, Courses: {len(courses)})\n")
                             return parsed
                         elif not last_parsed:
                             last_parsed = parsed
@@ -567,7 +567,7 @@ class AcademiaClient:
             print("[DATA] Returning attendance data with student info\n")
             return last_parsed
 
-        print("✗ Failed to fetch attendance: No valid attendance page found\n")
+        print("[FAIL] Failed to fetch attendance: No valid attendance page found\n")
         return None
     
     def get_timetable(self) -> Optional[Dict[str, Any]]:
@@ -640,14 +640,14 @@ class AcademiaClient:
             
             if match:
                 day_order = int(match.group(1))
-                print(f"✓ Day Order retrieved: {day_order}\n")
+                print(f"[OK] Day Order retrieved: {day_order}\n")
                 return day_order
             else:
-                print("✗ Could not find day order in response\n")
+                print("[FAIL] Could not find day order in response\n")
                 return None
                 
         except Exception as e:
-            print(f"✗ Failed to fetch day order: {str(e)}\n")
+            print(f"[FAIL] Failed to fetch day order: {str(e)}\n")
             return None
     
 #for loading and saving session data
@@ -702,14 +702,14 @@ def main():
             
         if attendance_data:
             print("\n" + "="*50)
-            print("✓ Attendance data retrieved successfully")
+            print("[OK] Attendance data retrieved successfully")
             print("="*50)
         
         # Step 4: Fetch and parse timetable
         timetable_data = client.get_timetable()
         if timetable_data:
             print("\n" + "="*50)
-            print("✓ Timetable data retrieved successfully")
+            print("[OK] Timetable data retrieved successfully")
             print("="*50)
     
     finally:

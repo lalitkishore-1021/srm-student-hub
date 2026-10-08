@@ -15,11 +15,17 @@ def scrape_campusweb(netid, pwd):
         
         # 1. Attempt session establishment on campusapi
         try:
-            session.post(
-                'https://campusapi.fly.dev/api/student-portal/login',
+            login_res = session.post(
+                'https://api.campusweb.in/api/student-portal/login',
                 json={'net_id': netid, 'password': pwd},
                 timeout=10
             )
+            if login_res.status_code != 200:
+                try:
+                    err_msg = login_res.json().get('message', 'CampusWeb login failed')
+                except:
+                    err_msg = 'CampusWeb login failed'
+                return {"success": False, "error": err_msg}
         except Exception:
             pass
 
@@ -28,7 +34,7 @@ def scrape_campusweb(netid, pwd):
         def fetch_att():
             try:
                 res = session.post(
-                    'https://campusapi.fly.dev/api/student-portal/attendance',
+                    'https://api.campusweb.in/api/student-portal/attendance',
                     json={'net_id': netid, 'password': pwd},
                     timeout=12
                 )
@@ -41,7 +47,7 @@ def scrape_campusweb(netid, pwd):
         def fetch_marks():
             try:
                 res = session.post(
-                    'https://campusapi.fly.dev/api/student-portal/marks',
+                    'https://api.campusweb.in/api/student-portal/marks',
                     json={'net_id': netid, 'password': pwd},
                     timeout=12
                 )
