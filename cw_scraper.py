@@ -1,4 +1,5 @@
 import requests
+import cloudscraper
 
 def scrape_campusweb(netid, pwd):
     try:
@@ -6,7 +7,7 @@ def scrape_campusweb(netid, pwd):
         if '@' in netid:
             netid = netid.split('@')[0]
             
-        session = requests.Session()
+        session = cloudscraper.create_scraper()
         session.headers.update({
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
             'Accept': 'application/json, text/plain, */*',
