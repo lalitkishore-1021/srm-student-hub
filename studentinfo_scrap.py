@@ -545,27 +545,44 @@ class AcademiaClient:
         except Exception as we:
             print(f"[ATTENDANCE] Welcome menu scan note: {we}")
 
-        last_parsed = None
-        for slug in candidate_slugs:
+        import concurrent.futures
+
+        def fetch_att_slug(slug):
             url = f'{self.BASE_URL}/srm_university/academia-academic-services/page/{slug}'
             try:
-                response = self.session.get(url, headers=self._get_page_headers(), timeout=15)
+                response = self.session.get(url, headers=self._get_page_headers(), timeout=10)
                 if response.status_code == 200 and len(response.text.strip()) > 100:
                     parsed = parse_attendance(response.text)
                     if parsed and not parsed.get("error"):
                         courses = parsed.get("attendance", {}).get("courses", {})
-                        if len(courses) > 0 or len(parsed.get("student_info", {})) > 0:
-                            print(f"[OK] Attendance data retrieved from {slug} (Status: {response.status_code}, Courses: {len(courses)})\n")
-                            return parsed
-                        elif not last_parsed:
-                            last_parsed = parsed
-            except Exception as e:
-                print(f"[ATTENDANCE] Error trying {slug}: {str(e)}")
-                continue
+                        return (slug, parsed, len(courses), response.status_code)
+            except Exception:
+                pass
+            return (slug, None, 0, 0)
 
-        if last_parsed:
-            print("[DATA] Returning attendance data with student info\n")
-            return last_parsed
+        slug_results = []
+        with concurrent.futures.ThreadPoolExecutor(max_workers=6) as executor:
+            futures = [executor.submit(fetch_att_slug, s) for s in candidate_slugs]
+            for f in concurrent.futures.as_completed(futures):
+                try:
+                    res = f.result()
+                    if res[1] is not None:
+                        slug_results.append(res)
+                except Exception:
+                    pass
+
+        # 1. Prefer slug with the most courses
+        slug_results.sort(key=lambda x: x[2], reverse=True)
+        for slug, parsed, n_courses, status in slug_results:
+            if n_courses > 0:
+                print(f"[OK] Attendance data retrieved from {slug} (Status: {status}, Courses: {n_courses})\n")
+                return parsed
+
+        # 2. Fallback to any slug with student info
+        for slug, parsed, n_courses, status in slug_results:
+            if parsed and parsed.get("student_info"):
+                print(f"[DATA] Returning attendance data with student info from {slug}\n")
+                return parsed
 
         print("[FAIL] Failed to fetch attendance: No valid attendance page found\n")
         return None
@@ -600,27 +617,40 @@ class AcademiaClient:
         except Exception as we:
             print(f"[TIMETABLE] Welcome menu scan note: {we}")
 
-        last_parsed = None
-        for slug in candidate_slugs:
+        def fetch_tt_slug(slug):
             url = f'{self.BASE_URL}/srm_university/academia-academic-services/page/{slug}'
             try:
-                response = self.session.get(url, headers=self._get_page_headers(), timeout=15)
+                response = self.session.get(url, headers=self._get_page_headers(), timeout=10)
                 if response.status_code == 200 and len(response.text.strip()) > 100:
                     parsed = parse_timetable(response.text)
                     if parsed and not parsed.get("error"):
                         courses = parsed.get("courses", [])
-                        if len(courses) > 0:
-                            print(f"[DATA] Timetable data retrieved from {slug} (Status: {response.status_code}, Courses: {len(courses)})\n")
-                            return parsed
-                        elif not last_parsed:
-                            last_parsed = parsed
-            except Exception as e:
-                print(f"[TIMETABLE] Error trying {slug}: {str(e)}")
-                continue
+                        return (slug, parsed, len(courses), response.status_code)
+            except Exception:
+                pass
+            return (slug, None, 0, 0)
 
-        if last_parsed:
-            print("[DATA] Returning timetable data with student info\n")
-            return last_parsed
+        tt_results = []
+        with concurrent.futures.ThreadPoolExecutor(max_workers=6) as executor:
+            futures = [executor.submit(fetch_tt_slug, s) for s in candidate_slugs]
+            for f in concurrent.futures.as_completed(futures):
+                try:
+                    res = f.result()
+                    if res[1] is not None:
+                        tt_results.append(res)
+                except Exception:
+                    pass
+
+        tt_results.sort(key=lambda x: x[2], reverse=True)
+        for slug, parsed, n_courses, status in tt_results:
+            if n_courses > 0:
+                print(f"[DATA] Timetable data retrieved from {slug} (Status: {status}, Courses: {n_courses})\n")
+                return parsed
+
+        for slug, parsed, n_courses, status in tt_results:
+            if parsed and parsed.get("student_info"):
+                print(f"[DATA] Returning timetable data with student info from {slug}\n")
+                return parsed
 
         print("[DATA] Failed to fetch timetable: No valid timetable page found\n")
         return None

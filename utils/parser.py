@@ -83,43 +83,61 @@ def parse_attendance(html_content: str) -> Dict[str, Any]:
                     data['student_info']['photo_url'] = img_tag.get('src')
     
     # Parse attendance courses
-    attendance_table = soup.find('table', {'bgcolor': '#FAFAD2'})
+    attendance_table = soup.find('table', {'bgcolor': re.compile(r'#?fafad2', re.I)})
+    if not attendance_table:
+        for tbl in soup.find_all('table'):
+            tbl_text = tbl.get_text()
+            if 'Course Code' in tbl_text and ('Hours Conducted' in tbl_text or 'Attn %' in tbl_text or 'Attendance %' in tbl_text or 'Absent' in tbl_text):
+                attendance_table = tbl
+                break
+
     if attendance_table:
         rows = attendance_table.find_all('tr')[1:]  # Skip header
         total_conducted = 0
         total_absent = 0
         
         for row in rows:
-            cells = row.find_all('td')
-            if len(cells) >= 9:
-                course_code_raw = cells[0].get_text(strip=True)
-                # Extract course code (e.g., "21CSC302J" from "21CSC302J\nRegular")
-                course_code_parts = course_code_raw.split('\n')
-                course_code = course_code_parts[0]
-                registration_type = course_code_parts[1] if len(course_code_parts) > 1 else ''
+            try:
+                cells = row.find_all('td')
+                if len(cells) >= 8:
+                    course_code_raw = cells[0].get_text(strip=True)
+                    course_code_parts = course_code_raw.split('\n')
+                    course_code = course_code_parts[0].strip()
+                    if not course_code or 'course' in course_code.lower() or 'code' in course_code.lower():
+                        continue
+                    registration_type = course_code_parts[1] if len(course_code_parts) > 1 else ''
 
-                # Get category to make truly unique key
-                category = cells[2].get_text(strip=True)
+                    category = cells[2].get_text(strip=True)
+                    course_key = course_code + category
+                    
+                    cond_m = re.search(r'\d+', cells[6].get_text(strip=True))
+                    abs_m = re.search(r'\d+', cells[7].get_text(strip=True))
+                    hours_conducted = int(cond_m.group(0)) if cond_m else 0
+                    hours_absent = int(abs_m.group(0)) if abs_m else 0
+                    
+                    pct_val = 0.0
+                    if len(cells) >= 9:
+                        pct_m = re.search(r'[\d.]+', cells[8].get_text(strip=True))
+                        if pct_m:
+                            pct_val = float(pct_m.group(0))
+                    elif hours_conducted > 0:
+                        pct_val = round(((hours_conducted - hours_absent) / hours_conducted) * 100, 2)
 
-                # Create unique key using course_code + category
-                course_key = course_code + category
-                
-                hours_conducted = int(cells[6].get_text(strip=True))
-                hours_absent = int(cells[7].get_text(strip=True))
-                
-                total_conducted += hours_conducted
-                total_absent += hours_absent
-                
-                data['attendance']['courses'][course_key] = {
-                    'course_title': cells[1].get_text(strip=True),
-                    'category': cells[2].get_text(strip=True),
-                    'faculty_name': cells[3].get_text(strip=True),
-                    'slot': cells[4].get_text(strip=True),
-                    'room_no': cells[5].get_text(strip=True),
-                    'hours_conducted': hours_conducted,
-                    'hours_absent': hours_absent,
-                    'attendance_percentage': float(cells[8].get_text(strip=True)) if cells[8].get_text(strip=True).replace('.','').isdigit() else 0.0
-                }
+                    total_conducted += hours_conducted
+                    total_absent += hours_absent
+                    
+                    data['attendance']['courses'][course_key] = {
+                        'course_title': cells[1].get_text(strip=True),
+                        'category': category,
+                        'faculty_name': cells[3].get_text(strip=True),
+                        'slot': cells[4].get_text(strip=True),
+                        'room_no': cells[5].get_text(strip=True),
+                        'hours_conducted': hours_conducted,
+                        'hours_absent': hours_absent,
+                        'attendance_percentage': pct_val
+                    }
+            except Exception:
+                continue
         
         # Calculate overall attendance
         if total_conducted > 0:
@@ -130,7 +148,7 @@ def parse_attendance(html_content: str) -> Dict[str, Any]:
         data['attendance']['total_hours_absent'] = total_absent
     
     # Parse internal marks
-    marks_tables = soup.find_all('table', {'border': '1'})
+    marks_tables = soup.find_all('table')
     for table in marks_tables:
         if 'Course Code' in table.get_text() and 'Test Performance' in table.get_text():
             rows = table.find_all('tr')[1:]  # Skip header

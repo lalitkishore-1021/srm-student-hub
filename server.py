@@ -557,13 +557,13 @@ def start_session():
             future_ac = executor.submit(run_academia)
             future_cw = executor.submit(cw_scraper.scrape_campusweb, reg_no, pwd)
             
-            # 1. Check CampusWeb first (fast: ~3-6s)
+            # 1. Wait for CampusWeb (fast: ~3-6s)
             cw_res = None
             try:
-                cw_res = future_cw.result(timeout=15)
+                cw_res = future_cw.result(timeout=8)
             except Exception as e:
-                print(f"[{reg_no}] CampusWeb check error/timeout: {e}")
-            
+                print(f"[{reg_no}] CampusWeb check note: {e}")
+
             result = None
             if cw_res and cw_res.get('success'):
                 print(f"[{reg_no}] CampusWeb succeeded! Building response instantly...")
@@ -575,9 +575,9 @@ def start_session():
                     'timetable': {},
                     'is_mock_attendance': False
                 }
-                # Give Academia a brief window (2s) in case timetable is ready
+                # Check if Academia finished with timetable (wait max 1s)
                 try:
-                    ac_res = future_ac.result(timeout=2)
+                    ac_res = future_ac.result(timeout=1)
                     if ac_res and ac_res.get('success'):
                         if ac_res.get('timetable'):
                             result['timetable'] = ac_res.get('timetable')
@@ -586,9 +586,10 @@ def start_session():
                 except Exception:
                     pass
             else:
-                # If CampusWeb failed, wait for Academia as fallback
+                # CampusWeb failed or timed out: wait for Academia (max 10s)
+                print(f"[{reg_no}] CampusWeb unavailable, using Academia fast scraper...")
                 try:
-                    ac_res = future_ac.result(timeout=40)
+                    ac_res = future_ac.result(timeout=10)
                     if ac_res and ac_res.get('success'):
                         result = ac_res
                     else:

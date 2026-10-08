@@ -139,10 +139,14 @@ def get_course_credit(code, title, timetable_courses=None):
     return 3.0
 
 def adapt_attendance(attendance_data, timetable_courses=None):
-    if not attendance_data or "courses" not in attendance_data:
+    if not attendance_data:
         return []
         
-    courses = attendance_data["courses"]
+    courses = attendance_data.get("courses")
+    if not courses and isinstance(attendance_data.get("attendance"), dict):
+        courses = attendance_data["attendance"].get("courses")
+    if not courses:
+        return []
     adapted = []
     
     for key, c in courses.items():
@@ -257,8 +261,9 @@ def run_fast_scraper(email, password, out_queue):
         final_tt = build_timetable(student_batch, courses_list)
         
         # Adapt to frontend format
+        courses_dict = attendance_data.get("courses") or attendance_data.get("attendance", {}).get("courses", {})
         attList = adapt_attendance(attendance_data, courses_list)
-        marksList = adapt_marks(attendance_data.get('marks', {}), attendance_data.get('courses', {}), courses_list)
+        marksList = adapt_marks(attendance_data.get('marks', {}), courses_dict, courses_list)
         
         advisors = timetable_data.get('advisors', {}) if timetable_data else {}
         fa = advisors.get('faculty_advisor', {})
