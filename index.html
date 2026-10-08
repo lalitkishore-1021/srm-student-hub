@@ -4335,7 +4335,7 @@
 
     <script>
         // ================= GLOBAL STATE =================
-        const BACKEND_URL = 'https://srm-student-hub-1.onrender.com';
+        const BACKEND_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? window.location.origin : 'https://srm-student-hub-1.onrender.com';
         let isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
         let attendanceData = [];
         let timetableData = {};

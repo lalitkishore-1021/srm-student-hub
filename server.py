@@ -544,6 +544,8 @@ def start_session():
         import concurrent.futures
         try:
             import cw_scraper
+            raw_reg = reg_no or ''
+            net_id = raw_reg.split('@')[0].strip().lower()
             executor = concurrent.futures.ThreadPoolExecutor(max_workers=2)
             
             def run_academia():
@@ -551,69 +553,65 @@ def start_session():
                 scrape_academia_worker(reg_no, pwd, batch, out_queue)
                 return out_queue.get(timeout=55)
             
-            # Run BOTH in parallel at the same time
+            # Run BOTH in parallel
             future_ac = executor.submit(run_academia)
             future_cw = executor.submit(cw_scraper.scrape_campusweb, reg_no, pwd)
             
-            # 1. Wait for Academia FIRST (Cold starts with Unified Timetable can take 20-30s)
-            result = None
-            try:
-                result = future_ac.result(timeout=50)
-            except Exception as e:
-                print(f"[{reg_no}] Academia failed or timed out: {e}")
-            
-            # 2. Now check CampusWeb - it's been running in parallel this whole time
+            # 1. Check CampusWeb first (fast: ~3-6s)
             cw_res = None
             try:
-                # Give it up to 10 more seconds if Academia finished early
-                cw_res = future_cw.result(timeout=10)
+                cw_res = future_cw.result(timeout=15)
             except Exception as e:
-                print(f"[{reg_no}] CampusWeb slow/failed (non-blocking): {e}")
+                print(f"[{reg_no}] CampusWeb check error/timeout: {e}")
             
-            # Release executor immediately
-            executor.shutdown(wait=False)
-            
-            # Build final result
-            if result is None or not result.get('success'):
-                result = result or {}
-                ac_err = result.get('error', '')
-                ac_err_lower = ac_err.lower()
-                
-                # STRICT AUTH: If Academia explicitly rejected the password, DO NOT fallback to CampusWeb!
-                # (CampusWeb API insecurely caches data without verifying passwords)
-                if 'password' in ac_err_lower or 'credential' in ac_err_lower or 'wrong email' in ac_err_lower or 'invalid' in ac_err_lower:
-                    sync_jobs[sid] = {'status': 'failed', 'result': {'success': False, 'error': "Wrong NetID or Password. Please try again."}, 'timestamp': time.time()}
-                    return
-                
-                result['success'] = True if (cw_res and cw_res.get('success')) else False
-                if not result.get('success'):
-                    cw_err = (cw_res or {}).get('error', '')
-                    
-                    final_err = "Login Failed. Invalid NetID or Password."
-                    if 'password' in cw_err.lower():
-                        final_err = "Wrong NetID or Password. Please try again."
-                    elif '@srmist.edu.in' not in reg_no.lower():
-                        final_err = "Please include @srmist.edu.in in your NetID."
-                    elif 'network' in ac_err.lower() or 'timeout' in ac_err.lower() or 'time out' in ac_err.lower() or 'network' in cw_err.lower():
-                        final_err = "Poor network connectivity. The university servers took too long to respond."
-                    elif ac_err:
-                        final_err = f"University Server Error: {ac_err}"
-                    
-                    sync_jobs[sid] = {'status': 'failed', 'result': {'success': False, 'error': final_err}, 'timestamp': time.time()}
-                    return
-            
-            raw_reg = reg_no or ''
-            net_id = raw_reg.split('@')[0].strip()
-
-            # Override with CampusWeb attendance & marks if available
+            result = None
             if cw_res and cw_res.get('success'):
-                if cw_res.get('attendance') and len(cw_res.get('attendance')) > 0:
-                    result['data'] = cw_res.get('attendance')
-                    result['is_mock_attendance'] = False
-                if cw_res.get('marks') and len(cw_res.get('marks')) > 0:
-                    result['marks'] = cw_res.get('marks')
+                print(f"[{reg_no}] CampusWeb succeeded! Building response instantly...")
+                result = {
+                    'success': True,
+                    'data': cw_res.get('attendance', []),
+                    'marks': cw_res.get('marks', []),
+                    'profile': cw_res.get('profile') or {},
+                    'timetable': {},
+                    'is_mock_attendance': False
+                }
+                # Give Academia a brief window (2s) in case timetable is ready
+                try:
+                    ac_res = future_ac.result(timeout=2)
+                    if ac_res and ac_res.get('success'):
+                        if ac_res.get('timetable'):
+                            result['timetable'] = ac_res.get('timetable')
+                        if not result['profile'].get('name') and ac_res.get('profile'):
+                            result['profile'].update(ac_res.get('profile'))
+                except Exception:
+                    pass
+            else:
+                # If CampusWeb failed, wait for Academia as fallback
+                try:
+                    ac_res = future_ac.result(timeout=40)
+                    if ac_res and ac_res.get('success'):
+                        result = ac_res
+                    else:
+                        result = ac_res or {}
+                except Exception as e:
+                    print(f"[{reg_no}] Academia failed/timed out: {e}")
+                    result = {'success': False, 'error': str(e)}
 
-            # Ensure profile has a real student name (never 'STUDENT (Academia Offline)')
+            executor.shutdown(wait=False)
+
+            if not result or not result.get('success'):
+                # Both failed
+                cw_err = (cw_res or {}).get('error', '')
+                ac_err = (result or {}).get('error', '')
+                final_err = "Login Failed. Invalid SRM Email/NetID or Password."
+                if 'password' in cw_err.lower() or 'password' in ac_err.lower():
+                    final_err = "Wrong NetID/Email or Password. Please try again."
+                elif 'network' in cw_err.lower() or 'network' in ac_err.lower():
+                    final_err = "Poor network connectivity. University servers took too long."
+                sync_jobs[sid] = {'status': 'failed', 'result': {'success': False, 'error': final_err}, 'timestamp': time.time()}
+                return
+
+            # Profile resolution
             cached_prof = get_cached_student_profile(net_id)
             profile = result.get('profile') or {}
             curr_name = profile.get('name', '').strip()
@@ -629,7 +627,7 @@ def start_session():
                     profile['course'] = 'SRM University'
                 result['profile'] = profile
 
-            # Timetable resilience: if scraped timetable has 0 classes, restore from push_subscriptions
+            # Timetable resilience: if scraped timetable has 0 classes, restore from cache
             curr_tt = result.get('timetable') or {}
             tt_classes_count = sum(len(v) for v in curr_tt.values() if isinstance(v, list))
             if tt_classes_count == 0:
@@ -644,6 +642,7 @@ def start_session():
                 name = save_prof.get('name', net_id.upper())
                 if 'offline' not in name.lower() and name.lower() != 'student':
                     save_student_to_db(net_id, name, register_no, result.get('data', []), result.get('marks', []), is_mock=result.get('is_mock_attendance', False))
+
             sync_jobs[sid] = {'status': 'completed', 'result': result, 'timestamp': time.time()}
         except queue.Empty:
             sync_jobs[sid] = {'status': 'failed', 'result': {'success': False, 'error': 'Background task crashed or timed out.'}, 'timestamp': time.time()}

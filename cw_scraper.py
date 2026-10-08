@@ -57,13 +57,28 @@ def scrape_campusweb(netid, pwd):
             except Exception:
                 pass
             return {}
+
+        def fetch_profile():
+            try:
+                res = session.post(
+                    'https://api.campusweb.in/api/student-portal/profile',
+                    json={'net_id': netid, 'password': pwd},
+                    timeout=12
+                )
+                if res.status_code == 200:
+                    return res.json()
+            except Exception:
+                pass
+            return {}
             
-        with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
             future_att = executor.submit(fetch_att)
             future_marks = executor.submit(fetch_marks)
+            future_prof = executor.submit(fetch_profile)
             
             att_json = future_att.result()
             marks_json = future_marks.result()
+            prof_json = future_prof.result()
             
         if not att_json or att_json.get('status') != 'success':
             return {"success": False, "error": (att_json or {}).get('message', 'CampusWeb API unavailable')}
@@ -149,7 +164,17 @@ def scrape_campusweb(netid, pwd):
                     "credit": att.get("credit", 3.0)
                 })
                 
-        return {"success": True, "attendance": att_data, "marks": marks_data}
+        profile_raw = (prof_json or {}).get('profile', {}) if isinstance(prof_json, dict) else {}
+        profile_data = {
+            "name": (profile_raw.get('student_name') or '').strip() or netid.upper(),
+            "regNo": (profile_raw.get('registration_number') or '').strip() or netid.upper(),
+            "course": (profile_raw.get('program') or '').strip() or 'SRM University',
+            "semester": (profile_raw.get('semester') or '').strip(),
+            "section": (profile_raw.get('section') or '').strip(),
+            "batch": (profile_raw.get('batch') or '').strip(),
+            "advisor": (profile_raw.get('faculty_advisor') or profile_raw.get('academic_advisor') or '').strip()
+        }
+        return {"success": True, "attendance": att_data, "marks": marks_data, "profile": profile_data}
         
     except Exception as e:
         return {"success": False, "error": str(e)}
