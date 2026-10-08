@@ -581,8 +581,10 @@ def start_session():
                     if ac_res and ac_res.get('success'):
                         if ac_res.get('timetable'):
                             result['timetable'] = ac_res.get('timetable')
-                        if not result['profile'].get('name') and ac_res.get('profile'):
-                            result['profile'].update(ac_res.get('profile'))
+                        if ac_res.get('profile'):
+                            for k, v in ac_res['profile'].items():
+                                if v and not result['profile'].get(k):
+                                    result['profile'][k] = v
                 except Exception:
                     pass
             else:

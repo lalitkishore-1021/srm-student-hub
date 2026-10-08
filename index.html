@@ -4683,12 +4683,24 @@
 
         function renderProfile(profile) {
             if (!profile) return;
+            // Helper: detect if a name is a real person name (not a netid/stub)
+            const _isRealName = (n) => {
+                if (!n || typeof n !== 'string') return false;
+                const t = n.trim();
+                if (t.length < 4) return false;
+                if (t.toLowerCase().includes('offline') || t.toLowerCase() === 'student') return false;
+                if (/^[A-Z]{1,4}\d{3,8}$/i.test(t)) return false;  // NetID like SG8215
+                if (/^RA\d{10,}/i.test(t)) return false;             // RegNo
+                return t.includes(' ') || t.length > 8;
+            };
             let displayName = (profile.name || '').trim();
-            if (displayName.toLowerCase().includes('offline')) {
+            // If the profile has a bad/empty name, try the cached real profile first
+            if (!_isRealName(displayName)) {
                 const savedProf = JSON.parse(localStorage.getItem('squadProfile') || '{}');
-                if (savedProf.name && !savedProf.name.toLowerCase().includes('offline')) {
+                if (_isRealName(savedProf.name)) {
                     displayName = savedProf.name;
                 } else {
+                    // Last resort: show netid or STUDENT — don't crash
                     const netId = (profile.regNo || localStorage.getItem('squadNetId') || localStorage.getItem('syncRegNo') || '').split('@')[0];
                     displayName = netId.toUpperCase() || 'STUDENT';
                 }
@@ -4747,14 +4759,15 @@
 
             // Faculty Advisor
             const faCard = document.getElementById('fa-card');
-            if (faCard && (profile.fa_name || profile.fa_email || profile.fa_phone)) {
+            const hasFA = profile.fa_name || profile.fa_email || profile.fa_phone || profile.advisor;
+            if (faCard && hasFA) {
                 faCard.style.display = 'block';
                 const faNameEl = document.getElementById('fa-name');
                 const faEmailEl = document.getElementById('fa-email');
                 const faPhoneEl = document.getElementById('fa-phone-display');
                 const faCallBtn = document.getElementById('fa-call-btn');
 
-                if (faNameEl) faNameEl.innerText = profile.fa_name || 'Faculty Advisor';
+                if (faNameEl) faNameEl.innerText = profile.fa_name || profile.advisor || 'Faculty Advisor';
                 if (faEmailEl) faEmailEl.innerText = '@ ' + (profile.fa_email || 'N/A');
                 if (faPhoneEl) faPhoneEl.innerText = ' ' + (profile.fa_phone || 'N/A');
                 if (faCallBtn && profile.fa_phone) {
@@ -5025,15 +5038,34 @@
                 const ttDict = result.timetable || {};
                 const profile = result.profile || {};
 
-                // Safe Profile update: reject offline/student dummy names if valid cached profile exists
+                // Safe Profile update: reject dummy/incomplete names if valid cached profile exists
                 const existingProf = JSON.parse(localStorage.getItem('squadProfile') || '{}');
-                const isDummyProf = !profile.name || profile.name.toLowerCase().includes('offline') || profile.name.toLowerCase() === 'student';
+                // isRealName: must have a space (first + last name), be longer than 5 chars, not be a netid/regNo pattern
+                const isRealName = (n) => {
+                    if (!n || typeof n !== 'string') return false;
+                    const t = n.trim();
+                    if (t.length < 4) return false;
+                    if (t.toLowerCase().includes('offline')) return false;
+                    if (t.toLowerCase() === 'student') return false;
+                    // NetID pattern: 2-3 uppercase letters followed by 3-6 digits (e.g. SG8215, BL9209)
+                    if (/^[A-Z]{1,4}\d{3,8}$/i.test(t)) return false;
+                    // RegNo pattern: starts with RA or similar + 13+ chars
+                    if (/^RA\d{10,}/i.test(t)) return false;
+                    // A real name should have at least one space OR be long (> 8 chars)
+                    return t.includes(' ') || t.length > 8;
+                };
+                const isDummyProf = !isRealName(profile.name);
+                const existingIsReal = isRealName(existingProf && existingProf.name);
                 if (!isDummyProf) {
-                    localStorage.setItem('squadProfile', JSON.stringify(profile));
-                    try { renderProfile(profile); } catch (e) { console.error("Profile Render Error:", e); }
-                } else if (existingProf && existingProf.name && !existingProf.name.toLowerCase().includes('offline') && existingProf.name.toLowerCase() !== 'student') {
+                    // Merge: keep existing profile's good fields if new profile is missing them
+                    const mergedProf = Object.assign({}, existingProf, profile);
+                    localStorage.setItem('squadProfile', JSON.stringify(mergedProf));
+                    try { renderProfile(mergedProf); } catch (e) { console.error("Profile Render Error:", e); }
+                } else if (existingIsReal) {
+                    // New sync gave bad profile data — keep showing the cached real profile
                     try { renderProfile(existingProf); } catch (e) {}
                 } else if (profile && profile.name) {
+                    // No cached real profile either — show whatever we have
                     localStorage.setItem('squadProfile', JSON.stringify(profile));
                     try { renderProfile(profile); } catch (e) {}
                 }
@@ -5162,13 +5194,27 @@
                     const ttDict = result.timetable || {};
                     const profile = result.profile || {};
 
-                    // Safe Profile update
+                    // Safe Profile update — same robust check as in login sync path
                     const existingProf = JSON.parse(localStorage.getItem('squadProfile') || '{}');
-                    const isDummyProf = !profile.name || profile.name.toLowerCase().includes('offline') || profile.name.toLowerCase() === 'student';
+                    const isRealName = (n) => {
+                        if (!n || typeof n !== 'string') return false;
+                        const t = n.trim();
+                        if (t.length < 4) return false;
+                        if (t.toLowerCase().includes('offline')) return false;
+                        if (t.toLowerCase() === 'student') return false;
+                        if (/^[A-Z]{1,4}\d{3,8}$/i.test(t)) return false;  // NetID pattern e.g. SG8215
+                        if (/^RA\d{10,}/i.test(t)) return false;            // RegNo pattern
+                        return t.includes(' ') || t.length > 8;
+                    };
+                    const isDummyProf = !isRealName(profile.name);
+                    const existingIsReal = isRealName(existingProf && existingProf.name);
                     if (!isDummyProf) {
-                        localStorage.setItem('squadProfile', JSON.stringify(profile));
-                        try { renderProfile(profile); } catch (e) {}
-                    } else if (existingProf && existingProf.name && !existingProf.name.toLowerCase().includes('offline') && existingProf.name.toLowerCase() !== 'student') {
+                        // Merge: don't lose existing good fields when new profile is incomplete
+                        const mergedProf = Object.assign({}, existingProf, profile);
+                        localStorage.setItem('squadProfile', JSON.stringify(mergedProf));
+                        try { renderProfile(mergedProf); } catch (e) {}
+                    } else if (existingIsReal) {
+                        // Background sync returned bad profile — keep the good cached one visible
                         try { renderProfile(existingProf); } catch (e) {}
                     }
 

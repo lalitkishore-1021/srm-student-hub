@@ -166,7 +166,7 @@ def scrape_campusweb(netid, pwd):
                 
         profile_raw = (prof_json or {}).get('profile', {}) if isinstance(prof_json, dict) else {}
         profile_data = {
-            "name": (profile_raw.get('student_name') or '').strip() or netid.upper(),
+            "name": (profile_raw.get('student_name') or '').strip(),  # Empty if unknown — frontend keeps cached name
             "regNo": (profile_raw.get('registration_number') or '').strip() or netid.upper(),
             "course": (profile_raw.get('program') or '').strip() or 'SRM University',
             "semester": (profile_raw.get('semester') or '').strip(),
