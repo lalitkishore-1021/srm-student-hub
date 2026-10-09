@@ -510,18 +510,28 @@ def get_cached_timetable_for_student(net_id):
         print(f"[RECOVERY] Timetable cache lookup error: {e}")
     return {}
 
+def save_cached_timetable_for_student(net_id, tt):
+    if not net_id or not tt: return
+    try:
+        tt_json = json.dumps(tt)
+        conn = get_db()
+        cur = conn.cursor()
+        clean_id = net_id.lower().strip()
+        if DATABASE_URL:
+            cur.execute("INSERT INTO push_subscriptions (net_id, timetable_json) VALUES (%s, %s) ON CONFLICT(net_id) DO UPDATE SET timetable_json = EXCLUDED.timetable_json", (clean_id, tt_json))
+        else:
+            cur.execute("INSERT INTO push_subscriptions (net_id, timetable_json) VALUES (?, ?) ON CONFLICT(net_id) DO UPDATE SET timetable_json = excluded.timetable_json", (clean_id, tt_json))
+        conn.commit()
+        cur.close()
+        conn.close()
+    except Exception as e:
+        print(f"[RECOVERY] Timetable cache save error: {e}")
 
 def scrape_academia_worker(reg_no, pwd, batch, out_queue):
     from fast_scraper_adapter import run_fast_scraper
     run_fast_scraper(reg_no, pwd, out_queue)
 
-
-
-
-
 @app.route('/api/start_session', methods=['POST'])
-
-
 def start_session():
     data = request.json
 
@@ -551,7 +561,19 @@ def start_session():
             def run_academia():
                 out_queue = queue.Queue()
                 scrape_academia_worker(reg_no, pwd, batch, out_queue)
-                return out_queue.get(timeout=55)
+                try:
+                    res = out_queue.get(timeout=70)
+                    if res and res.get('success') and res.get('timetable'):
+                        tt = res['timetable']
+                        has_classes = any(isinstance(v, list) and len(v) > 0 for v in tt.values())
+                        if has_classes:
+                            save_cached_timetable_for_student(net_id, tt)
+                            print(f"[{net_id}] Background timetable DB save complete!")
+                        else:
+                            print(f"[{net_id}] Background timetable empty, skipping cache update.")
+                    return res
+                except Exception as e:
+                    return {'success': False, 'error': str(e)}
             
             # Run BOTH in parallel
             future_ac = executor.submit(run_academia)
@@ -591,7 +613,7 @@ def start_session():
                 # CampusWeb failed or timed out: wait for Academia (max 10s)
                 print(f"[{reg_no}] CampusWeb unavailable, using Academia fast scraper...")
                 try:
-                    ac_res = future_ac.result(timeout=10)
+                    ac_res = future_ac.result(timeout=60)
                     if ac_res and ac_res.get('success'):
                         result = ac_res
                     else:

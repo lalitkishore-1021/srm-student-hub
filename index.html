@@ -4888,7 +4888,8 @@
                     if (regNo && pwd) {
                         const now = Date.now();
                         const lastRecovery = parseInt(localStorage.getItem('lastAutoRecoveryAttempt') || '0', 10);
-                        if (now - lastRecovery > 60000) {
+                        const THREE_HOURS = 3 * 60 * 60 * 1000;
+                        if (now - lastRecovery > THREE_HOURS) {
                             localStorage.setItem('lastAutoRecoveryAttempt', now.toString());
                             console.log("[AutoRecovery] Timetable missing or placeholder profile detected. Initiating background re-sync...");
                             showAutoRecoveryToast("Restoring timetable details...");

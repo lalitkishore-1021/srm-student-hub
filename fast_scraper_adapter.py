@@ -224,12 +224,16 @@ def run_fast_scraper(email, password, out_queue):
         
         lookup = client.lookup_user()
         if not lookup:
-            out_queue.put({'success': False, 'error': 'You entered a wrong email ID or password. Please make sure your email ends with @srmist.edu.in'})
+            print(f"[{email}] Zoho fast login blocked. Falling back to Playwright scraper...")
+            import playwright_scraper
+            playwright_scraper.scrape_academia_worker(email, password, 1, out_queue)
             return
             
         login_res = client.login()
         if not login_res.get("success"):
-            out_queue.put({'success': False, 'error': 'You entered a wrong email ID or password. Please make sure your email ends with @srmist.edu.in'})
+            print(f"[{email}] Zoho login failed. Falling back to Playwright scraper...")
+            import playwright_scraper
+            playwright_scraper.scrape_academia_worker(email, password, 1, out_queue)
             return
             
         print(f"[{email}] Login successful. Fetching data...")
