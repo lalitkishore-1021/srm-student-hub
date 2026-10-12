@@ -3037,21 +3037,30 @@
             </div>
             
             <h2 class="login-headline">LOGIN REQUIRED</h2>
-            <p class="login-subtext">Sync with Academia to access your dashboard.</p>
+            <p class="login-subtext">Sync with Academia &amp; SRM Student Portal to access your dashboard.</p>
             
             <div id="login-form-container">
                 <div class="login-input-wrapper">
                     <span class="login-input-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg></span>
-                    <input type="text" id="srm-reg" placeholder="SRM email id" class="login-input">
+                    <input type="text" id="srm-reg" placeholder="SRM Email ID / NetID (e.g. ab1234)" class="login-input">
                 </div>
                 
                 <div class="login-input-wrapper">
                     <span class="login-input-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></span>
-                    <input type="password" id="srm-pwd" placeholder="Academia password" required class="login-input">
+                    <input type="password" id="srm-pwd" placeholder="Academia Password (Timetable &amp; Advisors)" required class="login-input">
                     <span class="login-pwd-toggle" onclick="const pwd=document.getElementById('srm-pwd'); if(pwd.type==='password'){pwd.type='text'; this.innerHTML='<svg viewBox=\'0 0 24 24\' width=\'18\' height=\'18\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'2.5\' stroke-linecap=\'round\' stroke-linejoin=\'round\'><path d=\'M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24\'></path><line x1=\'1\' y1=\'1\' x2=\'23\' y2=\'23\'></line></svg>';}else{pwd.type='password'; this.innerHTML='<svg viewBox=\'0 0 24 24\' width=\'18\' height=\'18\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'2.5\' stroke-linecap=\'round\' stroke-linejoin=\'round\'><path d=\'M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z\'></path><circle cx=\'12\' cy=\'12\' r=\'3\'></circle></svg>';}"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg></span>
                 </div>
+
+                <div class="login-input-wrapper">
+                    <span class="login-input-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg></span>
+                    <input type="password" id="srm-portal-pwd" placeholder="SRM Portal Password (leave blank if same)" class="login-input">
+                    <span class="login-pwd-toggle" onclick="const pwd=document.getElementById('srm-portal-pwd'); if(pwd.type==='password'){pwd.type='text'; this.innerHTML='<svg viewBox=\'0 0 24 24\' width=\'18\' height=\'18\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'2.5\' stroke-linecap=\'round\' stroke-linejoin=\'round\'><path d=\'M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24\'></path><line x1=\'1\' y1=\'1\' x2=\'23\' y2=\'23\'></line></svg>';}else{pwd.type='password'; this.innerHTML='<svg viewBox=\'0 0 24 24\' width=\'18\' height=\'18\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'2.5\' stroke-linecap=\'round\' stroke-linejoin=\'round\'><path d=\'M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z\'></path><circle cx=\'12\' cy=\'12\' r=\'3\'></circle></svg>';}"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg></span>
+                </div>
+                <div style="font-size: 0.72rem; color: rgba(255,255,255,0.55); margin: -4px 0 12px 4px; text-align: left; line-height: 1.35;">
+                    ⚡ Auto-solves SRM Portal CAPTCHA for Attendance &amp; Marks + Academia for Timetable &amp; Advisors.
+                </div>
                 
-                <button class="login-auth-btn" id="login-auth-btn" onclick="startLiveSync()">AUTHENTICATE & SYNC</button>
+                <button class="login-auth-btn" id="login-auth-btn" onclick="startLiveSync()">AUTHENTICATE &amp; SYNC</button>
             </div>
 
             <div id="login-loader-container" style="display: none; flex-direction: column; align-items: center; justify-content: center; margin-top: 20px;">
@@ -4968,10 +4977,14 @@
 
         async function startLiveSync() {
             const regNo = document.getElementById('srm-reg').value.trim();
-            const pwd = document.getElementById('srm-pwd').value;
+            const rawAcadPwd = document.getElementById('srm-pwd').value;
+            const portalPwdEl = document.getElementById('srm-portal-pwd');
+            const rawPortalPwd = portalPwdEl ? portalPwdEl.value : '';
+            const pwd = rawAcadPwd || rawPortalPwd;
+            const portalPwd = rawPortalPwd || rawAcadPwd;
             const statusText = document.getElementById('sync-status');
 
-            if (!regNo || !pwd) {
+            if (!regNo || (!pwd && !portalPwd)) {
                 alert("Please enter your NetID/Email and Password.");
                 return;
             }
@@ -4985,7 +4998,7 @@
             if (backBtn) backBtn.style.display = 'none';
 
             let secondsPassed = 0;
-            statusText.innerHTML = ` Connecting to Academia... <span style="font-family: inherit; font-size: 1.1rem; color: #fff; background: rgba(255,170,0,0.2); padding: 2px 8px; border-radius: 6px;">0s</span>`;
+            statusText.innerHTML = ` Connecting to Academia &amp; SRM Portal... <span style="font-family: inherit; font-size: 1.1rem; color: #fff; background: rgba(255,170,0,0.2); padding: 2px 8px; border-radius: 6px;">0s</span>`;
             statusText.style.color = "var(--primary)";
             
             const tips = [
@@ -5028,7 +5041,7 @@
                 const initRes = await fetch(`${BACKEND_URL}/api/start_session`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json", "X-App-Key": "srm-hub-protected-x9f2" },
-                    body: JSON.stringify({ regNo: regNo, pwd: pwd, batch: currentBatch })
+                    body: JSON.stringify({ regNo: regNo, pwd: pwd, portalPwd: portalPwd, batch: currentBatch })
                 });
 
                 const initData = await initRes.json();
@@ -5094,6 +5107,7 @@
                 // Store credentials for auto background sync
                 localStorage.setItem("syncRegNo", regNo);
                 localStorage.setItem("syncPwd", pwd);
+                localStorage.setItem("syncPortalPwd", portalPwd);
                 localStorage.setItem("syncBatch", currentBatch);
                 localStorage.setItem("lastAutoSyncTime", Date.now().toString());
                 localStorage.setItem("lastSyncSuccessTime", Date.now().toString());
@@ -5217,16 +5231,17 @@
         async function backgroundSync() {
             const regNo = localStorage.getItem("syncRegNo");
             const pwd = localStorage.getItem("syncPwd");
+            const portalPwd = localStorage.getItem("syncPortalPwd") || pwd;
             const batch = localStorage.getItem("syncBatch") || currentBatch;
             
-            if (!regNo || !pwd) return; // Cannot auto sync
+            if (!regNo || (!pwd && !portalPwd)) return; // Cannot auto sync
 
             showSyncToast();
             try {
                 const initRes = await fetch(`${BACKEND_URL}/api/start_session`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json", "X-App-Key": "srm-hub-protected-x9f2" },
-                    body: JSON.stringify({ regNo, pwd, batch })
+                    body: JSON.stringify({ regNo, pwd, portalPwd, batch })
                 });
 
                 const initData = await initRes.json();

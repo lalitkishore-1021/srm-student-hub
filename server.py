@@ -550,17 +550,27 @@ def start_session():
     sync_id = str(uuid.uuid4())
     sync_jobs[sync_id] = {'status': 'processing', 'timestamp': time.time()}
     
-    def worker_wrapper(reg_no, pwd, batch, sid):
+    acad_pwd = (data.get('pwd') or '').strip()
+    portal_pwd = (data.get('portalPwd') or data.get('portal_pwd') or '').strip()
+    if acad_pwd and not portal_pwd:
+        portal_pwd = acad_pwd
+    elif portal_pwd and not acad_pwd:
+        acad_pwd = portal_pwd
+
+    def worker_wrapper(reg_no, acad_pwd_in, portal_pwd_in, batch, sid):
         import concurrent.futures
         try:
+            import srm_portal_scraper
             import cw_scraper
             raw_reg = reg_no or ''
             net_id = raw_reg.split('@')[0].strip().lower()
             executor = concurrent.futures.ThreadPoolExecutor(max_workers=2)
             
             def run_academia():
+                if not acad_pwd_in:
+                    return {'success': False, 'error': 'No Academia password provided'}
                 out_queue = queue.Queue()
-                scrape_academia_worker(reg_no, pwd, batch, out_queue)
+                scrape_academia_worker(reg_no, acad_pwd_in, batch, out_queue)
                 try:
                     res = out_queue.get(timeout=70)
                     if res and res.get('success') and res.get('timetable'):
@@ -574,78 +584,137 @@ def start_session():
                     return res
                 except Exception as e:
                     return {'success': False, 'error': str(e)}
-            
-            # Run BOTH in parallel
-            future_ac = executor.submit(run_academia)
-            future_cw = executor.submit(cw_scraper.scrape_campusweb, reg_no, pwd)
-            
-            result = None
-            cw_res = None
 
-            # 1. Check Academia first (direct scraper completes in ~1.5s and has full TT + profile)
-            try:
-                ac_res = future_ac.result(timeout=4)
-                if ac_res and ac_res.get('success'):
-                    print(f"[{reg_no}] Academia direct scraper succeeded in < 2s! Instant response.")
-                    result = ac_res
-            except Exception as e:
-                print(f"[{reg_no}] Academia quick check: {e}")
-
-            # 2. If Academia didn't complete yet or failed, check CampusWeb
-            if not result or not result.get('success'):
+            def run_portal():
+                if not portal_pwd_in:
+                    return {'success': False, 'error': 'No SRM Portal password provided'}
                 try:
-                    cw_res = future_cw.result(timeout=5)
-                    if cw_res and cw_res.get('success'):
-                        print(f"[{reg_no}] CampusWeb succeeded! Building response...")
-                        result = {
+                    p_res = srm_portal_scraper.fetch_portal_data(reg_no, portal_pwd_in)
+                    if p_res and p_res.get('success'):
+                        print(f"[{net_id}] SRM Student Portal direct scraper succeeded!")
+                        return p_res
+                    print(f"[{net_id}] SRM Portal scraper returned: {(p_res or {}).get('error')}")
+                except Exception as pe:
+                    print(f"[{net_id}] SRM Portal scraper exception: {pe}")
+                # Fallback to CampusWeb only if direct portal scraper failed
+                try:
+                    cw = cw_scraper.scrape_campusweb(reg_no, portal_pwd_in)
+                    if cw and cw.get('success'):
+                        return {
                             'success': True,
-                            'data': cw_res.get('attendance', []),
-                            'marks': cw_res.get('marks', []),
-                            'profile': cw_res.get('profile') or {},
+                            'data': cw.get('attendance', []),
+                            'marks': cw.get('marks', []),
+                            'profile': cw.get('profile') or {},
                             'timetable': {},
                             'is_mock_attendance': False
                         }
-                        # Check if Academia finished in background to provide timetable & advisors
-                        try:
-                            ac_res2 = future_ac.result(timeout=2)
-                            if ac_res2 and ac_res2.get('success'):
-                                if ac_res2.get('timetable'):
-                                    result['timetable'] = ac_res2.get('timetable')
-                                if ac_res2.get('courses'):
-                                    result['courses'] = ac_res2.get('courses')
-                                if ac_res2.get('profile'):
-                                    for k, v in ac_res2['profile'].items():
-                                        if v and not result['profile'].get(k):
-                                            result['profile'][k] = v
-                        except Exception:
-                            pass
-                except Exception as e:
-                    print(f"[{reg_no}] CampusWeb check: {e}")
+                    return cw
+                except Exception as ce:
+                    return {'success': False, 'error': str(ce)}
+            
+            # Run BOTH Academia (Timetable + Advisors + Courses) & SRM Student Portal (Attendance + Marks + Profile) in parallel
+            future_ac = executor.submit(run_academia)
+            future_portal = executor.submit(run_portal)
+            
+            ac_res = None
+            portal_res = None
 
-            # 3. If still no result, wait a final brief moment for Academia
-            if not result or not result.get('success'):
-                try:
-                    ac_res_final = future_ac.result(timeout=4)
-                    if ac_res_final and ac_res_final.get('success'):
-                        result = ac_res_final
-                    elif not result:
-                        result = ac_res_final
-                except Exception as e:
-                    print(f"[{reg_no}] Academia final wait: {e}")
+            try:
+                ac_res = future_ac.result(timeout=7)
+            except Exception as e:
+                print(f"[{reg_no}] Academia wait: {e}")
+
+            try:
+                portal_res = future_portal.result(timeout=10)
+            except Exception as e:
+                print(f"[{reg_no}] SRM Portal wait: {e}")
 
             executor.shutdown(wait=False)
 
-            if not result or not result.get('success'):
-                # Both failed
-                cw_err = (cw_res or {}).get('error', '')
-                ac_err = (result or {}).get('error', '')
+            ac_ok = bool(ac_res and ac_res.get('success'))
+            portal_ok = bool(portal_res and portal_res.get('success'))
+
+            if not ac_ok and not portal_ok:
+                p_err = (portal_res or {}).get('error', '')
+                ac_err = (ac_res or {}).get('error', '')
                 final_err = "Login Failed. Invalid SRM Email/NetID or Password."
-                if 'password' in cw_err.lower() or 'password' in ac_err.lower():
-                    final_err = "Wrong NetID/Email or Password. Please try again."
-                elif 'network' in cw_err.lower() or 'network' in ac_err.lower():
+                if 'password' in p_err.lower() or 'password' in ac_err.lower() or 'invalid' in p_err.lower():
+                    final_err = "Wrong NetID/Email or Password. Please check your Academia & SRM Portal passwords."
+                elif 'network' in p_err.lower() or 'network' in ac_err.lower():
                     final_err = "Poor network connectivity. University servers took too long."
                 sync_jobs[sid] = {'status': 'failed', 'result': {'success': False, 'error': final_err}, 'timestamp': time.time()}
                 return
+
+            # Merge results from both portals (Ratio-D dual-portal architecture)
+            merged_att = []
+            merged_marks = []
+            merged_tt = {}
+            merged_courses = []
+            merged_profile = {}
+
+            if portal_ok:
+                merged_att = portal_res.get('data') or portal_res.get('attendance') or []
+                merged_marks = portal_res.get('marks') or []
+                merged_tt = portal_res.get('timetable') or {}
+                merged_courses = portal_res.get('courses') or []
+                if portal_res.get('profile'):
+                    merged_profile.update(portal_res['profile'])
+
+            if ac_ok:
+                if not merged_att and ac_res.get('data'):
+                    merged_att = ac_res.get('data')
+                if not merged_marks and ac_res.get('marks'):
+                    merged_marks = ac_res.get('marks')
+                if ac_res.get('timetable') and any(isinstance(v, list) and len(v) > 0 for v in ac_res['timetable'].values()):
+                    merged_tt = ac_res['timetable']
+                if ac_res.get('courses'):
+                    merged_courses = ac_res['courses']
+                if ac_res.get('profile'):
+                    for k, v in ac_res['profile'].items():
+                        if v and (not merged_profile.get(k) or k in ('fa_name', 'fa_email', 'fa_phone', 'aa_name', 'aa_email', 'aa_phone', 'section', 'batch', 'department')):
+                            merged_profile[k] = v
+
+            # Cross-enrich Portal attendance & marks with Academia course metadata (credits, category, faculty, slot, room)
+            if merged_courses:
+                course_by_code = {}
+                for c in merged_courses:
+                    code_key = (c.get('code') or c.get('courseCode') or '').strip().upper()
+                    if code_key:
+                        course_by_code[code_key] = c
+                for item in merged_att:
+                    ck = (item.get('courseCode') or item.get('code') or '').strip().upper()
+                    mc = course_by_code.get(ck)
+                    if mc:
+                        if mc.get('credit') is not None and not item.get('credits'):
+                            item['credits'] = mc['credit']
+                            item['credit'] = mc['credit']
+                        if mc.get('category') and not item.get('category'):
+                            item['category'] = mc['category']
+                        if mc.get('faculty') and (not item.get('faculty') or item.get('faculty') == 'Faculty'):
+                            item['faculty'] = mc['faculty']
+                        if mc.get('slot') and not item.get('slot'):
+                            item['slot'] = mc['slot']
+                        if mc.get('room') and not item.get('room'):
+                            item['room'] = mc['room']
+                for m_item in merged_marks:
+                    ck = (m_item.get('courseCode') or m_item.get('code') or '').strip().upper()
+                    mc = course_by_code.get(ck)
+                    if mc:
+                        if mc.get('credit') is not None and not m_item.get('credits'):
+                            m_item['credits'] = mc['credit']
+                            m_item['credit'] = mc['credit']
+                        if mc.get('category') and not m_item.get('category'):
+                            m_item['category'] = mc['category']
+
+            result = {
+                'success': True,
+                'data': merged_att,
+                'marks': merged_marks,
+                'timetable': merged_tt,
+                'courses': merged_courses,
+                'profile': merged_profile,
+                'is_mock_attendance': False,
+            }
 
             # Profile resolution
             cached_prof = get_cached_student_profile(net_id)
@@ -685,7 +754,7 @@ def start_session():
         except Exception as e:
             sync_jobs[sid] = {'status': 'failed', 'result': {'success': False, 'error': f'Background task exception: {str(e)}'}, 'timestamp': time.time()}
 
-    t = threading.Thread(target=worker_wrapper, args=(data.get('regNo'), data.get('pwd'), data.get('batch', 1), sync_id))
+    t = threading.Thread(target=worker_wrapper, args=(data.get('regNo'), acad_pwd, portal_pwd, data.get('batch', 1), sync_id))
     t.start()
     return jsonify({'success': True, 'sync_id': sync_id})
 
