@@ -597,12 +597,14 @@ def start_session():
                     'timetable': {},
                     'is_mock_attendance': False
                 }
-                # Check if Academia finished with timetable (wait max 1s)
+                # Wait for Academia to finish with timetable, courses, and advisors (up to 5s)
                 try:
-                    ac_res = future_ac.result(timeout=1)
+                    ac_res = future_ac.result(timeout=5)
                     if ac_res and ac_res.get('success'):
                         if ac_res.get('timetable'):
                             result['timetable'] = ac_res.get('timetable')
+                        if ac_res.get('courses'):
+                            result['courses'] = ac_res.get('courses')
                         if ac_res.get('profile'):
                             for k, v in ac_res['profile'].items():
                                 if v and not result['profile'].get(k):

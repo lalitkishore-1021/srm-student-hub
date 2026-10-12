@@ -6,46 +6,62 @@ from studentinfo_scrap import AcademiaClient
 from tools.retry_fetch_failed_login import fetch_all_data_with_retry
 from tools.fallback_mock_attendance_data import generate_mock_attendance_from_timetable
 
+import re
+
 BATCH_TIMETABLES = {
     "1": {
         "time_slots": [
             "08:00 - 08:50", "08:50 - 09:40", "09:45 - 10:35", "10:40 - 11:30",
-            "11:35 - 12:25", "12:30 - 01:20", "01:25 - 02:15", "02:20 - 03:10",
-            "03:10 - 04:00", "04:00 - 04:50", "04:50 - 05:30", "05:30 - 06:10"
+            "11:35 - 12:25", "12:25 - 01:25", "01:25 - 02:15", "02:20 - 03:10",
+            "03:15 - 04:05", "04:05 - 04:55", "04:55 - 05:45", "05:45 - 06:30"
         ],
         "schedule": {
-            "1": ["A", "A / X", "F / X", "F", "G", "P6", "P7", "P8", "P9", "P10", "L11", "L12"],
-            "2": ["P11", "P12/X", "P13/X", "P14", "P15", "B", "B", "G", "G", "A", "L21", "L22"],
-            "3": ["C", "C / X", "A / X", "D", "B", "P26", "P27", "P28", "P29", "P30", "L31", "L32"],
-            "4": ["P31", "P32/X", "P33/X", "P34", "P35", "D", "D", "B", "E", "C", "L41", "L42"],
-            "5": ["E", "E / X", "C / X", "F", "D", "P46", "P47", "P48", "P49", "P50", "L51", "L52"]
+            "1": ["A", "A / X", "F / X", "F", "G", "LUNCH", "P6", "P7", "P8", "P9", "P10", "L11", "L12"],
+            "2": ["P11", "P12/X", "P13/X", "P14", "P15", "LUNCH", "B", "B", "G", "G", "A", "L21", "L22"],
+            "3": ["C", "C / X", "A / X", "D", "B", "LUNCH", "P26", "P27", "P28", "P29", "P30", "L31", "L32"],
+            "4": ["P31", "P32/X", "P33/X", "P34", "P35", "LUNCH", "D", "D", "B", "E", "C", "L41", "L42"],
+            "5": ["E", "E / X", "C / X", "F", "D", "LUNCH", "P46", "P47", "P48", "P49", "P50", "L51", "L52"]
         }
     },
     "2": {
         "time_slots": [
             "08:00 - 08:50", "08:50 - 09:40", "09:45 - 10:35", "10:40 - 11:30",
-            "11:35 - 12:25", "12:30 - 01:20", "01:25 - 02:15", "02:20 - 03:10",
-            "03:10 - 04:00", "04:00 - 04:50", "04:50 - 05:30", "05:30 - 06:10"
+            "11:35 - 12:25", "12:25 - 01:25", "01:25 - 02:15", "02:20 - 03:10",
+            "03:15 - 04:05", "04:05 - 04:55", "04:55 - 05:45", "05:45 - 06:30"
         ],
         "schedule": {
-            "1": ["P1", "P2/X", "P3/X", "P4", "P5", "A", "A", "F", "F", "G", "L11", "L12"],
-            "2": ["B", "B / X", "G / X", "G", "A", "P16", "P17", "P18", "P19", "P20", "L21", "L22"],
-            "3": ["P21", "P22/X", "P23/X", "P24", "P25", "C", "C", "A", "D", "B", "L31", "L32"],
-            "4": ["D", "D / X", "B / X", "E", "C", "P36", "P37", "P38", "P39", "P40", "L41", "L42"],
-            "5": ["P41", "P42/X", "P43/X", "P44", "P45", "E", "E", "C", "F", "D", "L51", "L52"]
+            "1": ["P1", "P2/X", "P3/X", "P4", "P5", "LUNCH", "A", "A", "F", "F", "G", "L11", "L12"],
+            "2": ["B", "B / X", "G / X", "G", "A", "LUNCH", "P16", "P17", "P18", "P19", "P20", "L21", "L22"],
+            "3": ["P21", "P22/X", "P23/X", "P24", "P25", "LUNCH", "C", "C", "A", "D", "B", "L31", "L32"],
+            "4": ["D", "D / X", "B / X", "E", "C", "LUNCH", "P36", "P37", "P38", "P39", "P40", "L41", "L42"],
+            "5": ["P41", "P42/X", "P43/X", "P44", "P45", "LUNCH", "E", "E", "C", "F", "D", "L51", "L52"]
         }
     }
 }
 
+def detect_student_batch(courses, reported_batch="1"):
+    m = re.search(r'[12]', str(reported_batch))
+    batch_hint = m.group() if m else "1"
+    b1_hits, b2_hits = 0, 0
+    for c in courses:
+        s_str = str(c.get('slot', '')).upper()
+        # Morning labs for Batch 2
+        for s in ['P1', 'P2', 'P3', 'P4', 'P5', 'P21', 'P22', 'P23', 'P24', 'P25', 'P41', 'P42', 'P43', 'P44', 'P45']:
+            if re.search(r'\b' + s + r'\b', s_str): b2_hits += 1
+        # Afternoon labs for Batch 1
+        for s in ['P6', 'P7', 'P8', 'P9', 'P10', 'P26', 'P27', 'P28', 'P29', 'P30', 'P46', 'P47', 'P48', 'P49', 'P50']:
+            if re.search(r'\b' + s + r'\b', s_str): b1_hits += 1
+    if b2_hits > b1_hits: return "2"
+    if b1_hits > b2_hits: return "1"
+    return batch_hint
+
 def get_course_for_slot(slot, courses):
+    if not slot or slot == "LUNCH" or slot == "X":
+        return None
     slot_options = [s.strip() for s in slot.split('/')]
     
     for course in courses:
-        # course['slot'] might be something like "A1-A2" or "A"
-        course_slot = course.get('slot', '').strip()
-        # Remove trailing hyphens
-        course_slot = course_slot.rstrip('-').strip()
-        
+        course_slot = course.get('slot', '').strip().rstrip('-').strip()
         if '-' in course_slot:
             parts = [p.strip() for p in course_slot.split('-') if p.strip()]
             for p in parts:
@@ -53,23 +69,22 @@ def get_course_for_slot(slot, courses):
                     return {
                         'subject': course.get('course_title', '') + " (" + course.get('course_code', '') + ")",
                         'room': course.get('room_no', 'TBA'),
-                        'code': course.get('course_code', '')
+                        'code': course.get('course_code', ''),
+                        'type': course.get('course_type', '')
                     }
         else:
             if course_slot in slot_options:
                 return {
                     'subject': course.get('course_title', '') + " (" + course.get('course_code', '') + ")",
                     'room': course.get('room_no', 'TBA'),
-                    'code': course.get('course_code', '')
+                    'code': course.get('course_code', ''),
+                    'type': course.get('course_type', '')
                 }
     return None
 
 def build_timetable(student_batch, courses):
-    # Fallback to batch 1 if unknown
-    if str(student_batch) not in BATCH_TIMETABLES:
-        student_batch = "1"
-        
-    batch_data = BATCH_TIMETABLES[str(student_batch)]
+    actual_batch = detect_student_batch(courses, student_batch)
+    batch_data = BATCH_TIMETABLES.get(str(actual_batch), BATCH_TIMETABLES["1"])
     time_slots = batch_data['time_slots']
     schedule = batch_data['schedule']
     
@@ -79,18 +94,34 @@ def build_timetable(student_batch, courses):
         final_tt[day] = []
         day_slots = schedule[day]
         for i, slot_code in enumerate(day_slots):
-            if i >= len(time_slots):
-                break
+            if i >= len(time_slots) or slot_code == "LUNCH":
+                continue
             
             course_info = get_course_for_slot(slot_code, courses)
             if course_info:
-                final_tt[day].append({
-                    "time": time_slots[i],
+                time_range = time_slots[i]
+                start_t, end_t = time_range.split(' - ') if ' - ' in time_range else (time_range, '')
+                entry = {
+                    "time": time_range,
+                    "start_time": start_t,
+                    "end_time": end_t,
                     "subject": course_info['subject'],
                     "room": course_info['room'],
                     "slot": slot_code,
-                    "code": course_info['code']
-                })
+                    "code": course_info['code'],
+                    "type": course_info.get('type', '')
+                }
+                
+                # Merge consecutive periods for the same course and room
+                if final_tt[day]:
+                    last = final_tt[day][-1]
+                    if last.get('code') == entry.get('code') and last.get('room') == entry.get('room'):
+                        last['end_time'] = entry['end_time']
+                        last['time'] = f"{last['start_time']} - {last['end_time']}"
+                        last['slot'] = f"{last['slot']}, {entry['slot']}"
+                        continue
+                        
+                final_tt[day].append(entry)
     return final_tt
 
 def get_course_credit(code, title, timetable_courses=None):
@@ -218,22 +249,31 @@ def adapt_marks(marks_data, courses_data, timetable_courses=None):
     return adapted
 
 def run_fast_scraper(email, password, out_queue):
-    print(f"[{email}] Starting FAST scraper...")
+    clean_email = email.strip()
+    if "@" not in clean_email:
+        clean_email += "@srmist.edu.in"
+    print(f"[{clean_email}] Starting FAST scraper...")
     try:
-        client = AcademiaClient(email, password)
+        client = AcademiaClient(clean_email, password)
         
         lookup = client.lookup_user()
         if not lookup:
-            print(f"[{email}] Zoho fast login blocked. Falling back to Playwright scraper...")
+            print(f"[{clean_email}] Zoho fast lookup failed. Falling back to Playwright scraper...")
             import playwright_scraper
-            playwright_scraper.scrape_academia_worker(email, password, 1, out_queue)
+            playwright_scraper.scrape_academia_worker(clean_email, password, 1, out_queue)
             return
             
         login_res = client.login()
         if not login_res.get("success"):
-            print(f"[{email}] Zoho login failed. Falling back to Playwright scraper...")
+            err_msg = str(login_res.get("message", ""))
+            err_type = str(login_res.get("type", ""))
+            if err_type == "INVALID_PASSWORD" or "password" in err_msg.lower():
+                print(f"[{clean_email}] Invalid password detected. Aborting immediately without Playwright stall.")
+                out_queue.put({'success': False, 'error': 'Wrong NetID/Email or Password. Please try again.'})
+                return
+            print(f"[{clean_email}] Zoho login failed ({err_type}). Falling back to Playwright scraper...")
             import playwright_scraper
-            playwright_scraper.scrape_academia_worker(email, password, 1, out_queue)
+            playwright_scraper.scrape_academia_worker(clean_email, password, 1, out_queue)
             return
             
         print(f"[{email}] Login successful. Fetching data...")

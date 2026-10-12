@@ -165,14 +165,34 @@ def scrape_campusweb(netid, pwd):
                 })
                 
         profile_raw = (prof_json or {}).get('profile', {}) if isinstance(prof_json, dict) else {}
+
+        import re
+        def parse_advisor_str(adv_str):
+            if not adv_str or not isinstance(adv_str, str):
+                return {"name": "", "email": ""}
+            m = re.search(r'\[([^\]]+)\]', adv_str)
+            email = m.group(1).strip() if m else ""
+            name = re.sub(r'\[.*?\]', '', adv_str).strip()
+            name = re.sub(r'\s+', ' ', name)
+            return {"name": name, "email": email}
+
+        fa_info = parse_advisor_str(profile_raw.get('faculty_advisor'))
+        aa_info = parse_advisor_str(profile_raw.get('academic_advisor'))
+
         profile_data = {
-            "name": (profile_raw.get('student_name') or '').strip(),  # Empty if unknown — frontend keeps cached name
+            "name": (profile_raw.get('student_name') or '').strip(),
             "regNo": (profile_raw.get('registration_number') or '').strip() or netid.upper(),
             "course": (profile_raw.get('program') or '').strip() or 'SRM University',
             "semester": (profile_raw.get('semester') or '').strip(),
             "section": (profile_raw.get('section') or '').strip(),
             "batch": (profile_raw.get('batch') or '').strip(),
-            "advisor": (profile_raw.get('faculty_advisor') or profile_raw.get('academic_advisor') or '').strip()
+            "fa_name": fa_info["name"],
+            "fa_email": fa_info["email"],
+            "fa_phone": "",
+            "aa_name": aa_info["name"],
+            "aa_email": aa_info["email"],
+            "aa_phone": "",
+            "advisor": fa_info["name"] or aa_info["name"]
         }
         return {"success": True, "attendance": att_data, "marks": marks_data, "profile": profile_data}
         
