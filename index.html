@@ -370,7 +370,8 @@
             }
 
             #main-content {
-                margin-left: 130px;
+                padding-left: 130px !important;
+                margin: 0 auto;
             }
         }
 
@@ -742,24 +743,9 @@
             100% { opacity: 0.95; transform: translateY(-50%) rotate(0deg) scale(1); }
         }
 
-        /* Plasticmorphism + Glassmorphism shell */
+        /* Sleek glassmorphism shell */
         .id-card::before {
-            content: '';
-            position: absolute;
-            inset: 4px;
-            background: rgba(20, 10, 30, 0.3);
-            border-radius: 31px;
-            z-index: 1;
-            backdrop-filter: blur(40px) saturate(200%);
-            -webkit-backdrop-filter: blur(40px) saturate(200%);
-            /* Puffy plastic 3D volume + glossy glass edge */
-            box-shadow: 
-                inset 6px 6px 20px rgba(255, 255, 255, 0.35), 
-                inset -8px -8px 25px rgba(0, 0, 0, 0.9), 
-                inset 0 0 10px rgba(255, 255, 255, 0.5);
-            border: 2px solid rgba(255, 255, 255, 0.25);
-            border-right-color: rgba(255,255,255,0.05);
-            border-bottom-color: rgba(255,255,255,0.05);
+            display: none;
         }
 
 
@@ -3256,7 +3242,7 @@
                             <div class="stat-label">Courses</div>
                         </div>
                         <div class="stat-box">
-                            <div class="stat-val orange" id="home-credit-val">21</div>
+                            <div class="stat-val orange" id="home-credit-val">-</div>
                             <div class="stat-label">Credits</div>
                         </div>
                     </div>
@@ -4717,38 +4703,41 @@
             const deptSpan = document.getElementById('id-detail-dept');
             const semSpan = document.getElementById('id-detail-sem');
 
-            let courseStr = (profile.course || 'B.Tech').trim();
-            let deg = 'B.Tech';
-            if (/^(B\.?Tech|M\.?Tech|B\.?Arch|MBA|BBA|B\.?Sc|BCA)/i.test(courseStr)) {
-                let m = courseStr.match(/^(B\.?Tech|M\.?Tech|B\.?Arch|MBA|BBA|B\.?Sc|BCA)/i);
+            let courseStr = (profile.program || profile.course || '').trim();
+            let deg = 'SRM University';
+            if (/^(B\.?Tech|M\.?Tech|B\.?Arch|MBA|BBA|B\.?Sc|BCA|B\.?Com|M\.?Sc|MCA|Ph\.?D)/i.test(courseStr)) {
+                let m = courseStr.match(/^(B\.?Tech|M\.?Tech|B\.?Arch|MBA|BBA|B\.?Sc|BCA|B\.?Com|M\.?Sc|MCA|Ph\.?D)/i);
                 deg = m[1];
                 if (deg.toLowerCase() === 'btech') deg = 'B.Tech';
                 if (deg.toLowerCase() === 'mtech') deg = 'M.Tech';
+            } else if (courseStr) {
+                deg = courseStr.split(/[\s\-\(]/)[0] || courseStr;
             }
 
             // Department: clean out degree prefixes and [UG - FT - ACADEMIC]
             let deptStr = (profile.department || '').trim();
-            if (!deptStr) {
-                deptStr = courseStr;
-                deptStr = deptStr.replace(/^[A-Za-z]+\.?[A-Za-z]*[\.\s\-]*/, '').trim();
+            if (!deptStr && courseStr) {
+                deptStr = courseStr.replace(/^(B\.?Tech|M\.?Tech|B\.?Arch|MBA|BBA|B\.?Sc|BCA|B\.?Com|M\.?Sc|MCA|Ph\.?D)[\.\s\-in]*/i, '').trim();
             }
             deptStr = deptStr.replace(/\[.*?\]/g, '').trim();
             deptStr = deptStr.replace(/^Tech[\.\s\-]*/i, '').trim();
-            if (!deptStr) deptStr = 'Computer Science and Engineering';
+            if (profile.section && !deptStr.includes(profile.section)) {
+                deptStr = deptStr ? `${deptStr} (${profile.section} Sec)` : `${profile.section} Section`;
+            }
+            if (!deptStr) deptStr = 'General';
 
-            // Clean semester (avoid "Semester III SEMESTER")
-            let semRaw = (profile.semester || '3').toString().trim();
+            // Clean semester
+            let semRaw = (profile.semester || '').toString().trim();
             let semClean = semRaw.replace(/SEMESTER/gi, '').trim();
-            if (!semClean) semClean = '3';
+            let semDisplay = semClean ? `Semester ${semClean}` : 'SRM Student';
 
             if (courseSpan) courseSpan.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/></svg> ${deg}`;
             if (deptSpan) deptSpan.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg> ${deptStr}`;
-            if (semSpan) semSpan.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg> Semester ${semClean}`;
+            if (semSpan) semSpan.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg> ${semDisplay}`;
 
             // Inject 3D Avatar
             const avatarImg = document.getElementById('id-avatar-img');
             const fallback = document.getElementById('id-avatar-fallback');
-            // Always use the human SVG icon instead of images or letters
             if (avatarImg) avatarImg.style.display = 'none';
             if (fallback) fallback.style.display = 'block';
 
@@ -4768,6 +4757,10 @@
                 let p = (phone || '').trim();
 
                 if (!n && fallbackStr) n = fallbackStr.trim();
+                if (n.toUpperCase() === 'N/A' || n === '--' || n.toLowerCase() === 'null') n = '';
+                if (e.toUpperCase() === 'N/A' || e === '--' || e.toLowerCase() === 'null') e = '';
+                if (p.toUpperCase() === 'N/A' || p === '--' || p.toLowerCase() === 'null') p = '';
+
                 if (n.includes('[')) {
                     let m = n.match(/\[([^\]]+)\]/);
                     if (m) {
@@ -4782,75 +4775,88 @@
             const fa = cleanAdvisor(profile.fa_name, profile.fa_email, profile.fa_phone, profile.advisor);
             const aa = cleanAdvisor(profile.aa_name, profile.aa_email, profile.aa_phone, '');
 
+            // Unhide or hide Advisors Section container
+            const advSection = document.getElementById('advisors-section');
+            const hasAnyAdvisor = !!(fa.name || fa.email || aa.name || aa.email);
+            if (advSection) advSection.style.display = hasAnyAdvisor ? 'block' : 'none';
+
             // Faculty Advisor
             const faCard = document.getElementById('fa-card');
-            if (faCard && (fa.name || fa.email)) {
-                faCard.style.display = 'block';
-                const faNameEl = document.getElementById('fa-name');
-                const faEmailEl = document.getElementById('fa-email');
-                const faPhoneEl = document.getElementById('fa-phone-display');
-                const faCallBtn = document.getElementById('fa-call-btn');
+            if (faCard) {
+                if (fa.name || fa.email) {
+                    faCard.style.display = 'block';
+                    const faNameEl = document.getElementById('fa-name');
+                    const faEmailEl = document.getElementById('fa-email');
+                    const faPhoneEl = document.getElementById('fa-phone-display');
+                    const faCallBtn = document.getElementById('fa-call-btn');
 
-                if (faNameEl) faNameEl.innerText = fa.name || 'Faculty Advisor';
-                if (faEmailEl) {
-                    if (fa.email) {
-                        faEmailEl.style.display = 'block';
-                        faEmailEl.innerHTML = `<span style="display:inline-flex;align-items:center;gap:6px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg> <a href="mailto:${fa.email}" style="color:var(--text-main);text-decoration:none;">${fa.email}</a></span>`;
-                    } else {
-                        faEmailEl.style.display = 'none';
+                    if (faNameEl) faNameEl.innerText = fa.name || 'Faculty Advisor';
+                    if (faEmailEl) {
+                        if (fa.email) {
+                            faEmailEl.style.display = 'block';
+                            faEmailEl.innerHTML = `<span style="display:inline-flex;align-items:center;gap:6px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg> <a href="mailto:${fa.email}" style="color:var(--text-main);text-decoration:none;">${fa.email}</a></span>`;
+                        } else {
+                            faEmailEl.style.display = 'none';
+                        }
                     }
-                }
-                if (faPhoneEl) {
-                    if (fa.phone && fa.phone !== 'N/A' && fa.phone !== '--') {
-                        faPhoneEl.style.display = 'block';
-                        faPhoneEl.innerText = fa.phone;
-                    } else {
-                        faPhoneEl.style.display = 'none';
+                    if (faPhoneEl) {
+                        if (fa.phone) {
+                            faPhoneEl.style.display = 'block';
+                            faPhoneEl.innerText = fa.phone;
+                        } else {
+                            faPhoneEl.style.display = 'none';
+                        }
                     }
-                }
-                if (faCallBtn) {
-                    if (fa.phone && fa.phone !== 'N/A' && fa.phone !== '--') {
-                        faCallBtn.style.display = 'block';
-                        faCallBtn.href = 'tel:' + fa.phone;
-                    } else {
-                        faCallBtn.style.display = 'none';
+                    if (faCallBtn) {
+                        if (fa.phone) {
+                            faCallBtn.style.display = 'block';
+                            faCallBtn.href = 'tel:' + fa.phone;
+                        } else {
+                            faCallBtn.style.display = 'none';
+                        }
                     }
+                } else {
+                    faCard.style.display = 'none';
                 }
             }
 
             // Academic Advisor
             const aaCard = document.getElementById('aa-card');
-            if (aaCard && (aa.name || aa.email)) {
-                aaCard.style.display = 'block';
-                const aaNameEl = document.getElementById('aa-name');
-                const aaEmailEl = document.getElementById('aa-email');
-                const aaPhoneEl = document.getElementById('aa-phone-display');
-                const aaCallBtn = document.getElementById('aa-call-btn');
+            if (aaCard) {
+                if (aa.name || aa.email) {
+                    aaCard.style.display = 'block';
+                    const aaNameEl = document.getElementById('aa-name');
+                    const aaEmailEl = document.getElementById('aa-email');
+                    const aaPhoneEl = document.getElementById('aa-phone-display');
+                    const aaCallBtn = document.getElementById('aa-call-btn');
 
-                if (aaNameEl) aaNameEl.innerText = aa.name || 'Academic Advisor';
-                if (aaEmailEl) {
-                    if (aa.email) {
-                        aaEmailEl.style.display = 'block';
-                        aaEmailEl.innerHTML = `<span style="display:inline-flex;align-items:center;gap:6px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg> <a href="mailto:${aa.email}" style="color:var(--text-main);text-decoration:none;">${aa.email}</a></span>`;
-                    } else {
-                        aaEmailEl.style.display = 'none';
+                    if (aaNameEl) aaNameEl.innerText = aa.name || 'Academic Advisor';
+                    if (aaEmailEl) {
+                        if (aa.email) {
+                            aaEmailEl.style.display = 'block';
+                            aaEmailEl.innerHTML = `<span style="display:inline-flex;align-items:center;gap:6px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg> <a href="mailto:${aa.email}" style="color:var(--text-main);text-decoration:none;">${aa.email}</a></span>`;
+                        } else {
+                            aaEmailEl.style.display = 'none';
+                        }
                     }
-                }
-                if (aaPhoneEl) {
-                    if (aa.phone && aa.phone !== 'N/A' && aa.phone !== '--') {
-                        aaPhoneEl.style.display = 'block';
-                        aaPhoneEl.innerText = aa.phone;
-                    } else {
-                        aaPhoneEl.style.display = 'none';
+                    if (aaPhoneEl) {
+                        if (aa.phone) {
+                            aaPhoneEl.style.display = 'block';
+                            aaPhoneEl.innerText = aa.phone;
+                        } else {
+                            aaPhoneEl.style.display = 'none';
+                        }
                     }
-                }
-                if (aaCallBtn) {
-                    if (aa.phone && aa.phone !== 'N/A' && aa.phone !== '--') {
-                        aaCallBtn.style.display = 'block';
-                        aaCallBtn.href = 'tel:' + aa.phone;
-                    } else {
-                        aaCallBtn.style.display = 'none';
+                    if (aaCallBtn) {
+                        if (aa.phone) {
+                            aaCallBtn.style.display = 'block';
+                            aaCallBtn.href = 'tel:' + aa.phone;
+                        } else {
+                            aaCallBtn.style.display = 'none';
+                        }
                     }
+                } else {
+                    aaCard.style.display = 'none';
                 }
             }
         }
@@ -5438,13 +5444,28 @@
             // Calculate overall
             let totalConducted = 0;
             let totalAbsent = 0;
+            let totalCredits = 0;
 
             workingAttData.forEach(sub => {
                 let cond = parseInt(sub.conducted) || 0;
                 let abs = parseInt(sub.absent) || 0;
+                let cred = parseFloat(sub.credit || sub.credits) || 0;
                 totalConducted += cond;
                 totalAbsent += abs;
+                totalCredits += cred;
             });
+
+            // If credits were not in attendance data, check saved squadCourses or squadMarks
+            if (totalCredits === 0) {
+                try {
+                    const savedCourses = JSON.parse(localStorage.getItem('squadCourses') || '[]');
+                    if (savedCourses && savedCourses.length > 0) {
+                        savedCourses.forEach(c => {
+                            totalCredits += parseFloat(c.credit || c.credits) || 0;
+                        });
+                    }
+                } catch(e) {}
+            }
 
             let totalPresent = totalConducted - totalAbsent;
             let overallPct = totalConducted > 0 ? ((totalPresent / totalConducted) * 100).toFixed(1) : "0.0";
@@ -5455,6 +5476,26 @@
                 if (homeAttVal) homeAttVal.innerText = overallPct + '%';
                 const homeCourseVal = document.getElementById('home-course-val');
                 if (homeCourseVal) homeCourseVal.innerText = workingAttData.length || '-';
+                const homeCreditVal = document.getElementById('home-credit-val');
+                if (homeCreditVal) homeCreditVal.innerText = totalCredits > 0 ? (Number.isInteger(totalCredits) ? totalCredits : totalCredits.toFixed(1)) : '-';
+
+                // Ratio-D style status badge for overall attendance
+                const attBadge = document.getElementById('att-perc-badge');
+                if (attBadge) {
+                    let numPct = parseFloat(overallPct);
+                    if (totalConducted === 0) {
+                        attBadge.innerText = '';
+                    } else if (numPct >= 85) {
+                        attBadge.innerText = '● Safe • Doing Great';
+                        attBadge.style.color = '#2ecc71';
+                    } else if (numPct >= 75) {
+                        attBadge.innerText = '● Danger • Thin Ice';
+                        attBadge.style.color = '#f39c12';
+                    } else {
+                        attBadge.innerText = '● Cooked • Comeback Needed';
+                        attBadge.style.color = '#e74c3c';
+                    }
+                }
             } catch(e) {}
             // -----------------------------------
             
@@ -5510,6 +5551,7 @@
                 let abs = parseInt(sub.absent) || 0;
                 let pres = cond - abs;
                 let cat = (sub.category || "THEORY").toUpperCase();
+                let subCredit = sub.credit || sub.credits || 0;
                 
                 // Truncate name for UI
                 let shortName = name.length > 30 ? name.substring(0, 30) + '...' : name;
@@ -5530,7 +5572,7 @@
                             </div>
                         </div>
 
-                        <div style="display: flex; justify-content: space-between; background: rgba(255,255,255,0.03); border-radius: 12px; padding: 12px 15px; margin-bottom: ${cond > 0 ? '20px' : '0'};">
+                        <div style="display: flex; justify-content: space-between; background: rgba(255,255,255,0.03); border-radius: 12px; padding: 12px 15px; margin-bottom: 12px;">
                             <div style="text-align: center;">
                                 <div style="color: var(--accent); font-size: 14px; font-weight: 800; text-shadow: 0 0 12px rgba(0, 206, 201, 0.8);">${pres}</div>
                                 <div style="color: var(--text-sub); font-size: 9px; font-weight: 700; letter-spacing: 0.5px; margin-top: 4px; text-transform: uppercase;">Present</div>
@@ -5544,23 +5586,44 @@
                                 <div style="color: var(--text-sub); font-size: 9px; font-weight: 700; letter-spacing: 0.5px; margin-top: 4px; text-transform: uppercase;">Total</div>
                             </div>
                             ${(() => {
-                                let m = Math.floor((pres - 0.75 * cond) / 0.75);
+                                let m = sub.bunk_margin !== undefined ? sub.bunk_margin : Math.floor((pres - 0.75 * cond) / 0.75);
+                                let needed = sub.classes_needed !== undefined ? sub.classes_needed : Math.max(0, Math.ceil(3 * cond - 4 * pres));
                                 if (cond === 0) return '';
-                                if (m >= 0) {
+                                if (m > 0 || (pct >= 75 && m >= 0)) {
                                     return `
                                     <div style="text-align: center;">
                                         <div style="color: #2ecc71; font-size: 14px; font-weight: 800; text-shadow: 0 0 12px rgba(46, 204, 113, 0.8);">+${m}</div>
                                         <div style="color: var(--text-sub); font-size: 9px; font-weight: 700; letter-spacing: 0.5px; margin-top: 4px; text-transform: uppercase;">Margin</div>
                                     </div>`;
                                 } else {
-                                    let req = Math.ceil(3 * cond - 4 * pres);
                                     return `
                                     <div style="text-align: center;">
-                                        <div style="color: #e74c3c; font-size: 14px; font-weight: 800; text-shadow: 0 0 12px rgba(231, 76, 60, 0.8);">-${req}</div>
+                                        <div style="color: #e74c3c; font-size: 14px; font-weight: 800; text-shadow: 0 0 12px rgba(231, 76, 60, 0.8);">-${needed}</div>
                                         <div style="color: var(--text-sub); font-size: 9px; font-weight: 700; letter-spacing: 0.5px; margin-top: 4px; text-transform: uppercase;">Needed</div>
                                     </div>`;
                                 }
                             })()}
+                        </div>
+
+                        <!-- Ratio-D Bunk Pill Badge & Credit -->
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 6px;">
+                            ${(() => {
+                                if (cond === 0) {
+                                    return `<span style="color: var(--text-sub); font-size: 11px;">No classes conducted yet</span>`;
+                                }
+                                let m = sub.bunk_margin !== undefined ? sub.bunk_margin : Math.floor((pres - 0.75 * cond) / 0.75);
+                                let needed = sub.classes_needed !== undefined ? sub.classes_needed : Math.max(0, Math.ceil(3 * cond - 4 * pres));
+                                if (pct >= 75) {
+                                    if (m > 0) {
+                                        return `<span style="background: rgba(46, 204, 113, 0.15); color: #2ecc71; border: 1px solid rgba(46, 204, 113, 0.3); border-radius: 20px; padding: 3px 10px; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; gap: 5px;"><i class="fas fa-check-circle" style="font-size: 10px;"></i> Can bunk ${m} ${m === 1 ? 'class' : 'classes'} safely</span>`;
+                                    } else {
+                                        return `<span style="background: rgba(243, 156, 18, 0.15); color: #f39c12; border: 1px solid rgba(243, 156, 18, 0.3); border-radius: 20px; padding: 3px 10px; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; gap: 5px;"><i class="fas fa-exclamation-triangle" style="font-size: 10px;"></i> On the edge • Don't bunk</span>`;
+                                    }
+                                } else {
+                                    return `<span style="background: rgba(231, 76, 60, 0.15); color: #e74c3c; border: 1px solid rgba(231, 76, 60, 0.3); border-radius: 20px; padding: 3px 10px; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; gap: 5px;"><i class="fas fa-arrow-up" style="font-size: 10px;"></i> Attend next ${needed} ${needed === 1 ? 'class' : 'classes'} to reach 75%</span>`;
+                                }
+                            })()}
+                            ${subCredit ? `<span style="color: var(--text-sub); font-size: 10px; font-weight: 700; background: rgba(255,255,255,0.06); padding: 3px 8px; border-radius: 6px; letter-spacing: 0.5px;">${subCredit} CREDITS</span>` : ''}
                         </div>
                 `;
 

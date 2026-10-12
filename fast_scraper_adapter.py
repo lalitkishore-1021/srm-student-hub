@@ -254,13 +254,28 @@ def run_fast_scraper(email, password, out_queue):
         clean_email += "@srmist.edu.in"
     print(f"[{clean_email}] Starting FAST scraper...")
     try:
+        # 1. Primary: Direct Fast Scraper (signin.ac + goscraper/ratio-d architecture)
+        import academia_direct_scraper
+        direct_res = academia_direct_scraper.fetch_academia_data(clean_email, password)
+        if direct_res.get("success"):
+            print(f"[{clean_email}] Direct Academia scraper succeeded in < 2s!")
+            out_queue.put(direct_res)
+            return
+
+        err_msg = str(direct_res.get("error", ""))
+        if "password" in err_msg.lower() or "credentials" in err_msg.lower():
+            print(f"[{clean_email}] Invalid credentials from direct scraper: {err_msg}")
+            out_queue.put({'success': False, 'error': 'Wrong NetID/Email or Password. Please try again.'})
+            return
+
+        # 2. Secondary fallback: Hybrid AcademiaClient
+        print(f"[{clean_email}] Direct scraper note: {err_msg}. Trying AcademiaClient fallback...")
         client = AcademiaClient(clean_email, password)
         
         lookup = client.lookup_user()
         if not lookup:
-            print(f"[{clean_email}] Zoho fast lookup failed. Falling back to Playwright scraper...")
-            import playwright_scraper
-            playwright_scraper.scrape_academia_worker(clean_email, password, 1, out_queue)
+            print(f"[{clean_email}] Lookup failed.")
+            out_queue.put({'success': False, 'error': 'Academia authentication failed. Please check credentials.'})
             return
             
         login_res = client.login()
@@ -268,12 +283,11 @@ def run_fast_scraper(email, password, out_queue):
             err_msg = str(login_res.get("message", ""))
             err_type = str(login_res.get("type", ""))
             if err_type == "INVALID_PASSWORD" or "password" in err_msg.lower():
-                print(f"[{clean_email}] Invalid password detected. Aborting immediately without Playwright stall.")
+                print(f"[{clean_email}] Invalid password detected.")
                 out_queue.put({'success': False, 'error': 'Wrong NetID/Email or Password. Please try again.'})
                 return
-            print(f"[{clean_email}] Zoho login failed ({err_type}). Falling back to Playwright scraper...")
-            import playwright_scraper
-            playwright_scraper.scrape_academia_worker(clean_email, password, 1, out_queue)
+            print(f"[{clean_email}] Zoho login failed ({err_type}).")
+            out_queue.put({'success': False, 'error': f'Auth Failed: {err_msg}'})
             return
             
         print(f"[{email}] Login successful. Fetching data...")

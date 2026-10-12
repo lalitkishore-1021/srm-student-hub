@@ -579,50 +579,59 @@ def start_session():
             future_ac = executor.submit(run_academia)
             future_cw = executor.submit(cw_scraper.scrape_campusweb, reg_no, pwd)
             
-            # 1. Wait for CampusWeb (fast: ~3-6s)
-            cw_res = None
-            try:
-                cw_res = future_cw.result(timeout=8)
-            except Exception as e:
-                print(f"[{reg_no}] CampusWeb check note: {e}")
-
             result = None
-            if cw_res and cw_res.get('success'):
-                print(f"[{reg_no}] CampusWeb succeeded! Building response instantly...")
-                result = {
-                    'success': True,
-                    'data': cw_res.get('attendance', []),
-                    'marks': cw_res.get('marks', []),
-                    'profile': cw_res.get('profile') or {},
-                    'timetable': {},
-                    'is_mock_attendance': False
-                }
-                # Wait for Academia to finish with timetable, courses, and advisors (up to 5s)
+            cw_res = None
+
+            # 1. Check Academia first (direct scraper completes in ~1.5s and has full TT + profile)
+            try:
+                ac_res = future_ac.result(timeout=4)
+                if ac_res and ac_res.get('success'):
+                    print(f"[{reg_no}] Academia direct scraper succeeded in < 2s! Instant response.")
+                    result = ac_res
+            except Exception as e:
+                print(f"[{reg_no}] Academia quick check: {e}")
+
+            # 2. If Academia didn't complete yet or failed, check CampusWeb
+            if not result or not result.get('success'):
                 try:
-                    ac_res = future_ac.result(timeout=5)
-                    if ac_res and ac_res.get('success'):
-                        if ac_res.get('timetable'):
-                            result['timetable'] = ac_res.get('timetable')
-                        if ac_res.get('courses'):
-                            result['courses'] = ac_res.get('courses')
-                        if ac_res.get('profile'):
-                            for k, v in ac_res['profile'].items():
-                                if v and not result['profile'].get(k):
-                                    result['profile'][k] = v
-                except Exception:
-                    pass
-            else:
-                # CampusWeb failed or timed out: wait for Academia (max 10s)
-                print(f"[{reg_no}] CampusWeb unavailable, using Academia fast scraper...")
-                try:
-                    ac_res = future_ac.result(timeout=60)
-                    if ac_res and ac_res.get('success'):
-                        result = ac_res
-                    else:
-                        result = ac_res or {}
+                    cw_res = future_cw.result(timeout=5)
+                    if cw_res and cw_res.get('success'):
+                        print(f"[{reg_no}] CampusWeb succeeded! Building response...")
+                        result = {
+                            'success': True,
+                            'data': cw_res.get('attendance', []),
+                            'marks': cw_res.get('marks', []),
+                            'profile': cw_res.get('profile') or {},
+                            'timetable': {},
+                            'is_mock_attendance': False
+                        }
+                        # Check if Academia finished in background to provide timetable & advisors
+                        try:
+                            ac_res2 = future_ac.result(timeout=2)
+                            if ac_res2 and ac_res2.get('success'):
+                                if ac_res2.get('timetable'):
+                                    result['timetable'] = ac_res2.get('timetable')
+                                if ac_res2.get('courses'):
+                                    result['courses'] = ac_res2.get('courses')
+                                if ac_res2.get('profile'):
+                                    for k, v in ac_res2['profile'].items():
+                                        if v and not result['profile'].get(k):
+                                            result['profile'][k] = v
+                        except Exception:
+                            pass
                 except Exception as e:
-                    print(f"[{reg_no}] Academia failed/timed out: {e}")
-                    result = {'success': False, 'error': str(e)}
+                    print(f"[{reg_no}] CampusWeb check: {e}")
+
+            # 3. If still no result, wait a final brief moment for Academia
+            if not result or not result.get('success'):
+                try:
+                    ac_res_final = future_ac.result(timeout=4)
+                    if ac_res_final and ac_res_final.get('success'):
+                        result = ac_res_final
+                    elif not result:
+                        result = ac_res_final
+                except Exception as e:
+                    print(f"[{reg_no}] Academia final wait: {e}")
 
             executor.shutdown(wait=False)
 
