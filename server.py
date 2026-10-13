@@ -866,14 +866,20 @@ def debug_sync():
         solved = srm_portal_scraper.solve_captcha_bytes(portal.captcha_bytes)
         res = portal.login_attempt(reg, p_pwd, solved)
         
+        soup = srm_portal_scraper.BeautifulSoup(getattr(portal, 'last_body', ''), 'html.parser')
+        alert_el = soup.find(class_=lambda c: c and ("alert-icon-content" in c or "alert-danger" in c))
+        alert_html = str(alert_el) if alert_el else 'None'
+        all_alerts = [str(x) for x in soup.find_all(class_=lambda c: c and 'alert' in str(c).lower())]
+        
         return jsonify({
             'ok': True,
             'ip': ip,
             'solved': solved,
             'res': res,
+            'alert_html': alert_html,
+            'all_alerts': all_alerts,
             'status': getattr(portal, 'last_status', None),
-            'url': getattr(portal, 'last_url', None),
-            'body_snippet': getattr(portal, 'last_body', '')[:1500]
+            'url': getattr(portal, 'last_url', None)
         })
     except Exception as e:
         return jsonify({'ok': False, 'err': str(e), 'trace': traceback.format_exc()})
