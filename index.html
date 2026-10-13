@@ -3134,11 +3134,8 @@
             </div>
             
             <h2 style="font-family: 'Montserrat', sans-serif; font-size: 1.25rem; font-weight: 800; color: #fff; margin: 0 0 6px 0; letter-spacing: 0.5px;">SRM STUDENT PORTAL</h2>
-            <p style="font-size: 0.78rem; color: rgba(255,255,255,0.7); margin: 0 0 18px 0; line-height: 1.45;">
-                Enter your <b style="color: #ffaa00;">sp.srmist.edu.in</b> credentials to fetch live attendance &amp; internal marks.<br>
-                <span style="font-size: 0.73rem; color: rgba(255,255,255,0.55); display: inline-block; margin-top: 4px;">
-                    ℹ️ Default password is your <b>Date of Birth (DDMMYYYY)</b> if never changed. It is <u>separate</u> from your Academia password.
-                </span>
+            <p style="font-size: 0.8rem; color: rgba(255,255,255,0.7); margin: 0 0 18px 0; line-height: 1.45;">
+                Enter your <b style="color: #ffaa00;">sp.srmist.edu.in</b> credentials to fetch live attendance &amp; internal marks.
             </p>
             
             <div style="display: flex; flex-direction: column; gap: 14px; text-align: left;">
@@ -3154,7 +3151,7 @@
                     <label style="font-size: 0.74rem; font-weight: 700; color: rgba(255,255,255,0.7); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 6px; display: block;">Student Portal Password</label>
                     <div class="login-input-wrapper" style="margin: 0; position: relative;">
                         <span class="login-input-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
-                        <input type="password" id="portal-modal-pwd" placeholder="e.g. 15082003 (DDMMYYYY)" class="login-input" style="font-size: 0.95rem;" onkeydown="if(event.key==='Enter') submitPortalSync();">
+                        <input type="password" id="portal-modal-pwd" placeholder="Student Portal Password" class="login-input" style="font-size: 0.95rem;" onkeydown="if(event.key==='Enter') submitPortalSync();">
                         <span class="login-pwd-toggle" onclick="togglePortalModalPwd()" style="cursor: pointer;">
                             <svg id="portal-modal-eye-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
                         </span>
@@ -6019,17 +6016,37 @@
         let courseObtained = 0; 
         let tests = [];
         
-        const regex = /([^\/]+)\/([0-9.]+)\s*\|\s*([0-9.]+)/g;
-        let match;
+        // 1. Direct check: If item already has a structured tests array from scraper
+        if (Array.isArray(item.tests) && item.tests.length > 0) {
+            item.tests.forEach(t => {
+                const testName = (t.test_name || t.testName || t.name || 'Test').trim();
+                const max = parseFloat(t.max || t.total || 0);
+                const obtained = parseFloat(t.obtained || t.got || 0);
+                if (max > 0) {
+                    courseMax += max;
+                    courseObtained += obtained;
+                    tests.push({ testName, max, obtained, percent: (obtained / max) * 100 });
+                    totalTests++;
+                }
+            });
+        }
+        
+        // 2. Regex fallback if tests array was not populated
+        if (tests.length === 0 && perfString) {
+            const regex = /([^\/]+)\/([0-9.]+)\s*\|\s*([0-9.]+)/g;
+            let match;
 
-        while ((match = regex.exec(perfString)) !== null) {
-            const testName = match[1].trim(); 
-            const max = parseFloat(match[2]); 
-            const obtained = parseFloat(match[3]);
-            courseMax += max; 
-            courseObtained += obtained;
-            tests.push({ testName, max, obtained, percent: max > 0 ? (obtained / max) * 100 : 0 });
-            totalTests++;
+            while ((match = regex.exec(perfString)) !== null) {
+                const testName = match[1].trim(); 
+                const max = parseFloat(match[2]); 
+                const obtained = parseFloat(match[3]);
+                if (max > 0) {
+                    courseMax += max; 
+                    courseObtained += obtained;
+                    tests.push({ testName, max, obtained, percent: (obtained / max) * 100 });
+                    totalTests++;
+                }
+            }
         }
 
         grandTotalMax += courseMax; 
@@ -6064,16 +6081,20 @@
         });
     });
 
-    let overallPercent = grandTotalMax > 0 ? (grandTotalObtained / grandTotalMax) * 100 : 0;
+    let hasAnyTests = grandTotalMax > 0;
+    let overallPercent = hasAnyTests ? (grandTotalObtained / grandTotalMax) * 100 : 0;
     let estCGPA = totalCredits > 0 ? (weightedGradePoints / totalCredits) : 0;
     
-    let overallGrade = 'F';
-    if (overallPercent >= 90) overallGrade = 'O';
-    else if (overallPercent >= 80) overallGrade = 'A+';
-    else if (overallPercent >= 70) overallGrade = 'A';
-    else if (overallPercent >= 60) overallGrade = 'B+';
-    else if (overallPercent >= 55) overallGrade = 'B';
-    else if (overallPercent >= 50) overallGrade = 'C';
+    let overallGrade = 'N/A';
+    if (hasAnyTests) {
+        if (overallPercent >= 90) overallGrade = 'O';
+        else if (overallPercent >= 80) overallGrade = 'A+';
+        else if (overallPercent >= 70) overallGrade = 'A';
+        else if (overallPercent >= 60) overallGrade = 'B+';
+        else if (overallPercent >= 55) overallGrade = 'B';
+        else if (overallPercent >= 50) overallGrade = 'C';
+        else overallGrade = 'F';
+    }
 
     const getColorForPercent = (p) => {
         if(p >= 80) return '#10b981'; // Green
@@ -6101,19 +6122,19 @@
             </div>
             
             <div style="display: flex; align-items: baseline; margin-bottom: 30px; position:relative; z-index:1;">
-                <span style="font-size: 48px; font-weight: 900; color: #fff; letter-spacing: -1.5px;">${overallPercent.toFixed(1)}</span>
+                <span style="font-size: 48px; font-weight: 900; color: #fff; letter-spacing: -1.5px;">${hasAnyTests ? overallPercent.toFixed(1) : '--'}</span>
                 <span style="font-size: 22px; font-weight: 700; color: rgba(255,255,255,0.6); margin-left: 4px;">%</span>
             </div>
             
             <div style="display: flex; justify-content: space-between; background: rgba(0,0,0,0.15); border-radius: 16px; padding: 15px; margin-bottom: 15px; position:relative; z-index:1;">
                 <div style="text-align: center; flex: 1;">
-                    <div style="color: #fff; font-size: 18px; font-weight: 800;">${estCGPA.toFixed(2)}</div>
+                    <div style="color: #fff; font-size: 18px; font-weight: 800;">${hasAnyTests ? estCGPA.toFixed(2) : '--'}</div>
                     <div style="color: rgba(255,255,255,0.5); font-size: 9px; font-weight: 700; letter-spacing: 0.5px; margin-top: 4px; text-transform: uppercase;">Est. CGPA</div>
                 </div>
                 <div style="width: 1px; background: rgba(255,255,255,0.1); margin: 0 10px;"></div>
                 <div style="text-align: center; flex: 1;">
-                    <div style="color: #fff; font-size: 18px; font-weight: 800;">${grandTotalObtained.toFixed(1)}</div>
-                    <div style="color: rgba(255,255,255,0.5); font-size: 9px; font-weight: 700; letter-spacing: 0.5px; margin-top: 4px; text-transform: uppercase;">Score / ${grandTotalMax}</div>
+                    <div style="color: #fff; font-size: 18px; font-weight: 800;">${hasAnyTests ? grandTotalObtained.toFixed(1) : '--'}</div>
+                    <div style="color: rgba(255,255,255,0.5); font-size: 9px; font-weight: 700; letter-spacing: 0.5px; margin-top: 4px; text-transform: uppercase;">Score / ${hasAnyTests ? grandTotalMax : '--'}</div>
                 </div>
                 <div style="width: 1px; background: rgba(255,255,255,0.1); margin: 0 10px;"></div>
                 <div style="text-align: center; flex: 1;">
@@ -6132,8 +6153,9 @@
     function buildRatioDMarksCard(c, isEmergency) {
         let cleanTitle = (c.title || "Subject").toLowerCase();
         let acronym = getSubjectAcronym(c.title, c.code);
-        let scoreDisplay = Number.isInteger(c.obtained) ? c.obtained : c.obtained.toFixed(1);
-        let scoreColor = isEmergency ? '#ff4757' : '#ffffff';
+        let hasCourseTests = c.tests && c.tests.length > 0 && c.max > 0;
+        let scoreDisplay = hasCourseTests ? (Number.isInteger(c.obtained) ? c.obtained : c.obtained.toFixed(1)) : '--';
+        let scoreColor = isEmergency ? '#ff4757' : (hasCourseTests ? '#ffffff' : 'rgba(255,255,255,0.4)');
 
         // Check stored credits
         let cCredits = 4;
@@ -6144,31 +6166,39 @@
         } catch(e) {}
 
         let chips = '';
-        c.tests.forEach(t => {
-            let isLow = isEmergency || t.percent < 50;
-            let isMed = !isLow && t.percent < 70;
-            let chipBg = isLow ? 'rgba(231, 76, 60, 0.15)' : (isMed ? 'rgba(243, 156, 18, 0.15)' : 'rgba(70, 100, 40, 0.25)');
-            let chipBorder = isLow ? '1px solid rgba(231, 76, 60, 0.35)' : (isMed ? '1px solid rgba(243, 156, 18, 0.35)' : '1px solid rgba(120, 180, 60, 0.35)');
-            let chipColor = isLow ? '#ff4757' : (isMed ? '#f39c12' : '#a8e063');
+        if (hasCourseTests) {
+            c.tests.forEach(t => {
+                let isLow = isEmergency || t.percent < 50;
+                let isMed = !isLow && t.percent < 70;
+                let chipBg = isLow ? 'rgba(231, 76, 60, 0.15)' : (isMed ? 'rgba(243, 156, 18, 0.15)' : 'rgba(70, 100, 40, 0.25)');
+                let chipBorder = isLow ? '1px solid rgba(231, 76, 60, 0.35)' : (isMed ? '1px solid rgba(243, 156, 18, 0.35)' : '1px solid rgba(120, 180, 60, 0.35)');
+                let chipColor = isLow ? '#ff4757' : (isMed ? '#f39c12' : '#a8e063');
 
-            let obtStr = Number.isInteger(t.obtained) ? t.obtained : t.obtained.toFixed(1);
+                let obtStr = Number.isInteger(t.obtained) ? t.obtained : t.obtained.toFixed(1);
 
-            chips += `
-                <div style="background: ${chipBg}; border: ${chipBorder}; border-radius: 12px; padding: 10px 6px; text-align: center;">
-                    <div style="font-size: 10px; font-weight: 800; color: ${chipColor}; opacity: 0.85; letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 4px;">${t.testName}</div>
-                    <div style="font-size: 15px; font-weight: 900; color: ${chipColor};">
-                        ${obtStr}<span style="font-size: 11px; opacity: 0.7; font-weight: 700;">/${t.max}</span>
+                chips += `
+                    <div style="background: ${chipBg}; border: ${chipBorder}; border-radius: 12px; padding: 10px 6px; text-align: center;">
+                        <div style="font-size: 10px; font-weight: 800; color: ${chipColor}; opacity: 0.85; letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 4px;">${t.testName}</div>
+                        <div style="font-size: 15px; font-weight: 900; color: ${chipColor};">
+                            ${obtStr}<span style="font-size: 11px; opacity: 0.7; font-weight: 700;">/${t.max}</span>
+                        </div>
                     </div>
-                </div>
-            `;
-        });
+                `;
+            });
 
-        // Fill remaining slots up to 6 with TBA dashed chips
-        let emptySlots = Math.max(0, 6 - c.tests.length);
-        for (let s = 0; s < emptySlots; s++) {
-            chips += `
-                <div style="border: 1px dashed rgba(255,255,255,0.1); border-radius: 12px; padding: 14px 6px; text-align: center; color: rgba(255,255,255,0.25); font-size: 11px; font-weight: 700; letter-spacing: 1px; display:flex; align-items:center; justify-content:center;">
-                    TBA
+            // Fill remaining slots up to 6 with TBA dashed chips
+            let emptySlots = Math.max(0, 6 - c.tests.length);
+            for (let s = 0; s < emptySlots; s++) {
+                chips += `
+                    <div style="border: 1px dashed rgba(255,255,255,0.1); border-radius: 12px; padding: 14px 6px; text-align: center; color: rgba(255,255,255,0.25); font-size: 11px; font-weight: 700; letter-spacing: 1px; display:flex; align-items:center; justify-content:center;">
+                        TBA
+                    </div>
+                `;
+            }
+        } else {
+            chips = `
+                <div style="grid-column: 1 / -1; padding: 14px; border-radius: 12px; background: rgba(255,255,255,0.02); border: 1px dashed rgba(255,255,255,0.12); text-align: center; color: rgba(255,255,255,0.4); font-size: 11px; font-weight: 700; letter-spacing: 0.8px; text-transform: uppercase;">
+                    No Internal Tests Conducted Yet
                 </div>
             `;
         }
@@ -6180,7 +6210,7 @@
                     <!-- Left: Big Score -->
                     <div style="text-align: left;">
                         <div style="font-size: 42px; font-weight: 900; line-height: 1; letter-spacing: -1.5px; color: ${scoreColor};">${scoreDisplay}</div>
-                        <div style="font-size: 10px; font-weight: 900; letter-spacing: 1.2px; text-transform: uppercase; color: var(--text-sub); margin-top: 6px;">OUT OF ${c.max || '--'}</div>
+                        <div style="font-size: 10px; font-weight: 900; letter-spacing: 1.2px; text-transform: uppercase; color: var(--text-sub); margin-top: 6px;">${hasCourseTests ? `OUT OF ${c.max}` : 'NO TESTS YET'}</div>
                     </div>
 
                     <!-- Right: Acronym, Title, Credits -->

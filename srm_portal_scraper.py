@@ -699,7 +699,7 @@ def fetch_portal_data(username: str, password: str) -> Dict[str, Any]:
     att_html = None
     active_portal = None
 
-    for attempt in range(1, 5):
+    for attempt in range(1, 3):
         portal = SRMPortalSession()
         try:
             if not portal.load_captcha() or not portal.captcha_bytes:
@@ -707,7 +707,7 @@ def fetch_portal_data(username: str, password: str) -> Dict[str, Any]:
             solved = solve_captcha_bytes(portal.captcha_bytes)
             if not solved:
                 continue
-            print(f"[{netid}] [PORTAL-OCR] Attempt {attempt}/4 predicted captcha: '{solved}'")
+            print(f"[{netid}] [PORTAL-OCR] Attempt {attempt}/2 predicted captcha: '{solved}'")
             res = portal.login_attempt(netid, password, solved)
             if res.get("ok"):
                 att_html = res.get("att_html")
