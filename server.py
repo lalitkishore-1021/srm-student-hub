@@ -40,6 +40,7 @@ CORS(app)
 Compress(app)
 
 sync_jobs = {}
+_STUDENT_COURSES_CACHE = {}
 
 
 
@@ -520,11 +521,11 @@ def save_cached_timetable_for_student(net_id, tt):
         if DATABASE_URL:
             cur.execute("UPDATE push_subscriptions SET timetable_json = %s WHERE lower(net_id) = %s", (tt_json, clean_id))
             if cur.rowcount == 0:
-                cur.execute("INSERT INTO push_subscriptions (net_id, timetable_json) VALUES (%s, %s)", (clean_id, tt_json))
+                cur.execute("INSERT INTO push_subscriptions (net_id, timetable_json, endpoint) VALUES (%s, %s, %s)", (clean_id, tt_json, f"cached_{clean_id}"))
         else:
             cur.execute("UPDATE push_subscriptions SET timetable_json = ? WHERE lower(net_id) = ?", (tt_json, clean_id))
             if cur.rowcount == 0:
-                cur.execute("INSERT INTO push_subscriptions (net_id, timetable_json) VALUES (?, ?)", (clean_id, tt_json))
+                cur.execute("INSERT INTO push_subscriptions (net_id, timetable_json, endpoint) VALUES (?, ?, ?)", (clean_id, tt_json, f"cached_{clean_id}"))
         conn.commit()
         cur.close()
         conn.close()
@@ -532,8 +533,12 @@ def save_cached_timetable_for_student(net_id, tt):
         print(f"[RECOVERY] Timetable cache save error: {e}")
 
 def scrape_academia_worker(reg_no, pwd, batch, out_queue):
-    from fast_scraper_adapter import run_fast_scraper
-    run_fast_scraper(reg_no, pwd, out_queue)
+    import academia_fast_client
+    try:
+        res = academia_fast_client.fetch_academia_fast(reg_no, pwd)
+        out_queue.put(res)
+    except Exception as e:
+        out_queue.put({'success': False, 'error': str(e)})
 
 @app.route('/api/start_session', methods=['POST'])
 def start_session():
@@ -556,10 +561,6 @@ def start_session():
     
     acad_pwd = (data.get('pwd') or '').strip()
     portal_pwd = (data.get('portalPwd') or data.get('portal_pwd') or '').strip()
-    if acad_pwd and not portal_pwd:
-        portal_pwd = acad_pwd
-    elif portal_pwd and not acad_pwd:
-        acad_pwd = portal_pwd
 
     def worker_wrapper(reg_no, acad_pwd_in, portal_pwd_in, batch, sid):
         import concurrent.futures
@@ -604,24 +605,24 @@ def start_session():
                     print(f"[{net_id}] SRM Portal scraper exception: {pe}")
                     return {'success': False, 'error': str(pe)}
             
-            # Run BOTH Academia (Timetable + Advisors + Courses) & SRM Student Portal (Attendance + Marks + Profile) in parallel
-            future_portal = executor.submit(run_portal)
-            future_ac = executor.submit(run_academia)
+            # Run Portal only if portal password provided; run Academia if acad password provided
+            future_portal = executor.submit(run_portal) if portal_pwd_in else None
+            future_ac = executor.submit(run_academia) if acad_pwd_in else None
             
             portal_res = None
             ac_res = None
 
-            # Check portal result first (finishes in ~2-4s)
-            try:
-                portal_res = future_portal.result(timeout=14)
-            except Exception as e:
-                print(f"[{reg_no}] SRM Portal wait: {e}")
+            if future_portal:
+                try:
+                    portal_res = future_portal.result(timeout=14)
+                except Exception as e:
+                    print(f"[{reg_no}] SRM Portal wait: {e}")
 
-            # Check academia result (finishes in ~8-14s)
-            try:
-                ac_res = future_ac.result(timeout=28)
-            except Exception as e:
-                print(f"[{reg_no}] Academia wait: {e}")
+            if future_ac:
+                try:
+                    ac_res = future_ac.result(timeout=28)
+                except Exception as e:
+                    print(f"[{reg_no}] Academia wait: {e}")
 
             executor.shutdown(wait=False)
 
@@ -631,9 +632,12 @@ def start_session():
             if not ac_ok and not portal_ok:
                 p_err = (portal_res or {}).get('error', '')
                 ac_err = (ac_res or {}).get('error', '')
-                final_err = "Login Failed. Invalid NetID or Password."
-                if any(w in p_err.lower() or w in ac_err.lower() for w in ['password', 'credential', 'invalid', 'wrong']):
+                if not portal_pwd_in:
+                    final_err = "Wrong NetID or Password. Please check your Academia password."
+                else:
                     final_err = "Wrong NetID or Password. Please check your Academia & SRM Portal passwords."
+                if any(w in p_err.lower() or w in ac_err.lower() for w in ['password', 'credential', 'invalid', 'wrong']):
+                    pass
                 elif 'network' in p_err.lower() or 'network' in ac_err.lower() or 'timeout' in p_err.lower() or 'timeout' in ac_err.lower():
                     final_err = "University servers took too long to respond. Please try again."
                 sync_jobs[sid] = {'status': 'failed', 'result': {'success': False, 'error': final_err}, 'timestamp': time.time()}
@@ -663,6 +667,7 @@ def start_session():
                     merged_tt = ac_res['timetable']
                 if ac_res.get('courses'):
                     merged_courses = ac_res['courses']
+                    _STUDENT_COURSES_CACHE[net_id] = merged_courses
                 if ac_res.get('profile'):
                     for k, v in ac_res['profile'].items():
                         if v and (not merged_profile.get(k) or k in ('fa_name', 'fa_email', 'fa_phone', 'aa_name', 'aa_email', 'aa_phone', 'section', 'batch', 'department')):
@@ -767,6 +772,84 @@ def sync_status(sync_id):
         return jsonify({'status': res['status'], 'result': res.get('result')})
     
     return jsonify({'status': 'processing'})
+
+@app.route('/api/portal_sync', methods=['POST'])
+def portal_sync():
+    client_key = request.headers.get('X-App-Key')
+    if client_key != API_SECRET_KEY:
+        return jsonify({'success': False, 'error': 'Unauthorized: Invalid API Key'}), 403
+
+    client_ip = request.headers.get('X-Forwarded-For', request.remote_addr)
+    if client_ip:
+        client_ip = client_ip.split(',')[0].strip()
+    if is_rate_limited(client_ip):
+        return jsonify({'success': False, 'error': 'Too many requests. Please try again later.'}), 429
+
+    data = request.json or {}
+    raw_reg = data.get('regNo') or data.get('username') or ''
+    net_id = raw_reg.split('@')[0].strip().lower()
+    portal_pwd = (data.get('portalPwd') or data.get('portal_pwd') or data.get('password') or '').strip()
+    client_courses = data.get('courses') or []
+
+    if not net_id or not portal_pwd:
+        return jsonify({'success': False, 'error': 'Please enter your SRM Student Portal Password.'}), 400
+
+    try:
+        import srm_portal_scraper
+        p_res = srm_portal_scraper.fetch_portal_data(net_id, portal_pwd)
+        if not p_res or not p_res.get('success'):
+            err = (p_res or {}).get('error', 'SRM Portal authentication failed.')
+            if any(w in err.lower() for w in ['invalid', 'password', 'credential', 'user id']):
+                err = 'Invalid SRM Student Portal Password. Make sure this is your Student Portal password and not your Academia password!'
+            return jsonify({'success': False, 'error': err})
+
+        att = p_res.get('data', [])
+        marks = p_res.get('marks', [])
+
+        courses = client_courses or _STUDENT_COURSES_CACHE.get(net_id) or []
+        if courses:
+            course_by_code = {}
+            for c in courses:
+                code_key = (c.get('code') or c.get('courseCode') or c.get('course_code') or '').strip().upper()
+                if code_key:
+                    course_by_code[code_key] = c
+            for item in att:
+                ck = (item.get('courseCode') or item.get('code') or item.get('course_code') or '').strip().upper()
+                mc = course_by_code.get(ck)
+                if mc:
+                    c_cred = mc.get('credit') if mc.get('credit') is not None else mc.get('credits')
+                    if c_cred is not None:
+                        item['credits'] = c_cred
+                        item['credit'] = c_cred
+                    c_fac = mc.get('faculty') or mc.get('faculty_name')
+                    if c_fac and (not item.get('faculty') or item.get('faculty') in ('Faculty', '')):
+                        item['faculty'] = c_fac
+                    c_rm = mc.get('room') or mc.get('room_no')
+                    if c_rm and not item.get('room'):
+                        item['room'] = c_rm
+            for m_item in marks:
+                ck = (m_item.get('courseCode') or m_item.get('code') or m_item.get('course_code') or '').strip().upper()
+                mc = course_by_code.get(ck)
+                if mc:
+                    c_cred = mc.get('credit') if mc.get('credit') is not None else mc.get('credits')
+                    if c_cred is not None:
+                        m_item['credits'] = c_cred
+                        m_item['credit'] = c_cred
+
+        prof = p_res.get('profile') or {}
+        save_name = prof.get('name') or net_id.upper()
+        save_reg = prof.get('reg_no') or net_id.upper()
+        if 'offline' not in save_name.lower() and save_name.lower() != 'student':
+            save_student_to_db(net_id, save_name, save_reg, att, marks, is_mock=False)
+
+        return jsonify({
+            'success': True,
+            'data': att,
+            'marks': marks,
+            'profile': prof
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': f'Portal sync error: {str(e)}'})
 
 @app.route('/api/debug_sync', methods=['POST'])
 def debug_sync():

@@ -3036,31 +3036,26 @@
                 </svg>
             </div>
             
-            <h2 class="login-headline">LOGIN REQUIRED</h2>
-            <p class="login-subtext">Sync with Academia &amp; SRM Student Portal to access your dashboard.</p>
+            <h2 class="login-headline">LOGIN WITH ACADEMIA</h2>
+            <p class="login-subtext">Enter your SRM NetID or Email and Academia password to access your timetable and dashboard instantly.</p>
             
             <div id="login-form-container">
                 <div class="login-input-wrapper">
                     <span class="login-input-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg></span>
-                    <input type="text" id="srm-reg" placeholder="SRM Email ID / NetID (e.g. ab1234)" class="login-input">
+                    <input type="text" id="srm-reg" placeholder="SRM Email ID or NetID (e.g. bl9209)" class="login-input" onkeydown="if(event.key==='Enter') startLiveSync();">
                 </div>
                 
                 <div class="login-input-wrapper">
                     <span class="login-input-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></span>
-                    <input type="password" id="srm-pwd" placeholder="Academia Password (Timetable &amp; Advisors)" required class="login-input">
+                    <input type="password" id="srm-pwd" placeholder="Academia Password" required class="login-input" onkeydown="if(event.key==='Enter') startLiveSync();">
                     <span class="login-pwd-toggle" onclick="const pwd=document.getElementById('srm-pwd'); if(pwd.type==='password'){pwd.type='text'; this.innerHTML='<svg viewBox=\'0 0 24 24\' width=\'18\' height=\'18\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'2.5\' stroke-linecap=\'round\' stroke-linejoin=\'round\'><path d=\'M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24\'></path><line x1=\'1\' y1=\'1\' x2=\'23\' y2=\'23\'></line></svg>';}else{pwd.type='password'; this.innerHTML='<svg viewBox=\'0 0 24 24\' width=\'18\' height=\'18\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'2.5\' stroke-linecap=\'round\' stroke-linejoin=\'round\'><path d=\'M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z\'></path><circle cx=\'12\' cy=\'12\' r=\'3\'></circle></svg>';}"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg></span>
                 </div>
 
-                <div class="login-input-wrapper">
-                    <span class="login-input-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg></span>
-                    <input type="password" id="srm-portal-pwd" placeholder="SRM Portal Password (leave blank if same)" class="login-input">
-                    <span class="login-pwd-toggle" onclick="const pwd=document.getElementById('srm-portal-pwd'); if(pwd.type==='password'){pwd.type='text'; this.innerHTML='<svg viewBox=\'0 0 24 24\' width=\'18\' height=\'18\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'2.5\' stroke-linecap=\'round\' stroke-linejoin=\'round\'><path d=\'M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24\'></path><line x1=\'1\' y1=\'1\' x2=\'23\' y2=\'23\'></line></svg>';}else{pwd.type='password'; this.innerHTML='<svg viewBox=\'0 0 24 24\' width=\'18\' height=\'18\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'2.5\' stroke-linecap=\'round\' stroke-linejoin=\'round\'><path d=\'M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z\'></path><circle cx=\'12\' cy=\'12\' r=\'3\'></circle></svg>';}"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg></span>
-                </div>
-                <div style="font-size: 0.72rem; color: rgba(255,255,255,0.55); margin: -4px 0 12px 4px; text-align: left; line-height: 1.35;">
-                    ⚡ Auto-solves SRM Portal CAPTCHA for Attendance &amp; Marks + Academia for Timetable &amp; Advisors.
+                <div style="font-size: 0.76rem; color: rgba(255,255,255,0.6); margin: -4px 0 14px 4px; text-align: left; line-height: 1.35;">
+                    ⚡ Loads Timetable, Registered Courses &amp; Advisors in seconds. Attendance &amp; Marks can be connected next.
                 </div>
                 
-                <button class="login-auth-btn" id="login-auth-btn" onclick="startLiveSync()">AUTHENTICATE &amp; SYNC</button>
+                <button class="login-auth-btn" id="login-auth-btn" onclick="startLiveSync()">LOG IN &amp; VIEW DASHBOARD</button>
             </div>
 
             <div id="login-loader-container" style="display: none; flex-direction: column; align-items: center; justify-content: center; margin-top: 20px;">
@@ -3109,6 +3104,57 @@
                 <button onclick="document.getElementById('holoShareModal').style.display='none'" class="action-btn" style="background: rgba(255,255,255,0.1); color: #fff;">Close</button>
                 <button id="downloadHoloBtn" class="action-btn" style="background: linear-gradient(135deg, #ffaa00, #ff8800); color: #000; font-weight: bold;">
                     Download 2D Image
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SRM STUDENT PORTAL SYNC MODAL -->
+    <div id="portal-sync-modal" class="modal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 10001; align-items: center; justify-content: center; backdrop-filter: blur(20px); background: rgba(5, 5, 8, 0.82);">
+        <div class="modal-content" style="background: rgba(18, 18, 24, 0.96); border: 1px solid rgba(255, 170, 0, 0.35); border-radius: 26px; padding: 32px 28px; width: 92%; max-width: 440px; box-shadow: 0 25px 60px rgba(0,0,0,0.85); position: relative; text-align: center; color: #fff; box-sizing: border-box;">
+            
+            <button onclick="closePortalSyncModal()" style="position: absolute; top: 16px; right: 18px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); color: #bbb; border-radius: 50%; width: 32px; height: 32px; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; line-height: 1;">&times;</button>
+            
+            <div style="width: 58px; height: 58px; border-radius: 50%; background: linear-gradient(135deg, rgba(255,170,0,0.18), rgba(138,43,226,0.15)); border: 1px solid rgba(255,170,0,0.4); display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; box-shadow: 0 8px 20px rgba(255,170,0,0.25);">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#ffaa00" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                    <polyline points="9 12 11 14 15 10"></polyline>
+                </svg>
+            </div>
+            
+            <h2 style="font-family: 'Montserrat', sans-serif; font-size: 1.25rem; font-weight: 800; color: #fff; margin: 0 0 6px 0; letter-spacing: 0.5px;">SRM STUDENT PORTAL</h2>
+            <p style="color: var(--text-sub); font-size: 0.84rem; line-height: 1.45; margin: 0 0 20px 0;">
+                Connect to fetch live attendance &amp; internal marks. CAPTCHA is auto-solved in ~50ms and data will auto-sync every 3 hours.
+            </p>
+            
+            <div style="display: flex; flex-direction: column; gap: 14px; text-align: left;">
+                <div>
+                    <label style="font-size: 0.74rem; font-weight: 700; color: rgba(255,255,255,0.7); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 6px; display: block;">NetID (Without @srmist.edu.in)</label>
+                    <div class="login-input-wrapper" style="margin: 0;">
+                        <span class="login-input-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
+                        <input type="text" id="portal-modal-netid" placeholder="e.g. bl9209" class="login-input" style="font-size: 0.95rem; font-weight: 600;" onkeydown="if(event.key==='Enter') submitPortalSync();">
+                    </div>
+                </div>
+                
+                <div>
+                    <label style="font-size: 0.74rem; font-weight: 700; color: rgba(255,255,255,0.7); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 6px; display: block;">Student Portal Password</label>
+                    <div class="login-input-wrapper" style="margin: 0; position: relative;">
+                        <span class="login-input-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
+                        <input type="password" id="portal-modal-pwd" placeholder="Portal Password" class="login-input" style="font-size: 0.95rem;" onkeydown="if(event.key==='Enter') submitPortalSync();">
+                        <span class="login-pwd-toggle" onclick="togglePortalModalPwd()" style="cursor: pointer;">
+                            <svg id="portal-modal-eye-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                        </span>
+                    </div>
+                </div>
+                
+                <div id="portal-modal-status" style="display: none; padding: 10px 14px; border-radius: 12px; font-size: 0.82rem; line-height: 1.4; text-align: center;"></div>
+                
+                <button id="portal-modal-submit-btn" onclick="submitPortalSync()" class="login-auth-btn" style="margin-top: 6px; width: 100%; padding: 14px; font-size: 0.92rem; font-weight: 800; letter-spacing: 0.8px; background: linear-gradient(135deg, #ffaa00, #ff8c00); color: #000; border: none; border-radius: 14px; box-shadow: 0 4px 18px rgba(255,170,0,0.35); cursor: pointer;">
+                    SYNC ATTENDANCE &amp; MARKS
+                </button>
+                
+                <button type="button" onclick="closePortalSyncModal()" style="background: transparent; border: none; color: var(--text-sub); font-size: 0.82rem; cursor: pointer; text-align: center; padding: 4px; text-decoration: underline;">
+                    Skip for now
                 </button>
             </div>
         </div>
@@ -3759,20 +3805,22 @@
             
 
             <div id="marks-no-data" class="image-card"
-                style="max-width: 600px; margin: 0 auto; padding: 40px; cursor: default; transform: none;">
+                style="max-width: 600px; margin: 0 auto; padding: 40px 24px; cursor: default; transform: none; text-align: center;">
                 <div class="meal-icon-box"
-                    style="width: 60px; height: 60px; margin: 0 auto 20px auto; border-radius: 50%;">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                        style="width: 35px; height: 35px;">
+                    style="width: 60px; height: 60px; margin: 0 auto 18px auto; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: rgba(255,170,0,0.12); border: 1px solid rgba(255,170,0,0.3);">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#ffaa00"
+                        stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"
+                        style="width: 32px; height: 32px;">
                         <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
                     </svg>
                 </div>
                 <h3
-                    style="color: var(--primary); margin-bottom: 15px; font-family: 'Montserrat', sans-serif; text-transform: uppercase;">
-                    No Marks Data</h3>
-                <p style="color: var(--text-sub); line-height: 1.6; font-size: 1.1rem;">Click the <strong
-                        style="color:var(--primary);">Sync Button</strong> in the top right to fetch your marks.</p>
+                    style="color: var(--primary); margin-bottom: 10px; font-family: 'Montserrat', sans-serif; font-weight: 800; text-transform: uppercase;">
+                    Connect SRM Student Portal</h3>
+                <p style="color: var(--text-sub); line-height: 1.5; font-size: 0.95rem; margin: 0 auto 20px auto; max-width: 440px;">Internal marks (FP, PBL, FT-I, FT-II, FJ) require connecting your SRM Student Portal credentials.</p>
+                <button onclick="openPortalSyncModal()" class="action-btn" style="background: linear-gradient(135deg, #ffaa00, #ff8c00); color: #000; font-weight: 800; border-radius: 14px; padding: 13px 26px; cursor: pointer; border: none; font-size: 0.92rem; box-shadow: 0 4px 18px rgba(255,170,0,0.35);">
+                    CONNECT PORTAL &amp; VIEW MARKS
+                </button>
             </div>
             <div id="marks-list" style="max-width: 600px; margin: 0 auto; display: none;"></div>
         </div>
@@ -4330,7 +4378,7 @@
 
     <script>
         // ================= GLOBAL STATE =================
-        const BACKEND_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? window.location.origin : 'https://srm-student-hub-1.onrender.com';
+        const BACKEND_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.hostname.endsWith('onrender.com')) ? window.location.origin : 'https://srm-student-hub-1.onrender.com';
         let isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
         let attendanceData = [];
         let timetableData = {};
@@ -4573,6 +4621,18 @@
             }
             
             switchView(viewId);
+            
+            // On-demand prompt for SRM Student Portal credentials if not connected yet
+            if (viewId === 'attendance-view' || viewId === 'marks-view') {
+                try {
+                    const hasPortal = localStorage.getItem('syncPortalPwd');
+                    const attData = JSON.parse(localStorage.getItem('squadAttendance') || '[]');
+                    const marksData = JSON.parse(localStorage.getItem('squadMarks') || '[]');
+                    if (!hasPortal && (attData.length === 0 || marksData.length === 0)) {
+                        setTimeout(() => openPortalSyncModal(), 300);
+                    }
+                } catch(e) {}
+            }
         }
 
         window.addEventListener('load', () => {
@@ -4894,8 +4954,199 @@
             currentBatch = batchNum;
         }
 
-        function openSyncModal() { document.getElementById('syncModal').style.display = 'flex'; }
-        function closeSyncModal() { document.getElementById('syncModal').style.display = 'none'; }
+        function openSyncModal() { 
+            const lv = document.getElementById('login-view');
+            if (lv) lv.style.display = 'flex';
+        }
+        function closeSyncModal() { 
+            const lv = document.getElementById('login-view');
+            if (lv) lv.style.display = 'none';
+        }
+
+        // ================= SRM STUDENT PORTAL MODAL HANDLERS =================
+        function openPortalSyncModal() {
+            const modal = document.getElementById('portal-sync-modal');
+            if (!modal) return;
+            
+            // Auto populate clean NetID without @srmist.edu.in
+            let rawId = localStorage.getItem('syncRegNo') || (document.getElementById('srm-reg') ? document.getElementById('srm-reg').value : '') || '';
+            let cleanNetId = rawId.split('@')[0].trim().toLowerCase();
+            
+            const netIdInput = document.getElementById('portal-modal-netid');
+            if (netIdInput && cleanNetId) {
+                netIdInput.value = cleanNetId;
+            }
+            
+            // Auto populate saved portal password if available
+            const savedPortalPwd = localStorage.getItem('syncPortalPwd') || '';
+            const pwdInput = document.getElementById('portal-modal-pwd');
+            if (pwdInput && savedPortalPwd) {
+                pwdInput.value = savedPortalPwd;
+            }
+            
+            const statusBox = document.getElementById('portal-modal-status');
+            if (statusBox) {
+                statusBox.style.display = 'none';
+                statusBox.innerHTML = '';
+            }
+            
+            const submitBtn = document.getElementById('portal-modal-submit-btn');
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerText = 'SYNC ATTENDANCE & MARKS';
+            }
+            
+            modal.style.display = 'flex';
+            if (pwdInput && !savedPortalPwd) {
+                setTimeout(() => pwdInput.focus(), 150);
+            }
+        }
+
+        function closePortalSyncModal() {
+            const modal = document.getElementById('portal-sync-modal');
+            if (modal) modal.style.display = 'none';
+        }
+
+        function togglePortalModalPwd() {
+            const pwdInput = document.getElementById('portal-modal-pwd');
+            const eyeIcon = document.getElementById('portal-modal-eye-icon');
+            if (!pwdInput) return;
+            if (pwdInput.type === 'password') {
+                pwdInput.type = 'text';
+                if (eyeIcon) {
+                    eyeIcon.innerHTML = `<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line>`;
+                }
+            } else {
+                pwdInput.type = 'password';
+                if (eyeIcon) {
+                    eyeIcon.innerHTML = `<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle>`;
+                }
+            }
+        }
+
+        async function submitPortalSync() {
+            const netIdInput = document.getElementById('portal-modal-netid');
+            const pwdInput = document.getElementById('portal-modal-pwd');
+            const statusBox = document.getElementById('portal-modal-status');
+            const submitBtn = document.getElementById('portal-modal-submit-btn');
+            
+            let rawId = (netIdInput ? netIdInput.value.trim() : '') || localStorage.getItem('syncRegNo') || '';
+            let netId = rawId.split('@')[0].trim().toLowerCase();
+            let portalPwd = pwdInput ? pwdInput.value : '';
+            
+            if (!netId || !portalPwd) {
+                if (statusBox) {
+                    statusBox.style.display = 'block';
+                    statusBox.style.background = 'rgba(255, 71, 87, 0.15)';
+                    statusBox.style.border = '1px solid rgba(255, 71, 87, 0.4)';
+                    statusBox.style.color = '#ff6b81';
+                    statusBox.innerText = 'Please enter both NetID and Student Portal password.';
+                }
+                return;
+            }
+            
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerText = 'FETCHING DATA...';
+            }
+            if (statusBox) {
+                statusBox.style.display = 'block';
+                statusBox.style.background = 'rgba(255, 170, 0, 0.12)';
+                statusBox.style.border = '1px solid rgba(255, 170, 0, 0.35)';
+                statusBox.style.color = '#ffaa00';
+                statusBox.innerHTML = '<span class="css-loader" style="display:inline-block; width:14px; height:14px; margin-right:8px; vertical-align:middle; border-width:2px;"></span> Solving CAPTCHA &amp; fetching attendance...';
+            }
+            
+            try {
+                const res = await fetch(`${BACKEND_URL}/api/portal_sync`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-App-Key': 'srm-hub-protected-x9f2'
+                    },
+                    body: JSON.stringify({
+                        regNo: netId,
+                        portalPwd: portalPwd,
+                        batch: typeof currentBatch !== 'undefined' ? currentBatch : 1
+                    })
+                });
+                
+                const data = await res.json();
+                
+                if (!data.success) {
+                    if (submitBtn) {
+                        submitBtn.disabled = false;
+                        submitBtn.innerText = 'TRY AGAIN';
+                    }
+                    if (statusBox) {
+                        statusBox.style.display = 'block';
+                        statusBox.style.background = 'rgba(255, 71, 87, 0.15)';
+                        statusBox.style.border = '1px solid rgba(255, 71, 87, 0.4)';
+                        statusBox.style.color = '#ff6b81';
+                        statusBox.innerText = data.error || 'Failed to authenticate with SRM Student Portal.';
+                    }
+                    return;
+                }
+                
+                // Success - store password locally for 3-hr background auto sync
+                localStorage.setItem('syncPortalPwd', portalPwd);
+                
+                const attList = Array.isArray(data.data) ? data.data : [];
+                const marksList = Array.isArray(data.marks) ? data.marks : [];
+                
+                if (attList.length > 0) {
+                    localStorage.setItem('squadAttendance', JSON.stringify(attList));
+                    try { renderAttendance(attList); } catch(e) { console.error('Attendance render error:', e); }
+                }
+                if (marksList.length > 0) {
+                    localStorage.setItem('squadMarks', JSON.stringify(marksList));
+                    try { renderMarks(marksList); } catch(e) { console.error('Marks render error:', e); }
+                }
+                if (Array.isArray(data.courses) && data.courses.length > 0) {
+                    localStorage.setItem('squadCourses', JSON.stringify(data.courses));
+                }
+                
+                // Update home attendance stat display
+                const homeAttVal = document.getElementById('home-att-val');
+                if (homeAttVal && attList.length > 0) {
+                    let totalCond = 0, totalAtt = 0;
+                    attList.forEach(s => {
+                        totalCond += (parseInt(s.conducted) || 0);
+                        totalAtt += (parseInt(s.attended) || 0);
+                    });
+                    if (totalCond > 0) {
+                        homeAttVal.innerText = ((totalAtt / totalCond) * 100).toFixed(1) + '%';
+                    }
+                }
+                
+                if (statusBox) {
+                    statusBox.style.background = 'rgba(46, 213, 115, 0.15)';
+                    statusBox.style.border = '1px solid rgba(46, 213, 115, 0.4)';
+                    statusBox.style.color = '#2ed573';
+                    statusBox.innerText = `✅ Synced ${attList.length} courses & ${marksList.length} marks successfully!`;
+                }
+                
+                if (typeof playUiSound === 'function') playUiSound('chime');
+                if (typeof triggerHaptic === 'function') triggerHaptic('success');
+                
+                setTimeout(() => {
+                    closePortalSyncModal();
+                }, 800);
+                
+            } catch(err) {
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerText = 'TRY AGAIN';
+                }
+                if (statusBox) {
+                    statusBox.style.display = 'block';
+                    statusBox.style.background = 'rgba(255, 71, 87, 0.15)';
+                    statusBox.style.border = '1px solid rgba(255, 71, 87, 0.4)';
+                    statusBox.style.color = '#ff6b81';
+                    statusBox.innerText = 'Could not connect to server. Please try again.';
+                }
+            }
+        }
         
         function logout() {
             localStorage.clear();
@@ -4977,15 +5228,11 @@
 
         async function startLiveSync() {
             const regNo = document.getElementById('srm-reg').value.trim();
-            const rawAcadPwd = document.getElementById('srm-pwd').value;
-            const portalPwdEl = document.getElementById('srm-portal-pwd');
-            const rawPortalPwd = portalPwdEl ? portalPwdEl.value : '';
-            const pwd = rawAcadPwd || rawPortalPwd;
-            const portalPwd = rawPortalPwd || rawAcadPwd;
+            const pwd = document.getElementById('srm-pwd').value;
             const statusText = document.getElementById('sync-status');
 
-            if (!regNo || (!pwd && !portalPwd)) {
-                alert("Please enter your NetID/Email and Password.");
+            if (!regNo || !pwd) {
+                alert("Please enter your SRM NetID or Email and Academia Password.");
                 return;
             }
 
@@ -4998,7 +5245,7 @@
             if (backBtn) backBtn.style.display = 'none';
 
             let secondsPassed = 0;
-            statusText.innerHTML = ` Connecting to Academia &amp; SRM Portal... <span style="font-family: inherit; font-size: 1.1rem; color: #fff; background: rgba(255,170,0,0.2); padding: 2px 8px; border-radius: 6px;">0s</span>`;
+            statusText.innerHTML = ` Connecting to Academia... <span style="font-family: inherit; font-size: 1.1rem; color: #fff; background: rgba(255,170,0,0.2); padding: 2px 8px; border-radius: 6px;">0s</span>`;
             statusText.style.color = "var(--primary)";
             
             const tips = [
@@ -5012,7 +5259,7 @@
 
             let timerInterval = setInterval(() => {
                 secondsPassed++;
-                statusText.innerHTML = ` Loading your data... <span style="font-family: inherit; font-size: 1.1rem; color: #fff; background: rgba(255,170,0,0.2); padding: 2px 8px; border-radius: 6px;">${secondsPassed}s</span>`;
+                statusText.innerHTML = ` Loading timetable &amp; courses... <span style="font-family: inherit; font-size: 1.1rem; color: #fff; background: rgba(255,170,0,0.2); padding: 2px 8px; border-radius: 6px;">${secondsPassed}s</span>`;
                 
                 let prog = Math.min((secondsPassed / 12) * 100, 95);
                 let pb = document.getElementById('login-progress-bar');
@@ -5041,7 +5288,7 @@
                 const initRes = await fetch(`${BACKEND_URL}/api/start_session`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json", "X-App-Key": "srm-hub-protected-x9f2" },
-                    body: JSON.stringify({ regNo: regNo, pwd: pwd, portalPwd: portalPwd, batch: currentBatch })
+                    body: JSON.stringify({ regNo: regNo, pwd: pwd, batch: currentBatch })
                 });
 
                 const initData = await initRes.json();
@@ -5107,7 +5354,6 @@
                 // Store credentials for auto background sync
                 localStorage.setItem("syncRegNo", regNo);
                 localStorage.setItem("syncPwd", pwd);
-                localStorage.setItem("syncPortalPwd", portalPwd);
                 localStorage.setItem("syncBatch", currentBatch);
                 localStorage.setItem("lastAutoSyncTime", Date.now().toString());
                 localStorage.setItem("lastSyncSuccessTime", Date.now().toString());
@@ -5231,104 +5477,150 @@
         async function backgroundSync() {
             const regNo = localStorage.getItem("syncRegNo");
             const pwd = localStorage.getItem("syncPwd");
-            const portalPwd = localStorage.getItem("syncPortalPwd") || pwd;
+            const portalPwd = localStorage.getItem("syncPortalPwd");
             const batch = localStorage.getItem("syncBatch") || currentBatch;
             
             if (!regNo || (!pwd && !portalPwd)) return; // Cannot auto sync
 
             showSyncToast();
+            let syncSuccess = false;
+
             try {
-                const initRes = await fetch(`${BACKEND_URL}/api/start_session`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json", "X-App-Key": "srm-hub-protected-x9f2" },
-                    body: JSON.stringify({ regNo, pwd, portalPwd, batch })
-                });
-
-                const initData = await initRes.json();
-                if (!initData.success) {
-                    hideSyncToast(false);
-                    return;
-                }
-                
-                const syncId = initData.sync_id;
-                let result = null;
-                let polls = 0;
-                
-                while (polls < 80) { // Max ~1.5 mins
-                    await new Promise(r => setTimeout(r, 1200));
-                    polls++;
+                // 1. Direct SRM Portal Sync if portal password exists
+                if (portalPwd) {
                     try {
-                        const statusRes = await fetch(`${BACKEND_URL}/api/sync_status/${syncId}`);
-                        const statusData = await statusRes.json();
-                        if (statusData.status === 'completed' || statusData.status === 'failed') {
-                            result = statusData.result;
-                            break;
+                        const cleanNetId = regNo.split('@')[0].trim().toLowerCase();
+                        const pRes = await fetch(`${BACKEND_URL}/api/portal_sync`, {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json", "X-App-Key": "srm-hub-protected-x9f2" },
+                            body: JSON.stringify({ regNo: cleanNetId, portalPwd: portalPwd, batch: batch })
+                        });
+                        const pData = await pRes.json();
+                        if (pData.success) {
+                            syncSuccess = true;
+                            const attList = Array.isArray(pData.data) ? pData.data : [];
+                            const marksList = Array.isArray(pData.marks) ? pData.marks : [];
+                            if (attList.length > 0) {
+                                localStorage.setItem('squadAttendance', JSON.stringify(attList));
+                                try { renderAttendance(attList); } catch(e) {}
+                            }
+                            if (marksList.length > 0) {
+                                localStorage.setItem('squadMarks', JSON.stringify(marksList));
+                                try { renderMarks(marksList); } catch(e) {}
+                            }
+                            if (Array.isArray(pData.courses) && pData.courses.length > 0) {
+                                localStorage.setItem('squadCourses', JSON.stringify(pData.courses));
+                            }
+                            // Update home attendance stat display
+                            const homeAttVal = document.getElementById('home-att-val');
+                            if (homeAttVal && attList.length > 0) {
+                                let totalCond = 0, totalAtt = 0;
+                                attList.forEach(s => {
+                                    totalCond += (parseInt(s.conducted) || 0);
+                                    totalAtt += (parseInt(s.attended) || 0);
+                                });
+                                if (totalCond > 0) {
+                                    homeAttVal.innerText = ((totalAtt / totalCond) * 100).toFixed(1) + '%';
+                                }
+                            }
                         }
-                    } catch (err) {}
+                    } catch(pe) {
+                        console.warn("Background portal sync warning:", pe);
+                    }
                 }
 
-                if (result && result.success) {
-                    localStorage.setItem('lastSyncSuccessTime', Date.now().toString());
-                    const banner = document.getElementById('sync-reminder-banner');
-                    if (banner) banner.style.display = 'none';
-                    
-                    const attList = Array.isArray(result.data) ? result.data : [];
-                    const marksList = Array.isArray(result.marks) ? result.marks : [];
-                    const ttDict = result.timetable || {};
-                    const profile = result.profile || {};
+                // 2. Academia Sync for Timetable & Profile if Academia pwd exists
+                if (pwd) {
+                    const initRes = await fetch(`${BACKEND_URL}/api/start_session`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json", "X-App-Key": "srm-hub-protected-x9f2" },
+                        body: JSON.stringify({ regNo, pwd, portalPwd: portalPwd || '', batch })
+                    });
 
-                    // Safe Profile update — same robust check as in login sync path
-                    const existingProf = JSON.parse(localStorage.getItem('squadProfile') || '{}');
-                    const isRealName = (n) => {
-                        if (!n || typeof n !== 'string') return false;
-                        const t = n.trim();
-                        if (t.length < 4) return false;
-                        if (t.toLowerCase().includes('offline')) return false;
-                        if (t.toLowerCase() === 'student') return false;
-                        if (/^[A-Z]{1,4}\d{3,8}$/i.test(t)) return false;  // NetID pattern e.g. SG8215
-                        if (/^RA\d{10,}/i.test(t)) return false;            // RegNo pattern
-                        return t.includes(' ') || t.length > 8;
-                    };
-                    const isDummyProf = !isRealName(profile.name);
-                    const existingIsReal = isRealName(existingProf && existingProf.name);
-                    if (!isDummyProf) {
-                        // Merge: don't lose existing good fields when new profile is incomplete
-                        const mergedProf = Object.assign({}, existingProf, profile);
-                        localStorage.setItem('squadProfile', JSON.stringify(mergedProf));
-                        try { renderProfile(mergedProf); } catch (e) {}
-                    } else if (existingIsReal) {
-                        // Background sync returned bad profile — keep the good cached one visible
-                        try { renderProfile(existingProf); } catch (e) {}
-                    }
+                    const initData = await initRes.json();
+                    if (initData.success) {
+                        const syncId = initData.sync_id;
+                        let result = null;
+                        let polls = 0;
+                        
+                        while (polls < 40) { // Max ~48s
+                            await new Promise(r => setTimeout(r, 1200));
+                            polls++;
+                            try {
+                                const statusRes = await fetch(`${BACKEND_URL}/api/sync_status/${syncId}`);
+                                const statusData = await statusRes.json();
+                                if (statusData.status === 'completed' || statusData.status === 'failed') {
+                                    result = statusData.result;
+                                    break;
+                                }
+                            } catch (err) {}
+                        }
 
-                    // Safe Timetable update
-                    const existingTT = JSON.parse(localStorage.getItem('squadTimetable') || '{}');
-                    const newHasClasses = ttDict && Object.values(ttDict).some(arr => Array.isArray(arr) && arr.length > 0);
-                    const oldHasClasses = existingTT && Object.values(existingTT).some(arr => Array.isArray(arr) && arr.length > 0);
+                        if (result && result.success) {
+                            syncSuccess = true;
+                            localStorage.setItem('lastSyncSuccessTime', Date.now().toString());
+                            const banner = document.getElementById('sync-reminder-banner');
+                            if (banner) banner.style.display = 'none';
+                            
+                            const attList = Array.isArray(result.data) ? result.data : [];
+                            const marksList = Array.isArray(result.marks) ? result.marks : [];
+                            const ttDict = result.timetable || {};
+                            const profile = result.profile || {};
 
-                    if (newHasClasses) {
-                        localStorage.setItem('squadTimetable', JSON.stringify(ttDict));
-                        try { renderTimetable(ttDict); } catch (e) {}
-                    } else if (oldHasClasses) {
-                        try { renderTimetable(existingTT); } catch (e) {}
-                    }
-                    if (Array.isArray(result.courses) && result.courses.length > 0) {
-                        localStorage.setItem('squadCourses', JSON.stringify(result.courses));
-                    }
-                    
-                    // Only overwrite attendance/marks if server returned real data
-                    if (attList.length > 0) {
-                        localStorage.setItem('squadAttendance', JSON.stringify(attList));
-                        try { renderAttendance(attList); } catch (e) {}
-                    }
-                    if (marksList.length > 0) {
-                        localStorage.setItem('squadMarks', JSON.stringify(marksList));
-                        try { renderMarks(marksList); } catch (e) {}
-                    }
+                            // Safe Profile update
+                            const existingProf = JSON.parse(localStorage.getItem('squadProfile') || '{}');
+                            const isRealName = (n) => {
+                                if (!n || typeof n !== 'string') return false;
+                                const t = n.trim();
+                                if (t.length < 4) return false;
+                                if (t.toLowerCase().includes('offline')) return false;
+                                if (t.toLowerCase() === 'student') return false;
+                                if (/^[A-Z]{1,4}\d{3,8}$/i.test(t)) return false;
+                                if (/^RA\d{10,}/i.test(t)) return false;
+                                return t.includes(' ') || t.length > 8;
+                            };
+                            const isDummyProf = !isRealName(profile.name);
+                            const existingIsReal = isRealName(existingProf && existingProf.name);
+                            if (!isDummyProf) {
+                                const mergedProf = Object.assign({}, existingProf, profile);
+                                localStorage.setItem('squadProfile', JSON.stringify(mergedProf));
+                                try { renderProfile(mergedProf); } catch (e) {}
+                            } else if (existingIsReal) {
+                                try { renderProfile(existingProf); } catch (e) {}
+                            }
 
-                    try { checkAndShowNotificationBanner(); } catch(e) {}
-                    try { initBackgroundPushService(); } catch(e) {}
-                    try { syncStudentScheduleToServiceWorker(ttDict, attList, profile); } catch(e) {}
+                            // Safe Timetable update
+                            const existingTT = JSON.parse(localStorage.getItem('squadTimetable') || '{}');
+                            const newHasClasses = ttDict && Object.values(ttDict).some(arr => Array.isArray(arr) && arr.length > 0);
+                            const oldHasClasses = existingTT && Object.values(existingTT).some(arr => Array.isArray(arr) && arr.length > 0);
+
+                            if (newHasClasses) {
+                                localStorage.setItem('squadTimetable', JSON.stringify(ttDict));
+                                try { renderTimetable(ttDict); } catch (e) {}
+                            } else if (oldHasClasses) {
+                                try { renderTimetable(existingTT); } catch (e) {}
+                            }
+                            if (Array.isArray(result.courses) && result.courses.length > 0) {
+                                localStorage.setItem('squadCourses', JSON.stringify(result.courses));
+                            }
+                            
+                            if (attList.length > 0) {
+                                localStorage.setItem('squadAttendance', JSON.stringify(attList));
+                                try { renderAttendance(attList); } catch (e) {}
+                            }
+                            if (marksList.length > 0) {
+                                localStorage.setItem('squadMarks', JSON.stringify(marksList));
+                                try { renderMarks(marksList); } catch (e) {}
+                            }
+
+                            try { checkAndShowNotificationBanner(); } catch(e) {}
+                            try { initBackgroundPushService(); } catch(e) {}
+                            try { syncStudentScheduleToServiceWorker(ttDict, attList, profile); } catch(e) {}
+                        }
+                    }
+                }
+
+                if (syncSuccess) {
                     localStorage.setItem('lastAutoSyncTime', Date.now().toString());
                     localStorage.setItem('lastSyncSuccessTime', Date.now().toString());
                     hideSyncToast(true);
@@ -5448,8 +5740,20 @@
 
             if (workingAttData.length === 0) {
                 html = `
-                    <div style="padding: 30px; text-align: center; background: rgba(255, 71, 87, 0.1); border: 1px solid rgba(255, 71, 87, 0.3); border-radius: 15px; margin-top: 20px;">
-                        <h3 style="color: #ff4757; margin-bottom: 10px; font-size: 1.2rem;">Attendance Data Not Available</h3>
+                    <div style="padding: 36px 24px; text-align: center; background: rgba(255, 170, 0, 0.08); border: 1px solid rgba(255, 170, 0, 0.3); border-radius: 20px; margin: 20px auto; max-width: 500px; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
+                        <div style="width: 56px; height: 56px; border-radius: 50%; background: rgba(255,170,0,0.15); display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; border: 1px solid rgba(255,170,0,0.35);">
+                            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#ffaa00" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                                <polyline points="9 12 11 14 15 10"></polyline>
+                            </svg>
+                        </div>
+                        <h3 style="color: #fff; margin-bottom: 8px; font-size: 1.2rem; font-family: 'Montserrat', sans-serif; font-weight: 800;">Connect SRM Student Portal</h3>
+                        <p style="color: var(--text-sub); font-size: 0.88rem; line-height: 1.5; margin: 0 0 20px 0;">
+                            Connect your SRM Student Portal credentials to view your live attendance percentage, classes conducted, and margin planner.
+                        </p>
+                        <button onclick="openPortalSyncModal()" class="action-btn" style="background: linear-gradient(135deg, #ffaa00, #ff8c00); color: #000; font-weight: 800; border-radius: 14px; padding: 13px 28px; cursor: pointer; border: none; font-size: 0.92rem; box-shadow: 0 4px 18px rgba(255,170,0,0.35);">
+                            CONNECT STUDENT PORTAL
+                        </button>
                     </div>
                 `;
                 list.innerHTML = html;
