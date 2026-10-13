@@ -1,0 +1,255 @@
+{
+  "bl9209": {
+    "portal_password": "Bmounika@2003",
+    "data": [
+      {
+        "courseTitle": "DATA STRUCTURES AND ALGORITHMS",
+        "courseCode": "21CSC201J",
+        "category": "THEORY",
+        "faculty": "",
+        "slot": "",
+        "room": "",
+        "conducted": 58,
+        "absent": 3,
+        "present": 55,
+        "attended": 94.83,
+        "credit": 4.0,
+        "bunk_margin": 15,
+        "classes_needed": 0,
+        "status_badge": "safe",
+        "classes_per_cycle": 1
+      },
+      {
+        "courseTitle": "OPERATING SYSTEMS",
+        "courseCode": "21CSC202J",
+        "category": "THEORY",
+        "faculty": "",
+        "slot": "",
+        "room": "",
+        "conducted": 55,
+        "absent": 1,
+        "present": 54,
+        "attended": 98.18,
+        "credit": 4.0,
+        "bunk_margin": 17,
+        "classes_needed": 0,
+        "status_badge": "safe",
+        "classes_per_cycle": 1
+      },
+      {
+        "courseTitle": "ADVANCED PROGRAMMING PRACTICE",
+        "courseCode": "21CSC203P",
+        "category": "THEORY",
+        "faculty": "",
+        "slot": "",
+        "room": "",
+        "conducted": 40,
+        "absent": 1,
+        "present": 39,
+        "attended": 97.5,
+        "credit": 2.0,
+        "bunk_margin": 12,
+        "classes_needed": 0,
+        "status_badge": "safe",
+        "classes_per_cycle": 1
+      },
+      {
+        "courseTitle": "COMPUTER ORGANIZATION AND ARCHITECTURE",
+        "courseCode": "21CSS201T",
+        "category": "THEORY",
+        "faculty": "",
+        "slot": "",
+        "room": "",
+        "conducted": 43,
+        "absent": 2,
+        "present": 41,
+        "attended": 95.35,
+        "credit": 3.0,
+        "bunk_margin": 11,
+        "classes_needed": 0,
+        "status_badge": "safe",
+        "classes_per_cycle": 1
+      },
+      {
+        "courseTitle": "PROFESSIONAL ETHICS",
+        "courseCode": "21LEM201T",
+        "category": "THEORY",
+        "faculty": "",
+        "slot": "",
+        "room": "",
+        "conducted": 10,
+        "absent": 0,
+        "present": 10,
+        "attended": 100.0,
+        "credit": 3.0,
+        "bunk_margin": 3,
+        "classes_needed": 0,
+        "status_badge": "safe",
+        "classes_per_cycle": 1
+      },
+      {
+        "courseTitle": "UNIVERSAL HUMAN VALUES - II: UNDERSTANDING HARMONY AND ETHICAL HUMAN CONDUCT",
+        "courseCode": "21LEM202T",
+        "category": "THEORY",
+        "faculty": "",
+        "slot": "",
+        "room": "",
+        "conducted": 4,
+        "absent": 0,
+        "present": 4,
+        "attended": 100.0,
+        "credit": 1.0,
+        "bunk_margin": 1,
+        "classes_needed": 0,
+        "status_badge": "safe",
+        "classes_per_cycle": 1
+      },
+      {
+        "courseTitle": "TRANSFORMS AND BOUNDARY VALUE PROBLEMS",
+        "courseCode": "21MAB201T",
+        "category": "THEORY",
+        "faculty": "",
+        "slot": "",
+        "room": "",
+        "conducted": 45,
+        "absent": 3,
+        "present": 42,
+        "attended": 93.33,
+        "credit": 4.0,
+        "bunk_margin": 11,
+        "classes_needed": 0,
+        "status_badge": "safe",
+        "classes_per_cycle": 1
+      }
+    ],
+    "marks": [
+      {
+        "courseTitle": "ADVANCED PROGRAMMING PRACTICE",
+        "courseCode": "21CSC203P",
+        "courseType": "Theory",
+        "performance": "FP-I/10.00 | 8.00   PBL-I/20.00 | 17.70",
+        "Test Performance": "FP-I/10.00 | 8.00   PBL-I/20.00 | 17.70",
+        "tests": [
+          {
+            "test_name": "FP-I",
+            "max": 10.0,
+            "obtained": 8.0
+          },
+          {
+            "test_name": "PBL-I",
+            "max": 20.0,
+            "obtained": 17.7
+          }
+        ],
+        "credit": 2.0
+      },
+      {
+        "courseTitle": "COMPUTER ORGANIZATION AND ARCHITECTURE",
+        "courseCode": "21CSS201T",
+        "courseType": "Theory",
+        "performance": "FT-I/5.00 | 4.10   FT-II/15.00 | 9.60",
+        "Test Performance": "FT-I/5.00 | 4.10   FT-II/15.00 | 9.60",
+        "tests": [
+          {
+            "test_name": "FT-I",
+            "max": 5.0,
+            "obtained": 4.1
+          },
+          {
+            "test_name": "FT-II",
+            "max": 15.0,
+            "obtained": 9.6
+          }
+        ],
+        "credit": 3.0
+      },
+      {
+        "courseTitle": "DATA STRUCTURES AND ALGORITHMS",
+        "courseCode": "21CSC201J",
+        "courseType": "Theory",
+        "performance": "FJ-I/15.00 | 4.70   LLJ-I/7.00 | 3.50",
+        "Test Performance": "FJ-I/15.00 | 4.70   LLJ-I/7.00 | 3.50",
+        "tests": [
+          {
+            "test_name": "FJ-I",
+            "max": 15.0,
+            "obtained": 4.7
+          },
+          {
+            "test_name": "LLJ-I",
+            "max": 7.0,
+            "obtained": 3.5
+          }
+        ],
+        "credit": 4.0
+      },
+      {
+        "courseTitle": "OPERATING SYSTEMS",
+        "courseCode": "21CSC202J",
+        "courseType": "Theory",
+        "performance": "FJ-I/15.00 | 14.00   LLJ-I/7.00 | 6.00",
+        "Test Performance": "FJ-I/15.00 | 14.00   LLJ-I/7.00 | 6.00",
+        "tests": [
+          {
+            "test_name": "FJ-I",
+            "max": 15.0,
+            "obtained": 14.0
+          },
+          {
+            "test_name": "LLJ-I",
+            "max": 7.0,
+            "obtained": 6.0
+          }
+        ],
+        "credit": 4.0
+      },
+      {
+        "courseTitle": "PROFESSIONAL ETHICS",
+        "courseCode": "21LEM201T",
+        "courseType": "Theory",
+        "performance": "FML-I/20.00 | 10.00",
+        "Test Performance": "FML-I/20.00 | 10.00",
+        "tests": [
+          {
+            "test_name": "FML-I",
+            "max": 20.0,
+            "obtained": 10.0
+          }
+        ],
+        "credit": 3.0
+      },
+      {
+        "courseTitle": "TRANSFORMS AND BOUNDARY VALUE PROBLEMS",
+        "courseCode": "21MAB201T",
+        "courseType": "Theory",
+        "performance": "FT-I/5.00 | 5.00   FT-II/15.00 | 6.60",
+        "Test Performance": "FT-I/5.00 | 5.00   FT-II/15.00 | 6.60",
+        "tests": [
+          {
+            "test_name": "FT-I",
+            "max": 5.0,
+            "obtained": 5.0
+          },
+          {
+            "test_name": "FT-II",
+            "max": 15.0,
+            "obtained": 6.6
+          }
+        ],
+        "credit": 4.0
+      }
+    ],
+    "profile": {
+      "name": "BALAGA LALIT KISHORE",
+      "reg_no": "RA2511026010324",
+      "program": "B.Tech. - Computer Science and Engineering with specialization in Artificial Intelligence and Machine Learning [UG - FT - ACADEMIC]",
+      "department": "Faculty of Engineering and Technology, Kattankulathur",
+      "section": "",
+      "semester": "III SEMESTER",
+      "batch": "2025",
+      "mobile": "8247555458",
+      "email": "bl9209@srmist.edu.in"
+    },
+    "source": "srm_portal"
+  }
+}

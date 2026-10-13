@@ -182,6 +182,9 @@ class SRMPortalSession:
     def __init__(self):
         self.session = requests.Session()
         self.session.headers.update(HEADERS)
+        proxy = os.environ.get("PORTAL_PROXY") or os.environ.get("HTTPS_PROXY") or os.environ.get("HTTP_PROXY")
+        if proxy:
+            self.session.proxies.update({"http": proxy, "https": proxy})
         self.nonce = None
         self.login_form_fields = {}
         self.domain_field_name = "dtoken_x"

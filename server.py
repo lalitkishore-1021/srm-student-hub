@@ -532,6 +532,74 @@ def save_cached_timetable_for_student(net_id, tt):
     except Exception as e:
         print(f"[RECOVERY] Timetable cache save error: {e}")
 
+def get_portal_data_with_fallback(net_id, portal_pwd):
+    clean_id = (net_id or "").split('@')[0].strip().lower()
+    portal_pwd = (portal_pwd or "").strip()
+    if not clean_id or not portal_pwd:
+        return {'success': False, 'error': 'Missing Student Portal credentials'}
+
+    import srm_portal_scraper
+    p_res = None
+    try:
+        p_res = srm_portal_scraper.fetch_portal_data(clean_id, portal_pwd)
+    except Exception as e:
+        print(f"[{clean_id}] Portal scrape exception: {e}")
+
+    cache_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'portal_data_cache.json')
+
+    # If live scrape succeeded, cache the fresh data
+    if p_res and p_res.get('success'):
+        try:
+            c_dict = {}
+            if os.path.exists(cache_file):
+                with open(cache_file, 'r', encoding='utf-8') as f:
+                    c_dict = json.load(f)
+            c_dict[clean_id] = {
+                'portal_password': portal_pwd,
+                'data': p_res.get('data', []),
+                'marks': p_res.get('marks', []),
+                'profile': p_res.get('profile', {}),
+                'source': 'srm_portal'
+            }
+            with open(cache_file, 'w', encoding='utf-8') as f:
+                json.dump(c_dict, f, indent=2)
+            print(f"[{clean_id}] Fresh portal data cached to disk.")
+        except Exception as se:
+            print(f"[{clean_id}] Cache write warning: {se}")
+        return p_res
+
+    # If live scrape failed (e.g. cloud IP geoblocked on foreign Render server), check verified cache
+    cached_entry = None
+    try:
+        if os.path.exists(cache_file):
+            with open(cache_file, 'r', encoding='utf-8') as f:
+                c_dict = json.load(f)
+                entry = c_dict.get(clean_id)
+                if entry:
+                    exp_pwd = (entry.get('portal_password') or "").strip()
+                    # Verify password matches if recorded
+                    if not exp_pwd or exp_pwd.lower() == portal_pwd.lower():
+                        cached_entry = entry
+                    else:
+                        return {'success': False, 'error': 'Invalid SRM Student Portal Password. Make sure this is your Student Portal password and not your Academia password!', 'reason': 'invalid_credentials'}
+    except Exception as ce:
+        print(f"[{clean_id}] Cache read error: {ce}")
+
+    if cached_entry:
+        print(f"[{clean_id}] [CACHE] Using verified Student Portal data (cached)!")
+        return {
+            'success': True,
+            'data': cached_entry.get('data', []),
+            'marks': cached_entry.get('marks', []),
+            'profile': cached_entry.get('profile', {}),
+            'source': 'srm_portal_verified'
+        }
+
+    err = (p_res or {}).get('error', 'SRM Portal authentication failed.')
+    if any(w in err.lower() for w in ['invalid', 'password', 'credential', 'user id']):
+        err = 'Invalid SRM Student Portal Password. Make sure this is your Student Portal password and not your Academia password!'
+    return {'success': False, 'error': err, 'reason': (p_res or {}).get('reason')}
+
 def scrape_academia_worker(reg_no, pwd, batch, out_queue):
     import academia_fast_client
     try:
@@ -594,12 +662,12 @@ def start_session():
                 if not portal_pwd_in:
                     return {'success': False, 'error': 'No SRM Portal password provided'}
                 try:
-                    p_res = srm_portal_scraper.fetch_portal_data(net_id, portal_pwd_in)
+                    p_res = get_portal_data_with_fallback(net_id, portal_pwd_in)
                     if p_res and p_res.get('success'):
-                        print(f"[{net_id}] SRM Student Portal direct scraper succeeded!")
+                        print(f"[{net_id}] SRM Student Portal resolved successfully!")
                         return p_res
                     err_msg = (p_res or {}).get('error', 'SRM Portal auth failed')
-                    print(f"[{net_id}] SRM Portal scraper returned: {err_msg}")
+                    print(f"[{net_id}] SRM Portal returned: {err_msg}")
                     return p_res or {'success': False, 'error': err_msg}
                 except Exception as pe:
                     print(f"[{net_id}] SRM Portal scraper exception: {pe}")
@@ -795,8 +863,7 @@ def portal_sync():
         return jsonify({'success': False, 'error': 'Please enter your SRM Student Portal Password.'}), 400
 
     try:
-        import srm_portal_scraper
-        p_res = srm_portal_scraper.fetch_portal_data(net_id, portal_pwd)
+        p_res = get_portal_data_with_fallback(net_id, portal_pwd)
         if not p_res or not p_res.get('success'):
             err = (p_res or {}).get('error', 'SRM Portal authentication failed.')
             if any(w in err.lower() for w in ['invalid', 'password', 'credential', 'user id']):

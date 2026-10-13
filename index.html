@@ -5112,7 +5112,7 @@
                     let totalCond = 0, totalAtt = 0;
                     attList.forEach(s => {
                         totalCond += (parseInt(s.conducted) || 0);
-                        totalAtt += (parseInt(s.attended) || 0);
+                        totalAtt += (parseInt(s.present !== undefined ? s.present : (s.conducted - (s.absent || 0))) || 0);
                     });
                     if (totalCond > 0) {
                         homeAttVal.innerText = ((totalAtt / totalCond) * 100).toFixed(1) + '%';
@@ -5517,7 +5517,7 @@
                                 let totalCond = 0, totalAtt = 0;
                                 attList.forEach(s => {
                                     totalCond += (parseInt(s.conducted) || 0);
-                                    totalAtt += (parseInt(s.attended) || 0);
+                                    totalAtt += (parseInt(s.present !== undefined ? s.present : (s.conducted - (s.absent || 0))) || 0);
                                 });
                                 if (totalCond > 0) {
                                     homeAttVal.innerText = ((totalAtt / totalCond) * 100).toFixed(1) + '%';
