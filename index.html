@@ -4385,6 +4385,16 @@
     </div>
 
     <script>
+        // ================= ONE-TIME GLOBAL LOGOUT MIGRATION =================
+        const FORCE_LOGOUT_KEY = 'app_force_logout_20261013';
+        if (localStorage.getItem(FORCE_LOGOUT_KEY) !== 'done') {
+            try {
+                localStorage.clear();
+                sessionStorage.clear();
+            } catch (e) {}
+            localStorage.setItem(FORCE_LOGOUT_KEY, 'done');
+        }
+
         // ================= GLOBAL STATE =================
         const BACKEND_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.hostname.endsWith('onrender.com')) ? window.location.origin : 'https://srm-student-hub-1.onrender.com';
         let isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
