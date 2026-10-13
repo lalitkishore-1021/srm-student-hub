@@ -4,6 +4,7 @@ import re
 from typing import Dict, Optional, Any
 import time
 import random
+import concurrent.futures
 
 # importing parser utility functions
 from utils.parser import *
@@ -80,47 +81,31 @@ class AcademiaClient:
         self.session.cookies.update(initial_cookies)
         print(f"[DEBUG] Initial cookies setup completed")
         
-        # Add slight delay to simulate human behavior
-        time.sleep(random.uniform(0.5, 1.5))
-        
         # Visit login page to get fresh CSRF token and session cookies
         print("[DEBUG] Attempting to fetch login page for CSRF token...")
-        try:
-            login_page_url = f'{self.BASE_URL}/accounts/p/10002227248/signin'
-            params = {
-                'hide_fp': 'true',
-                'orgtype': '40',
-                'service_language': 'en',
-                'css_url': '/49910842/academia-academic-services/downloadPortalCustomCss/login',
-                'dcc': 'true',
-                'serviceurl': f'{self.BASE_URL}/portal/academia-academic-services/redirectFromLogin'
-            }
-            
-            response = self.session.get(login_page_url, params=params)
-            print(f"[DEBUG] Login page response status: {response.status_code}")
-            response.raise_for_status()
-            
-            # Extract CSRF token from cookies
-            """ print(f"[DEBUG] Current cookies: {list(self.session.cookies.keys())}") """
-            if 'iamcsr' in self.session.cookies:
-                self.csrf_token = self.session.cookies.get('iamcsr')
-                print("[OK] CSRF Token obtained")
-                """ print(f"[DEBUG] CSRF Token value: {self.csrf_token[:20]}..." if len(self.csrf_token) > 20 else f"[DEBUG] CSRF Token value: {self.csrf_token}") """
-            else:
-                print("[WARN] Warning: No CSRF token found in cookies")
-                """ print(f"[DEBUG] Available cookies: {dict(self.session.cookies)}") """
-            
-            # Extract JSESSIONID if present
-            if 'JSESSIONID' in self.session.cookies:
-                print("[OK] Session ID obtained")
-                """ print(f"[DEBUG] JSESSIONID: {self.session.cookies.get('JSESSIONID')[:20]}...") """
-            else:
-                print("[DEBUG] JSESSIONID not found in cookies")
-                
-        except Exception as e:
-            print(f"[WARN] Warning: Failed to initialize session: {str(e)}")
-            print(f"[DEBUG] Exception type: {type(e).__name__}")
-            print(f"[DEBUG] Exception details: {repr(e)}")
+        login_page_url = f'{self.BASE_URL}/accounts/p/10002227248/signin'
+        params = {
+            'hide_fp': 'true',
+            'orgtype': '40',
+            'service_language': 'en',
+            'dcc': 'true',
+            'serviceurl': f'{self.BASE_URL}/portal/academia-academic-services/redirectFromLogin'
+        }
+        for attempt in range(2):
+            try:
+                response = self.session.get(login_page_url, params=params, timeout=10)
+                print(f"[DEBUG] Login page response status: {response.status_code}")
+                response.raise_for_status()
+                if 'iamcsr' in self.session.cookies:
+                    self.csrf_token = self.session.cookies.get('iamcsr')
+                    print("[OK] CSRF Token obtained")
+                    break
+            except Exception as e:
+                print(f"[WARN] Warning: Failed to initialize session (attempt {attempt+1}/2): {str(e)}")
+                time.sleep(0.5)
+        
+        if not self.csrf_token and 'iamcsr' in self.session.cookies:
+            self.csrf_token = self.session.cookies.get('iamcsr')
     
     def _get_common_headers(self) -> Dict[str, str]:
         """Get common headers for requests"""
@@ -164,7 +149,7 @@ class AcademiaClient:
         
         try:
             print("[DEBUG] Sending POST request for user lookup...")
-            response = self.session.post(url, headers=self._get_common_headers(), data=data)
+            response = self.session.post(url, headers=self._get_common_headers(), data=data, timeout=8)
             # print(f"[DEBUG] Response status code: {response.status_code}")
             # print(f"[DEBUG] Response headers: {dict(response.headers)}")
             response.raise_for_status()
@@ -212,7 +197,7 @@ class AcademiaClient:
         
         # First, visit the announcement page to get proper session state
         try:
-            response = self.session.get(redirect_uri)
+            response = self.session.get(redirect_uri, timeout=6)
             response.raise_for_status()
             print("[OK] Visited sessions reminder page")
         except Exception as e:
@@ -225,7 +210,7 @@ class AcademiaClient:
         headers['Referer'] = redirect_uri
         
         try:
-            response = self.session.delete(delete_url, headers=headers)
+            response = self.session.delete(delete_url, headers=headers, timeout=6)
             response.raise_for_status()
             print(f"[OK] Active sessions deleted (Status: {response.status_code})")
         except Exception as e:
@@ -256,7 +241,7 @@ class AcademiaClient:
         }
         
         try:
-            response = self.session.get(next_url, params=next_params, headers=next_headers)
+            response = self.session.get(next_url, params=next_params, headers=next_headers, timeout=6)
             response.raise_for_status()
             print(f"[OK] Session closure confirmed (Status: {response.status_code})\n")
             return True
@@ -272,7 +257,7 @@ class AcademiaClient:
         
         # Visit the block-sessions page
         try:
-            response = self.session.get(redirect_uri)
+            response = self.session.get(redirect_uri, timeout=6)
             response.raise_for_status()
             print("[OK] Visited blocked sessions page")
         except Exception as e:
@@ -285,7 +270,7 @@ class AcademiaClient:
         headers['Referer'] = redirect_uri
         
         try:
-            response = self.session.delete(delete_url, headers=headers)
+            response = self.session.delete(delete_url, headers=headers, timeout=6)
             response.raise_for_status()
             print(f"[OK] Blocked sessions deleted (Status: {response.status_code})\n")
             return True
@@ -328,7 +313,7 @@ class AcademiaClient:
         headers['Content-Type'] = 'application/json;charset=UTF-8'
 
         try:
-            response = self.session.post(url, headers=headers, params=params, data=body)
+            response = self.session.post(url, headers=headers, params=params, data=body, timeout=8)
             response.raise_for_status()
 
             if response.status_code == 200:
@@ -405,7 +390,8 @@ class AcademiaClient:
                             try:
                                 final_response = self.session.get(
                                     service_url,
-                                    headers=redirect_headers
+                                    headers=redirect_headers,
+                                    timeout=8
                                 )
 
                                 if final_response.status_code == 200:
@@ -530,27 +516,25 @@ class AcademiaClient:
             'Attendance'
         ]
         
-        # Try dynamic slug discovery from WELCOME page
+        # Try dynamic slug discovery from WELCOME page (fast timeout 2s)
         try:
             welcome_url = f'{self.BASE_URL}/srm_university/academia-academic-services/page/WELCOME'
-            w_res = self.session.get(welcome_url, headers=self._get_page_headers(), timeout=10)
+            w_res = self.session.get(welcome_url, headers=self._get_page_headers(), timeout=2)
             if w_res.status_code == 200:
                 discovered = re.findall(r'(?:My_)?Attendance[a-zA-Z0-9_]*', w_res.text)
                 for d_slug in reversed(discovered):
                     if d_slug in candidate_slugs:
                         candidate_slugs.remove(d_slug)
                     candidate_slugs.insert(0, d_slug)
-                if discovered:
-                    print(f"[ATTENDANCE] Discovered menu slugs: {list(dict.fromkeys(discovered))}")
-        except Exception as we:
-            print(f"[ATTENDANCE] Welcome menu scan note: {we}")
+        except Exception:
+            pass
 
         import concurrent.futures
 
         def fetch_att_slug(slug):
             url = f'{self.BASE_URL}/srm_university/academia-academic-services/page/{slug}'
             try:
-                response = self.session.get(url, headers=self._get_page_headers(), timeout=10)
+                response = self.session.get(url, headers=self._get_page_headers(), timeout=4)
                 if response.status_code == 200 and len(response.text.strip()) > 100:
                     parsed = parse_attendance(response.text)
                     if parsed and not parsed.get("error"):
@@ -560,28 +544,10 @@ class AcademiaClient:
                 pass
             return (slug, None, 0, 0)
 
-        slug_results = []
-        with concurrent.futures.ThreadPoolExecutor(max_workers=6) as executor:
-            futures = [executor.submit(fetch_att_slug, s) for s in candidate_slugs]
-            for f in concurrent.futures.as_completed(futures):
-                try:
-                    res = f.result()
-                    if res[1] is not None:
-                        slug_results.append(res)
-                except Exception:
-                    pass
-
-        # 1. Prefer slug with the most courses
-        slug_results.sort(key=lambda x: x[2], reverse=True)
-        for slug, parsed, n_courses, status in slug_results:
+        for slug in candidate_slugs[:4]:
+            s, parsed, n_courses, status = fetch_att_slug(slug)
             if n_courses > 0:
-                print(f"[OK] Attendance data retrieved from {slug} (Status: {status}, Courses: {n_courses})\n")
-                return parsed
-
-        # 2. Fallback to any slug with student info
-        for slug, parsed, n_courses, status in slug_results:
-            if parsed and parsed.get("student_info"):
-                print(f"[DATA] Returning attendance data with student info from {slug}\n")
+                print(f"[OK] Attendance data retrieved from {s} (Status: {status}, Courses: {n_courses})\n")
                 return parsed
 
         print("[FAIL] Failed to fetch attendance: No valid attendance page found\n")
@@ -592,30 +558,15 @@ class AcademiaClient:
         print("Fetching timetable data...")
         
         candidate_slugs = [
+            'My_Time_Table_2023_24',
             'My_Time_Table_2024_25',
             'My_Time_Table_2025_26',
             'My_Time_Table_2024_25_Even',
             'My_Time_Table_2024_25_Odd',
             'My_Time_Table_2025_26_Even',
             'My_Time_Table_2025_26_Odd',
-            'My_Time_Table',
-            'My_Time_Table_2023_24'
+            'My_Time_Table'
         ]
-        
-        # Try dynamic slug discovery from WELCOME page
-        try:
-            welcome_url = f'{self.BASE_URL}/srm_university/academia-academic-services/page/WELCOME'
-            w_res = self.session.get(welcome_url, headers=self._get_page_headers(), timeout=10)
-            if w_res.status_code == 200:
-                discovered = re.findall(r'My_Time_Table[a-zA-Z0-9_]*', w_res.text)
-                for d_slug in reversed(discovered):
-                    if d_slug in candidate_slugs:
-                        candidate_slugs.remove(d_slug)
-                    candidate_slugs.insert(0, d_slug)
-                if discovered:
-                    print(f"[TIMETABLE] Discovered menu slugs: {list(dict.fromkeys(discovered))}")
-        except Exception as we:
-            print(f"[TIMETABLE] Welcome menu scan note: {we}")
 
         def fetch_tt_slug(slug):
             url = f'{self.BASE_URL}/srm_university/academia-academic-services/page/{slug}'
@@ -630,27 +581,17 @@ class AcademiaClient:
                 pass
             return (slug, None, 0, 0)
 
-        tt_results = []
-        with concurrent.futures.ThreadPoolExecutor(max_workers=6) as executor:
-            futures = [executor.submit(fetch_tt_slug, s) for s in candidate_slugs]
-            for f in concurrent.futures.as_completed(futures):
-                try:
-                    res = f.result()
-                    if res[1] is not None:
-                        tt_results.append(res)
-                except Exception:
-                    pass
-
-        tt_results.sort(key=lambda x: x[2], reverse=True)
-        for slug, parsed, n_courses, status in tt_results:
+        for slug in candidate_slugs:
+            s, parsed, n_courses, status = fetch_tt_slug(slug)
             if n_courses > 0:
-                print(f"[DATA] Timetable data retrieved from {slug} (Status: {status}, Courses: {n_courses})\n")
+                print(f"[DATA] Timetable data retrieved from {s} (Status: {status}, Courses: {n_courses})\n")
                 return parsed
-
-        for slug, parsed, n_courses, status in tt_results:
             if parsed and parsed.get("student_info"):
-                print(f"[DATA] Returning timetable data with student info from {slug}\n")
-                return parsed
+                best_fallback = parsed
+
+        if 'best_fallback' in locals() and best_fallback:
+            print("[DATA] Returning timetable data with student info\n")
+            return best_fallback
 
         print("[DATA] Failed to fetch timetable: No valid timetable page found\n")
         return None
@@ -662,7 +603,7 @@ class AcademiaClient:
         url = f'{self.BASE_URL}/srm_university/academia-academic-services/page/WELCOME'
         
         try:
-            response = self.session.get(url, headers=self._get_page_headers())
+            response = self.session.get(url, headers=self._get_page_headers(), timeout=4)
             response.raise_for_status()
             
             # Search for day order pattern in the response

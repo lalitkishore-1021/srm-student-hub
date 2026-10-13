@@ -69,13 +69,13 @@ def fetch_all_data_with_retry(client, max_retries: int = 2, save_debug_html: boo
             print("[DATA] Fetching day order...")
             day_order = client.get_day_order()
             if day_order is not None:
-                print(f"✓ [DATA] Day order retrieved: {day_order}")
+                print(f"[OK] [DATA] Day order retrieved: {day_order}")
             else:
-                print("⚠ [DATA] Day order not available from server")
+                print("[!] [DATA] Day order not available from server")
             
             # Normalize day order
             if not isinstance(day_order, int) or day_order <= 0:
-                print(f"⚠ [DATA] Invalid day order ({day_order}), defaulting to Day 4")
+                print(f"[!] [DATA] Invalid day order ({day_order}), defaulting to Day 4")
                 day_order = 4
 
             # --- ATTENDANCE ---
@@ -83,7 +83,7 @@ def fetch_all_data_with_retry(client, max_retries: int = 2, save_debug_html: boo
             try:
                 attendance_data = client.get_attendance()
             except Exception as att_err:
-                print(f"✗ [DATA] Attendance fetch failed: {att_err}")
+                print(f"[X] [DATA] Attendance fetch failed: {att_err}")
                 attendance_data = None
             
             # --- TIMETABLE ---
@@ -91,7 +91,7 @@ def fetch_all_data_with_retry(client, max_retries: int = 2, save_debug_html: boo
             try:
                 timetable_data = client.get_timetable()
             except Exception as tt_err:
-                print(f"✗ [DATA] Timetable fetch failed: {tt_err}")
+                print(f"[X] [DATA] Timetable fetch failed: {tt_err}")
                 timetable_data = None
             
             # --- VALIDATE PARSING ---
@@ -164,7 +164,7 @@ def fetch_all_data_with_retry(client, max_retries: int = 2, save_debug_html: boo
                         }
             
             # --- SUCCESS ---
-            print("✓ [DATA] All data retrieved and parsed successfully")
+            print("[OK] [DATA] All data retrieved and parsed successfully")
             return {
                 "success": True,
                 "day_order": day_order,
@@ -173,7 +173,7 @@ def fetch_all_data_with_retry(client, max_retries: int = 2, save_debug_html: boo
             }
         
         except Exception as e:
-            print(f"✗ [DATA] Fetch error on attempt {attempt + 1}: {e}")
+            print(f"[X] [DATA] Fetch error on attempt {attempt + 1}: {e}")
             if attempt < max_retries - 1:
                 continue
             else:

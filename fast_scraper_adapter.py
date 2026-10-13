@@ -254,76 +254,33 @@ def run_fast_scraper(email, password, out_queue):
         clean_email += "@srmist.edu.in"
     print(f"[{clean_email}] Starting FAST scraper...")
     try:
-        # 1. Primary: Direct Fast Scraper (signin.ac + goscraper/ratio-d architecture)
-        import academia_direct_scraper
-        direct_res = academia_direct_scraper.fetch_academia_data(clean_email, password)
-        if direct_res.get("success"):
-            print(f"[{clean_email}] Direct Academia scraper succeeded in < 2s!")
-            out_queue.put(direct_res)
-            return
-
-        err_msg = str(direct_res.get("error", ""))
-        if "password" in err_msg.lower() or "credentials" in err_msg.lower():
-            print(f"[{clean_email}] Invalid credentials from direct scraper: {err_msg}")
-            out_queue.put({'success': False, 'error': 'Wrong NetID/Email or Password. Please try again.'})
-            return
-
-        # 2. Secondary fallback: Hybrid AcademiaClient
-        print(f"[{clean_email}] Direct scraper note: {err_msg}. Trying AcademiaClient fallback...")
         client = AcademiaClient(clean_email, password)
         
         lookup = client.lookup_user()
         if not lookup:
             print(f"[{clean_email}] Lookup failed.")
-            out_queue.put({'success': False, 'error': 'Academia authentication failed. Please check credentials.'})
+            out_queue.put({'success': False, 'error': 'Wrong NetID/Email or Password. Please check your credentials.'})
             return
             
         login_res = client.login()
         if not login_res.get("success"):
             err_msg = str(login_res.get("message", ""))
             err_type = str(login_res.get("type", ""))
-            if err_type == "INVALID_PASSWORD" or "password" in err_msg.lower():
-                print(f"[{clean_email}] Invalid password detected.")
-                out_queue.put({'success': False, 'error': 'Wrong NetID/Email or Password. Please try again.'})
-                return
-            print(f"[{clean_email}] Zoho login failed ({err_type}).")
-            out_queue.put({'success': False, 'error': f'Auth Failed: {err_msg}'})
+            print(f"[{clean_email}] Academia login failed ({err_type}): {err_msg}")
+            out_queue.put({'success': False, 'error': 'Wrong NetID/Email or Password. Please check your credentials.'})
             return
             
-        print(f"[{email}] Login successful. Fetching data...")
+        print(f"[{email}] Login successful. Fetching timetable & courses...")
         
-        result = fetch_all_data_with_retry(client, max_retries=1, save_debug_html=False)
-        if not result.get("success"):
-            out_queue.put({'success': False, 'error': result.get("error", "Failed to fetch data")})
-            return
-            
-        day_order = result.get('day_order', 0)
-        attendance_data = result.get('attendance_data')
-        timetable_data = result.get('timetable_data')
+        timetable_data = client.get_timetable() or {}
+        day_order = client.get_day_order() or 1
         
-        is_mock_attendance = False
-        if attendance_data is None or (isinstance(attendance_data, dict) and attendance_data.get("error")):
-            print(f"[{email}] Attendance invalid, using fallback...")
-            attendance_data = generate_mock_attendance_from_timetable(timetable_data)
-            is_mock_attendance = True
-            if attendance_data is None:
-                attendance_data = {}
-        
-        student_info = attendance_data.get('student_info', {}) if attendance_data else {}
-        if not student_info and timetable_data:
-            student_info = timetable_data.get('student_info', {})
+        student_info = timetable_data.get('student_info', {})
         student_batch = student_info.get('batch', '1')
-        
-        # Build Day 1-5 Timetable exactly as requested by user
-        courses_list = timetable_data.get('courses', []) if timetable_data else []
+        courses_list = timetable_data.get('courses', [])
         final_tt = build_timetable(student_batch, courses_list)
         
-        # Adapt to frontend format
-        courses_dict = attendance_data.get("courses") or attendance_data.get("attendance", {}).get("courses", {})
-        attList = adapt_attendance(attendance_data, courses_list)
-        marksList = adapt_marks(attendance_data.get('marks', {}), courses_dict, courses_list)
-        
-        advisors = timetable_data.get('advisors', {}) if timetable_data else {}
+        advisors = timetable_data.get('advisors', {})
         fa = advisors.get('faculty_advisor', {})
         aa = advisors.get('academic_advisor', {})
         
@@ -343,17 +300,18 @@ def run_fast_scraper(email, password, out_queue):
             "aa_phone": aa.get("phone", "")
         }
         
-        print(f"[{email}] Scraping complete!")
+        total_classes = sum(len(v) for v in final_tt.values())
+        print(f"[{email}] Scraping complete! Courses: {len(courses_list)}, TT classes: {total_classes}")
         
         out_queue.put({
             'success': True,
-            'data': attList,
-            'marks': marksList,
+            'data': [],
+            'marks': [],
             'timetable': final_tt,
             'courses': courses_list,
             'profile': profile,
             'day_order': day_order,
-            'is_mock_attendance': is_mock_attendance,
+            'is_mock_attendance': False,
             'cookie_dump': json.dumps(client.get_session_data())
         })
         

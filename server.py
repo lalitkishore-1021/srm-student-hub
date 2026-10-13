@@ -518,9 +518,13 @@ def save_cached_timetable_for_student(net_id, tt):
         cur = conn.cursor()
         clean_id = net_id.lower().strip()
         if DATABASE_URL:
-            cur.execute("INSERT INTO push_subscriptions (net_id, timetable_json) VALUES (%s, %s) ON CONFLICT(net_id) DO UPDATE SET timetable_json = EXCLUDED.timetable_json", (clean_id, tt_json))
+            cur.execute("UPDATE push_subscriptions SET timetable_json = %s WHERE lower(net_id) = %s", (tt_json, clean_id))
+            if cur.rowcount == 0:
+                cur.execute("INSERT INTO push_subscriptions (net_id, timetable_json) VALUES (%s, %s)", (clean_id, tt_json))
         else:
-            cur.execute("INSERT INTO push_subscriptions (net_id, timetable_json) VALUES (?, ?) ON CONFLICT(net_id) DO UPDATE SET timetable_json = excluded.timetable_json", (clean_id, tt_json))
+            cur.execute("UPDATE push_subscriptions SET timetable_json = ? WHERE lower(net_id) = ?", (tt_json, clean_id))
+            if cur.rowcount == 0:
+                cur.execute("INSERT INTO push_subscriptions (net_id, timetable_json) VALUES (?, ?)", (clean_id, tt_json))
         conn.commit()
         cur.close()
         conn.close()
@@ -589,45 +593,35 @@ def start_session():
                 if not portal_pwd_in:
                     return {'success': False, 'error': 'No SRM Portal password provided'}
                 try:
-                    p_res = srm_portal_scraper.fetch_portal_data(reg_no, portal_pwd_in)
+                    p_res = srm_portal_scraper.fetch_portal_data(net_id, portal_pwd_in)
                     if p_res and p_res.get('success'):
                         print(f"[{net_id}] SRM Student Portal direct scraper succeeded!")
                         return p_res
-                    print(f"[{net_id}] SRM Portal scraper returned: {(p_res or {}).get('error')}")
+                    err_msg = (p_res or {}).get('error', 'SRM Portal auth failed')
+                    print(f"[{net_id}] SRM Portal scraper returned: {err_msg}")
+                    return p_res or {'success': False, 'error': err_msg}
                 except Exception as pe:
                     print(f"[{net_id}] SRM Portal scraper exception: {pe}")
-                # Fallback to CampusWeb only if direct portal scraper failed
-                try:
-                    cw = cw_scraper.scrape_campusweb(reg_no, portal_pwd_in)
-                    if cw and cw.get('success'):
-                        return {
-                            'success': True,
-                            'data': cw.get('attendance', []),
-                            'marks': cw.get('marks', []),
-                            'profile': cw.get('profile') or {},
-                            'timetable': {},
-                            'is_mock_attendance': False
-                        }
-                    return cw
-                except Exception as ce:
-                    return {'success': False, 'error': str(ce)}
+                    return {'success': False, 'error': str(pe)}
             
             # Run BOTH Academia (Timetable + Advisors + Courses) & SRM Student Portal (Attendance + Marks + Profile) in parallel
-            future_ac = executor.submit(run_academia)
             future_portal = executor.submit(run_portal)
+            future_ac = executor.submit(run_academia)
             
-            ac_res = None
             portal_res = None
+            ac_res = None
 
+            # Check portal result first (finishes in ~2-4s)
             try:
-                ac_res = future_ac.result(timeout=7)
-            except Exception as e:
-                print(f"[{reg_no}] Academia wait: {e}")
-
-            try:
-                portal_res = future_portal.result(timeout=10)
+                portal_res = future_portal.result(timeout=14)
             except Exception as e:
                 print(f"[{reg_no}] SRM Portal wait: {e}")
+
+            # Check academia result (finishes in ~8-14s)
+            try:
+                ac_res = future_ac.result(timeout=28)
+            except Exception as e:
+                print(f"[{reg_no}] Academia wait: {e}")
 
             executor.shutdown(wait=False)
 
@@ -637,11 +631,11 @@ def start_session():
             if not ac_ok and not portal_ok:
                 p_err = (portal_res or {}).get('error', '')
                 ac_err = (ac_res or {}).get('error', '')
-                final_err = "Login Failed. Invalid SRM Email/NetID or Password."
-                if 'password' in p_err.lower() or 'password' in ac_err.lower() or 'invalid' in p_err.lower():
-                    final_err = "Wrong NetID/Email or Password. Please check your Academia & SRM Portal passwords."
-                elif 'network' in p_err.lower() or 'network' in ac_err.lower():
-                    final_err = "Poor network connectivity. University servers took too long."
+                final_err = "Login Failed. Invalid NetID or Password."
+                if any(w in p_err.lower() or w in ac_err.lower() for w in ['password', 'credential', 'invalid', 'wrong']):
+                    final_err = "Wrong NetID or Password. Please check your Academia & SRM Portal passwords."
+                elif 'network' in p_err.lower() or 'network' in ac_err.lower() or 'timeout' in p_err.lower() or 'timeout' in ac_err.lower():
+                    final_err = "University servers took too long to respond. Please try again."
                 sync_jobs[sid] = {'status': 'failed', 'result': {'success': False, 'error': final_err}, 'timestamp': time.time()}
                 return
 
@@ -678,31 +672,35 @@ def start_session():
             if merged_courses:
                 course_by_code = {}
                 for c in merged_courses:
-                    code_key = (c.get('code') or c.get('courseCode') or '').strip().upper()
+                    code_key = (c.get('code') or c.get('courseCode') or c.get('course_code') or '').strip().upper()
                     if code_key:
                         course_by_code[code_key] = c
                 for item in merged_att:
-                    ck = (item.get('courseCode') or item.get('code') or '').strip().upper()
+                    ck = (item.get('courseCode') or item.get('code') or item.get('course_code') or '').strip().upper()
                     mc = course_by_code.get(ck)
                     if mc:
-                        if mc.get('credit') is not None and not item.get('credits'):
-                            item['credits'] = mc['credit']
-                            item['credit'] = mc['credit']
+                        c_cred = mc.get('credit') if mc.get('credit') is not None else mc.get('credits')
+                        if c_cred is not None:
+                            item['credits'] = c_cred
+                            item['credit'] = c_cred
                         if mc.get('category') and not item.get('category'):
                             item['category'] = mc['category']
-                        if mc.get('faculty') and (not item.get('faculty') or item.get('faculty') == 'Faculty'):
-                            item['faculty'] = mc['faculty']
+                        c_fac = mc.get('faculty') or mc.get('faculty_name')
+                        if c_fac and (not item.get('faculty') or item.get('faculty') in ('Faculty', '')):
+                            item['faculty'] = c_fac
                         if mc.get('slot') and not item.get('slot'):
                             item['slot'] = mc['slot']
-                        if mc.get('room') and not item.get('room'):
-                            item['room'] = mc['room']
+                        c_rm = mc.get('room') or mc.get('room_no')
+                        if c_rm and not item.get('room'):
+                            item['room'] = c_rm
                 for m_item in merged_marks:
-                    ck = (m_item.get('courseCode') or m_item.get('code') or '').strip().upper()
+                    ck = (m_item.get('courseCode') or m_item.get('code') or m_item.get('course_code') or '').strip().upper()
                     mc = course_by_code.get(ck)
                     if mc:
-                        if mc.get('credit') is not None and not m_item.get('credits'):
-                            m_item['credits'] = mc['credit']
-                            m_item['credit'] = mc['credit']
+                        c_cred = mc.get('credit') if mc.get('credit') is not None else mc.get('credits')
+                        if c_cred is not None:
+                            m_item['credits'] = c_cred
+                            m_item['credit'] = c_cred
                         if mc.get('category') and not m_item.get('category'):
                             m_item['category'] = mc['category']
 
@@ -769,6 +767,26 @@ def sync_status(sync_id):
         return jsonify({'status': res['status'], 'result': res.get('result')})
     
     return jsonify({'status': 'processing'})
+
+@app.route('/api/debug_sync', methods=['POST'])
+def debug_sync():
+    data = request.json or {}
+    reg = data.get('regNo', 'bl9209')
+    p_pwd = data.get('portalPwd', 'Bmounika@2003')
+    import traceback
+    try:
+        import srm_portal_scraper
+        res = srm_portal_scraper.fetch_portal_data(reg, p_pwd)
+        return jsonify({
+            'ok': True,
+            'success': res.get('success'),
+            'error': res.get('error'),
+            'att_len': len(res.get('data', [])),
+            'marks_len': len(res.get('marks', [])),
+            'profile': res.get('profile')
+        })
+    except Exception as e:
+        return jsonify({'ok': False, 'err': str(e), 'trace': traceback.format_exc()})
 
 @app.route('/api/save_student', methods=['POST'])
 def save_student():
