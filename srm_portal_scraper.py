@@ -259,6 +259,9 @@ class SRMPortalSession:
 
         resp = self.session.post(LOGIN_SERVLET, data=fp_body, timeout=12)
         body = resp.text or ""
+        self.last_status = resp.status_code
+        self.last_url = str(resp.url)
+        self.last_body = body
         url_lower = str(resp.url).lower()
 
         if "logout.jsp" in url_lower or "attendance" in url_lower or "hrdsystem" in url_lower:

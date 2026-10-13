@@ -859,14 +859,21 @@ def debug_sync():
     import traceback
     try:
         import srm_portal_scraper
-        res = srm_portal_scraper.fetch_portal_data(reg, p_pwd)
+        import requests
+        ip = requests.get('https://api.ipify.org', timeout=5).text
+        portal = srm_portal_scraper.SRMPortalSession()
+        portal.load_captcha()
+        solved = srm_portal_scraper.solve_captcha_bytes(portal.captcha_bytes)
+        res = portal.login_attempt(reg, p_pwd, solved)
+        
         return jsonify({
             'ok': True,
-            'success': res.get('success'),
-            'error': res.get('error'),
-            'att_len': len(res.get('data', [])),
-            'marks_len': len(res.get('marks', [])),
-            'profile': res.get('profile')
+            'ip': ip,
+            'solved': solved,
+            'res': res,
+            'status': getattr(portal, 'last_status', None),
+            'url': getattr(portal, 'last_url', None),
+            'body_snippet': getattr(portal, 'last_body', '')[:1500]
         })
     except Exception as e:
         return jsonify({'ok': False, 'err': str(e), 'trace': traceback.format_exc()})
