@@ -3133,7 +3133,13 @@
                 </svg>
             </div>
             
-            <h2 style="font-family: 'Montserrat', sans-serif; font-size: 1.25rem; font-weight: 800; color: #fff; margin: 0 0 22px 0; letter-spacing: 0.5px;">SRM STUDENT PORTAL</h2>
+            <h2 style="font-family: 'Montserrat', sans-serif; font-size: 1.25rem; font-weight: 800; color: #fff; margin: 0 0 6px 0; letter-spacing: 0.5px;">SRM STUDENT PORTAL</h2>
+            <p style="font-size: 0.78rem; color: rgba(255,255,255,0.7); margin: 0 0 18px 0; line-height: 1.45;">
+                Enter your <b style="color: #ffaa00;">sp.srmist.edu.in</b> credentials to fetch live attendance &amp; internal marks.<br>
+                <span style="font-size: 0.73rem; color: rgba(255,255,255,0.55); display: inline-block; margin-top: 4px;">
+                    ℹ️ Default password is your <b>Date of Birth (DDMMYYYY)</b> if never changed. It is <u>separate</u> from your Academia password.
+                </span>
+            </p>
             
             <div style="display: flex; flex-direction: column; gap: 14px; text-align: left;">
                 <div>
@@ -3148,10 +3154,15 @@
                     <label style="font-size: 0.74rem; font-weight: 700; color: rgba(255,255,255,0.7); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 6px; display: block;">Student Portal Password</label>
                     <div class="login-input-wrapper" style="margin: 0; position: relative;">
                         <span class="login-input-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
-                        <input type="password" id="portal-modal-pwd" placeholder="Portal Password" class="login-input" style="font-size: 0.95rem;" onkeydown="if(event.key==='Enter') submitPortalSync();">
+                        <input type="password" id="portal-modal-pwd" placeholder="e.g. 15082003 (DDMMYYYY)" class="login-input" style="font-size: 0.95rem;" onkeydown="if(event.key==='Enter') submitPortalSync();">
                         <span class="login-pwd-toggle" onclick="togglePortalModalPwd()" style="cursor: pointer;">
                             <svg id="portal-modal-eye-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
                         </span>
+                    </div>
+                    <div style="text-align: right; margin-top: 5px;">
+                        <a href="https://ssp.srmist.edu.in/resetpassword/" target="_blank" rel="noopener noreferrer" style="color: #ffaa00; font-size: 0.74rem; text-decoration: underline; font-weight: 600;">
+                            Forgot or need to reset Portal password? &rarr;
+                        </a>
                     </div>
                 </div>
                 
@@ -5050,7 +5061,13 @@
             
             let rawId = (netIdInput ? netIdInput.value.trim() : '') || localStorage.getItem('syncRegNo') || '';
             let netId = rawId.split('@')[0].trim().toLowerCase();
-            let portalPwd = pwdInput ? pwdInput.value : '';
+            let portalPwd = (pwdInput ? pwdInput.value : '').trim();
+            
+            // Auto-normalize DOB separators (e.g. 15-08-2003 or 15/08/2003 -> 15082003)
+            if (/^\d{2}[-/.]\d{2}[-/.]\d{4}$/.test(portalPwd)) {
+                portalPwd = portalPwd.replace(/[-/.]/g, '');
+                if (pwdInput) pwdInput.value = portalPwd;
+            }
             
             if (!netId || !portalPwd) {
                 if (statusBox) {
@@ -5101,7 +5118,8 @@
                         statusBox.style.background = 'rgba(255, 71, 87, 0.15)';
                         statusBox.style.border = '1px solid rgba(255, 71, 87, 0.4)';
                         statusBox.style.color = '#ff6b81';
-                        statusBox.innerText = data.error || 'Failed to authenticate with SRM Student Portal.';
+                        const err = data.error || 'Failed to authenticate with SRM Student Portal.';
+                        statusBox.innerHTML = `<div>${err}</div><div style="margin-top:6px;"><a href="https://ssp.srmist.edu.in/resetpassword/" target="_blank" rel="noopener noreferrer" style="color: #ffaa00; text-decoration: underline; font-weight: 700; font-size: 0.8rem;">Click here to reset your Portal Password on SSP &rarr;</a></div>`;
                     }
                     return;
                 }

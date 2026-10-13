@@ -538,6 +538,11 @@ def get_portal_data_with_fallback(net_id, portal_pwd):
     if not clean_id or not portal_pwd:
         return {'success': False, 'error': 'Missing Student Portal credentials'}
 
+    # Auto-normalize Date of Birth format if entered with separators (e.g. 15-08-2003 -> 15082003)
+    import re
+    if re.match(r'^\d{2}[-/.]\d{2}[-/.]\d{4}$', portal_pwd):
+        portal_pwd = re.sub(r'[-/.]', '', portal_pwd)
+
     import srm_portal_scraper
     p_res = None
     try:
@@ -545,9 +550,29 @@ def get_portal_data_with_fallback(net_id, portal_pwd):
     except Exception as e:
         print(f"[{clean_id}] Portal scrape exception: {e}")
 
+    # Fallback: if direct portal scraper did not succeed, try CampusWeb API
+    if not (p_res and p_res.get('success')):
+        try:
+            import cw_scraper
+            print(f"[{clean_id}] Direct portal scraper did not succeed; trying CampusWeb API fallback...")
+            cw_res = cw_scraper.scrape_campusweb(clean_id, portal_pwd)
+            if cw_res and cw_res.get('success'):
+                print(f"[{clean_id}] ✅ CampusWeb API fallback succeeded!")
+                p_res = {
+                    'success': True,
+                    'data': cw_res.get('attendance', []),
+                    'marks': cw_res.get('marks', []),
+                    'profile': cw_res.get('profile', {}),
+                    'source': 'campusweb_api'
+                }
+            else:
+                print(f"[{clean_id}] CampusWeb API fallback also failed: {(cw_res or {}).get('error')}")
+        except Exception as cwe:
+            print(f"[{clean_id}] CampusWeb fallback exception: {cwe}")
+
     cache_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'portal_data_cache.json')
 
-    # If live scrape succeeded, cache the fresh data
+    # If live scrape succeeded from either source, cache the fresh data
     if p_res and p_res.get('success'):
         try:
             c_dict = {}
@@ -559,7 +584,7 @@ def get_portal_data_with_fallback(net_id, portal_pwd):
                 'data': p_res.get('data', []),
                 'marks': p_res.get('marks', []),
                 'profile': p_res.get('profile', {}),
-                'source': 'srm_portal'
+                'source': p_res.get('source', 'srm_portal')
             }
             with open(cache_file, 'w', encoding='utf-8') as f:
                 json.dump(c_dict, f, indent=2)
@@ -568,7 +593,7 @@ def get_portal_data_with_fallback(net_id, portal_pwd):
             print(f"[{clean_id}] Cache write warning: {se}")
         return p_res
 
-    # If live scrape failed (e.g. cloud IP geoblocked on foreign Render server), check verified cache
+    # If live scrape failed, check verified cache
     cached_entry = None
     try:
         if os.path.exists(cache_file):
@@ -581,7 +606,11 @@ def get_portal_data_with_fallback(net_id, portal_pwd):
                     if not exp_pwd or exp_pwd.lower() == portal_pwd.lower():
                         cached_entry = entry
                     else:
-                        return {'success': False, 'error': 'Invalid SRM Student Portal Password. Make sure this is your Student Portal password and not your Academia password!', 'reason': 'invalid_credentials'}
+                        return {
+                            'success': False,
+                            'error': 'Invalid SRM Student Portal Password. Student Portal (sp.srmist.edu.in) uses a separate password from Academia (default is your Date of Birth in DDMMYYYY format). Reset at https://ssp.srmist.edu.in/resetpassword/',
+                            'reason': 'invalid_credentials'
+                        }
     except Exception as ce:
         print(f"[{clean_id}] Cache read error: {ce}")
 
@@ -597,7 +626,7 @@ def get_portal_data_with_fallback(net_id, portal_pwd):
 
     err = (p_res or {}).get('error', 'SRM Portal authentication failed.')
     if any(w in err.lower() for w in ['invalid', 'password', 'credential', 'user id']):
-        err = 'Invalid SRM Student Portal Password. Make sure this is your Student Portal password and not your Academia password!'
+        err = 'Invalid SRM Student Portal Password. Student Portal (sp.srmist.edu.in) uses a separate password from Academia (default is your Date of Birth in DDMMYYYY format). You can reset it at https://ssp.srmist.edu.in/resetpassword/'
     return {'success': False, 'error': err, 'reason': (p_res or {}).get('reason')}
 
 def scrape_academia_worker(reg_no, pwd, batch, out_queue):
@@ -867,7 +896,7 @@ def portal_sync():
         if not p_res or not p_res.get('success'):
             err = (p_res or {}).get('error', 'SRM Portal authentication failed.')
             if any(w in err.lower() for w in ['invalid', 'password', 'credential', 'user id']):
-                err = 'Invalid SRM Student Portal Password. Make sure this is your Student Portal password and not your Academia password!'
+                err = 'Invalid SRM Student Portal Password. Student Portal (sp.srmist.edu.in) uses a separate password from Academia (default is your Date of Birth in DDMMYYYY format). You can reset it at https://ssp.srmist.edu.in/resetpassword/'
             return jsonify({'success': False, 'error': err})
 
         att = p_res.get('data', [])

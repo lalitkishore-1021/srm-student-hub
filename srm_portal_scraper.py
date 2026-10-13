@@ -281,17 +281,17 @@ class SRMPortalSession:
     @staticmethod
     def _classify_failure(body: str) -> Dict[str, Any]:
         soup = BeautifulSoup(body, "html.parser")
-        alert_el = soup.find(class_=lambda c: c and ("alert-icon-content" in c or "alert-danger" in c))
+        alert_el = soup.find(class_=lambda c: c and ("alert" in c or "error" in c))
         if alert_el:
             alert_text = alert_el.get_text(separator=" ", strip=True)
             if alert_text.lower().startswith("alert"):
                 alert_text = alert_text[5:].strip()
             blob = alert_text.lower()
-            if "captcha" in blob:
+            if any(k in blob for k in ["captcha", "code", "verification", "security"]):
                 return {"ok": False, "reason": "wrong_captcha", "message": alert_text}
             if "locked" in blob:
                 return {"ok": False, "reason": "account_locked", "message": alert_text}
-            if any(k in blob for k in ["invalid", "attempts remaining", "unsuccessful", "user id or password"]):
+            if any(k in blob for k in ["invalid", "attempts remaining", "unsuccessful", "user id or password", "password", "credential"]):
                 return {"ok": False, "reason": "invalid_credentials", "message": alert_text}
             return {"ok": False, "reason": "login_failed", "message": alert_text}
         return {"ok": False, "reason": "login_failed", "message": "Student Portal login failed"}
@@ -688,8 +688,13 @@ def fetch_portal_data(username: str, password: str) -> Dict[str, Any]:
     """
     start_ts = time.time()
     netid = (username or "").strip().split("@")[0].strip()
+    password = (password or "").strip()
     if not netid or not password:
         return {"success": False, "error": "Missing Student Portal credentials"}
+
+    import re
+    if re.match(r'^\d{2}[-/.]\d{2}[-/.]\d{4}$', password):
+        password = re.sub(r'[-/.]', '', password)
 
     att_html = None
     active_portal = None
