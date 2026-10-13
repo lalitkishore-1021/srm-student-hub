@@ -3065,12 +3065,8 @@
                     <input type="password" id="srm-pwd" placeholder="Academia Password" required class="login-input" onkeydown="if(event.key==='Enter') startLiveSync();">
                     <span class="login-pwd-toggle" onclick="const pwd=document.getElementById('srm-pwd'); if(pwd.type==='password'){pwd.type='text'; this.innerHTML='<svg viewBox=\'0 0 24 24\' width=\'18\' height=\'18\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'2.5\' stroke-linecap=\'round\' stroke-linejoin=\'round\'><path d=\'M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24\'></path><line x1=\'1\' y1=\'1\' x2=\'23\' y2=\'23\'></line></svg>';}else{pwd.type='password'; this.innerHTML='<svg viewBox=\'0 0 24 24\' width=\'18\' height=\'18\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'2.5\' stroke-linecap=\'round\' stroke-linejoin=\'round\'><path d=\'M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z\'></path><circle cx=\'12\' cy=\'12\' r=\'3\'></circle></svg>';}"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg></span>
                 </div>
-
-                <div style="font-size: 0.76rem; color: rgba(255,255,255,0.6); margin: -4px 0 14px 4px; text-align: left; line-height: 1.35;">
-                    ⚡ Loads Timetable, Registered Courses &amp; Advisors in seconds. Attendance &amp; Marks can be connected next.
-                </div>
                 
-                <button class="login-auth-btn" id="login-auth-btn" onclick="startLiveSync()">LOG IN &amp; VIEW DASHBOARD</button>
+                <button class="login-auth-btn" id="login-auth-btn" onclick="startLiveSync()" style="margin-top: 10px;">LOG IN &amp; VIEW DASHBOARD</button>
             </div>
 
             <div id="login-loader-container" style="display: none; flex-direction: column; align-items: center; justify-content: center; margin-top: 20px;">
@@ -3137,10 +3133,7 @@
                 </svg>
             </div>
             
-            <h2 style="font-family: 'Montserrat', sans-serif; font-size: 1.25rem; font-weight: 800; color: #fff; margin: 0 0 6px 0; letter-spacing: 0.5px;">SRM STUDENT PORTAL</h2>
-            <p style="color: var(--text-sub); font-size: 0.84rem; line-height: 1.45; margin: 0 0 20px 0;">
-                Connect to fetch live attendance &amp; internal marks. CAPTCHA is auto-solved in ~50ms and data will auto-sync every 3 hours.
-            </p>
+            <h2 style="font-family: 'Montserrat', sans-serif; font-size: 1.25rem; font-weight: 800; color: #fff; margin: 0 0 22px 0; letter-spacing: 0.5px;">SRM STUDENT PORTAL</h2>
             
             <div style="display: flex; flex-direction: column; gap: 14px; text-align: left;">
                 <div>
@@ -5372,6 +5365,7 @@
                 localStorage.setItem("syncBatch", currentBatch);
                 localStorage.setItem("lastAutoSyncTime", Date.now().toString());
                 localStorage.setItem("lastSyncSuccessTime", Date.now().toString());
+                localStorage.setItem("lastAcademiaSyncTime", Date.now().toString());
 
                 updateHomeState();
 
@@ -5544,8 +5538,16 @@
                     }
                 }
 
-                // 2. Academia Sync for Timetable & Profile if Academia pwd exists
-                if (pwd) {
+                // 2. Academia Sync for Timetable, Profile & Credits
+                // Timetable and Profile rarely change. If already cached, only refresh from Academia once every 2 days (48 hours).
+                const TWO_DAYS = 48 * 60 * 60 * 1000;
+                const lastAcademiaSync = parseInt(localStorage.getItem('lastAcademiaSyncTime') || '0');
+                const existingTT = JSON.parse(localStorage.getItem('squadTimetable') || '{}');
+                const hasTimetable = existingTT && Object.values(existingTT).some(arr => Array.isArray(arr) && arr.length > 0);
+                const hasProfile = !!localStorage.getItem('squadProfile');
+                const needsAcademiaSync = !hasTimetable || !hasProfile || (Date.now() - lastAcademiaSync > TWO_DAYS);
+
+                if (pwd && needsAcademiaSync) {
                     const initRes = await fetch(`${BACKEND_URL}/api/start_session`, {
                         method: "POST",
                         headers: { "Content-Type": "application/json", "X-App-Key": "srm-hub-protected-x9f2" },
@@ -5573,6 +5575,7 @@
 
                         if (result && result.success) {
                             syncSuccess = true;
+                            localStorage.setItem('lastAcademiaSyncTime', Date.now().toString());
                             localStorage.setItem('lastSyncSuccessTime', Date.now().toString());
                             const banner = document.getElementById('sync-reminder-banner');
                             if (banner) banner.style.display = 'none';
@@ -5924,22 +5927,22 @@
                 let marginShadow = isSafe ? "0 0 16px rgba(0, 255, 136, 0.4)" : "0 0 16px rgba(255, 51, 102, 0.4)";
 
                 html += `
-                    <div class="glass-card fade-in-up" style="animation-delay: ${index * 0.04}s; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 20px; padding: 20px 22px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 20px rgba(0,0,0,0.15);">
+                    <div class="glass-card fade-in-up" style="animation-delay: ${index * 0.04}s; background: rgba(255, 255, 255, 0.045); backdrop-filter: blur(20px) saturate(180%); -webkit-backdrop-filter: blur(20px) saturate(180%); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 22px; padding: 22px 24px; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35), inset 0 1px 1px rgba(255, 255, 255, 0.1);">
                         <!-- Left: Big Bold Margin / Needed in Neon -->
                         <div style="min-width: 80px; text-align: left;">
-                            <div style="font-size: 38px; font-weight: 900; line-height: 1; letter-spacing: -1px; color: ${marginColor}; text-shadow: ${marginShadow};">${marginVal}</div>
-                            <div style="font-size: 10px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; color: var(--text-sub); margin-top: 6px;">${marginLabel}</div>
+                            <div style="font-size: 42px; font-weight: 900; line-height: 1; letter-spacing: -1.5px; color: ${marginColor}; text-shadow: ${marginShadow};">${marginVal}</div>
+                            <div style="font-size: 10px; font-weight: 900; letter-spacing: 1.5px; text-transform: uppercase; color: var(--text-sub); margin-top: 6px;">${marginLabel}</div>
                         </div>
 
                         <!-- Right: Acronym, Title, Stats -->
                         <div style="text-align: right; flex: 1; padding-left: 15px;">
-                            <div style="font-size: 19px; font-weight: 900; color: #ffffff; letter-spacing: 0.5px; text-transform: uppercase;">${acronym}</div>
-                            <div style="font-size: 12px; color: var(--text-sub); font-weight: 500; margin: 3px 0 7px 0; text-transform: lowercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 230px; margin-left: auto;">${name.toLowerCase()}</div>
+                            <div style="font-size: 24px; font-weight: 900; color: #ffffff; letter-spacing: 0.5px; text-transform: uppercase;">${acronym}</div>
+                            <div style="font-size: 12px; color: rgba(255,255,255,0.75); font-weight: 700; margin: 3px 0 8px 0; text-transform: lowercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 230px; margin-left: auto;">${name.toLowerCase()}</div>
                             <div style="display: flex; align-items: center; justify-content: flex-end; gap: 8px;">
-                                <span style="color: rgba(255,255,255,0.7); font-size: 13px; font-weight: 700;">${pres}/${cond}</span>
+                                <span style="color: rgba(255,255,255,0.75); font-size: 13px; font-weight: 800;">${pres}/${cond}</span>
                                 <span style="color: rgba(255,255,255,0.3); font-size: 10px;">•</span>
-                                <span style="color: #fff; font-size: 15px; font-weight: 900;">${pct.toFixed(1)}%</span>
-                                ${subCredit ? `<span style="color: var(--text-sub); font-size: 10px; font-weight: 700; background: rgba(255,255,255,0.06); padding: 2px 7px; border-radius: 6px; margin-left: 4px;">${subCredit}C</span>` : ''}
+                                <span style="color: #fff; font-size: 16px; font-weight: 900;">${pct.toFixed(1)}%</span>
+                                ${subCredit ? `<span style="color: rgba(255,255,255,0.8); font-size: 10px; font-weight: 800; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); padding: 2px 7px; border-radius: 6px; margin-left: 4px;">${subCredit}C</span>` : ''}
                             </div>
                         </div>
                     </div>
@@ -6143,20 +6146,20 @@
         }
 
         return `
-            <div class="glass-card fade-in-up" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 20px; padding: 20px; margin-bottom: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.15);">
+            <div class="glass-card fade-in-up" style="background: rgba(255, 255, 255, 0.045); backdrop-filter: blur(20px) saturate(180%); -webkit-backdrop-filter: blur(20px) saturate(180%); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 22px; padding: 22px 20px; margin-bottom: 16px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35), inset 0 1px 1px rgba(255, 255, 255, 0.1);">
                 <!-- Top Row -->
                 <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px;">
                     <!-- Left: Big Score -->
                     <div style="text-align: left;">
-                        <div style="font-size: 38px; font-weight: 900; line-height: 1; letter-spacing: -1px; color: ${scoreColor};">${scoreDisplay}</div>
-                        <div style="font-size: 10px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: var(--text-sub); margin-top: 5px;">OUT OF ${c.max || '--'}</div>
+                        <div style="font-size: 42px; font-weight: 900; line-height: 1; letter-spacing: -1.5px; color: ${scoreColor};">${scoreDisplay}</div>
+                        <div style="font-size: 10px; font-weight: 900; letter-spacing: 1.2px; text-transform: uppercase; color: var(--text-sub); margin-top: 6px;">OUT OF ${c.max || '--'}</div>
                     </div>
 
                     <!-- Right: Acronym, Title, Credits -->
                     <div style="text-align: right; flex: 1; padding-left: 15px;">
-                        <div style="font-size: 19px; font-weight: 900; color: ${isEmergency ? '#ff4757' : '#ffffff'}; letter-spacing: 0.5px; text-transform: uppercase;">${acronym}</div>
-                        <div style="font-size: 11px; color: var(--text-sub); font-weight: 500; margin: 3px 0 7px 0; text-transform: lowercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 220px; margin-left: auto;">${cleanTitle}</div>
-                        <span style="font-size: 10px; font-weight: 800; color: rgba(255,255,255,0.6); background: rgba(255,255,255,0.06); padding: 3px 8px; border-radius: 6px; letter-spacing: 0.5px; text-transform: uppercase; display: inline-block;">${cCredits} CREDITS</span>
+                        <div style="font-size: 24px; font-weight: 900; color: ${isEmergency ? '#ff4757' : '#ffffff'}; letter-spacing: 0.5px; text-transform: uppercase;">${acronym}</div>
+                        <div style="font-size: 12px; color: rgba(255,255,255,0.75); font-weight: 700; margin: 3px 0 8px 0; text-transform: lowercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 220px; margin-left: auto;">${cleanTitle}</div>
+                        <span style="font-size: 10px; font-weight: 800; color: rgba(255,255,255,0.8); background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); padding: 3px 8px; border-radius: 6px; letter-spacing: 0.5px; text-transform: uppercase; display: inline-block;">${cCredits} CREDITS</span>
                     </div>
                 </div>
 
@@ -6192,15 +6195,12 @@
     // Render Academic Emergency section if any course qualifies
     if (emergencyCourse) {
         html += `
-            <div style="border: 1px dashed rgba(255, 71, 87, 0.4); border-radius: 24px; padding: 18px 16px; margin-bottom: 24px; background: rgba(255, 71, 87, 0.03);">
+            <div style="border: 1.5px solid rgba(255, 71, 87, 0.45); border-radius: 24px; padding: 18px 16px; margin-bottom: 24px; background: rgba(255, 71, 87, 0.04); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);">
                 <div style="display:flex; align-items:center; gap:12px; margin-bottom: 16px;">
-                    <span style="font-size:11px; font-weight:800; letter-spacing:2px; text-transform:uppercase; color:#ff4757;">academic emergency</span>
-                    <div style="flex:1; height:1px; background:rgba(255, 71, 87, 0.2);"></div>
+                    <span style="font-size:11px; font-weight:900; letter-spacing:2px; text-transform:uppercase; color:#ff4757;">academic emergency</span>
+                    <div style="flex:1; height:1px; background:rgba(255, 71, 87, 0.25);"></div>
                 </div>
                 ${buildRatioDMarksCard(emergencyCourse, true)}
-                <div style="text-align:center; font-size:11px; color:#ff6b81; margin-top:14px; opacity:0.85; font-weight:600;">
-                    💀 academic career speedrun (any%)
-                </div>
             </div>
         `;
     }
