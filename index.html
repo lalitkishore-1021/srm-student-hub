@@ -743,9 +743,24 @@
             100% { opacity: 0.95; transform: translateY(-50%) rotate(0deg) scale(1); }
         }
 
-        /* Sleek glassmorphism shell */
+        /* Plasticmorphism + Glassmorphism shell */
         .id-card::before {
-            display: none;
+            content: '';
+            position: absolute;
+            inset: 4px;
+            background: rgba(20, 10, 30, 0.3);
+            border-radius: 31px;
+            z-index: 1;
+            backdrop-filter: blur(40px) saturate(200%);
+            -webkit-backdrop-filter: blur(40px) saturate(200%);
+            /* Puffy plastic 3D volume + glossy glass edge */
+            box-shadow: 
+                inset 6px 6px 20px rgba(255, 255, 255, 0.35), 
+                inset -8px -8px 25px rgba(0, 0, 0, 0.9), 
+                inset 0 0 10px rgba(255, 255, 255, 0.5);
+            border: 2px solid rgba(255, 255, 255, 0.25);
+            border-right-color: rgba(255,255,255,0.05);
+            border-bottom-color: rgba(255,255,255,0.05);
         }
 
 
@@ -3290,7 +3305,7 @@
                     <div class="stats-bar">
                         <div class="stat-box">
                             <div class="stat-val green" id="home-att-val">--%</div>
-                            <div class="stat-label">Attendance <span id="att-perc-badge" style="display:block; font-size:0.75rem; font-weight:900; margin-top:5px; color: var(--text-sub); letter-spacing: 1px;"></span></div>
+                            <div class="stat-label">Attendance</div>
                         </div>
                         <div class="stat-box">
                             <div class="stat-val blue" id="home-course-val">-</div>
@@ -5714,6 +5729,43 @@
             renderAttendance(attendanceData);
         }
 
+        function getSubjectAcronym(title, code) {
+            if (!title && !code) return "SUB";
+            const t = (title || "").toUpperCase().trim();
+            const known = {
+                "TRANSFORMS AND BOUNDARY VALUE PROBLEMS": "TBVP",
+                "DATA STRUCTURES AND ALGORITHMS": "DSA",
+                "COMPUTER ORGANIZATION AND ARCHITECTURE": "COA",
+                "ADVANCED PROGRAMMING PRACTICE": "APP",
+                "OPERATING SYSTEMS": "OS",
+                "UNIVERSAL HUMAN VALUES": "UHV-II",
+                "PROFESSIONAL ETHICS": "PE",
+                "OBJECT ORIENTED PROGRAMMING": "OOPS",
+                "DATABASE MANAGEMENT SYSTEMS": "DBMS",
+                "DESIGN AND ANALYSIS OF ALGORITHMS": "DAA",
+                "COMPUTER NETWORKS": "CN",
+                "ARTIFICIAL INTELLIGENCE": "AI",
+                "MACHINE LEARNING": "ML",
+                "SOFTWARE ENGINEERING": "SE"
+            };
+            for (let k in known) {
+                if (t.includes(k)) return known[k];
+            }
+            if (t.includes("UNIVERSAL HUMAN VALUES")) return "UHV-II";
+            const words = t.replace(/[^A-Z0-9\s]/g, ' ').split(/\s+/).filter(w => {
+                return w.length > 0 && !['AND', 'OF', 'THE', 'IN', 'FOR', 'WITH', 'TO', 'ON', 'II', 'I', 'III', 'PART', 'LAB'].includes(w);
+            });
+            if (words.length >= 2) {
+                return words.map(w => w[0]).join('');
+            }
+            if (code) {
+                let cleanCode = code.replace(/[^A-Z0-9]/gi, '').toUpperCase();
+                if (cleanCode.length > 3) return cleanCode.substring(0, 5);
+                return cleanCode;
+            }
+            return (title || "SUB").substring(0, 4).toUpperCase();
+        }
+
         function renderAttendance(attData) {
             const list = document.getElementById('attendance-list');
             if (!list) return;
@@ -5797,24 +5849,6 @@
                 if (homeCourseVal) homeCourseVal.innerText = workingAttData.length || '-';
                 const homeCreditVal = document.getElementById('home-credit-val');
                 if (homeCreditVal) homeCreditVal.innerText = totalCredits > 0 ? (Number.isInteger(totalCredits) ? totalCredits : totalCredits.toFixed(1)) : '-';
-
-                // Ratio-D style status badge for overall attendance
-                const attBadge = document.getElementById('att-perc-badge');
-                if (attBadge) {
-                    let numPct = parseFloat(overallPct);
-                    if (totalConducted === 0) {
-                        attBadge.innerText = '';
-                    } else if (numPct >= 85) {
-                        attBadge.innerText = '● Safe • Doing Great';
-                        attBadge.style.color = '#2ecc71';
-                    } else if (numPct >= 75) {
-                        attBadge.innerText = '● Danger • Thin Ice';
-                        attBadge.style.color = '#f39c12';
-                    } else {
-                        attBadge.innerText = '● Cooked • Comeback Needed';
-                        attBadge.style.color = '#e74c3c';
-                    }
-                }
             } catch(e) {}
             // -----------------------------------
             
@@ -5860,118 +5894,56 @@
                 </div>
             `;
 
-            // Build Course Cards
+            // Section divider
+            html += `
+                <div style="display:flex; align-items:center; gap:12px; margin: 30px 0 16px 0;">
+                    <span style="font-size:11px; font-weight:800; letter-spacing:3px; text-transform:uppercase; color:var(--text-sub);">subjects</span>
+                    <div style="flex:1; height:1px; background:rgba(255,255,255,0.08);"></div>
+                </div>
+            `;
+
+            // Build Course Cards (Ratio-D style with bold typography & neon margin)
             workingAttData.forEach((sub, index) => {
                 let name = sub.courseTitle || sub.name || "Unknown Subject";
                 if (name.toLowerCase() === "na") name = (sub.id || sub.courseCode || "Unknown Course");
-                let pctStr = String(sub.attended || "0");
+                let pctStr = String(sub.attended !== undefined ? sub.attended : "0");
                 let pct = parseFloat(pctStr) || 0;
                 let cond = parseInt(sub.conducted) || 0;
                 let abs = parseInt(sub.absent) || 0;
                 let pres = cond - abs;
-                let cat = (sub.category || "THEORY").toUpperCase();
                 let subCredit = sub.credit || sub.credits || 0;
-                
-                // Truncate name for UI
-                let shortName = name.length > 30 ? name.substring(0, 30) + '...' : name;
+                let acronym = getSubjectAcronym(name, sub.courseCode);
+
+                let m = sub.bunk_margin !== undefined ? sub.bunk_margin : Math.floor((pres - 0.75 * cond) / 0.75);
+                let needed = sub.classes_needed !== undefined ? sub.classes_needed : Math.max(0, Math.ceil(3 * cond - 4 * pres));
+
+                let isSafe = (cond === 0 || pct >= 75);
+                let marginVal = isSafe ? (m >= 0 ? m : 0) : needed;
+                let marginLabel = isSafe ? "MARGIN" : "REQUIRED";
+                let marginColor = isSafe ? "#00ff88" : "#ff3366";
+                let marginShadow = isSafe ? "0 0 16px rgba(0, 255, 136, 0.4)" : "0 0 16px rgba(255, 51, 102, 0.4)";
 
                 html += `
-                    <div class="glass-card fade-in-up" style="animation-delay: ${index * 0.05}s; border: 1px solid rgba(255,255,255,0.05); background: var(--bg-card); border-radius: 20px; padding: 20px; margin-bottom: 15px; position: relative; overflow: hidden;">
-                        
-                        <!-- Left indicator accent -->
-                        <div style="position: absolute; left: 0; top: 25px; bottom: 25px; width: 3px; background: rgba(255,255,255,0.8); border-radius: 0 4px 4px 0;"></div>
-                        
-                        <div style="display: flex; justify-content: space-between; align-items: flex-start; padding-left: 10px; margin-bottom: 20px;">
-                            <div style="flex: 1; padding-right: 15px;">
-                                <div style="color: var(--text-main); font-weight: 700; font-size: 15px; margin-bottom: 4px; line-height: 1.3;">${shortName}</div>
-                                <div style="color: var(--text-sub); font-size: 10px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase;">${cat}</div>
-                            </div>
-                            <div style="text-align: right;">
-                                <div style="color: var(--text-main); font-weight: 800; font-size: 18px;">${pctStr}%</div>
-                            </div>
+                    <div class="glass-card fade-in-up" style="animation-delay: ${index * 0.04}s; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 20px; padding: 20px 22px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 20px rgba(0,0,0,0.15);">
+                        <!-- Left: Big Bold Margin / Needed in Neon -->
+                        <div style="min-width: 80px; text-align: left;">
+                            <div style="font-size: 38px; font-weight: 900; line-height: 1; letter-spacing: -1px; color: ${marginColor}; text-shadow: ${marginShadow};">${marginVal}</div>
+                            <div style="font-size: 10px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; color: var(--text-sub); margin-top: 6px;">${marginLabel}</div>
                         </div>
 
-                        <div style="display: flex; justify-content: space-between; background: rgba(255,255,255,0.03); border-radius: 12px; padding: 12px 15px; margin-bottom: 12px;">
-                            <div style="text-align: center;">
-                                <div style="color: var(--accent); font-size: 14px; font-weight: 800; text-shadow: 0 0 12px rgba(0, 206, 201, 0.8);">${pres}</div>
-                                <div style="color: var(--text-sub); font-size: 9px; font-weight: 700; letter-spacing: 0.5px; margin-top: 4px; text-transform: uppercase;">Present</div>
+                        <!-- Right: Acronym, Title, Stats -->
+                        <div style="text-align: right; flex: 1; padding-left: 15px;">
+                            <div style="font-size: 19px; font-weight: 900; color: #ffffff; letter-spacing: 0.5px; text-transform: uppercase;">${acronym}</div>
+                            <div style="font-size: 12px; color: var(--text-sub); font-weight: 500; margin: 3px 0 7px 0; text-transform: lowercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 230px; margin-left: auto;">${name.toLowerCase()}</div>
+                            <div style="display: flex; align-items: center; justify-content: flex-end; gap: 8px;">
+                                <span style="color: rgba(255,255,255,0.7); font-size: 13px; font-weight: 700;">${pres}/${cond}</span>
+                                <span style="color: rgba(255,255,255,0.3); font-size: 10px;">•</span>
+                                <span style="color: #fff; font-size: 15px; font-weight: 900;">${pct.toFixed(1)}%</span>
+                                ${subCredit ? `<span style="color: var(--text-sub); font-size: 10px; font-weight: 700; background: rgba(255,255,255,0.06); padding: 2px 7px; border-radius: 6px; margin-left: 4px;">${subCredit}C</span>` : ''}
                             </div>
-                            <div style="text-align: center;">
-                                <div style="color: var(--danger); font-size: 14px; font-weight: 800; text-shadow: 0 0 12px rgba(255, 71, 87, 0.8);">${abs}</div>
-                                <div style="color: var(--text-sub); font-size: 9px; font-weight: 700; letter-spacing: 0.5px; margin-top: 4px; text-transform: uppercase;">Absent</div>
-                            </div>
-                            <div style="text-align: center;">
-                                <div style="color: var(--text-main); font-size: 14px; font-weight: 800; text-shadow: 0 0 10px rgba(255, 255, 255, 0.6);">${cond}</div>
-                                <div style="color: var(--text-sub); font-size: 9px; font-weight: 700; letter-spacing: 0.5px; margin-top: 4px; text-transform: uppercase;">Total</div>
-                            </div>
-                            ${(() => {
-                                let m = sub.bunk_margin !== undefined ? sub.bunk_margin : Math.floor((pres - 0.75 * cond) / 0.75);
-                                let needed = sub.classes_needed !== undefined ? sub.classes_needed : Math.max(0, Math.ceil(3 * cond - 4 * pres));
-                                if (cond === 0) return '';
-                                if (m > 0 || (pct >= 75 && m >= 0)) {
-                                    return `
-                                    <div style="text-align: center;">
-                                        <div style="color: #2ecc71; font-size: 14px; font-weight: 800; text-shadow: 0 0 12px rgba(46, 204, 113, 0.8);">+${m}</div>
-                                        <div style="color: var(--text-sub); font-size: 9px; font-weight: 700; letter-spacing: 0.5px; margin-top: 4px; text-transform: uppercase;">Margin</div>
-                                    </div>`;
-                                } else {
-                                    return `
-                                    <div style="text-align: center;">
-                                        <div style="color: #e74c3c; font-size: 14px; font-weight: 800; text-shadow: 0 0 12px rgba(231, 76, 60, 0.8);">-${needed}</div>
-                                        <div style="color: var(--text-sub); font-size: 9px; font-weight: 700; letter-spacing: 0.5px; margin-top: 4px; text-transform: uppercase;">Needed</div>
-                                    </div>`;
-                                }
-                            })()}
                         </div>
-
-                        <!-- Ratio-D Bunk Pill Badge & Credit -->
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 6px;">
-                            ${(() => {
-                                if (cond === 0) {
-                                    return `<span style="color: var(--text-sub); font-size: 11px;">No classes conducted yet</span>`;
-                                }
-                                let m = sub.bunk_margin !== undefined ? sub.bunk_margin : Math.floor((pres - 0.75 * cond) / 0.75);
-                                let needed = sub.classes_needed !== undefined ? sub.classes_needed : Math.max(0, Math.ceil(3 * cond - 4 * pres));
-                                if (pct >= 75) {
-                                    if (m > 0) {
-                                        return `<span style="background: rgba(46, 204, 113, 0.15); color: #2ecc71; border: 1px solid rgba(46, 204, 113, 0.3); border-radius: 20px; padding: 3px 10px; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; gap: 5px;"><i class="fas fa-check-circle" style="font-size: 10px;"></i> Can bunk ${m} ${m === 1 ? 'class' : 'classes'} safely</span>`;
-                                    } else {
-                                        return `<span style="background: rgba(243, 156, 18, 0.15); color: #f39c12; border: 1px solid rgba(243, 156, 18, 0.3); border-radius: 20px; padding: 3px 10px; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; gap: 5px;"><i class="fas fa-exclamation-triangle" style="font-size: 10px;"></i> On the edge • Don't bunk</span>`;
-                                    }
-                                } else {
-                                    return `<span style="background: rgba(231, 76, 60, 0.15); color: #e74c3c; border: 1px solid rgba(231, 76, 60, 0.3); border-radius: 20px; padding: 3px 10px; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; gap: 5px;"><i class="fas fa-arrow-up" style="font-size: 10px;"></i> Attend next ${needed} ${needed === 1 ? 'class' : 'classes'} to reach 75%</span>`;
-                                }
-                            })()}
-                            ${subCredit ? `<span style="color: var(--text-sub); font-size: 10px; font-weight: 700; background: rgba(255,255,255,0.06); padding: 3px 8px; border-radius: 6px; letter-spacing: 0.5px;">${subCredit} CREDITS</span>` : ''}
-                        </div>
+                    </div>
                 `;
-
-                if (cond === 0) {
-                    html += `
-                        <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 10px; padding: 10px; display: flex; align-items: center; gap: 8px; margin-top: 15px;">
-                            <i class="fas fa-info-circle" style="color: var(--text-sub); font-size: 12px;"></i>
-                            <span style="color: var(--text-sub); font-size: 12px; font-weight: 500;">No classes conducted yet</span>
-                        </div>
-                    `;
-                } else {
-                    // Segmented line graph
-                    html += `
-                        <div style="position: relative; height: 30px; margin-top: 10px;">
-                            <!-- Base line -->
-                            <div style="position: absolute; top: 14px; left: 0; right: 0; height: 2px; background: rgba(255,255,255,0.1); border-radius: 2px;"></div>
-                            <!-- Fill line -->
-                            <div style="position: absolute; top: 14px; left: 0; width: ${pct}%; height: 2px; background: var(--accent); border-radius: 2px; box-shadow: 0 0 10px var(--accent);"></div>
-                            
-                            <!-- Dots -->
-                            <div style="position: absolute; top: 12px; left: 0%; width: 6px; height: 6px; border-radius: 50%; background: ${pct >= 0 ? 'var(--accent)' : 'rgba(255,255,255,0.2)'};"></div>
-                            <div style="position: absolute; top: 12px; left: 33%; width: 6px; height: 6px; border-radius: 50%; background: ${pct >= 33 ? 'var(--accent)' : 'rgba(255,255,255,0.2)'};"></div>
-                            <div style="position: absolute; top: 12px; left: 66%; width: 6px; height: 6px; border-radius: 50%; background: ${pct >= 66 ? 'var(--accent)' : 'rgba(255,255,255,0.2)'};"></div>
-                            <div style="position: absolute; top: 12px; right: 0; width: 6px; height: 6px; border-radius: 50%; background: ${pct >= 100 ? 'var(--accent)' : 'rgba(255,255,255,0.2)'};"></div>
-                        </div>
-                    `;
-                }
-
-                html += `</div>`;
             });
 
             list.innerHTML = html;
@@ -6125,76 +6097,126 @@
         </div>
     `;
 
-    parsedCourses.forEach((c, index) => {
-        let shortName = c.title.length > 30 ? c.title.substring(0, 30) + '...' : c.title;
-        let testRows = '';
-        const courseColor = getColorForPercent(c.percent);
-        const courseRGB = rgbForPercent(c.percent);
-        
+    // Helper to generate a Ratio-D subject marks card (Screenshot 5)
+    function buildRatioDMarksCard(c, isEmergency) {
+        let cleanTitle = (c.title || "Subject").toLowerCase();
+        let acronym = getSubjectAcronym(c.title, c.code);
+        let scoreDisplay = Number.isInteger(c.obtained) ? c.obtained : c.obtained.toFixed(1);
+        let scoreColor = isEmergency ? '#ff4757' : '#ffffff';
+
+        // Check stored credits
+        let cCredits = 4;
+        try {
+            const savedCourses = JSON.parse(localStorage.getItem('squadCourses') || '[]');
+            const mc = savedCourses.find(sc => (sc.code || sc.courseCode || '').toUpperCase() === (c.code || '').toUpperCase());
+            if (mc && (mc.credit || mc.credits)) cCredits = parseFloat(mc.credit || mc.credits);
+        } catch(e) {}
+
+        let chips = '';
         c.tests.forEach(t => {
-            const testColor = getColorForPercent(t.percent);
-            const testRGB = rgbForPercent(t.percent);
-            testRows += `
-                <div style="padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.03);">
-                    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 6px;">
-                        <div>
-                            <div style="color: var(--text-main); font-size: 13px; font-weight: 700;">${t.testName}</div>
-                            <div style="color: rgba(255,255,255,0.4); font-size: 11px; margin-top: 2px;">${t.obtained} / ${t.max} marks</div>
-                        </div>
-                        <div style="color: ${testColor}; font-size: 14px; font-weight: 800; text-shadow: 0 0 12px rgba(${testRGB}, 0.8);">${t.percent.toFixed(0)}%</div>
-                    </div>
-                    <!-- Thin Glow Line Graph for Test -->
-                    <div style="position: relative; height: 10px; margin-top: 10px;">
-                        <div style="position: absolute; top: 4px; left: 0; right: 0; height: 2px; background: rgba(255,255,255,0.1); border-radius: 2px;"></div>
-                        <div style="position: absolute; top: 4px; left: 0; width: ${t.percent}%; height: 2px; background: ${testColor}; border-radius: 2px; box-shadow: 0 0 10px ${testColor};"></div>
+            let isLow = isEmergency || t.percent < 50;
+            let isMed = !isLow && t.percent < 70;
+            let chipBg = isLow ? 'rgba(231, 76, 60, 0.15)' : (isMed ? 'rgba(243, 156, 18, 0.15)' : 'rgba(70, 100, 40, 0.25)');
+            let chipBorder = isLow ? '1px solid rgba(231, 76, 60, 0.35)' : (isMed ? '1px solid rgba(243, 156, 18, 0.35)' : '1px solid rgba(120, 180, 60, 0.35)');
+            let chipColor = isLow ? '#ff4757' : (isMed ? '#f39c12' : '#a8e063');
+
+            let obtStr = Number.isInteger(t.obtained) ? t.obtained : t.obtained.toFixed(1);
+
+            chips += `
+                <div style="background: ${chipBg}; border: ${chipBorder}; border-radius: 12px; padding: 10px 6px; text-align: center;">
+                    <div style="font-size: 10px; font-weight: 800; color: ${chipColor}; opacity: 0.85; letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 4px;">${t.testName}</div>
+                    <div style="font-size: 15px; font-weight: 900; color: ${chipColor};">
+                        ${obtStr}<span style="font-size: 11px; opacity: 0.7; font-weight: 700;">/${t.max}</span>
                     </div>
                 </div>
             `;
         });
-        
-        if (c.perfString && !testRows) {
-            testRows = `<div style="color: var(--text-sub); font-size: 12px; padding: 12px 0;">${c.perfString}</div>`;
-        }
-        if (!testRows) {
-            testRows = `<div style="color: rgba(255,255,255,0.3); font-size: 12px; padding: 16px 0; text-align: center; font-style: italic;">No assessments recorded yet</div>`;
+
+        // Fill remaining slots up to 6 with TBA dashed chips
+        let emptySlots = Math.max(0, 6 - c.tests.length);
+        for (let s = 0; s < emptySlots; s++) {
+            chips += `
+                <div style="border: 1px dashed rgba(255,255,255,0.1); border-radius: 12px; padding: 14px 6px; text-align: center; color: rgba(255,255,255,0.25); font-size: 11px; font-weight: 700; letter-spacing: 1px; display:flex; align-items:center; justify-content:center;">
+                    TBA
+                </div>
+            `;
         }
 
-        html += `
-            <div class="glass-card fade-in-up" style="animation-delay: ${index * 0.05}s; border: 1px solid rgba(255,255,255,0.05); background: var(--bg-card); border-radius: 20px; padding: 20px; margin-bottom: 15px; position: relative; overflow: hidden;">
-                
-                <!-- Thin White Left indicator accent like Attendance -->
-                <div style="position: absolute; left: 0; top: 25px; bottom: 25px; width: 3px; background: rgba(255,255,255,0.8); border-radius: 0 4px 4px 0;"></div>
-                
-                <div style="display: flex; justify-content: space-between; align-items: flex-start; padding-left: 10px; margin-bottom: 15px;">
-                    <div style="flex: 1; padding-right: 15px;">
-                        <div style="color: var(--text-main); font-weight: 700; font-size: 15px; margin-bottom: 4px; line-height: 1.3;">${shortName}</div>
-                        <div style="color: var(--text-sub); font-size: 10px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase;">${c.code}</div>
+        return `
+            <div class="glass-card fade-in-up" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 20px; padding: 20px; margin-bottom: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.15);">
+                <!-- Top Row -->
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px;">
+                    <!-- Left: Big Score -->
+                    <div style="text-align: left;">
+                        <div style="font-size: 38px; font-weight: 900; line-height: 1; letter-spacing: -1px; color: ${scoreColor};">${scoreDisplay}</div>
+                        <div style="font-size: 10px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: var(--text-sub); margin-top: 5px;">OUT OF ${c.max || '--'}</div>
                     </div>
-                    <div style="text-align: right;">
-                        <div style="color: ${courseColor}; font-weight: 900; font-size: 20px; text-shadow: 0 0 12px rgba(${courseRGB}, 0.8);">${c.percent.toFixed(0)}%</div>
-                        <div style="color: rgba(255,255,255,0.5); font-size: 11px; font-weight: 700; margin-top: 4px;">${c.obtained.toFixed(1)} <span style="font-size:9px; color:rgba(255,255,255,0.3);">/ ${c.max}</span></div>
+
+                    <!-- Right: Acronym, Title, Credits -->
+                    <div style="text-align: right; flex: 1; padding-left: 15px;">
+                        <div style="font-size: 19px; font-weight: 900; color: ${isEmergency ? '#ff4757' : '#ffffff'}; letter-spacing: 0.5px; text-transform: uppercase;">${acronym}</div>
+                        <div style="font-size: 11px; color: var(--text-sub); font-weight: 500; margin: 3px 0 7px 0; text-transform: lowercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 220px; margin-left: auto;">${cleanTitle}</div>
+                        <span style="font-size: 10px; font-weight: 800; color: rgba(255,255,255,0.6); background: rgba(255,255,255,0.06); padding: 3px 8px; border-radius: 6px; letter-spacing: 0.5px; text-transform: uppercase; display: inline-block;">${cCredits} CREDITS</span>
                     </div>
                 </div>
-                
-                <!-- Thin Glow Line Graph for Overall Course -->
-                <div style="position: relative; height: 20px; margin-top: 5px; margin-left: 10px; margin-bottom: 10px;">
-                    <!-- Base line -->
-                    <div style="position: absolute; top: 9px; left: 0; right: 0; height: 2px; background: rgba(255,255,255,0.1); border-radius: 2px;"></div>
-                    <!-- Fill line with glow -->
-                    <div style="position: absolute; top: 9px; left: 0; width: ${c.percent}%; height: 2px; background: ${courseColor}; border-radius: 2px; box-shadow: 0 0 10px ${courseColor}; transition: width 1s ease-out;"></div>
-                </div>
-                
-                <div style="padding: 0 0 0 10px;">
-                    <div style="color: rgba(255,255,255,0.4); font-size: 10px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; display: flex; align-items: center; gap: 8px; margin-top: 15px; margin-bottom: 5px;">
-                        <i class="fas fa-list-ul"></i> Assessment Breakdown
-                    </div>
-                    <div style="border-top: 1px dashed rgba(255,255,255,0.08); margin-top: 10px;">
-                        ${testRows}
-                    </div>
+
+                <!-- Assessment Grid (3 columns, 6 slots total) -->
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
+                    ${chips}
                 </div>
             </div>
         `;
+    }
+
+    // Identify emergency course (score < 50% or lowest score if below 60%)
+    let emergencyCourse = null;
+    let otherCourses = [];
+
+    // Find lowest score
+    let minCourse = null;
+    parsedCourses.forEach(c => {
+        if (c.max > 0) {
+            if (!minCourse || c.percent < minCourse.percent) {
+                minCourse = c;
+            }
+        }
     });
+
+    if (minCourse && minCourse.percent < 60) {
+        emergencyCourse = minCourse;
+        otherCourses = parsedCourses.filter(c => c !== minCourse);
+    } else {
+        otherCourses = parsedCourses;
+    }
+
+    // Render Academic Emergency section if any course qualifies
+    if (emergencyCourse) {
+        html += `
+            <div style="border: 1px dashed rgba(255, 71, 87, 0.4); border-radius: 24px; padding: 18px 16px; margin-bottom: 24px; background: rgba(255, 71, 87, 0.03);">
+                <div style="display:flex; align-items:center; gap:12px; margin-bottom: 16px;">
+                    <span style="font-size:11px; font-weight:800; letter-spacing:2px; text-transform:uppercase; color:#ff4757;">academic emergency</span>
+                    <div style="flex:1; height:1px; background:rgba(255, 71, 87, 0.2);"></div>
+                </div>
+                ${buildRatioDMarksCard(emergencyCourse, true)}
+                <div style="text-align:center; font-size:11px; color:#ff6b81; margin-top:14px; opacity:0.85; font-weight:600;">
+                    💀 academic career speedrun (any%)
+                </div>
+            </div>
+        `;
+    }
+
+    // Render Section divider for other subjects
+    if (otherCourses.length > 0) {
+        html += `
+            <div style="display:flex; align-items:center; gap:12px; margin: 25px 0 16px 0;">
+                <span style="font-size:11px; font-weight:800; letter-spacing:3px; text-transform:uppercase; color:var(--text-sub);">${emergencyCourse ? 'other subjects' : 'subjects'}</span>
+                <div style="flex:1; height:1px; background:rgba(255,255,255,0.08);"></div>
+            </div>
+        `;
+        otherCourses.forEach(c => {
+            html += buildRatioDMarksCard(c, false);
+        });
+    }
 
     list.innerHTML = html;
 }
@@ -11966,12 +11988,71 @@ function predictDateRangeUI() {
         currentDate.setDate(currentDate.getDate() + 1);
     }
 
-    let html = '<h3 style="color:var(--text-main); font-size:16px; margin-bottom:15px;">Predicted Attendance</h3>';
+    let totalBunkedClasses = 0;
+    Object.values(missedClasses).forEach(cnt => { totalBunkedClasses += cnt; });
+
+    const dayCount = Math.max(1, Math.round((end - start) / (1000 * 60 * 60 * 24)) + 1);
+
+    // Calculate current overall attendance
+    let totalCond = 0, totalPres = 0;
+    (attendanceData || []).forEach(s => {
+        let c = parseInt(s.conducted) || 0;
+        let p = parseInt(s.present !== undefined ? s.present : (c - (parseInt(s.absent) || 0))) || 0;
+        totalCond += c;
+        totalPres += p;
+    });
+
+    let currOverallPct = totalCond > 0 ? (totalPres / totalCond) * 100 : 0;
+    let newOverallCond = totalCond + totalBunkedClasses;
+    let newOverallPct = newOverallCond > 0 ? (totalPres / newOverallCond) * 100 : 0;
+    let overallMarginLeft = Math.floor((totalPres - 0.75 * newOverallCond) / 0.75);
+    let overallNeeded = Math.max(0, Math.ceil(3 * newOverallCond - 4 * totalPres));
+
+    let html = '';
+
+    if (totalBunkedClasses > 0) {
+        let isOverallSafe = newOverallPct >= 75;
+        let ovColor = isOverallSafe ? '#00ff88' : '#ff3366';
+        let ovShadow = isOverallSafe ? '0 0 16px rgba(0,255,136,0.35)' : '0 0 16px rgba(255,51,102,0.35)';
+
+        // Top Impact Summary Card
+        html += `
+            <div class="glass-card" style="background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; padding: 20px; margin-bottom: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.25);">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                    <span style="font-size:11px; font-weight:800; letter-spacing:1.5px; text-transform:uppercase; color:var(--text-sub);">SIMULATION IMPACT</span>
+                    <span style="font-size:11px; font-weight:700; color:rgba(255,255,255,0.7); background:rgba(255,255,255,0.06); padding:3px 9px; border-radius:10px;">${dayCount} ${dayCount === 1 ? 'day' : 'days'} selected • ${totalBunkedClasses} ${totalBunkedClasses === 1 ? 'class' : 'classes'}</span>
+                </div>
+                
+                <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:14px;">
+                    <div>
+                        <div style="font-size:12px; color:var(--text-sub); margin-bottom:2px;">Overall Attendance</div>
+                        <div style="display:flex; align-items:baseline; gap:8px;">
+                            <span style="color:rgba(255,255,255,0.4); font-size:16px; text-decoration:line-through; font-weight:700;">${currOverallPct.toFixed(1)}%</span>
+                            <span style="color:var(--text-sub); font-size:12px;">→</span>
+                            <span style="color:${ovColor}; font-size:26px; font-weight:900; text-shadow:${ovShadow};">${newOverallPct.toFixed(1)}%</span>
+                        </div>
+                    </div>
+                    <div style="text-align:right;">
+                        ${isOverallSafe ? `
+                            <span style="background:rgba(0,255,136,0.12); color:#00ff88; border:1px solid rgba(0,255,136,0.35); border-radius:10px; padding:6px 12px; font-size:12px; font-weight:800; display:inline-block;">+${overallMarginLeft} Overall Margin Left</span>
+                        ` : `
+                            <span style="background:rgba(255,51,102,0.12); color:#ff3366; border:1px solid rgba(255,51,102,0.35); border-radius:10px; padding:6px 12px; font-size:12px; font-weight:800; display:inline-block;">🚨 ${overallNeeded} Classes Needed Overall</span>
+                        `}
+                    </div>
+                </div>
+            </div>
+
+            <div style="display:flex; align-items:center; gap:12px; margin: 24px 0 14px 0;">
+                <span style="font-size:11px; font-weight:800; letter-spacing:2px; text-transform:uppercase; color:var(--text-sub);">AFFECTED SUBJECTS</span>
+                <div style="flex:1; height:1px; background:rgba(255,255,255,0.08);"></div>
+            </div>
+        `;
+    }
     
     let anyMissed = false;
     attendanceData.forEach(sub => {
         let name = sub.courseTitle || sub.name || "Unknown Subject";
-                if (name.toLowerCase() === "na") name = (sub.id || sub.courseCode || "Unknown Course");
+        if (name.toLowerCase() === "na") name = (sub.id || sub.courseCode || "Unknown Course");
         let safeId = (sub.id || sub.courseCode || name).toString().replace(/[^a-zA-Z0-9]/g, '');
         let bunked = missedClasses[safeId] || 0;
         
@@ -11979,23 +12060,47 @@ function predictDateRangeUI() {
         let cond = parseInt(sub.conducted) || 0;
         let abs = parseInt(sub.absent) || 0;
         let pres = cond - abs;
+        let acronym = getSubjectAcronym(name, sub.courseCode);
         
         if (bunked > 0) {
             anyMissed = true;
             let newTotal = cond + bunked;
             let newPct = (pres / newTotal) * 100;
+            let subMargin = Math.floor((pres - 0.75 * newTotal) / 0.75);
+            let subNeeded = Math.max(0, Math.ceil(3 * newTotal - 4 * pres));
+            let isSafe = newPct >= 75;
             
-            let color = newPct >= 75 ? 'var(--success)' : 'var(--danger)';
+            let color = isSafe ? '#00ff88' : '#ff3366';
+            let shadow = isSafe ? '0 0 12px rgba(0,255,136,0.35)' : '0 0 12px rgba(255,51,102,0.35)';
             
             html += `
-                <div class="glass-card" style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 12px; margin-bottom: 10px;">
-                    <div style="color: var(--text-main); font-weight: 700; font-size: 14px; margin-bottom: 10px;">${name}</div>
-                    <div style="display:flex; justify-content:space-between; align-items:center;">
-                        <div style="color:var(--text-sub); font-size:12px;">Missed: ${bunked} classes</div>
-                        <div style="display:flex; align-items:center; gap:10px;">
-                            <span style="color:var(--text-main); font-size:14px; text-decoration:line-through; opacity:0.5;">${pct.toFixed(1)}%</span>
-                            <i class="fas fa-arrow-right" style="color:var(--text-sub); font-size:10px;"></i>
-                            <span style="color:${color}; font-weight:800; font-size:16px;">${newPct.toFixed(1)}%</span>
+                <div class="glass-card" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 18px; padding: 18px; margin-bottom: 12px;">
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom: 12px;">
+                        <div>
+                            <div style="color: #ffffff; font-weight: 800; font-size: 16px; letter-spacing:0.3px;">${acronym}</div>
+                            <div style="color: var(--text-sub); font-size: 11px; margin-top: 2px; text-transform: lowercase;">${name.toLowerCase()}</div>
+                        </div>
+                        <div style="text-align: right;">
+                            <span style="background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.7); font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 8px;">${bunked} ${bunked === 1 ? 'class' : 'classes'} missed</span>
+                        </div>
+                    </div>
+
+                    <div style="display:flex; justify-content:space-between; align-items:center; background: rgba(0,0,0,0.2); border-radius: 12px; padding: 12px 14px;">
+                        <div style="display:flex; align-items:baseline; gap:8px;">
+                            <span style="color:rgba(255,255,255,0.4); font-size:13px; text-decoration:line-through; font-weight:600;">${pct.toFixed(1)}%</span>
+                            <span style="color:var(--text-sub); font-size:11px;">→</span>
+                            <span style="color:${color}; font-weight:900; font-size:17px; text-shadow:${shadow};">${newPct.toFixed(1)}%</span>
+                        </div>
+                        <div>
+                            ${isSafe ? `
+                                <span style="background: rgba(0, 255, 136, 0.12); color: #00ff88; border: 1px solid rgba(0, 255, 136, 0.35); border-radius: 8px; padding: 4px 10px; font-size: 11px; font-weight: 800; display: inline-flex; align-items: center; gap: 4px;">
+                                    +${subMargin} MARGIN LEFT
+                                </span>
+                            ` : `
+                                <span style="background: rgba(255, 51, 102, 0.12); color: #ff3366; border: 1px solid rgba(255, 51, 102, 0.35); border-radius: 8px; padding: 4px 10px; font-size: 11px; font-weight: 800; display: inline-flex; align-items: center; gap: 4px;">
+                                    🚨 ${subNeeded} CLASSES NEEDED
+                                </span>
+                            `}
                         </div>
                     </div>
                 </div>
@@ -12004,7 +12109,7 @@ function predictDateRangeUI() {
     });
     
     if (!anyMissed) {
-        html += `<div style="color:var(--text-sub); font-size:14px; text-align:center; padding:20px;">No classes will be missed in this range based on your timetable!</div>`;
+        html += `<div style="color:var(--text-sub); font-size:14px; text-align:center; padding:30px 20px; background:rgba(255,255,255,0.02); border-radius:16px; border:1px dashed rgba(255,255,255,0.08);">🎉 No classes will be missed in this date range based on your timetable!</div>`;
     }
     
     resultsContainer.innerHTML = html;
@@ -12081,9 +12186,9 @@ function predictDateRangeUI() {
 
     <!-- Attendance Predictor Modal -->
     <div id="att-predict-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:var(--bg-start); z-index:99999; flex-direction:column; overflow-y:auto; padding-bottom:50px;">
-        <div style="padding: 20px; display:flex; align-items:center; gap:15px; position:sticky; top:0; background:rgba(0,0,0,0.8); backdrop-filter:blur(10px); z-index:10;">
-            <button onclick="closeAttendancePredictor()" style="background:none; border:none; color:var(--text-main); font-size:18px; cursor:pointer;"><i class="fas fa-arrow-left"></i></button>
-            <h2 style="margin:0; font-size:18px; color:var(--text-main); font-weight:700; flex:1;">Predict Attendance</h2>
+        <div style="padding: 18px 20px; display:flex; align-items:center; gap:14px; position:sticky; top:0; background:rgba(10,12,18,0.85); backdrop-filter:blur(20px); z-index:10; border-bottom:1px solid rgba(255,255,255,0.06);">
+            <button onclick="closeAttendancePredictor()" style="background:rgba(255,255,255,0.08); border:none; border-radius:50%; width:36px; height:36px; color:#fff; display:flex; align-items:center; justify-content:center; cursor:pointer;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg></button>
+            <h2 style="margin:0; font-size:18px; color:#fff; font-weight:800; flex:1; letter-spacing:-0.2px;">Predict Attendance</h2>
         </div>
         
         <div style="padding: 20px;">
