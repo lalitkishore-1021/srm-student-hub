@@ -27,3 +27,5 @@ cap.txt
 cw_att.html
 cw_marks.html
 old_server.py
+*.class
+
