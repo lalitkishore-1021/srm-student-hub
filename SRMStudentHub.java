@@ -248,10 +248,25 @@ public class SRMStudentHub {
                         int needed = (int) Math.ceil(((targetDecimal * conducted) - attended) / (1.0 - targetDecimal));
                         if (needed < 0) needed = 0;
 
+                        // Calculate projected date when required becomes 0
+                        java.time.LocalDate targetDate = java.time.LocalDate.now();
+                        int daysAdded = 0;
+                        int classesCovered = 0;
+                        while (classesCovered < needed && daysAdded < 120) {
+                            targetDate = targetDate.plusDays(1);
+                            daysAdded++;
+                            java.time.DayOfWeek dow = targetDate.getDayOfWeek();
+                            if (dow != java.time.DayOfWeek.SATURDAY && dow != java.time.DayOfWeek.SUNDAY) {
+                                classesCovered++;
+                            }
+                        }
+                        String dateFormatted = targetDate.format(java.time.format.DateTimeFormatter.ofPattern("EEE, MMM d, yyyy"));
+
                         percentLabel.setForeground(new Color(217, 48, 37)); // Red
                         statusBadge.setText("ATTENDANCE SHORTAGE (< " + (int)target + "%)");
                         statusBadge.setForeground(new Color(217, 48, 37));
-                        detailLabel.setText("You must attend the next " + needed + " consecutive class(es) to reach " + (int)target + "%.");
+                        detailLabel.setText("<html><center>Must attend next <b>" + needed + "</b> consecutive class(es) to reach " + (int)target + "%.<br>"
+                                + "<font color='#008844'><b>📅 Required becomes 0 on: " + dateFormatted + "</b></font></center></html>");
                     }
 
                 } catch (NumberFormatException ex) {

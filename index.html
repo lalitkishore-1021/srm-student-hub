@@ -5794,6 +5794,134 @@
             return (title || "SUB").substring(0, 4).toUpperCase();
         }
 
+        function matchSubjectInTimetable(sub, cls) {
+            if (!sub || !cls) return false;
+            const clean = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+            const subCode = clean(sub.courseCode || sub.code || '');
+            const clsCode = clean(cls.code || '');
+            if (subCode && clsCode && (subCode === clsCode || clsCode.includes(subCode) || subCode.includes(clsCode))) {
+                return true;
+            }
+            const subTitle = clean(sub.courseTitle || sub.name || '');
+            const clsSubject = clean(cls.subject || cls.title || '');
+            if (subCode && clsSubject.includes(subCode)) {
+                return true;
+            }
+            if (subTitle && clsSubject && (clsSubject.includes(subTitle) || subTitle.includes(clsSubject))) {
+                return true;
+            }
+            if (typeof getSubjectAcronym === 'function') {
+                const subAcr = clean(getSubjectAcronym(sub.courseTitle || sub.name, sub.courseCode));
+                const clsAcr = clean(getSubjectAcronym(cls.subject || cls.title, cls.code));
+                if (subAcr.length >= 3 && subAcr === clsAcr) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        function calculateZeroRequiredDate(sub, needed) {
+            if (!needed || needed <= 0) return null;
+            const ttDict = JSON.parse(localStorage.getItem('squadTimetable') || '{}');
+            const hasTimetable = ttDict && typeof ttDict === 'object' && Object.keys(ttDict).length > 0;
+
+            const classesPerDayOrder = { "1": 0, "2": 0, "3": 0, "4": 0, "5": 0 };
+            let totalMatchedHours = 0;
+
+            if (hasTimetable) {
+                for (let d = 1; d <= 5; d++) {
+                    const dayKey = d.toString();
+                    const list = ttDict[dayKey] || [];
+                    if (Array.isArray(list)) {
+                        list.forEach(cls => {
+                            if (matchSubjectInTimetable(sub, cls)) {
+                                let hrs = 1;
+                                if (cls.period_start && cls.period_end && cls.period_end >= cls.period_start) {
+                                    hrs = Math.max(1, cls.period_end - cls.period_start + 1);
+                                }
+                                classesPerDayOrder[dayKey] += hrs;
+                                totalMatchedHours += hrs;
+                            }
+                        });
+                    }
+                }
+            }
+
+            // Fallback frequency if timetable not loaded or subject is outside timetable grid
+            if (totalMatchedHours === 0) {
+                const cred = parseFloat(sub.credit || sub.credits) || 3;
+                if (cred >= 4) {
+                    classesPerDayOrder["1"] = 1;
+                    classesPerDayOrder["2"] = 1;
+                    classesPerDayOrder["3"] = 1;
+                    classesPerDayOrder["5"] = 1;
+                } else if (cred <= 2) {
+                    classesPerDayOrder["2"] = 1;
+                    classesPerDayOrder["4"] = 1;
+                } else {
+                    classesPerDayOrder["1"] = 1;
+                    classesPerDayOrder["3"] = 1;
+                    classesPerDayOrder["4"] = 1;
+                }
+            }
+
+            let curr = new Date();
+            // If after 17:00 (5 PM), today's scheduled classes are completed; start looking from tomorrow
+            if (curr.getHours() >= 17) {
+                curr.setDate(curr.getDate() + 1);
+            }
+            curr.setHours(0, 0, 0, 0);
+
+            let hoursCovered = 0;
+            let targetDate = null;
+            let targetDayOrder = null;
+            let daysSearched = 0;
+            const MAX_SEARCH_DAYS = 120; // 4 months upper bound
+
+            while (hoursCovered < needed && daysSearched < MAX_SEARCH_DAYS) {
+                const dayOfWeek = curr.getDay(); // 0 is Sun, 6 is Sat
+                if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+                    const iso = curr.getFullYear() + "-" + String(curr.getMonth() + 1).padStart(2, '0') + "-" + String(curr.getDate()).padStart(2, '0');
+                    const isHoliday = typeof srmPlanner !== 'undefined' && srmPlanner[iso] && srmPlanner[iso].type === "Holiday";
+                    if (!isHoliday) {
+                        let dOrder = (typeof getDayOrder === 'function') ? getDayOrder(iso) : 0;
+                        if (!dOrder || dOrder < 1 || dOrder > 5) {
+                            dOrder = (daysSearched % 5) + 1;
+                        }
+                        const classesToday = classesPerDayOrder[dOrder.toString()] || 0;
+                        if (classesToday > 0) {
+                            hoursCovered += classesToday;
+                            if (hoursCovered >= needed) {
+                                targetDate = new Date(curr);
+                                targetDayOrder = dOrder;
+                                break;
+                            }
+                        }
+                    }
+                }
+                curr.setDate(curr.getDate() + 1);
+                daysSearched++;
+            }
+
+            if (targetDate) {
+                const now = new Date();
+                now.setHours(0, 0, 0, 0);
+                const diffDays = Math.round((targetDate - now) / (1000 * 60 * 60 * 24));
+                const options = { weekday: 'short', month: 'short', day: 'numeric' };
+                let dateStr = targetDate.toLocaleDateString('en-US', options);
+                if (diffDays === 0) dateStr = 'Today, ' + dateStr;
+                else if (diffDays === 1) dateStr = 'Tomorrow, ' + dateStr;
+
+                return {
+                    dateFormatted: dateStr,
+                    dayOrder: targetDayOrder,
+                    diffDays: diffDays,
+                    isEstimated: totalMatchedHours === 0
+                };
+            }
+            return null;
+        }
+
         function renderAttendance(attData) {
             const list = document.getElementById('attendance-list');
             if (!list) return;
@@ -5950,26 +6078,80 @@
                 let marginLabel = isSafe ? "MARGIN" : "REQUIRED";
                 let marginColor = isSafe ? "#00ff88" : "#ff3366";
                 let marginShadow = isSafe ? "0 0 16px rgba(0, 255, 136, 0.4)" : "0 0 16px rgba(255, 51, 102, 0.4)";
+                let recoveryInfo = !isSafe ? calculateZeroRequiredDate(sub, needed) : null;
 
                 html += `
-                    <div class="glass-card fade-in-up" style="animation-delay: ${index * 0.04}s; background: rgba(255, 255, 255, 0.045); backdrop-filter: blur(20px) saturate(180%); -webkit-backdrop-filter: blur(20px) saturate(180%); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 22px; padding: 22px 24px; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35), inset 0 1px 1px rgba(255, 255, 255, 0.1);">
-                        <!-- Left: Big Bold Margin / Needed in Neon -->
-                        <div style="min-width: 80px; text-align: left;">
-                            <div style="font-size: 42px; font-weight: 900; line-height: 1; letter-spacing: -1.5px; color: ${marginColor}; text-shadow: ${marginShadow};">${marginVal}</div>
-                            <div style="font-size: 10px; font-weight: 900; letter-spacing: 1.5px; text-transform: uppercase; color: var(--text-sub); margin-top: 6px;">${marginLabel}</div>
-                        </div>
+                    <div class="glass-card fade-in-up" style="animation-delay: ${index * 0.04}s; background: rgba(255, 255, 255, 0.045); backdrop-filter: blur(20px) saturate(180%); -webkit-backdrop-filter: blur(20px) saturate(180%); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 22px; padding: 20px 22px; margin-bottom: 14px; display: flex; flex-direction: column; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35), inset 0 1px 1px rgba(255, 255, 255, 0.1);">
+                        <!-- Upper: Stats Row -->
+                        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                            <!-- Left: Big Bold Margin / Needed in Neon -->
+                            <div style="min-width: 80px; text-align: left;">
+                                <div style="font-size: 42px; font-weight: 900; line-height: 1; letter-spacing: -1.5px; color: ${marginColor}; text-shadow: ${marginShadow};">${marginVal}</div>
+                                <div style="font-size: 10px; font-weight: 900; letter-spacing: 1.5px; text-transform: uppercase; color: var(--text-sub); margin-top: 6px;">${marginLabel}</div>
+                            </div>
 
-                        <!-- Right: Acronym, Title, Stats -->
-                        <div style="text-align: right; flex: 1; padding-left: 15px;">
-                            <div style="font-size: 24px; font-weight: 900; color: #ffffff; letter-spacing: 0.5px; text-transform: uppercase;">${acronym}</div>
-                            <div style="font-size: 12px; color: rgba(255,255,255,0.75); font-weight: 700; margin: 3px 0 8px 0; text-transform: lowercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 230px; margin-left: auto;">${name.toLowerCase()}</div>
-                            <div style="display: flex; align-items: center; justify-content: flex-end; gap: 8px;">
-                                <span style="color: rgba(255,255,255,0.75); font-size: 13px; font-weight: 800;">${pres}/${cond}</span>
-                                <span style="color: rgba(255,255,255,0.3); font-size: 10px;">•</span>
-                                <span style="color: #fff; font-size: 16px; font-weight: 900;">${pct.toFixed(1)}%</span>
-                                ${subCredit ? `<span style="color: rgba(255,255,255,0.8); font-size: 10px; font-weight: 800; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); padding: 2px 7px; border-radius: 6px; margin-left: 4px;">${subCredit}C</span>` : ''}
+                            <!-- Right: Acronym, Title, Stats -->
+                            <div style="text-align: right; flex: 1; padding-left: 15px;">
+                                <div style="font-size: 24px; font-weight: 900; color: #ffffff; letter-spacing: 0.5px; text-transform: uppercase;">${acronym}</div>
+                                <div style="font-size: 12px; color: rgba(255,255,255,0.75); font-weight: 700; margin: 3px 0 8px 0; text-transform: lowercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 230px; margin-left: auto;">${name.toLowerCase()}</div>
+                                <div style="display: flex; align-items: center; justify-content: flex-end; gap: 8px;">
+                                    <span style="color: rgba(255,255,255,0.75); font-size: 13px; font-weight: 800;">${pres}/${cond}</span>
+                                    <span style="color: rgba(255,255,255,0.3); font-size: 10px;">•</span>
+                                    <span style="color: #fff; font-size: 16px; font-weight: 900;">${pct.toFixed(1)}%</span>
+                                    ${subCredit ? `<span style="color: rgba(255,255,255,0.8); font-size: 10px; font-weight: 800; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); padding: 2px 7px; border-radius: 6px; margin-left: 4px;">${subCredit}C</span>` : ''}
+                                </div>
                             </div>
                         </div>
+
+                        <!-- Lower: Actionable Recovery or Safe Status Box -->
+                        ${!isSafe ? `
+                            <div style="width: 100%; margin-top: 14px; padding: 12px 14px; background: linear-gradient(135deg, rgba(255, 51, 102, 0.12), rgba(28, 14, 24, 0.7)); border: 1px solid rgba(255, 51, 102, 0.35); border-radius: 14px; box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.08), 0 4px 15px rgba(0, 0, 0, 0.25);">
+                                <!-- Recovery Class Count Alert -->
+                                <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px; margin-bottom: 8px;">
+                                    <div style="display: flex; align-items: center; gap: 7px;">
+                                        <span style="display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 50%; background: rgba(255, 51, 102, 0.25); color: #ff3366; font-size: 11px;">
+                                            <i class="fas fa-bullseye"></i>
+                                        </span>
+                                        <span style="font-size: 12px; font-weight: 800; color: #ffffff;">
+                                            Attend next <strong style="color: #ff3366; font-size: 13.5px; font-weight: 900; background: rgba(255, 51, 102, 0.22); padding: 1px 6px; border-radius: 5px; border: 1px solid rgba(255, 51, 102, 0.38);">${needed}</strong> ${needed === 1 ? 'class' : 'classes'} continuously
+                                        </span>
+                                    </div>
+                                    <span style="font-size: 10px; font-weight: 700; color: rgba(255, 255, 255, 0.6); text-transform: uppercase; letter-spacing: 0.5px;">
+                                        To Clear Shortage
+                                    </span>
+                                </div>
+
+                                <!-- Date When Required Becomes 0 -->
+                                <div style="display: flex; align-items: center; justify-content: space-between; padding-top: 8px; border-top: 1px dashed rgba(255, 51, 102, 0.25); flex-wrap: wrap; gap: 6px;">
+                                    <div style="display: flex; align-items: center; gap: 6px; color: rgba(255, 255, 255, 0.7); font-size: 11px; font-weight: 700;">
+                                        <i class="far fa-calendar-check" style="color: #00ff88; font-size: 13px;"></i>
+                                        <span>Required becomes 0 on:</span>
+                                    </div>
+                                    <div style="display: flex; align-items: center; gap: 6px;">
+                                        <span style="font-size: 12.5px; font-weight: 900; color: #00ff88; text-shadow: 0 0 10px rgba(0, 255, 136, 0.35); letter-spacing: 0.2px;">
+                                            ${recoveryInfo ? recoveryInfo.dateFormatted : 'Next ' + needed + ' classes'}
+                                        </span>
+                                        ${recoveryInfo && recoveryInfo.dayOrder ? `
+                                            <span style="font-size: 9.5px; font-weight: 800; color: #00ff88; background: rgba(0, 255, 136, 0.15); border: 1px solid rgba(0, 255, 136, 0.3); padding: 1px 6px; border-radius: 5px;">
+                                                Day ${recoveryInfo.dayOrder}
+                                            </span>
+                                        ` : ''}
+                                    </div>
+                                </div>
+                            </div>
+                        ` : `
+                            <div style="width: 100%; margin-top: 12px; padding: 7px 12px; background: rgba(0, 255, 136, 0.04); border: 1px solid rgba(0, 255, 136, 0.16); border-radius: 12px; display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+                                <div style="display: flex; align-items: center; gap: 6px;">
+                                    <i class="fas fa-shield-alt" style="color: #00ff88; font-size: 11px;"></i>
+                                    <span style="font-size: 11.5px; font-weight: 700; color: rgba(255, 255, 255, 0.85);">
+                                        Safe Bunk Margin: You can miss <b style="color: #00ff88; font-weight: 900;">${marginVal}</b> ${marginVal === 1 ? 'class' : 'classes'} safely
+                                    </span>
+                                </div>
+                                <span style="font-size: 9.5px; font-weight: 800; color: #00ff88; background: rgba(0, 255, 136, 0.12); padding: 2px 7px; border-radius: 5px;">
+                                    Safe Zone
+                                </span>
+                            </div>
+                        `}
                     </div>
                 `;
             });
