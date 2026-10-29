@@ -265,8 +265,8 @@ public class SRMStudentHub {
                         percentLabel.setForeground(new Color(217, 48, 37)); // Red
                         statusBadge.setText("ATTENDANCE SHORTAGE (< " + (int)target + "%)");
                         statusBadge.setForeground(new Color(217, 48, 37));
-                        detailLabel.setText("<html><center>Must attend next <b>" + needed + "</b> consecutive class(es) to reach " + (int)target + "%.<br>"
-                                + "<font color='#008844'><b>📅 Required becomes 0 on: " + dateFormatted + "</b></font></center></html>");
+                        detailLabel.setText("<html><center>Attend next <b>" + needed + "</b> class(es) for " + (int)target + "% &nbsp;•&nbsp; "
+                                + "<font color='#008844'><b>0 req: " + dateFormatted + "</b></font></center></html>");
                     }
 
                 } catch (NumberFormatException ex) {
