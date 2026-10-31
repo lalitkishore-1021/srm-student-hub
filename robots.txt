@@ -1,4 +1,29 @@
+# Robots.txt for SRM Student Hub
+# Allow all major search engine crawlers: Bravebot, Googlebot, Bingbot, DuckDuckBot, Applebot, YandexBot, etc.
+
 User-agent: *
 Allow: /
 
+User-agent: Bravebot
+Allow: /
+
+User-agent: Googlebot
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+User-agent: DuckDuckBot
+Allow: /
+
+User-agent: Applebot
+Allow: /
+
+User-agent: YandexBot
+Allow: /
+
+User-agent: Slurp
+Allow: /
+
+# Canonical XML Sitemap
 Sitemap: https://srm-student-hub-1.onrender.com/sitemap.xml

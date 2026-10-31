@@ -1,9 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
   <url>
     <loc>https://srm-student-hub-1.onrender.com/</loc>
-    <lastmod>2026-09-15</lastmod>
+    <lastmod>2026-10-31</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
+    <image:image>
+      <image:loc>https://srm-student-hub-1.onrender.com/images/app-icon.svg</image:loc>
+      <image:title>SRM Student Hub</image:title>
+      <image:caption>SRM Student Hub - #1 SRMIST Academia Attendance, CGPA and Timetable Portal</image:caption>
+    </image:image>
   </url>
 </urlset>

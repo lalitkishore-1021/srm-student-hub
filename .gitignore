@@ -6,6 +6,8 @@ hub.db
 *.log
 *.png
 *.txt
+!robots.txt
+!srmhubindexnow2026.txt
 debug_*
 test_*
 fix_*

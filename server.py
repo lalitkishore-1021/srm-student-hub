@@ -2928,9 +2928,9 @@ def serve_index():
     return response
 @app.route('/<path:path>')
 def serve_static(path):
-    safe_paths = ['index.html', 'manifest.json', 'sw.js', 'robots.txt', 'sitemap.xml']
+    safe_paths = ['index.html', 'manifest.json', 'sw.js', 'robots.txt', 'sitemap.xml', 'srmhubindexnow2026.txt']
     safe_folders = ['images', 'css', 'js', 'fonts', 'themes', 'audio']
-    is_safe = path in safe_paths or any(path.startswith(f"{f}/") for f in safe_folders)
+    is_safe = path in safe_paths or path.endswith('.txt') or any(path.startswith(f"{f}/") for f in safe_folders)
     if not is_safe:
         return "Access Denied", 403
         
