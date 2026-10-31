@@ -6200,40 +6200,12 @@
                 let needed = sub.classes_needed !== undefined ? sub.classes_needed : Math.max(0, Math.ceil(3 * cond - 4 * pres));
 
                 let isSafe = (cond === 0 || pct >= 75);
-                let profile = getSubjectTimetableProfile(sub);
                 let recoveryInfo = !isSafe ? calculateZeroRequiredDate(sub, needed) : null;
 
-                let marginVal = 0;
-                let marginSub = '';
+                let marginVal = isSafe ? (m >= 0 ? m : 0) : needed;
                 let marginLabel = isSafe ? "MARGIN" : "REQUIRED";
                 let marginColor = isSafe ? "#00ff88" : "#ff3366";
                 let marginShadow = isSafe ? "0 0 16px rgba(0, 255, 136, 0.4)" : "0 0 16px rgba(255, 51, 102, 0.4)";
-
-                if (isSafe) {
-                    let safeHrs = m >= 0 ? m : 0;
-                    if (profile.hasMerged && profile.avgHours > 1) {
-                        marginVal = Math.max(0, Math.floor(safeHrs / profile.avgHours));
-                        marginSub = safeHrs + ' HRS';
-                    } else {
-                        marginVal = safeHrs;
-                        marginSub = '';
-                    }
-                } else {
-                    if (recoveryInfo && recoveryInfo.hasMerged && recoveryInfo.classesNeeded < needed) {
-                        marginVal = recoveryInfo.classesNeeded;
-                        marginSub = needed + ' HRS';
-                    } else {
-                        marginVal = needed;
-                        marginSub = '';
-                    }
-                }
-
-                let attendBadgeText = '';
-                if (recoveryInfo && recoveryInfo.hasMerged && recoveryInfo.classesNeeded < needed) {
-                    attendBadgeText = 'Attend ' + recoveryInfo.classesNeeded + ' ' + (recoveryInfo.classesNeeded === 1 ? 'class' : 'classes') + ' (' + needed + ' hrs)';
-                } else {
-                    attendBadgeText = 'Attend ' + needed + ' more';
-                }
 
                 let safeByBadgeText = recoveryInfo ? recoveryInfo.dateFormatted : ('In ' + needed + ' classes');
                 let dayOrderBadge = (recoveryInfo && recoveryInfo.dayOrder) ? ' (Day ' + recoveryInfo.dayOrder + ')' : '';
@@ -6246,7 +6218,6 @@
                             <div style="min-width: 80px; text-align: left;">
                                 <div style="font-size: 42px; font-weight: 900; line-height: 1; letter-spacing: -1.5px; color: ${marginColor}; text-shadow: ${marginShadow};">${marginVal}</div>
                                 <div style="font-size: 10px; font-weight: 900; letter-spacing: 1.5px; text-transform: uppercase; color: var(--text-sub); margin-top: 6px;">${marginLabel}</div>
-                                ${marginSub ? `<div style="font-size: 9px; font-weight: 800; color: rgba(255,255,255,0.45); margin-top: 2px; letter-spacing: 0.5px;">${marginSub}</div>` : ''}
                             </div>
 
                             <!-- Right: Acronym, Title, Stats -->
@@ -6267,7 +6238,7 @@
                             <div style="width: 100%; margin-top: 13px; padding-top: 10px; border-top: 1px solid rgba(255, 255, 255, 0.08); display: flex; align-items: center; justify-content: space-between; gap: 8px;">
                                 <div style="display: flex; align-items: center; gap: 6px;">
                                     <span style="background: rgba(255, 51, 102, 0.16); color: #ff4772; font-size: 11px; font-weight: 800; padding: 2.5px 8px; border-radius: 6px; letter-spacing: 0.2px; border: 1px solid rgba(255, 51, 102, 0.35);">
-                                        ${attendBadgeText}
+                                        Attend ${needed} more
                                     </span>
                                     <span style="color: rgba(255, 255, 255, 0.65); font-size: 11px; font-weight: 600;">to reach 75%</span>
                                 </div>

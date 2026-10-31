@@ -232,39 +232,30 @@ public class SRMStudentHub {
 
                     double targetDecimal = target / 100.0;
 
-                    String cName = txtCourse.getText().toUpperCase();
-                    int hrsPerClass = (cName.contains("LAB") || cName.contains("PRACTICAL") || cName.endsWith("P")) ? 2 : 1;
-
                     if (currentPct >= target) {
                         // Safe: Calculate bunk margin
-                        int safeMarginHrs = (int) Math.floor((attended - (targetDecimal * conducted)) / targetDecimal);
-                        if (safeMarginHrs < 0) safeMarginHrs = 0;
-                        int safeClasses = safeMarginHrs / hrsPerClass;
+                        int safeMargin = (int) Math.floor((attended - (targetDecimal * conducted)) / targetDecimal);
+                        if (safeMargin < 0) safeMargin = 0;
 
                         percentLabel.setForeground(new Color(24, 134, 75)); // Green
                         statusBadge.setText("SAFE ZONE (Above " + (int)target + "%)");
                         statusBadge.setForeground(new Color(24, 134, 75));
-                        if (hrsPerClass > 1) {
-                            detailLabel.setText("<html><center>Safe margin: <b>" + safeClasses + " class(es)</b> (" + safeMarginHrs + " hrs) to stay above " + (int)target + "%.</center></html>");
-                        } else {
-                            detailLabel.setText("You can safely miss " + safeMarginHrs + " more class(es) and remain above " + (int)target + "%.");
-                        }
+                        detailLabel.setText("You can safely miss " + safeMargin + " more class(es) and remain above " + (int)target + "%.");
                     } else {
                         // Shortage: Calculate required classes
-                        int neededHrs = (int) Math.ceil(((targetDecimal * conducted) - attended) / (1.0 - targetDecimal));
-                        if (neededHrs < 0) neededHrs = 0;
-                        int neededClasses = (int) Math.ceil((double) neededHrs / hrsPerClass);
+                        int needed = (int) Math.ceil(((targetDecimal * conducted) - attended) / (1.0 - targetDecimal));
+                        if (needed < 0) needed = 0;
 
                         // Calculate projected date when required becomes 0
                         java.time.LocalDate targetDate = java.time.LocalDate.now();
                         int daysAdded = 0;
                         int hoursCovered = 0;
-                        while (hoursCovered < neededHrs && daysAdded < 120) {
+                        while (hoursCovered < needed && daysAdded < 120) {
                             targetDate = targetDate.plusDays(1);
                             daysAdded++;
                             java.time.DayOfWeek dow = targetDate.getDayOfWeek();
                             if (dow != java.time.DayOfWeek.SATURDAY && dow != java.time.DayOfWeek.SUNDAY) {
-                                hoursCovered += hrsPerClass;
+                                hoursCovered++;
                             }
                         }
                         String dateFormatted = targetDate.format(java.time.format.DateTimeFormatter.ofPattern("EEE, MMM d, yyyy"));
@@ -272,13 +263,8 @@ public class SRMStudentHub {
                         percentLabel.setForeground(new Color(217, 48, 37)); // Red
                         statusBadge.setText("ATTENDANCE SHORTAGE (< " + (int)target + "%)");
                         statusBadge.setForeground(new Color(217, 48, 37));
-                        if (hrsPerClass > 1) {
-                            detailLabel.setText("<html><center>Attend next <b>" + neededClasses + " class(es)</b> (" + neededHrs + " hrs) for " + (int)target + "% &nbsp;•&nbsp; "
-                                    + "<font color='#008844'><b>Safe by: " + dateFormatted + "</b></font></center></html>");
-                        } else {
-                            detailLabel.setText("<html><center>Attend next <b>" + neededHrs + " class(es)</b> for " + (int)target + "% &nbsp;•&nbsp; "
-                                    + "<font color='#008844'><b>Safe by: " + dateFormatted + "</b></font></center></html>");
-                        }
+                        detailLabel.setText("<html><center>Attend next <b>" + needed + "</b> class(es) for " + (int)target + "% &nbsp;•&nbsp; "
+                                + "<font color='#008844'><b>Safe by: " + dateFormatted + "</b></font></center></html>");
                     }
                 } catch (NumberFormatException ex) {
                     JOptionPane.showMessageDialog(frame, "Please enter valid numeric values for hours and target %.", "Invalid Input", JOptionPane.ERROR_MESSAGE);
