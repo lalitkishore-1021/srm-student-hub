@@ -125,7 +125,9 @@
 
     <!-- PWA Settings -->
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#08080c">
+    <meta name="theme-color" content="#000000">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="color-scheme" content="dark">
     <link rel="apple-touch-icon" href="images/app-icon.svg">
     <link rel="icon" id="dynamic-favicon" type="image/svg+xml" href="images/app-icon.svg">
 
@@ -2449,44 +2451,64 @@
             background-size: 200% 100%; animation: loadingBar 1.5s linear infinite; display: none;
         }
         @keyframes loadingBar { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
-        /* === FEATURE 1: VIDEO BACKGROUND === */
+        /* === FEATURE 1: VIDEO BACKGROUND (FULL PORTRAIT EDGE-TO-EDGE BLEED) === */
         .music-video-bg {
-          position: fixed;
-          top: 0;
-          left: 0;
-          width: 100%;
-          height: 100%;
-          z-index: 0;
-          overflow: hidden;
-          pointer-events: none;
+          position: fixed !important;
+          top: 0 !important;
+          left: 0 !important;
+          width: 100vw !important;
+          height: 100vh !important;
+          z-index: 0 !important;
+          overflow: hidden !important;
+          pointer-events: none !important;
+          background: #000 !important;
         }
         .bg-video {
-          width: 100%; height: 100%;
-          object-fit: cover;
-          filter: brightness(0.7) saturate(1.2);
-          transition: opacity 1.2s ease;
+          position: fixed !important;
+          top: 50% !important;
+          left: 50% !important;
+          transform: translate(-50%, -50%) !important;
+          width: 177.78vh !important;
+          height: 100vh !important;
+          min-width: 100vw !important;
+          min-height: 56.25vw !important;
+          object-fit: cover !important;
+          filter: brightness(0.72) saturate(1.2) !important;
+          transition: opacity 0.8s ease !important;
+          pointer-events: none !important;
+        }
+        .bg-yt-wrap {
+          position: fixed !important;
+          top: 50% !important;
+          left: 50% !important;
+          transform: translate(-50%, -50%) !important;
+          width: 177.78vh !important;
+          height: 100vh !important;
+          min-width: 100vw !important;
+          min-height: 56.25vw !important;
+          pointer-events: none !important;
+          overflow: hidden !important;
+          z-index: 0 !important;
+          transition: opacity 0.8s ease !important;
+        }
+        .bg-yt-wrap iframe {
+          position: absolute !important;
+          top: 50% !important;
+          left: 50% !important;
+          width: 100% !important;
+          height: 100% !important;
+          transform: translate(-50%, -50%) scale(1.15) !important;
+          border: none !important;
+          pointer-events: none !important;
+          filter: brightness(0.72) contrast(1.08) saturate(1.15) !important;
         }
         .bg-video-overlay {
-          position: absolute; inset: 0;
-          background: linear-gradient(
-            to bottom,
-            rgba(0,0,0,0.05) 0%,
-            rgba(0,0,0,0.3) 50%,
-            rgba(0,0,0,0.75) 100%
-          );
+          position: absolute !important;
+          inset: 0 !important;
+          background: radial-gradient(circle at center, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.65) 100%) !important;
+          pointer-events: none !important;
+          z-index: 1 !important;
         }
-        .bg-cover-fallback {
-          width: 100%; height: 100%;
-          object-fit: cover;
-          filter: blur(24px) brightness(0.30) saturate(1.6);
-          transform: scale(1.1);
-          animation: coverPulse 8s ease-in-out infinite;
-        }
-        @keyframes coverPulse {
-          0%, 100% { transform: scale(1.1); }
-          50%       { transform: scale(1.18) rotate(1deg); }
-        }
-
         /* === FEATURE 2: LYRICS BOTTOM SHEET === */
         .fs-lyrics-bottom-sheet {
           position: absolute;
@@ -4539,7 +4561,7 @@
     <div id="music-fullscreen" class="music-fullscreen">
         <div id="music-video-bg" class="music-video-bg">
             <video id="bg-video-player" autoplay muted loop playsinline class="bg-video"></video>
-            <div id="bg-yt-wrap" class="bg-yt-wrap" style="position: absolute; top: -15%; left: -15%; width: 130%; height: 130%; pointer-events: none; overflow: hidden; display: none; opacity: 0; transition: opacity 0.8s ease; z-index: 0;">
+            <div id="bg-yt-wrap" class="bg-yt-wrap" style="display: none; opacity: 0;">
                 <iframe id="bg-yt-iframe" style="width: 100%; height: 100%; border: none; object-fit: cover; pointer-events: none; filter: brightness(0.65) contrast(1.1);" allow="autoplay; encrypted-media; picture-in-picture"></iframe>
             </div>
             <div class="bg-video-overlay"></div>
@@ -10289,8 +10311,15 @@ function checkAndShowHolidayBanner(viewId) {
             if (!videoBackgroundEnabled) {
                 if (bgVideoPlayer) { bgVideoPlayer.style.opacity = '0'; bgVideoPlayer.pause(); bgVideoPlayer.src = ''; }
                 if (bgYtWrap) { bgYtWrap.style.display = 'none'; bgYtWrap.style.opacity = '0'; if (bgYtIframe) bgYtIframe.src = ''; }
+                if (fsCoverContainer) { fsCoverContainer.style.display = 'flex'; fsCoverContainer.style.opacity = '1'; }
                 applyCoverFallback(track, musicVideoBg);
                 return;
+            }
+
+            // In video mode: Hide the square album cover container so video is full portrait!
+            if (fsCoverContainer) {
+                fsCoverContainer.style.display = 'none';
+                fsCoverContainer.style.opacity = '0';
             }
 
             currentVideoRequestId++;
@@ -10313,11 +10342,7 @@ function checkAndShowHolidayBanner(viewId) {
                         bgVideoPlayer.style.opacity = '1';
                     }
                     if (fsCoverContainer) {
-                        fsCoverContainer.style.transition = 'opacity 0.5s ease';
-                        fsCoverContainer.style.opacity = '0';
-                        coverHideTimeout = setTimeout(() => {
-                            if (fsCoverContainer) fsCoverContainer.style.display = 'none';
-                        }, 500);
+                        fsCoverContainer.style.display = 'none';
                     }
                 };
 
@@ -10334,7 +10359,6 @@ function checkAndShowHolidayBanner(viewId) {
 
             // Priority 2: Online track or Campus track without manual video: Automatic Video Match!
             if (track && (track.title || track.song)) {
-                applyCoverFallback(track, musicVideoBg);
                 if (bgVideoPlayer) { bgVideoPlayer.style.opacity = '0'; bgVideoPlayer.pause(); bgVideoPlayer.src = ''; }
 
                 const searchTitle = (track.title || track.song || '').trim();
@@ -10355,14 +10379,10 @@ function checkAndShowHolidayBanner(viewId) {
                         if (reqId === currentVideoRequestId && bgYtWrap) {
                             bgYtWrap.style.opacity = '1';
                             if (fsCoverContainer) {
-                                fsCoverContainer.style.transition = 'opacity 0.6s ease';
-                                fsCoverContainer.style.opacity = '0';
-                                coverHideTimeout = setTimeout(() => {
-                                    if (fsCoverContainer) fsCoverContainer.style.display = 'none';
-                                }, 600);
+                                fsCoverContainer.style.display = 'none';
                             }
                         }
-                    }, 400);
+                    }, 250);
                 };
 
                 if (window.musicVideoCache.has(cacheKey)) {
@@ -10375,9 +10395,13 @@ function checkAndShowHolidayBanner(viewId) {
                             if (data && data.success && data.video_id) {
                                 window.musicVideoCache.set(cacheKey, data.video_id);
                                 playMatchedVideo(data.video_id);
+                            } else {
+                                applyCoverFallback(track, musicVideoBg);
                             }
                         })
-                        .catch(() => {});
+                        .catch(() => {
+                            applyCoverFallback(track, musicVideoBg);
+                        });
                 }
             } else {
                 applyCoverFallback(track, musicVideoBg);
@@ -10387,7 +10411,7 @@ function checkAndShowHolidayBanner(viewId) {
         function applyCoverFallback(track, musicVideoBg) {
             if (!musicVideoBg) return;
             const fsCoverContainer = document.getElementById('fs-cover-container');
-            if (fsCoverContainer) {
+            if (fsCoverContainer && !videoBackgroundEnabled) {
                 fsCoverContainer.style.display = 'flex';
                 fsCoverContainer.style.opacity = '1';
             }
@@ -10696,9 +10720,13 @@ function checkAndShowHolidayBanner(viewId) {
 
             const fsCoverContainer = document.getElementById('fs-cover-container');
             if (fsCoverContainer) {
-                fsCoverContainer.style.display = 'flex';
-                fsCoverContainer.style.opacity = '1';
-                fsCoverContainer.style.transition = 'opacity 0.5s ease';
+                if (videoBackgroundEnabled) {
+                    fsCoverContainer.style.display = 'none';
+                    fsCoverContainer.style.opacity = '0';
+                } else {
+                    fsCoverContainer.style.display = 'flex';
+                    fsCoverContainer.style.opacity = '1';
+                }
             }
 
             const fsTitle = document.getElementById('fs-title');

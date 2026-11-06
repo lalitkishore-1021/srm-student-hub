@@ -4,8 +4,8 @@
   "description": "Your all-in-one portal for Step Class, CGPA, and more.",
   "start_url": "./index.html",
   "display": "standalone",
-  "background_color": "#050505",
-  "theme_color": "#ffaa00",
+  "background_color": "#000000",
+  "theme_color": "#000000",
   "icons": [
     {
       "src": "images/app-icon.svg",
