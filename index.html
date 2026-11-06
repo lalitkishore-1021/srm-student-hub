@@ -4544,7 +4544,7 @@
         <div id="music-video-bg" class="music-video-bg">
             <video id="bg-video-player" autoplay muted loop playsinline class="bg-video"></video>
             <div id="bg-yt-wrap" class="bg-yt-wrap" style="position: absolute; top: -15%; left: -15%; width: 130%; height: 130%; pointer-events: none; overflow: hidden; display: none; opacity: 0; transition: opacity 0.8s ease; z-index: 0;">
-                <iframe id="bg-yt-iframe" style="width: 100%; height: 100%; border: none; object-fit: cover; pointer-events: none; filter: brightness(0.65) contrast(1.1);" allow="autoplay"></iframe>
+                <iframe id="bg-yt-iframe" style="width: 100%; height: 100%; border: none; object-fit: cover; pointer-events: none; filter: brightness(0.65) contrast(1.1);" allow="autoplay; encrypted-media; picture-in-picture"></iframe>
             </div>
             <div class="bg-video-overlay"></div>
         </div>
@@ -10722,6 +10722,7 @@ function checkAndShowHolidayBanner(viewId) {
             const playerVid = document.getElementById('player-video');
             const fsVid = document.getElementById('fs-video');
             const bgVideoPlayer = document.getElementById('bg-video-player');
+            const bgYtIframe = document.getElementById('bg-yt-iframe');
             
             if (!audioPlayer.paused) {
                 userManuallyStopped = true;
@@ -10729,12 +10730,18 @@ function checkAndShowHolidayBanner(viewId) {
                 if (playerVid && playerVid.style.display !== 'none') playerVid.pause();
                 if (fsVid && fsVid.style.display !== 'none') fsVid.pause();
                 if (bgVideoPlayer) bgVideoPlayer.pause();
+                if (bgYtIframe && bgYtIframe.contentWindow) {
+                    try { bgYtIframe.contentWindow.postMessage('{"event":"command","func":"pauseVideo","args":""}', '*'); } catch(e) {}
+                }
             } else { 
                 userManuallyStopped = false;
                 audioPlayer.play().catch(e => console.warn(e)); 
                 if (playerVid && playerVid.style.display !== 'none') playerVid.play();
                 if (fsVid && fsVid.style.display !== 'none') fsVid.play();
                 if (bgVideoPlayer && !document.hidden) bgVideoPlayer.play().catch(() => {});
+                if (bgYtIframe && bgYtIframe.contentWindow && !document.hidden) {
+                    try { bgYtIframe.contentWindow.postMessage('{"event":"command","func":"playVideo","args":""}', '*'); } catch(e) {}
+                }
             }
         }
 
