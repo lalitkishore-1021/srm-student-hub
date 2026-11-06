@@ -1668,6 +1668,43 @@
             transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
         }
 
+        .tt-batch-wrapper {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 0 auto 16px auto;
+            max-width: 600px;
+        }
+
+        .tt-batch-pill-box {
+            display: inline-flex;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 3px;
+            border-radius: 20px;
+            border: 1px solid var(--glass-border);
+            gap: 4px;
+        }
+
+        .tt-batch-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-sub);
+            padding: 7px 18px;
+            border-radius: 16px;
+            font-size: 0.82rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            font-family: 'Montserrat', sans-serif;
+            letter-spacing: 0.3px;
+        }
+
+        .tt-batch-btn.active {
+            background: var(--primary);
+            color: #ffffff;
+            box-shadow: 0 4px 12px rgba(255, 107, 107, 0.35);
+        }
+
         .day-btn.active {
             background: var(--text-main);
             color: #000;
@@ -3935,6 +3972,13 @@
                     <p style="margin: 0; font-size: 0.8rem; color: var(--text-sub);">No classes today. Take a break and recharge.</p>
                 </div>
             </div>
+            <!-- BATCH SWITCHER -->
+            <div class="tt-batch-wrapper">
+                <div class="tt-batch-pill-box">
+                    <button type="button" class="tt-batch-btn active" id="tt-batch-btn-1" onclick="switchTimetableBatch(1)">Batch 1</button>
+                    <button type="button" class="tt-batch-btn" id="tt-batch-btn-2" onclick="switchTimetableBatch(2)">Batch 2</button>
+                </div>
+            </div>
             <div class="tt-day-selector">
                 <div class="day-btn" onclick="renderDay(1, this)">Day 1</div>
                 <div class="day-btn" onclick="renderDay(2, this)">Day 2</div>
@@ -5004,9 +5048,169 @@
         }
 
         // ================= LIVE SYNC API CALL =================
-        function toggleBatch(element, batchNum) {
-            // Function preserved to avoid JS errors if clicked, but UI is removed
+        function updateBatchButtonsUI(batchNum) {
+            const btn1 = document.getElementById('tt-batch-btn-1');
+            const btn2 = document.getElementById('tt-batch-btn-2');
+            if (btn1 && btn2) {
+                if (batchNum === 2) {
+                    btn2.classList.add('active');
+                    btn1.classList.remove('active');
+                } else {
+                    btn1.classList.add('active');
+                    btn2.classList.remove('active');
+                }
+            }
+        }
+
+        function switchTimetableBatch(batchNum) {
+            batchNum = parseInt(batchNum, 10) || 1;
             currentBatch = batchNum;
+            localStorage.setItem("syncBatch", batchNum.toString());
+            updateBatchButtonsUI(batchNum);
+
+            if (timetableData && typeof timetableData === 'object') {
+                const currBatch = detectTimetableBatch(timetableData);
+                if (currBatch !== batchNum) {
+                    timetableData = convertTimetableBatch(timetableData, batchNum);
+                    try {
+                        localStorage.setItem('squadTimetable', JSON.stringify(timetableData));
+                    } catch(e) {}
+                }
+            }
+
+            const dayBtns = document.querySelectorAll('.tt-day-selector .day-btn');
+            let activeDay = 1;
+            let activeBtn = null;
+            dayBtns.forEach((btn, idx) => {
+                if (btn.classList.contains('active')) {
+                    activeDay = idx + 1;
+                    activeBtn = btn;
+                }
+            });
+            renderDay(activeDay, activeBtn);
+        }
+
+        function toggleBatch(element, batchNum) {
+            switchTimetableBatch(batchNum);
+        }
+
+        function detectTimetableBatch(tt) {
+            if (!tt || typeof tt !== 'object') return 1;
+            if (tt.batch === "2" || tt.batch === 2) return 2;
+            if (tt.batch === "1" || tt.batch === 1) return 1;
+
+            const day1 = tt["1"] || [];
+            for (let c of day1) {
+                let isTheory = (c.type && c.type.toLowerCase().includes('theory')) || (c.slot && /^[A-G]/i.test(c.slot));
+                let timeStr = String(c.time || c.time_from || '').trim();
+                if (isTheory && timeStr) {
+                    if (/^(01|02|03|04|05|13|14|15|16|17):/i.test(timeStr)) return 2;
+                    if (/^(08|09|10|11|12):/i.test(timeStr)) return 1;
+                }
+            }
+            const day2 = tt["2"] || [];
+            for (let c of day2) {
+                let isTheory = (c.type && c.type.toLowerCase().includes('theory')) || (c.slot && /^[A-G]/i.test(c.slot));
+                let timeStr = String(c.time || c.time_from || '').trim();
+                if (isTheory && timeStr) {
+                    if (/^(08|09|10|11|12):/i.test(timeStr)) return 2;
+                    if (/^(01|02|03|04|05|13|14|15|16|17):/i.test(timeStr)) return 1;
+                }
+            }
+            return 1;
+        }
+
+        function convertTimetableBatch(tt, targetBatch) {
+            if (!tt || typeof tt !== 'object') return tt;
+            const currentDetected = detectTimetableBatch(tt);
+            if (currentDetected === targetBatch) {
+                tt.batch = String(targetBatch);
+                return tt;
+            }
+
+            const PERIOD_DEF = [
+                { period: 1, start: "08:00", end: "08:50" },
+                { period: 2, start: "08:50", end: "09:40" },
+                { period: 3, start: "09:45", end: "10:35" },
+                { period: 4, start: "10:40", end: "11:30" },
+                { period: 5, start: "11:35", end: "12:25" },
+                { period: 6, start: "01:25", end: "02:15" },
+                { period: 7, start: "02:20", end: "03:10" },
+                { period: 8, start: "03:15", end: "04:05" },
+                { period: 9, start: "04:05", end: "04:55" },
+                { period: 10, start: "04:55", end: "05:45" }
+            ];
+
+            function timeToPeriod(timeStr, isEnd) {
+                if (!timeStr) return null;
+                let m = timeStr.trim().match(/^(\d{1,2}):(\d{2})/);
+                if (!m) return null;
+                let h = parseInt(m[1], 10);
+                let min = parseInt(m[2], 10);
+                let total = h * 60 + min;
+                if (h >= 1 && h <= 6) total += 12 * 60;
+
+                let bestP = null;
+                let minDiff = 999999;
+                PERIOD_DEF.forEach(p => {
+                    let pTime = isEnd ? p.end : p.start;
+                    let pm = pTime.match(/^(\d{1,2}):(\d{2})/);
+                    let ph = parseInt(pm[1], 10);
+                    let pmin = parseInt(pm[2], 10);
+                    let ptotal = ph * 60 + pmin;
+                    if (ph >= 1 && ph <= 6) ptotal += 12 * 60;
+                    let diff = Math.abs(ptotal - total);
+                    if (diff < minDiff) {
+                        minDiff = diff;
+                        bestP = p.period;
+                    }
+                });
+                return bestP;
+            }
+
+            const newTt = {};
+            for (let day in tt) {
+                if (!Array.isArray(tt[day])) {
+                    newTt[day] = tt[day];
+                    continue;
+                }
+                newTt[day] = tt[day].map(cls => {
+                    let copy = Object.assign({}, cls);
+                    let pStart = copy.period !== undefined ? parseInt(copy.period, 10) : null;
+                    let pEnd = copy.period_end !== undefined ? parseInt(copy.period_end, 10) : pStart;
+
+                    if (!pStart || isNaN(pStart) || pStart < 1 || pStart > 10) {
+                        let parts = (copy.time || '').split('-');
+                        pStart = timeToPeriod(parts[0], false) || 1;
+                        pEnd = parts[1] ? timeToPeriod(parts[1], true) : pStart;
+                    }
+                    if (!pEnd || isNaN(pEnd) || pEnd < pStart) pEnd = pStart;
+
+                    let newStart, newEnd;
+                    if (pStart <= 5) {
+                        newStart = Math.min(10, pStart + 5);
+                        newEnd = Math.min(10, pEnd + 5);
+                    } else {
+                        newStart = Math.max(1, pStart - 5);
+                        newEnd = Math.max(1, pEnd - 5);
+                    }
+
+                    let defStart = PERIOD_DEF[newStart - 1] || PERIOD_DEF[0];
+                    let defEnd = PERIOD_DEF[newEnd - 1] || PERIOD_DEF[PERIOD_DEF.length - 1];
+
+                    copy.period = newStart;
+                    copy.period_end = newEnd;
+                    copy.time_from = defStart.start;
+                    copy.time_to = defEnd.end;
+                    copy.time = `${defStart.start} - ${defEnd.end}`;
+                    return copy;
+                });
+
+                newTt[day].sort((a, b) => (a.period || 0) - (b.period || 0));
+            }
+
+            newTt.batch = String(targetBatch);
+            return newTt;
         }
 
         function openSyncModal() { 
@@ -6620,6 +6824,30 @@
 
             noData.style.display = 'none';
             grid.style.display = 'block';
+
+            // Auto-detect and synchronize batch
+            let detected = detectTimetableBatch(timetableData);
+            let savedBatch = localStorage.getItem("syncBatch");
+            if (!savedBatch) {
+                try {
+                    let prof = JSON.parse(localStorage.getItem('studentProfile') || '{}');
+                    if (prof.batch) savedBatch = prof.batch;
+                } catch(e) {}
+            }
+            if (savedBatch && (savedBatch === "1" || savedBatch === "2" || savedBatch === 1 || savedBatch === 2)) {
+                currentBatch = parseInt(savedBatch, 10);
+            } else {
+                currentBatch = detected;
+            }
+
+            if (detected !== currentBatch) {
+                timetableData = convertTimetableBatch(timetableData, currentBatch);
+                try {
+                    localStorage.setItem('squadTimetable', JSON.stringify(timetableData));
+                } catch(e) {}
+            }
+
+            updateBatchButtonsUI(currentBatch);
 
             setInitialTimetableDay();
         }

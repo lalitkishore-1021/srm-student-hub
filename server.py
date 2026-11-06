@@ -634,7 +634,7 @@ def get_portal_data_with_fallback(net_id, portal_pwd):
 def scrape_academia_worker(reg_no, pwd, batch, out_queue):
     import academia_fast_client
     try:
-        res = academia_fast_client.fetch_academia_fast(reg_no, pwd)
+        res = academia_fast_client.fetch_academia_fast(reg_no, pwd, batch_override=batch)
         out_queue.put(res)
     except Exception as e:
         out_queue.put({'success': False, 'error': str(e)})

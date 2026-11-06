@@ -40,17 +40,28 @@ BATCH_TIMETABLES = {
 }
 
 def detect_student_batch(courses, reported_batch="1"):
-    m = re.search(r'[12]', str(reported_batch))
-    batch_hint = m.group() if m else "1"
+    m = re.search(r'batch\D*([12])', str(reported_batch), re.I)
+    if not m and '/' in str(reported_batch):
+        m = re.search(r'\b([12])\b', str(reported_batch).split('/')[-1])
+    if not m:
+        m = re.search(r'[12]', str(reported_batch))
+    batch_hint = m.group(1) if (m and m.groups()) else (m.group() if m else "1")
+
+    B1_LAB_NUMS = set(range(6, 11)) | set(range(11, 16)) | set(range(26, 31)) | set(range(31, 36)) | set(range(46, 51))
+    B2_LAB_NUMS = set(range(1, 6)) | set(range(16, 21)) | set(range(21, 26)) | set(range(36, 41)) | set(range(41, 46))
+
     b1_hits, b2_hits = 0, 0
     for c in courses:
         s_str = str(c.get('slot', '')).upper()
-        # Morning labs for Batch 2
-        for s in ['P1', 'P2', 'P3', 'P4', 'P5', 'P21', 'P22', 'P23', 'P24', 'P25', 'P41', 'P42', 'P43', 'P44', 'P45']:
-            if re.search(r'\b' + s + r'\b', s_str): b2_hits += 1
-        # Afternoon labs for Batch 1
-        for s in ['P6', 'P7', 'P8', 'P9', 'P10', 'P26', 'P27', 'P28', 'P29', 'P30', 'P46', 'P47', 'P48', 'P49', 'P50']:
-            if re.search(r'\b' + s + r'\b', s_str): b1_hits += 1
+        for m_slot in re.finditer(r'P(\d+)(?:\s*-\s*P?(\d+))?', s_str):
+            start_num = int(m_slot.group(1))
+            end_num = int(m_slot.group(2)) if m_slot.group(2) else start_num
+            for p_num in range(start_num, end_num + 1):
+                if p_num in B1_LAB_NUMS:
+                    b1_hits += 1
+                if p_num in B2_LAB_NUMS:
+                    b2_hits += 1
+
     if b2_hits > b1_hits: return "2"
     if b1_hits > b2_hits: return "1"
     return batch_hint
@@ -122,6 +133,7 @@ def build_timetable(student_batch, courses):
                         continue
                         
                 final_tt[day].append(entry)
+    final_tt["batch"] = str(actual_batch)
     return final_tt
 
 def get_course_credit(code, title, timetable_courses=None):

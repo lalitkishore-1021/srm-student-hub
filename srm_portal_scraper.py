@@ -389,7 +389,16 @@ def _parse_portal_profile(html_content: Optional[str], netid: str) -> Dict[str, 
             elif "program" in label:
                 profile["program"] = val
             elif "batch" in label:
-                profile["batch"] = val
+                m_b_exp = re.search(r"batch\D*([12])", val, re.I)
+                if m_b_exp:
+                    profile["batch"] = m_b_exp.group(1)
+                elif "/" in val:
+                    after_slash = val.split("/")[-1].strip()
+                    m_s = re.search(r"\b([12])\b", after_slash)
+                    profile["batch"] = m_s.group(1) if m_s else "1"
+                else:
+                    m_b = re.search(r"\b([12])\b", val)
+                    profile["batch"] = m_b.group(1) if m_b else "1"
             elif "semester" in label:
                 profile["semester"] = val
             elif "section" in label:
@@ -516,6 +525,20 @@ def _parse_portal_timetable_and_courses(html_content: Optional[str]) -> Tuple[Di
                     final_tt[day_num].append(entry)
         break
 
+    B1_LAB_NUMS = set(range(6, 11)) | set(range(11, 16)) | set(range(26, 31)) | set(range(31, 36)) | set(range(46, 51))
+    B2_LAB_NUMS = set(range(1, 6)) | set(range(16, 21)) | set(range(21, 26)) | set(range(36, 41)) | set(range(41, 46))
+    b1_hits, b2_hits = 0, 0
+    for c in courses_list:
+        slot_raw = str(c.get("slot", "")).upper()
+        for m_slot in re.finditer(r'P(\d+)(?:\s*-\s*P?(\d+))?', slot_raw):
+            start_num = int(m_slot.group(1))
+            end_num = int(m_slot.group(2)) if m_slot.group(2) else start_num
+            for p_num in range(start_num, end_num + 1):
+                if p_num in B1_LAB_NUMS:
+                    b1_hits += 1
+                if p_num in B2_LAB_NUMS:
+                    b2_hits += 1
+    final_tt["batch"] = "2" if b2_hits > b1_hits else "1"
     return final_tt, courses_list
 
 

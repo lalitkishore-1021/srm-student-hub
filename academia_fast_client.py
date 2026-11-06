@@ -51,7 +51,7 @@ def smart_extract_zoho(raw_html: str) -> Optional[str]:
         return html.unescape(hidden['zmlvalue']).replace(r'\-', '-').replace(r'\/', '/')
     return None
 
-def fetch_academia_fast(email: str, password: str) -> Dict[str, Any]:
+def fetch_academia_fast(email: str, password: str, batch_override: Optional[Any] = None) -> Dict[str, Any]:
     t0 = time.time()
     clean_user = email.strip()
     if '@' not in clean_user:
@@ -175,9 +175,18 @@ def fetch_academia_fast(email: str, password: str) -> Dict[str, Any]:
     el = get_element_by_label("Combo / Batch") or get_element_by_label("Batch")
     if el:
         val = clean_text(el.get_text())
-        m_b = re.search(r'\b([12])\b', val)
-        if m_b:
-            profile["batch"] = m_b.group(1)
+        m_batch_explicit = re.search(r'batch\D*([12])', val, re.I)
+        if m_batch_explicit:
+            profile["batch"] = m_batch_explicit.group(1)
+        elif '/' in val:
+            after_slash = val.split('/')[-1].strip()
+            m_slash = re.search(r'\b([12])\b', after_slash)
+            if m_slash:
+                profile["batch"] = m_slash.group(1)
+        else:
+            m_b = re.search(r'\b([12])\b', val)
+            if m_b:
+                profile["batch"] = m_b.group(1)
 
     el = get_element_by_label("Department") or get_element_by_label("Institution")
     if el:
@@ -279,9 +288,36 @@ def fetch_academia_fast(email: str, password: str) -> Dict[str, Any]:
                 break
 
     # 2. Fetch Unified Timetable Grid for student's batch
-    batch_num = profile.get("batch", "1")
-    if batch_num not in ("1", "2"):
+    # Auto-detect batch from lab slots
+    # SRM Batch 1 Lab Slots: Day 1: P6-P10, Day 2: P11-P15, Day 3: P26-P30, Day 4: P31-P35, Day 5: P46-P50
+    # SRM Batch 2 Lab Slots: Day 1: P1-P5, Day 2: P16-P20, Day 3: P21-P25, Day 4: P36-P40, Day 5: P41-P45
+    B1_LAB_NUMS = set(range(6, 11)) | set(range(11, 16)) | set(range(26, 31)) | set(range(31, 36)) | set(range(46, 51))
+    B2_LAB_NUMS = set(range(1, 6)) | set(range(16, 21)) | set(range(21, 26)) | set(range(36, 41)) | set(range(41, 46))
+
+    b1_hits, b2_hits = 0, 0
+    for c in registered_courses:
+        slot_raw = str(c.get("slot", "")).upper()
+        for m_slot in re.finditer(r'P(\d+)(?:\s*-\s*P?(\d+))?', slot_raw):
+            start_num = int(m_slot.group(1))
+            end_num = int(m_slot.group(2)) if m_slot.group(2) else start_num
+            for p_num in range(start_num, end_num + 1):
+                if p_num in B1_LAB_NUMS:
+                    b1_hits += 1
+                if p_num in B2_LAB_NUMS:
+                    b2_hits += 1
+
+    if b1_hits > b2_hits:
         batch_num = "1"
+    elif b2_hits > b1_hits:
+        batch_num = "2"
+    elif batch_override and str(batch_override) in ("1", "2"):
+        batch_num = str(batch_override)
+    else:
+        batch_num = profile.get("batch", "1")
+        if batch_num not in ("1", "2"):
+            batch_num = "1"
+
+    profile["batch"] = batch_num
 
     grid_url = f"https://academia.srmist.edu.in/srm_university/academia-academic-services/page/Unified_Time_Table_2025_Batch_{batch_num}"
     grid_html = None
@@ -381,7 +417,8 @@ def fetch_academia_fast(email: str, password: str) -> Dict[str, Any]:
                     else:
                         final_tt[day_num].append(entry)
 
-    total_classes = sum(len(v) for v in final_tt.values())
+    total_classes = sum(len(v) for v in final_tt.values() if isinstance(v, list))
+    final_tt["batch"] = str(batch_num)
     print(f"[{clean_user}] Timetable extracted: {total_classes} classes across 5 days in {time.time()-t0:.2f}s!", flush=True)
 
     return {
