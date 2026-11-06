@@ -2345,6 +2345,44 @@ def handle_user_music_library():
             cur.close()
             conn.close()
 
+# Automatic background video matcher for all streaming & online music
+_video_match_cache = {}
+
+@app.route('/api/music/video_match', methods=['GET'])
+def get_video_match():
+    query = request.args.get('q', '').strip()
+    if not query:
+        return jsonify({'success': False, 'error': 'Query parameter q required'})
+    
+    cache_key = query.lower()
+    now = time.time()
+    if cache_key in _video_match_cache:
+        cached = _video_match_cache[cache_key]
+        if now - cached['timestamp'] < 86400: # 24 hr cache
+            return jsonify({'success': True, 'video_id': cached['video_id'], 'cached': True})
+            
+    # Search YouTube for official music video or canvas
+    clean_q = re.sub(r'\(.*?\)|\[.*?\]', '', query).strip()
+    search_url = f"https://www.youtube.com/results?search_query={urllib.parse.quote(clean_q + ' official music video')}"
+    try:
+        req = urllib.request.Request(search_url, headers={
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept-Language': 'en-US,en;q=0.9'
+        })
+        with urllib.request.urlopen(req, timeout=5) as res:
+            html_text = res.read().decode('utf-8')
+            vids = re.findall(r'"videoId":"([a-zA-Z0-9_-]{11})"', html_text)
+            if not vids:
+                vids = re.findall(r'/watch\?v=([a-zA-Z0-9_-]{11})', html_text)
+            
+            if vids:
+                vid = vids[0]
+                _video_match_cache[cache_key] = {'timestamp': now, 'video_id': vid}
+                return jsonify({'success': True, 'video_id': vid})
+            return jsonify({'success': False, 'error': 'No video found'})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
 @app.route('/api/ai/chat', methods=['POST'])
 def ai_chat():
     data = request.json

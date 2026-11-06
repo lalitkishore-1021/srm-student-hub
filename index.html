@@ -3756,19 +3756,15 @@
 
         <div id="music-view" class="app-view" style="padding-top: 10px; background: #0a0a0f;">
             <!-- View Header -->
-            <div class="view-header" style="justify-content: space-between; display: flex; align-items: center; border: none; padding: 10px 16px; margin-bottom: 5px;">
-                <button class="back-btn" onclick="switchNav('home-view', document.querySelector('.nav-item'))" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; padding: 8px 16px; font-size: 0.8rem; color: #fff; display: flex; align-items: center; gap: 6px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg> Back to Home</button>
-                <div id="music-user-sync-badge" style="display:flex; align-items:center; gap:6px; background: rgba(29,185,84,0.12); border: 1px solid rgba(29,185,84,0.3); border-radius: 20px; padding: 4px 12px; font-size: 11px; font-weight: 700; color: #1DB954; font-family:'Montserrat', sans-serif;">
-                    <span style="width:6px; height:6px; background:#1DB954; border-radius:50%; box-shadow:0 0 6px #1DB954;"></span>
-                    <span id="music-user-sync-text">Music Lounge</span>
-                </div>
+            <div class="view-header" style="justify-content: flex-start; display: flex; align-items: center; border: none; padding: 10px 16px; margin-bottom: 5px;">
+                <button class="back-btn" onclick="switchNav('home-view', document.querySelector('.nav-item'))" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; padding: 8px 16px; font-size: 0.8rem; color: #fff; display: flex; align-items: center; gap: 6px; cursor: pointer; transition: all 0.2s;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg> Back to Home</button>
             </div>
 
             <!-- Hero Title -->
             <div style="padding: 6px 20px 16px 20px; display: flex; justify-content: space-between; align-items: center; position: relative; overflow: hidden;">
                 <div style="position: absolute; top: 0; right: -20px; width: 150px; height: 150px; background: radial-gradient(circle, rgba(29,185,84,0.18) 0%, transparent 70%); border-radius: 50%; pointer-events: none;"></div>
                 <div style="z-index: 1;">
-                    <h1 style="font-family:'Montserrat', sans-serif; font-size: 2.3rem; font-weight: 900; line-height: 1.05; margin:0; letter-spacing: -0.5px;">
+                    <h1 style="font-family:'Montserrat', sans-serif; font-size: 2.2rem; font-weight: 900; line-height: 1.05; margin:0; letter-spacing: -0.5px;">
                         <span style="color: #fff;">MUSIC</span><br>
                         <span style="color: #1DB954; text-shadow: 0 0 15px rgba(29,185,84,0.4);">LOUNGE</span>
                     </h1>
@@ -3796,7 +3792,7 @@
             <div style="padding: 0 16px 14px 16px;">
                 <div style="position: relative; display: flex; align-items: center; background: rgba(255,255,255,0.06); border: 1.5px solid rgba(255,255,255,0.1); border-radius: 28px; padding: 4px 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.35); transition: all 0.25s;" id="music-search-box">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1DB954" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0; margin-right:10px;"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                    <input type="text" id="music-search-input" placeholder="Search any song, artist, album (e.g. Believer, Arijit...)" style="width: 100%; background: transparent; border: none; color: #fff; font-family: 'Montserrat', sans-serif; font-size: 13px; font-weight: 600; outline: none; padding: 10px 0;" oninput="handleMusicSearchInput(this.value)" onfocus="handleMusicSearchFocus()" onkeydown="if(event.key==='Enter') executeMusicSearch(this.value)">
+                    <input type="text" id="music-search-input" placeholder="Search any song, artist, album (e.g. Believer, Arijit...)" style="width: 100%; background: transparent; border: none; color: #fff; font-family: 'Montserrat', sans-serif; font-size: 13px; font-weight: 600; outline: none; padding: 10px 0;" oninput="handleMusicSearchInput(this.value)" onfocus="handleMusicSearchFocus()" onkeydown="if(event.key==='Enter') executeMusicSearch(this.value, true)">
                     <button id="music-search-clear-btn" onclick="clearMusicSearch()" style="display:none; background:none; border:none; color:var(--text-sub); font-size:16px; cursor:pointer; padding:6px; flex-shrink:0;">✕</button>
                 </div>
 
@@ -3819,11 +3815,11 @@
                 </div>
             </div>
 
-            <!-- Tab Switcher (Folders) -->
+            <!-- Tab Switcher (No Emojis, Pure Minimalist Apple/Spotify Styling) -->
             <div style="display:flex; gap: 8px; padding: 0 16px; margin-bottom: 20px; overflow-x: auto; scroll-snap-type: x mandatory;" class="no-scrollbar">
                 <button onclick="switchMusicTab('explore')" id="music-tab-explore" style="display:flex; align-items:center; gap:8px; background: rgba(29,185,84,0.15); border: 1.5px solid #1DB954; color: #fff; padding: 9px 18px; border-radius: 25px; font-weight: 700; font-size: 0.82rem; white-space: nowrap; font-family:'Montserrat', sans-serif; flex-shrink: 0; cursor:pointer;">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="#1DB954"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-                    Explore &amp; Hits
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1DB954" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>
+                    Explore
                 </button>
                 <button onclick="switchMusicTab('recent')" id="music-tab-recent" style="display:flex; align-items:center; gap:8px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); color: rgba(255,255,255,0.7); padding: 9px 18px; border-radius: 25px; font-weight: 600; font-size: 0.82rem; white-space: nowrap; font-family:'Montserrat', sans-serif; flex-shrink: 0; cursor:pointer;">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
@@ -3845,55 +3841,83 @@
 
             <!-- SECTION 1: Explore & Hits (Pre-loaded from start) -->
             <div id="music-explore-section">
-                <!-- Genre / Vibe Chips -->
+                <!-- Genre / Vibe Chips (NO EMOJIS, Clean Typography) -->
                 <div style="display:flex; gap:8px; padding:0 16px 14px 16px; overflow-x:auto;" class="no-scrollbar">
-                    <button type="button" class="music-genre-chip active" onclick="filterMusicGenre('trending', this)">🔥 Top 50 Trending</button>
-                    <button type="button" class="music-genre-chip" onclick="filterMusicGenre('bollywood', this)">🌟 Bollywood</button>
-                    <button type="button" class="music-genre-chip" onclick="filterMusicGenre('lofi', this)">🎧 Chill &amp; Lofi</button>
-                    <button type="button" class="music-genre-chip" onclick="filterMusicGenre('south', this)">🎵 Tamil &amp; South</button>
-                    <button type="button" class="music-genre-chip" onclick="filterMusicGenre('pop', this)">⚡ Global Pop</button>
-                    <button type="button" class="music-genre-chip" onclick="filterMusicGenre('punjabi', this)">🕺 Punjabi</button>
-                    <button type="button" class="music-genre-chip" onclick="filterMusicGenre('campus', this)">📂 Campus Uploads</button>
+                    <button type="button" class="music-genre-chip active" onclick="filterMusicGenre('trending', this)">Top Trending</button>
+                    <button type="button" class="music-genre-chip" onclick="filterMusicGenre('bollywood', this)">Bollywood</button>
+                    <button type="button" class="music-genre-chip" onclick="filterMusicGenre('lofi', this)">Chill &amp; Lofi</button>
+                    <button type="button" class="music-genre-chip" onclick="filterMusicGenre('south', this)">Tamil &amp; South</button>
+                    <button type="button" class="music-genre-chip" onclick="filterMusicGenre('pop', this)">Global Pop</button>
+                    <button type="button" class="music-genre-chip" onclick="filterMusicGenre('punjabi', this)">Punjabi</button>
+                    <button type="button" class="music-genre-chip" onclick="filterMusicGenre('campus', this)">Campus Hub</button>
                 </div>
-                <div id="music-list" style="padding-bottom: 120px;"></div>
+
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 0 16px 12px 16px;">
+                    <div>
+                        <span id="music-section-title" style="font-family:'Montserrat', sans-serif; font-size: 0.85rem; font-weight: 800; color: #fff; text-transform: uppercase; letter-spacing: 0.8px;">CHARTBUSTERS</span>
+                        <span id="music-section-count" style="font-family:'Montserrat', sans-serif; font-size: 0.72rem; color: var(--text-sub); margin-left: 6px; font-weight: 600;">(50 TRACKS)</span>
+                    </div>
+                    <button id="music-play-all-btn" onclick="playAllTrending()" style="background: #1DB954; color: #000; border: none; border-radius: 20px; padding: 6px 16px; font-size: 0.75rem; font-weight: 800; font-family:'Montserrat', sans-serif; display: flex; align-items: center; gap: 6px; cursor: pointer; box-shadow: 0 4px 15px rgba(29,185,84,0.3); transition: transform 0.2s;" onmousedown="this.style.transform='scale(0.96)'" onmouseup="this.style.transform='scale(1)'">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="#000"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                        Play All
+                    </button>
+                </div>
+
+                <div id="music-all-section">
+                    <div id="music-tracks-list" style="padding-bottom: 120px;"></div>
+                </div>
             </div>
 
-            <!-- SECTION 2: Recently Played Folder -->
+            <!-- SECTION 2: Dedicated Recently Played Folder -->
             <div id="music-recent-section" style="display:none; padding: 0 16px 120px 16px;">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:16px; padding:12px 16px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
                     <div>
-                        <div style="font-family:'Montserrat', sans-serif; font-size:14px; font-weight:800; color:#fff;">Recently Played</div>
-                        <div id="recent-played-count" style="font-family:'Montserrat', sans-serif; font-size:11px; color:var(--text-sub); margin-top:2px;">0 tracks</div>
+                        <h3 style="font-family:'Montserrat', sans-serif; font-size: 1.1rem; font-weight: 800; color: #fff; margin:0;">Recently Played</h3>
+                        <p style="color: var(--text-sub); font-size: 0.75rem; margin: 4px 0 0 0; font-family:'Montserrat', sans-serif;">Tracks you recently listened to</p>
                     </div>
                     <div style="display:flex; gap:8px;">
-                        <button type="button" onclick="playAllRecentlyPlayed()" style="background:#1DB954; color:#000; border:none; border-radius:18px; padding:6px 14px; font-family:'Montserrat', sans-serif; font-size:11px; font-weight:800; cursor:pointer;">▶ Play All</button>
-                        <button type="button" onclick="clearRecentlyPlayed()" style="background:rgba(255,255,255,0.06); color:var(--text-sub); border:none; border-radius:18px; padding:6px 12px; font-family:'Montserrat', sans-serif; font-size:11px; font-weight:700; cursor:pointer;">Clear</button>
+                        <button type="button" onclick="playAllRecentlyPlayed()" style="background: #1DB954; color: #000; border: none; border-radius: 20px; padding: 6px 14px; font-size: 0.75rem; font-weight: 800; font-family:'Montserrat', sans-serif; display: flex; align-items: center; gap: 5px; cursor: pointer;">
+                            <svg width="11" height="11" viewBox="0 0 24 24" fill="#000"><polygon points="5 3 19 12 5 21 5 3"/></svg> Play All
+                        </button>
+                        <button type="button" onclick="clearRecentlyPlayed()" style="background: rgba(255,255,255,0.06); color: var(--text-sub); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; padding: 6px 12px; font-size: 0.75rem; font-weight: 700; font-family:'Montserrat', sans-serif; cursor: pointer;">
+                            Clear
+                        </button>
                     </div>
                 </div>
-                <div id="recent-played-list"></div>
+                <div id="music-recent-list"></div>
             </div>
 
-            <!-- SECTION 3: Playlists Folder -->
+            <!-- SECTION 3: Custom Playlists Folder & Manager -->
             <div id="music-playlists-section" style="display:none; padding: 0 16px 120px 16px;">
-                <!-- Playlists Grid View -->
                 <div id="playlists-overview-view">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-                        <span style="font-family:'Montserrat', sans-serif; font-size:13px; font-weight:800; text-transform:uppercase; letter-spacing:1px; color:#fff;">Your Playlists</span>
-                        <button type="button" onclick="openCreatePlaylistModal()" style="display:flex; align-items:center; gap:6px; background:#1DB954; color:#000; border:none; border-radius:18px; padding:6px 14px; font-family:'Montserrat', sans-serif; font-size:11px; font-weight:800; cursor:pointer;">
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 16px;">
+                        <div>
+                            <h3 style="font-family:'Montserrat', sans-serif; font-size: 1.1rem; font-weight: 800; color: #fff; margin:0;">Your Playlists</h3>
+                            <p style="color: var(--text-sub); font-size: 0.75rem; margin: 4px 0 0 0; font-family:'Montserrat', sans-serif;">Organize and order your favorite tracks</p>
+                        </div>
+                        <button type="button" onclick="openCreatePlaylistModal()" style="background: #1DB954; color: #000; border: none; border-radius: 20px; padding: 7px 15px; font-size: 0.78rem; font-weight: 800; font-family:'Montserrat', sans-serif; display: flex; align-items: center; gap: 5px; cursor: pointer; box-shadow: 0 4px 15px rgba(29,185,84,0.3);">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                             New Playlist
                         </button>
                     </div>
-                    <div id="playlists-grid" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap:12px;"></div>
+                    <div id="music-playlists-grid" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px;"></div>
                 </div>
 
-                <!-- Single Playlist Detail View -->
+                <!-- Single Playlist Detail View (Tracks & Reordering) -->
                 <div id="playlist-detail-view" style="display:none;">
-                    <button type="button" onclick="closePlaylistDetail()" style="display:flex; align-items:center; gap:6px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); color:#fff; border-radius:16px; padding:6px 14px; font-family:'Montserrat', sans-serif; font-size:11px; font-weight:700; margin-bottom:14px; cursor:pointer;">
-                        &larr; Back to Playlists
-                    </button>
-                    <div id="playlist-detail-header" style="background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.08); border-radius:18px; padding:16px; margin-bottom:16px;"></div>
-                    <div id="playlist-tracks-list"></div>
+                    <div style="display:flex; align-items:center; gap:10px; margin-bottom: 14px;">
+                        <button type="button" onclick="closePlaylistDetail()" style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 50%; width: 34px; height: 34px; display:flex; align-items:center; justify-content:center; color:#fff; cursor:pointer;">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                        </button>
+                        <div style="flex:1; overflow:hidden;">
+                            <h3 id="playlist-detail-title" style="font-family:'Montserrat', sans-serif; font-size: 1.15rem; font-weight: 800; color: #fff; margin:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Playlist</h3>
+                            <p id="playlist-detail-count" style="color: var(--text-sub); font-size: 0.75rem; margin: 2px 0 0 0; font-family:'Montserrat', sans-serif;">0 tracks • Reorder songs below</p>
+                        </div>
+                        <button type="button" id="playlist-detail-play-btn" onclick="playActivePlaylist()" style="background:#1DB954; color:#000; border:none; border-radius:20px; padding:6px 14px; font-size:0.75rem; font-weight:800; font-family:'Montserrat', sans-serif; display:flex; align-items:center; gap:5px; cursor:pointer;">
+                            <svg width="11" height="11" viewBox="0 0 24 24" fill="#000"><polygon points="5 3 19 12 5 21 5 3"/></svg> Play All
+                        </button>
+                    </div>
+                    <div id="playlist-detail-tracks-list"></div>
                 </div>
             </div>
 
@@ -3901,6 +3925,7 @@
             <div id="music-downloads-section" style="display:none;">
                 <div id="downloads-list" style="padding: 15px; padding-bottom: 120px;"></div>
             </div>
+        </div>
         </div>
         <div id="events-view" class="app-view">
             <div class="view-header">
@@ -4518,6 +4543,9 @@
     <div id="music-fullscreen" class="music-fullscreen">
         <div id="music-video-bg" class="music-video-bg">
             <video id="bg-video-player" autoplay muted loop playsinline class="bg-video"></video>
+            <div id="bg-yt-wrap" class="bg-yt-wrap" style="position: absolute; top: -15%; left: -15%; width: 130%; height: 130%; pointer-events: none; overflow: hidden; display: none; opacity: 0; transition: opacity 0.8s ease; z-index: 0;">
+                <iframe id="bg-yt-iframe" style="width: 100%; height: 100%; border: none; object-fit: cover; pointer-events: none; filter: brightness(0.65) contrast(1.1);" allow="autoplay"></iframe>
+            </div>
             <div class="bg-video-overlay"></div>
         </div>
         <div class="fs-bg-orbs-container">
@@ -4529,9 +4557,15 @@
         <div class="fs-bg-overlay"></div>
         
         <div class="fs-player-container">
-            <div class="fs-header">
+            <div class="fs-header" style="display:flex; justify-content:space-between; align-items:center;">
                 <button class="fs-close" onclick="closeFullscreenPlayer()"><svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg></button>
-                <span>Now Playing</span>
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <span style="font-family:'Montserrat',sans-serif; font-weight:700; font-size:0.85rem; letter-spacing:0.5px;">Now Playing</span>
+                    <button id="fs-canvas-toggle-btn" onclick="toggleCanvasMode()" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.18); border-radius: 14px; padding: 3px 8px; font-size: 10px; font-weight: 700; color: #1DB954; cursor: pointer; display: flex; align-items: center; gap: 4px; font-family:'Montserrat',sans-serif;" title="Toggle Video Background">
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+                        <span id="fs-canvas-toggle-text">Video</span>
+                    </button>
+                </div>
                 <button class="fs-close" id="fs-download-btn" onclick="downloadCurrentTrack()" style="font-size:24px;" title="Download Offline"><svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg></button>
             </div>
             <div id="fs-cover-container" class="fs-cover-container">
@@ -9215,7 +9249,7 @@ function checkAndShowHolidayBanner(viewId) {
             if (historyPanel) historyPanel.style.display = 'none';
             if (searchDebounceTimer) clearTimeout(searchDebounceTimer);
             searchDebounceTimer = setTimeout(() => {
-                executeMusicSearch(val.trim());
+                executeMusicSearch(val.trim(), false);
             }, 300);
         }
 
@@ -9239,6 +9273,11 @@ function checkAndShowHolidayBanner(viewId) {
             const panel = document.getElementById('music-search-history-panel');
             if (!container || !panel) return;
 
+            // Automatically filter out any keystroke spam / backslash junk from previous sessions
+            if (userMusicLibrary.search_history) {
+                userMusicLibrary.search_history = userMusicLibrary.search_history.filter(item => item && typeof item === 'string' && item.trim().length >= 2 && !item.includes('\\'));
+            }
+
             const history = userMusicLibrary.search_history || [];
             if (history.length === 0) {
                 panel.style.display = 'none';
@@ -9249,10 +9288,10 @@ function checkAndShowHolidayBanner(viewId) {
             let html = '';
             history.forEach((q, idx) => {
                 html += `
-                    <div style="display:flex; align-items:center; gap:6px; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.12); border-radius:18px; padding:6px 12px; font-family:'Montserrat', sans-serif; font-size:12px; font-weight:600; color:#fff; cursor:pointer;" onclick="selectSearchHistoryQuery('${q.replace(/'/g, "\\'")}')">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                        <span>${q}</span>
-                        <span onclick="event.stopPropagation(); removeSearchHistoryItem(${idx})" style="color:var(--text-sub); margin-left:4px; font-size:13px;" onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='var(--text-sub)'">✕</span>
+                    <div style="display:inline-flex; align-items:center; gap:6px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); border-radius:18px; padding:6px 12px; font-family:'Montserrat', sans-serif; font-size:12px; font-weight:600; color:#fff; cursor:pointer; transition:all 0.2s;" onclick="selectSearchHistoryQuery('${q.replace(/'/g, "\\'")}')">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="opacity:0.6;"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                        <span>${escapeHtml(q)}</span>
+                        <span onclick="event.stopPropagation(); removeSearchHistoryItem(${idx})" style="color:var(--text-sub); margin-left:4px; font-size:13px; line-height:1;" onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='var(--text-sub)'">✕</span>
                     </div>
                 `;
             });
@@ -9268,7 +9307,7 @@ function checkAndShowHolidayBanner(viewId) {
             }
             const historyPanel = document.getElementById('music-search-history-panel');
             if (historyPanel) historyPanel.style.display = 'none';
-            executeMusicSearch(q);
+            executeMusicSearch(q, true);
         }
 
         function removeSearchHistoryItem(idx) {
@@ -9287,7 +9326,7 @@ function checkAndShowHolidayBanner(viewId) {
         }
 
         let currentSearchResults = [];
-        async function executeMusicSearch(query) {
+        async function executeMusicSearch(query, saveToHistory = false) {
             if (!query || query.trim().length === 0) return;
             const cleanQ = query.trim();
             const resultsPanel = document.getElementById('music-search-results-panel');
@@ -9298,13 +9337,16 @@ function checkAndShowHolidayBanner(viewId) {
             if (!resultsPanel || !resultsList) return;
             resultsPanel.style.display = 'block';
 
-            // Add to search history
-            if (!userMusicLibrary.search_history) userMusicLibrary.search_history = [];
-            const existingIdx = userMusicLibrary.search_history.indexOf(cleanQ);
-            if (existingIdx !== -1) userMusicLibrary.search_history.splice(existingIdx, 1);
-            userMusicLibrary.search_history.unshift(cleanQ);
-            if (userMusicLibrary.search_history.length > 15) userMusicLibrary.search_history.pop();
-            saveUserMusicLibrary();
+            // Only add to search history if explicitly user-triggered (Enter, clicked search item), never on typing debounce!
+            if (saveToHistory && cleanQ.length >= 2 && !cleanQ.includes('\\')) {
+                if (!userMusicLibrary.search_history) userMusicLibrary.search_history = [];
+                userMusicLibrary.search_history = userMusicLibrary.search_history.filter(item => item && typeof item === 'string' && item.trim().length >= 2 && !item.includes('\\'));
+                const existingIdx = userMusicLibrary.search_history.indexOf(cleanQ);
+                if (existingIdx !== -1) userMusicLibrary.search_history.splice(existingIdx, 1);
+                userMusicLibrary.search_history.unshift(cleanQ);
+                if (userMusicLibrary.search_history.length > 10) userMusicLibrary.search_history.pop();
+                saveUserMusicLibrary();
+            }
 
             // Skeleton loading state
             resultsList.innerHTML = `
@@ -9313,7 +9355,7 @@ function checkAndShowHolidayBanner(viewId) {
                     <div style="width:48px; height:48px; border-radius:10px; background:rgba(255,255,255,0.08); margin-right:12px;"></div>
                     <div style="flex:1;">
                         <div style="height:14px; width:60%; background:rgba(255,255,255,0.08); border-radius:4px; margin-bottom:8px;"></div>
-                        <div style="height:11px; width:35%; background:rgba(255,255,255,0.05); border-radius:4px;"></div>
+                        <div style="height:11px; width:40%; background:rgba(255,255,255,0.05); border-radius:4px;"></div>
                     </div>
                 </div>`).join('')}
             `;
@@ -9325,10 +9367,12 @@ function checkAndShowHolidayBanner(viewId) {
                     currentSearchResults = data.results;
                     renderSearchResultsList(currentSearchResults);
                 } else {
-                    resultsList.innerHTML = `<div style="text-align:center; color:var(--text-sub); padding:30px; font-family:'Montserrat', sans-serif; font-size:13px;">No results found for "${cleanQ}". Try another song or artist.</div>`;
+                    currentSearchResults = [];
+                    resultsList.innerHTML = `<div style="text-align:center; color:var(--text-sub); padding:30px; font-family:'Montserrat', sans-serif; font-size:13px;">No results found for "${escapeHtml(cleanQ)}". Try another song or artist.</div>`;
                 }
             } catch(e) {
-                resultsList.innerHTML = `<div style="text-align:center; color:var(--danger); padding:20px; font-family:'Montserrat', sans-serif; font-size:13px;">Search error. Check your connection.</div>`;
+                console.error("Music search error:", e);
+                resultsList.innerHTML = `<div style="text-align:center; color:var(--danger); padding:30px; font-family:'Montserrat', sans-serif; font-size:13px;">Search error. Check your connection.</div>`;
             }
         }
 
@@ -10203,19 +10247,47 @@ function checkAndShowHolidayBanner(viewId) {
         let bgFadeTimeout = null;
         let coverHideTimeout = null;
 
+        let videoBackgroundEnabled = true;
+        window.musicVideoCache = new Map();
+        let currentVideoRequestId = 0;
+
+        function toggleCanvasMode() {
+            videoBackgroundEnabled = !videoBackgroundEnabled;
+            const btnText = document.getElementById('fs-canvas-toggle-text');
+            if (btnText) btnText.innerText = videoBackgroundEnabled ? 'Video' : 'Cover';
+            const track = currentPlaylist[currentTrackIndex];
+            if (track) {
+                updateVideoBackground(track);
+            }
+        }
+
         function updateVideoBackground(track, videoData = null) {
             const bgVideoPlayer = document.getElementById('bg-video-player');
+            const bgYtWrap = document.getElementById('bg-yt-wrap');
+            const bgYtIframe = document.getElementById('bg-yt-iframe');
             const musicVideoBg = document.getElementById('music-video-bg');
             const fsCoverContainer = document.getElementById('fs-cover-container');
-            if (!bgVideoPlayer || !musicVideoBg) return;
+            if (!musicVideoBg) return;
 
             clearTimeout(bgFadeTimeout);
             clearTimeout(coverHideTimeout);
-            bgVideoPlayer.style.opacity = '0';
 
-            const videoSrc = videoData || (track && track.video_data) || (track && track.has_video ? `${BACKEND_URL}/api/music/video/${track.id}` : null);
+            // If user explicitly toggled video canvas off, show classic album cover
+            if (!videoBackgroundEnabled) {
+                if (bgVideoPlayer) { bgVideoPlayer.style.opacity = '0'; bgVideoPlayer.pause(); bgVideoPlayer.src = ''; }
+                if (bgYtWrap) { bgYtWrap.style.display = 'none'; bgYtWrap.style.opacity = '0'; if (bgYtIframe) bgYtIframe.src = ''; }
+                applyCoverFallback(track, musicVideoBg);
+                return;
+            }
 
-            if (track && track.has_video && videoSrc && videoSrc.trim() !== '') {
+            currentVideoRequestId++;
+            const reqId = currentVideoRequestId;
+
+            // Priority 1: Campus uploaded video directly attached to track
+            const directVideoSrc = videoData || (track && track.video_data) || (track && track.has_video && !track.is_online ? `${BACKEND_URL}/api/music/video/${track.id}` : null);
+
+            if (directVideoSrc && directVideoSrc.trim() !== '') {
+                if (bgYtWrap) { bgYtWrap.style.display = 'none'; bgYtWrap.style.opacity = '0'; if (bgYtIframe) bgYtIframe.src = ''; }
                 const oldFallback = musicVideoBg.querySelector('.bg-cover-fallback');
                 if (oldFallback) oldFallback.remove();
 
@@ -10223,45 +10295,100 @@ function checkAndShowHolidayBanner(viewId) {
                 const showVideo = () => {
                     if (shown) return;
                     shown = true;
-                    bgVideoPlayer.style.transition = 'opacity 0.8s ease';
-                    bgVideoPlayer.style.opacity = '1';
-                    
+                    if (bgVideoPlayer) {
+                        bgVideoPlayer.style.transition = 'opacity 0.8s ease';
+                        bgVideoPlayer.style.opacity = '1';
+                    }
                     if (fsCoverContainer) {
                         fsCoverContainer.style.transition = 'opacity 0.5s ease';
                         fsCoverContainer.style.opacity = '0';
                         coverHideTimeout = setTimeout(() => {
-                            fsCoverContainer.style.display = 'none';
+                            if (fsCoverContainer) fsCoverContainer.style.display = 'none';
                         }, 500);
                     }
                 };
-                
-                bgVideoPlayer.onplaying = showVideo;
-                bgVideoPlayer.oncanplay = showVideo;
-                bgVideoPlayer.onloadeddata = showVideo;
 
-                bgVideoPlayer.src = videoSrc;
-                bgVideoPlayer.load();
-                bgVideoPlayer.play().catch(() => {});
-            } else {
-                bgVideoPlayer.onplaying = null;
-                bgVideoPlayer.oncanplay = null;
-                bgVideoPlayer.onloadeddata = null;
-                bgVideoPlayer.src = '';
-                const img = document.createElement('img');
-                img.className = 'bg-cover-fallback';
-                img.src = (track && track.cover_url) || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMzMzIi8+PC9zdmc+';
-                img.onerror = () => { img.src = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMzMzIi8+PC9zdmc+'; };
-                const oldFallback = musicVideoBg.querySelector('.bg-cover-fallback');
-                if (oldFallback) oldFallback.remove();
-                musicVideoBg.insertBefore(img, musicVideoBg.querySelector('.bg-video-overlay'));
-                img.style.opacity = '0';
-                img.style.transition = 'opacity 1.2s ease';
-                bgFadeTimeout = setTimeout(() => { img.style.opacity = '1'; }, 100);
-                if (fsCoverContainer) {
-                    fsCoverContainer.style.display = 'flex';
-                    fsCoverContainer.style.opacity = '1';
+                if (bgVideoPlayer) {
+                    bgVideoPlayer.onplaying = showVideo;
+                    bgVideoPlayer.oncanplay = showVideo;
+                    bgVideoPlayer.onloadeddata = showVideo;
+                    bgVideoPlayer.src = directVideoSrc;
+                    bgVideoPlayer.load();
+                    bgVideoPlayer.play().catch(() => {});
                 }
+                return;
             }
+
+            // Priority 2: Online track or Campus track without manual video: Automatic Video Match!
+            if (track && (track.title || track.song)) {
+                applyCoverFallback(track, musicVideoBg);
+                if (bgVideoPlayer) { bgVideoPlayer.style.opacity = '0'; bgVideoPlayer.pause(); bgVideoPlayer.src = ''; }
+
+                const searchTitle = (track.title || track.song || '').trim();
+                const searchArtist = (track.artist || track.singers || '').trim();
+                const cacheKey = (searchTitle + ' ' + searchArtist).toLowerCase();
+
+                const playMatchedVideo = (videoId) => {
+                    if (reqId !== currentVideoRequestId) return;
+                    if (!videoId || !bgYtWrap || !bgYtIframe) return;
+
+                    const embedUrl = `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&mute=1&controls=0&loop=1&playlist=${videoId}&playsinline=1&modestbranding=1&rel=0&iv_load_policy=3&disablekb=1&enablejsapi=1`;
+                    if (!bgYtIframe.src || !bgYtIframe.src.includes(videoId)) {
+                        bgYtIframe.src = embedUrl;
+                    }
+
+                    bgYtWrap.style.display = 'block';
+                    setTimeout(() => {
+                        if (reqId === currentVideoRequestId && bgYtWrap) {
+                            bgYtWrap.style.opacity = '1';
+                            if (fsCoverContainer) {
+                                fsCoverContainer.style.transition = 'opacity 0.6s ease';
+                                fsCoverContainer.style.opacity = '0';
+                                coverHideTimeout = setTimeout(() => {
+                                    if (fsCoverContainer) fsCoverContainer.style.display = 'none';
+                                }, 600);
+                            }
+                        }
+                    }, 400);
+                };
+
+                if (window.musicVideoCache.has(cacheKey)) {
+                    playMatchedVideo(window.musicVideoCache.get(cacheKey));
+                } else {
+                    const query = encodeURIComponent((searchTitle + ' ' + searchArtist).trim());
+                    fetch(`${BACKEND_URL}/api/music/video_match?q=${query}`)
+                        .then(r => r.json())
+                        .then(data => {
+                            if (data && data.success && data.video_id) {
+                                window.musicVideoCache.set(cacheKey, data.video_id);
+                                playMatchedVideo(data.video_id);
+                            }
+                        })
+                        .catch(() => {});
+                }
+            } else {
+                applyCoverFallback(track, musicVideoBg);
+            }
+        }
+
+        function applyCoverFallback(track, musicVideoBg) {
+            if (!musicVideoBg) return;
+            const fsCoverContainer = document.getElementById('fs-cover-container');
+            if (fsCoverContainer) {
+                fsCoverContainer.style.display = 'flex';
+                fsCoverContainer.style.opacity = '1';
+            }
+            const coverSrc = (track && (track.cover_data || track.cover_url)) || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMzMzIi8+PC9zdmc+';
+            const img = document.createElement('img');
+            img.className = 'bg-cover-fallback';
+            img.src = coverSrc;
+            img.onerror = () => { img.src = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMzMzIi8+PC9zdmc+'; };
+            const oldFallback = musicVideoBg.querySelector('.bg-cover-fallback');
+            if (oldFallback) oldFallback.remove();
+            musicVideoBg.insertBefore(img, musicVideoBg.querySelector('.bg-video-overlay'));
+            img.style.opacity = '0';
+            img.style.transition = 'opacity 1.2s ease';
+            bgFadeTimeout = setTimeout(() => { img.style.opacity = '1'; }, 100);
         }
 
         async function loadLyricsForTrack(track) {
@@ -10579,12 +10706,7 @@ function checkAndShowHolidayBanner(viewId) {
                 if (isFsOpen || userInitiated) {
                     openFullscreenPlayer(null, true);
                 }
-                if (track.has_video) {
-                    const vidUrl = `${BACKEND_URL}/api/music/video/${track.id}`;
-                    updateVideoBackground(track, vidUrl);
-                } else {
-                    updateVideoBackground(track);
-                }
+                updateVideoBackground(track);
             } else {
                 // Background mode / Screen off: Pause video to save CPU/battery
                 const bgVid = document.getElementById('bg-video-player');
@@ -11048,14 +11170,8 @@ function checkAndShowHolidayBanner(viewId) {
             if (fab) fab.classList.add('hidden-fab');
             
             // Resume or trigger background video when reopening fullscreen from mini-player
-            if (!force && track && track.has_video) {
-                const bgVid = document.getElementById('bg-video-player');
-                const vidUrl = `${BACKEND_URL}/api/music/video/${track.id}`;
-                if (bgVid && bgVid.src && bgVid.src.includes(`/api/music/video/${track.id}`)) {
-                    if (isPlaying && bgVid.paused) bgVid.play().catch(() => {});
-                } else {
-                    updateVideoBackground(track, vidUrl);
-                }
+            if (!force && track) {
+                updateVideoBackground(track);
             }
             
             if (!force && !history.state?.fsMusic) {
