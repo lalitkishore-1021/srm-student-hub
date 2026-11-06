@@ -1602,10 +1602,10 @@ def get_music():
     conn = get_db()
     if DATABASE_URL:
         cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-        cur.execute("SELECT id, title, artist, cover_data, uploaded_by, net_id, created_at, lyrics, CASE WHEN video_data IS NOT NULL THEN 1 ELSE 0 END as has_video FROM music_hub ORDER BY order_index ASC, created_at DESC")
+        cur.execute("SELECT id, title, artist, cover_data, uploaded_by, net_id, created_at, lyrics, CASE WHEN video_data IS NOT NULL THEN 1 ELSE 0 END as has_video, CASE WHEN audio_data LIKE 'http%' THEN audio_data ELSE NULL END as audio_url FROM music_hub ORDER BY order_index ASC, created_at DESC")
     else:
         cur = conn.cursor()
-        cur.execute("SELECT id, title, artist, cover_data, uploaded_by, net_id, created_at, lyrics, CASE WHEN video_data IS NOT NULL THEN 1 ELSE 0 END as has_video FROM music_hub ORDER BY order_index ASC, created_at DESC")
+        cur.execute("SELECT id, title, artist, cover_data, uploaded_by, net_id, created_at, lyrics, CASE WHEN video_data IS NOT NULL THEN 1 ELSE 0 END as has_video, CASE WHEN audio_data LIKE 'http%' THEN audio_data ELSE NULL END as audio_url FROM music_hub ORDER BY order_index ASC, created_at DESC")
     
     rows = cur.fetchall()
     items = []
