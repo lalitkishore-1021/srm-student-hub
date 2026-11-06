@@ -197,6 +197,8 @@ def init_db():
             id SERIAL PRIMARY KEY, post_id INTEGER NOT NULL, net_id TEXT NOT NULL, UNIQUE(post_id, net_id))''')
         cur.execute('''CREATE TABLE IF NOT EXISTS push_subscriptions (
             id SERIAL PRIMARY KEY, net_id TEXT, endpoint TEXT UNIQUE NOT NULL, p256dh TEXT, auth TEXT, timetable_json TEXT, created_at TEXT)''')
+        cur.execute('''CREATE TABLE IF NOT EXISTS user_music_library (
+            net_id TEXT PRIMARY KEY, library_data TEXT, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)''')
         conn.commit()
         for table, col, ctype in [
             ('students', 'created_at', 'TEXT'),
@@ -302,6 +304,8 @@ def init_db():
             id SERIAL PRIMARY KEY, post_id INTEGER NOT NULL, net_id TEXT NOT NULL, UNIQUE(post_id, net_id))''')
         cur.execute('''CREATE TABLE IF NOT EXISTS push_subscriptions (
             id INTEGER PRIMARY KEY AUTOINCREMENT, net_id TEXT, endpoint TEXT UNIQUE NOT NULL, p256dh TEXT, auth TEXT, timetable_json TEXT, created_at TEXT)''')
+        cur.execute('''CREATE TABLE IF NOT EXISTS user_music_library (
+            net_id TEXT PRIMARY KEY, library_data TEXT, updated_at TEXT)''')
         
         for table, col, ctype in [
             ('students', 'created_at', 'TEXT'),
@@ -2130,6 +2134,216 @@ def get_lyrics():
     except Exception as e:
         print(f"Lyrics fetch error: {e}")
     return jsonify({'success': False, 'error': 'Lyrics not found.'})
+
+# ================= FREE JIOSAAVN MUSIC STREAMING API & USER LIBRARY =================
+import base64
+import html
+import urllib.parse
+import urllib.request
+import time
+
+SAAVN_DES_KEY = b"38346591"
+_trending_music_cache = {"timestamp": 0, "data": []}
+_search_music_cache = {}
+
+def decrypt_saavn_url(enc_url):
+    if not enc_url:
+        return None
+    try:
+        raw = base64.b64decode(enc_url.strip())
+        # Try pycryptodome first
+        try:
+            from Crypto.Cipher import DES
+            cipher = DES.new(SAAVN_DES_KEY, DES.MODE_ECB)
+            dec = cipher.decrypt(raw)
+        except Exception:
+            from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+            cipher = Cipher(algorithms.TripleDES(SAAVN_DES_KEY * 3), modes.ECB())
+            decryptor = cipher.decryptor()
+            dec = decryptor.update(raw) + decryptor.finalize()
+        pad = dec[-1]
+        if pad < 8:
+            dec = dec[:-pad]
+        url = dec.decode('utf-8')
+        # Upgrade to 320kbps CD Quality
+        if '_96.mp4' in url:
+            return url.replace('_96.mp4', '_320.mp4')
+        if '_160.mp4' in url:
+            return url.replace('_160.mp4', '_320.mp4')
+        return url
+    except Exception as e:
+        return None
+
+def clean_saavn_text(s):
+    if not s:
+        return ''
+    return html.unescape(s).strip()
+
+@app.route('/api/music/search', methods=['GET'])
+def search_online_music():
+    query = request.args.get('q', '').strip()
+    if not query:
+        return jsonify({'success': False, 'error': 'Query parameter q is required', 'results': []})
+    
+    count = int(request.args.get('n', 25))
+    cache_key = f"{query.lower()}_{count}"
+    now = time.time()
+    
+    if cache_key in _search_music_cache:
+        cached = _search_music_cache[cache_key]
+        if now - cached['timestamp'] < 1800: # 30 min cache
+            return jsonify({'success': True, 'results': cached['data']})
+            
+    url = f"https://www.jiosaavn.com/api.php?__call=search.getResults&_format=json&_marker=0&cc=in&p=1&n={count}&q={urllib.parse.quote(query)}"
+    try:
+        req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'})
+        with urllib.request.urlopen(req, timeout=6) as res:
+            data = json.loads(res.read().decode('utf-8'))
+            results = []
+            for item in data.get('results', []):
+                enc = item.get('encrypted_media_url')
+                media_url = decrypt_saavn_url(enc) if enc else None
+                if not media_url:
+                    media_url = item.get('media_preview_url')
+                img = (item.get('image') or '').replace('150x150.jpg', '500x500.jpg').replace('http://', 'https://')
+                results.append({
+                    'id': str(item.get('id')),
+                    'title': clean_saavn_text(item.get('song') or item.get('title')),
+                    'artist': clean_saavn_text(item.get('singers') or item.get('primary_artists') or item.get('music')),
+                    'album': clean_saavn_text(item.get('album')),
+                    'year': item.get('year', ''),
+                    'duration': int(item.get('duration') or 0),
+                    'cover_url': img,
+                    'audio_url': media_url,
+                    'has_video': False,
+                    'is_online': True
+                })
+            _search_music_cache[cache_key] = {'timestamp': now, 'data': results}
+            return jsonify({'success': True, 'results': results})
+    except Exception as e:
+        print(f"Music search error: {e}")
+        return jsonify({'success': False, 'error': str(e), 'results': []})
+
+@app.route('/api/music/trending', methods=['GET'])
+def get_trending_music():
+    global _trending_music_cache
+    now = time.time()
+    if _trending_music_cache['data'] and (now - _trending_music_cache['timestamp'] < 3600): # 1 hour cache
+        return jsonify({'success': True, 'results': _trending_music_cache['data']})
+        
+    # Top 50 Superhits Playlist (JioSaavn Official Curated Chart)
+    url = 'https://www.jiosaavn.com/api.php?__call=playlist.getDetails&_format=json&_marker=0&cc=in&listid=1134548194'
+    try:
+        req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'})
+        with urllib.request.urlopen(req, timeout=8) as res:
+            data = json.loads(res.read().decode('utf-8'))
+            songs = data.get('songs', [])
+            results = []
+            for item in songs:
+                enc = item.get('encrypted_media_url')
+                media_url = decrypt_saavn_url(enc) if enc else None
+                if not media_url:
+                    media_url = item.get('media_preview_url')
+                img = (item.get('image') or '').replace('150x150.jpg', '500x500.jpg').replace('http://', 'https://')
+                results.append({
+                    'id': str(item.get('id')),
+                    'title': clean_saavn_text(item.get('song') or item.get('title')),
+                    'artist': clean_saavn_text(item.get('singers') or item.get('primary_artists') or item.get('music')),
+                    'album': clean_saavn_text(item.get('album')),
+                    'year': item.get('year', ''),
+                    'duration': int(item.get('duration') or 0),
+                    'cover_url': img,
+                    'audio_url': media_url,
+                    'has_video': False,
+                    'is_online': True
+                })
+            if results:
+                _trending_music_cache = {'timestamp': now, 'data': results}
+                return jsonify({'success': True, 'results': results})
+    except Exception as e:
+        print(f"Trending fetch error: {e}")
+        
+    # Fallback to search query if playlist is temporarily unreachable
+    try:
+        fallback_url = "https://www.jiosaavn.com/api.php?__call=search.getResults&_format=json&_marker=0&cc=in&p=1&n=30&q=Top%20Trending%20Songs"
+        req = urllib.request.Request(fallback_url, headers={'User-Agent': 'Mozilla/5.0'})
+        with urllib.request.urlopen(req, timeout=6) as res:
+            data = json.loads(res.read().decode('utf-8'))
+            results = []
+            for item in data.get('results', []):
+                enc = item.get('encrypted_media_url')
+                media_url = decrypt_saavn_url(enc) if enc else None
+                img = (item.get('image') or '').replace('150x150.jpg', '500x500.jpg').replace('http://', 'https://')
+                results.append({
+                    'id': str(item.get('id')),
+                    'title': clean_saavn_text(item.get('song') or item.get('title')),
+                    'artist': clean_saavn_text(item.get('singers') or item.get('primary_artists')),
+                    'album': clean_saavn_text(item.get('album')),
+                    'year': item.get('year', ''),
+                    'duration': int(item.get('duration') or 0),
+                    'cover_url': img,
+                    'audio_url': media_url,
+                    'has_video': False,
+                    'is_online': True
+                })
+            _trending_music_cache = {'timestamp': now, 'data': results}
+            return jsonify({'success': True, 'results': results})
+    except Exception as e2:
+        return jsonify({'success': False, 'error': str(e2), 'results': []})
+
+@app.route('/api/music/library', methods=['GET', 'POST'])
+def handle_user_music_library():
+    if request.method == 'GET':
+        net_id = request.args.get('net_id', '').strip()
+        if not net_id:
+            return jsonify({'success': False, 'error': 'net_id parameter required'}), 400
+        conn = get_db()
+        cur = conn.cursor()
+        try:
+            if DATABASE_URL:
+                cur.execute("SELECT library_data FROM user_music_library WHERE net_id = %s", (net_id,))
+            else:
+                cur.execute("SELECT library_data FROM user_music_library WHERE net_id = ?", (net_id,))
+            row = cur.fetchone()
+            if row and row[0]:
+                return jsonify({'success': True, 'library': json.loads(row[0])})
+            return jsonify({'success': True, 'library': {'playlists': [], 'recently_played': [], 'search_history': [], 'favorites': []}})
+        except Exception as e:
+            return jsonify({'success': False, 'error': str(e)}), 500
+        finally:
+            cur.close()
+            conn.close()
+            
+    elif request.method == 'POST':
+        data = request.json or {}
+        net_id = data.get('net_id', '').strip()
+        library_data = data.get('library', {})
+        if not net_id:
+            return jsonify({'success': False, 'error': 'net_id required'}), 400
+            
+        lib_json = json.dumps(library_data)
+        conn = get_db()
+        cur = conn.cursor()
+        try:
+            if DATABASE_URL:
+                cur.execute("""
+                    INSERT INTO user_music_library (net_id, library_data, updated_at)
+                    VALUES (%s, %s, NOW())
+                    ON CONFLICT (net_id) DO UPDATE SET library_data = EXCLUDED.library_data, updated_at = NOW()
+                """, (net_id, lib_json))
+            else:
+                cur.execute("""
+                    INSERT INTO user_music_library (net_id, library_data, updated_at)
+                    VALUES (?, ?, datetime('now'))
+                    ON CONFLICT(net_id) DO UPDATE SET library_data = excluded.library_data, updated_at = datetime('now')
+                """, (net_id, lib_json))
+            conn.commit()
+            return jsonify({'success': True})
+        except Exception as e:
+            return jsonify({'success': False, 'error': str(e)}), 500
+        finally:
+            cur.close()
+            conn.close()
 
 @app.route('/api/ai/chat', methods=['POST'])
 def ai_chat():
