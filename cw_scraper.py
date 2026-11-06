@@ -33,31 +33,48 @@ def scrape_campusweb(netid, pwd):
         except Exception as e:
             return {"success": False, "error": f"CampusWeb connection error: {e}"}
 
-        # 2. Sequential fetching of attendance, marks, profile (fast, robust, avoids race conditions)
+        # 2. Parallel fetching of attendance, marks, profile (ultra-fast, sub-second response)
         att_json = {}
         marks_json = {}
         prof_json = {}
 
-        try:
-            r = session.post('https://api.campusweb.in/api/student-portal/attendance', json={'net_id': clean_id, 'password': pwd}, timeout=12)
-            if r.status_code == 200:
-                att_json = r.json()
-        except Exception as e:
-            print(f"[{clean_id}] CampusWeb attendance fetch warning: {e}")
+        import concurrent.futures
 
-        try:
-            r = session.post('https://api.campusweb.in/api/student-portal/marks', json={'net_id': clean_id, 'password': pwd}, timeout=12)
-            if r.status_code == 200:
-                marks_json = r.json()
-        except Exception as e:
-            print(f"[{clean_id}] CampusWeb marks fetch warning: {e}")
+        def fetch_att():
+            try:
+                r = session.post('https://api.campusweb.in/api/student-portal/attendance', json={'net_id': clean_id, 'password': pwd}, timeout=10)
+                if r.status_code == 200:
+                    return r.json()
+            except Exception as e:
+                print(f"[{clean_id}] CampusWeb attendance fetch warning: {e}")
+            return {}
 
-        try:
-            r = session.post('https://api.campusweb.in/api/student-portal/profile', json={'net_id': clean_id, 'password': pwd}, timeout=10)
-            if r.status_code == 200:
-                prof_json = r.json()
-        except Exception as e:
-            print(f"[{clean_id}] CampusWeb profile fetch warning: {e}")
+        def fetch_marks():
+            try:
+                r = session.post('https://api.campusweb.in/api/student-portal/marks', json={'net_id': clean_id, 'password': pwd}, timeout=10)
+                if r.status_code == 200:
+                    return r.json()
+            except Exception as e:
+                print(f"[{clean_id}] CampusWeb marks fetch warning: {e}")
+            return {}
+
+        def fetch_profile():
+            try:
+                r = session.post('https://api.campusweb.in/api/student-portal/profile', json={'net_id': clean_id, 'password': pwd}, timeout=10)
+                if r.status_code == 200:
+                    return r.json()
+            except Exception as e:
+                print(f"[{clean_id}] CampusWeb profile fetch warning: {e}")
+            return {}
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=3) as pool:
+            f_att = pool.submit(fetch_att)
+            f_marks = pool.submit(fetch_marks)
+            f_prof = pool.submit(fetch_profile)
+
+            att_json = f_att.result()
+            marks_json = f_marks.result()
+            prof_json = f_prof.result()
             
         if not att_json or att_json.get('status') != 'success':
             return {"success": False, "error": (att_json or {}).get('message', 'CampusWeb API unavailable')}

@@ -717,7 +717,14 @@ def start_session():
                 except Exception as e:
                     print(f"[{reg_no}] SRM Portal wait: {e}")
 
-            if future_ac:
+            # Fast Path (Ratio-D sub-5s speed): If portal sync succeeded, don't block 28s on slow Playwright!
+            if portal_res and portal_res.get('success'):
+                if future_ac:
+                    try:
+                        ac_res = future_ac.result(timeout=0.8)
+                    except Exception:
+                        pass  # Let Academia complete in background without blocking user
+            elif future_ac:
                 try:
                     ac_res = future_ac.result(timeout=28)
                 except Exception as e:
