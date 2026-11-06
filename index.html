@@ -1878,21 +1878,15 @@
 
         .cal-note-dot {
             position: absolute;
-            top: 4px;
-            right: 4px;
-            width: 7px;
-            height: 7px;
+            top: 5px;
+            right: 5px;
+            width: 5px;
+            height: 5px;
             background: #ffaa00;
             border-radius: 50%;
-            box-shadow: 0 0 8px #ffaa00, 0 0 14px rgba(255, 170, 0, 0.85);
-            animation: calDotPulse 2s infinite ease-in-out;
+            box-shadow: 0 0 6px rgba(255, 170, 0, 0.7);
             z-index: 3;
             pointer-events: none;
-        }
-
-        @keyframes calDotPulse {
-            0%, 100% { transform: scale(1); opacity: 0.9; }
-            50% { transform: scale(1.35); opacity: 1; box-shadow: 0 0 12px #ffaa00, 0 0 20px #ffaa00; }
         }
 
         .cal-day:hover {
@@ -3964,43 +3958,36 @@
             </div>
 
             <div class="image-card" id="cal-event-details"
-                style="display: none; text-align: left; cursor: default; transform: none; max-width: 600px; margin-left: auto; margin-right: auto; border: 1px solid rgba(255, 170, 0, 0.25); border-radius: 20px; padding: 22px; background: rgba(20, 20, 26, 0.7); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); box-shadow: 0 15px 35px rgba(0,0,0,0.4);">
+                style="display: none; text-align: left; cursor: default; transform: none; max-width: 520px; margin-left: auto; margin-right: auto; border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 20px; padding: 20px; background: rgba(18, 20, 26, 0.85); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); box-shadow: 0 20px 45px rgba(0,0,0,0.45);">
+                <!-- Header -->
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-                    <h3 style="color: var(--primary); margin: 0; font-family: 'Montserrat', sans-serif; font-weight: 900; font-size: 1.15rem;" id="event-date-title">Date</h3>
-                    <button onclick="document.getElementById('cal-event-details').style.display='none';" style="background:rgba(255,255,255,0.08); border:none; border-radius:50%; width:30px; height:30px; color:#fff; display:flex; align-items:center; justify-content:center; cursor:pointer;">✕</button>
+                    <h3 style="color: #ffffff; margin: 0; font-family: 'Montserrat', sans-serif; font-weight: 800; font-size: 1.05rem; letter-spacing: -0.2px;" id="event-date-title">Date</h3>
+                    <button type="button" onclick="document.getElementById('cal-event-details').style.display='none';" style="background:rgba(255,255,255,0.06); border:none; border-radius:50%; width:28px; height:28px; color:var(--text-sub); display:flex; align-items:center; justify-content:center; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.color='#fff';this.style.background='rgba(255,255,255,0.12)'" onmouseout="this.style.color='var(--text-sub)';this.style.background='rgba(255,255,255,0.06)'">✕</button>
                 </div>
-                <p id="event-desc" style="color: var(--text-main); font-size: 1rem; line-height: 1.6; margin-bottom: 16px; font-family: inherit;"></p>
+
+                <!-- Event Details Badge & Text -->
+                <div id="event-desc" style="margin-bottom: 14px;"></div>
                 
-                <!-- Advanced Daily Note & Marks Section -->
-                <div style="border-top: 1px dashed rgba(255, 170, 0, 0.25); padding-top: 16px;">
+                <!-- Daily Note Section -->
+                <div style="border-top: 1px solid rgba(255, 255, 255, 0.06); padding-top: 14px;">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 8px;">
-                        <h4 style="color: var(--primary); margin: 0; font-size: 0.85rem; font-family: 'Montserrat', sans-serif; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">
-                            Day Note &amp; Target Marker
-                        </h4>
-                        <span id="cal-note-indicator-badge" style="display:none; font-size:10px; font-weight:800; background:rgba(255,170,0,0.15); color:#ffaa00; border:1px solid rgba(255,170,0,0.3); border-radius:12px; padding:2px 8px; font-family:'Montserrat', sans-serif;">
-                            ● Marked on Calendar
+                        <span style="font-family: 'Montserrat', sans-serif; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.12em; color: var(--text-sub);">
+                            Personal Note
+                        </span>
+                        <span id="cal-note-indicator-badge" style="display:none; font-size:10px; font-weight:700; background:rgba(255,170,0,0.12); color:#ffaa00; border:1px solid rgba(255,170,0,0.25); border-radius:10px; padding:2px 8px; font-family:'Montserrat', sans-serif;">
+                            ● Marked
                         </span>
                     </div>
-                    <p style="font-size: 0.8rem; color: var(--text-sub); margin-bottom: 10px;">
-                        Mark a note, study target, or assignment reminder. A glowing gold dot indicator will appear on this day in the calendar grid.
-                    </p>
 
-                    <!-- Quick Preset Tag Chips -->
-                    <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px;">
-                        <button type="button" onclick="appendNoteTag('📝 Note:')" style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); color: #fff; padding: 4px 10px; border-radius: 8px; font-size: 11px; font-weight: 700; cursor: pointer;">📝 Note</button>
-                        <button type="button" onclick="appendNoteTag('📌 Exam:')" style="background: rgba(255,71,87,0.15); border: 1px solid rgba(255,71,87,0.3); color: #ff6b81; padding: 4px 10px; border-radius: 8px; font-size: 11px; font-weight: 700; cursor: pointer;">📌 Exam</button>
-                        <button type="button" onclick="appendNoteTag('🎯 Assignment:')" style="background: rgba(255,170,0,0.15); border: 1px solid rgba(255,170,0,0.3); color: #ffaa00; padding: 4px 10px; border-radius: 8px; font-size: 11px; font-weight: 700; cursor: pointer;">🎯 Assignment</button>
-                        <button type="button" onclick="appendNoteTag('⭐ Important:')" style="background: rgba(0,206,201,0.15); border: 1px solid rgba(0,206,201,0.3); color: #00cec9; padding: 4px 10px; border-radius: 8px; font-size: 11px; font-weight: 700; cursor: pointer;">⭐ Important</button>
-                        <button type="button" onclick="appendNoteTag('🌴 Holiday / Trip:')" style="background: rgba(46,213,115,0.15); border: 1px solid rgba(46,213,115,0.3); color: #2ed573; padding: 4px 10px; border-radius: 8px; font-size: 11px; font-weight: 700; cursor: pointer;">🌴 Personal</button>
-                    </div>
-
-                    <textarea id="custom-reminder-val" class="modal-input" rows="2" placeholder="E.g. Project Review submission, CT-2 Study..." style="width:100%; box-sizing:border-box; background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.12); color: #fff; padding: 12px; border-radius: 10px; font-size: 0.9rem; margin-bottom: 10px; resize:none; font-family: inherit;"></textarea>
+                    <textarea id="custom-reminder-val" rows="2" placeholder="Add a note for this day..." style="width:100%; box-sizing:border-box; background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.08); color: #fff; padding: 10px 12px; border-radius: 12px; font-size: 13px; font-weight: 500; margin-bottom: 10px; resize:none; font-family: 'Montserrat', sans-serif; outline: none; transition: border-color 0.2s;" onfocus="this.style.borderColor='rgba(255,255,255,0.25)'" onblur="this.style.borderColor='rgba(255,255,255,0.08)'"></textarea>
                     
-                    <div style="display:flex; gap:10px; align-items:center;">
-                        <button class="action-btn" onclick="saveCustomReminder()" style="flex:1; padding: 10px 16px; font-size: 0.88rem; background: linear-gradient(135deg, #ffaa00, #ff8c00); color: #000; font-weight: 800; border-radius: 10px; border: none; cursor:pointer; font-family:'Montserrat', sans-serif;">Save Note on Day</button>
-                        <button type="button" id="clear-reminder-btn" onclick="clearCustomReminder()" style="display:none; padding: 10px 14px; font-size: 0.85rem; background: rgba(255,71,87,0.15); color: #ff6b81; border: 1px solid rgba(255,71,87,0.3); border-radius: 10px; font-weight: 700; cursor:pointer; font-family:'Montserrat', sans-serif;">Clear</button>
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <span id="custom-reminder-status" style="font-size: 11px; color: #10b981; font-weight: 600; font-family: 'Montserrat', sans-serif;"></span>
+                        <div style="display:flex; gap:8px; align-items:center; margin-left:auto;">
+                            <button type="button" id="clear-reminder-btn" onclick="clearCustomReminder()" style="display:none; padding: 7px 12px; font-size: 11px; background: transparent; color: var(--text-sub); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; font-weight: 700; cursor:pointer; font-family:'Montserrat', sans-serif; transition:all 0.2s;" onmouseover="this.style.color='#ef4444';this.style.borderColor='rgba(239,68,68,0.3)'" onmouseout="this.style.color='var(--text-sub)';this.style.borderColor='rgba(255,255,255,0.08)'">Delete</button>
+                            <button type="button" onclick="saveCustomReminder()" style="padding: 7px 16px; font-size: 11px; background: #ffffff; color: #0a0c10; font-weight: 800; border-radius: 8px; border: none; cursor:pointer; font-family:'Montserrat', sans-serif; letter-spacing: 0.3px; transition: all 0.15s; box-shadow: 0 2px 8px rgba(255,255,255,0.12);" onmouseover="this.style.transform='translateY(-1px)';this.style.boxShadow='0 4px 12px rgba(255,255,255,0.2)'" onmouseout="this.style.transform='none';this.style.boxShadow='0 2px 8px rgba(255,255,255,0.12)'">Save</button>
+                        </div>
                     </div>
-                    <p id="custom-reminder-status" style="font-size: 0.8rem; color: #00cc66; margin: 8px 0 0; min-height: 16px; font-weight: bold;"></p>
                 </div>
             </div>
         </div>
@@ -4827,7 +4814,7 @@
             }
 
             // Close fullscreen modals on back button
-            const modals = ['target-modal', 'cgpa-modal', 'grade-modal', 'att-predict-modal'];
+            const modals = ['cgpa-modal', 'grade-modal', 'att-predict-modal'];
             modals.forEach(m => {
                 const el = document.getElementById(m);
                 if (el && el.style.display !== 'none') el.style.display = 'none';
@@ -6705,8 +6692,8 @@
                 </div>
             </div>
             
-            <button onclick="openTargetModal()" style="font-family:'Montserrat', sans-serif; width: 100%; background: linear-gradient(135deg, rgba(255,170,0,0.25), rgba(255,170,0,0.15)); border: 1px solid rgba(255,170,0,0.45); border-radius: 14px; padding: 14px; color: #fff; font-weight: 800; font-size: 14px; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; transition: all 0.2s; position:relative; z-index:1; letter-spacing:1px; text-transform:uppercase;">
-                <i class="fas fa-bullseye" style="color:#ffaa00;"></i> TARGET &amp; SGPA PREDICTOR
+            <button onclick="openCgpaCalculator()" style="font-family:'Montserrat', sans-serif; width: 100%; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.1); border-radius: 14px; padding: 14px; color: #fff; font-weight: 700; font-size: 14px; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; transition: all 0.2s; position:relative; z-index:1;">
+                <i class="fas fa-calculator"></i> Launch CGPA Calculator
             </button>
         </div>
     `;
@@ -6766,7 +6753,7 @@
         }
 
         return `
-            <div class="glass-card fade-in-up" onclick="openTargetModal('${c.code}')" style="cursor: pointer; background: rgba(255, 255, 255, 0.045); backdrop-filter: blur(20px) saturate(180%); -webkit-backdrop-filter: blur(20px) saturate(180%); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 22px; padding: 22px 20px; margin-bottom: 16px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35), inset 0 1px 1px rgba(255, 255, 255, 0.1); transition: transform 0.2s ease, border-color 0.2s ease;">
+            <div class="glass-card fade-in-up" style="background: rgba(255, 255, 255, 0.045); backdrop-filter: blur(20px) saturate(180%); -webkit-backdrop-filter: blur(20px) saturate(180%); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 22px; padding: 22px 20px; margin-bottom: 16px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35), inset 0 1px 1px rgba(255, 255, 255, 0.1);">
                 <!-- Top Row -->
                 <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px;">
                     <!-- Left: Big Score -->
@@ -6786,16 +6773,6 @@
                 <!-- Assessment Grid (3 columns, 6 slots total) -->
                 <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
                     ${chips}
-                </div>
-
-                <!-- Tap Target Hint -->
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-top:14px; padding-top:10px; border-top:1px solid rgba(255,255,255,0.06);">
-                    <span style="font-family:'Montserrat', sans-serif; font-size: 9.5px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: ${isEmergency ? '#ff4757' : 'var(--text-sub)'};">
-                        ${isEmergency ? 'Critical Status' : 'Internal Performance'}
-                    </span>
-                    <span style="font-family:'Montserrat', sans-serif; font-size: 10.5px; font-weight: 800; color: var(--primary); letter-spacing: 0.5px;">
-                        Calculate Target Grade &rarr;
-                    </span>
                 </div>
             </div>
         `;
@@ -7108,18 +7085,6 @@
         let userReminders = JSON.parse(localStorage.getItem('userReminders') || '{}');
         let currentEditingDate = null;
 
-        function appendNoteTag(tag) {
-            const input = document.getElementById('custom-reminder-val');
-            if (!input) return;
-            if (!input.value || input.value.trim().length === 0) {
-                input.value = tag + " ";
-            } else {
-                input.value = input.value.trim() + " • " + tag + " ";
-            }
-            input.focus();
-            if (typeof triggerHaptic === 'function') triggerHaptic('light');
-        }
-
         function clearCustomReminder() {
             if (!currentEditingDate) return;
             document.getElementById('custom-reminder-val').value = '';
@@ -7127,7 +7092,7 @@
             localStorage.setItem('userReminders', JSON.stringify(userReminders));
             let st = document.getElementById('custom-reminder-status');
             if (st) {
-                st.innerText = "Note cleared.";
+                st.innerText = "Deleted";
                 st.style.color = "var(--text-sub)";
             }
             let badge = document.getElementById('cal-note-indicator-badge');
@@ -7136,27 +7101,27 @@
             if (clearBtn) clearBtn.style.display = 'none';
             if (typeof triggerHaptic === 'function') triggerHaptic('light');
             renderCalendar();
-            setTimeout(() => { if (st) st.innerText = ''; }, 3000);
+            setTimeout(() => { if (st) st.innerText = ''; }, 2500);
         }
 
         function saveCustomReminder() {
-            if(!currentEditingDate) return;
+            if (!currentEditingDate) return;
             const val = document.getElementById('custom-reminder-val').value.trim();
             let st = document.getElementById('custom-reminder-status');
             let badge = document.getElementById('cal-note-indicator-badge');
             let clearBtn = document.getElementById('clear-reminder-btn');
-            if(val) {
+            if (val) {
                 userReminders[currentEditingDate] = val;
                 if (st) {
-                    st.innerText = "✓ Note marked on calendar!";
-                    st.style.color = "#00cc66";
+                    st.innerText = "✓ Saved";
+                    st.style.color = "#10b981";
                 }
                 if (badge) badge.style.display = 'inline-block';
-                if (clearBtn) clearBtn.style.display = 'block';
+                if (clearBtn) clearBtn.style.display = 'inline-block';
             } else {
                 delete userReminders[currentEditingDate];
                 if (st) {
-                    st.innerText = "Note cleared.";
+                    st.innerText = "Deleted";
                     st.style.color = "var(--text-sub)";
                 }
                 if (badge) badge.style.display = 'none';
@@ -7165,18 +7130,22 @@
             localStorage.setItem('userReminders', JSON.stringify(userReminders));
             if (typeof triggerHaptic === 'function') triggerHaptic('success');
             renderCalendar();
-            setTimeout(() => { if (st) st.innerText = ''; }, 3000);
+            setTimeout(() => { if (st) st.innerText = ''; }, 2500);
         }
 
         function showEventDetails(dateStr) {
             currentEditingDate = dateStr;
             const card = document.getElementById('cal-event-details');
+            if (!card) return;
             card.style.display = 'block';
             card.style.animation = 'none';
             card.offsetHeight; /* trigger reflow */
-            card.style.animation = 'fadeInUp 0.4s ease forwards';
+            card.style.animation = 'fadeInUp 0.3s ease forwards';
 
-            document.getElementById('event-date-title').innerText = new Date(dateStr).toDateString();
+            const parts = dateStr.split('-');
+            const d = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+            const dateFmt = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+            document.getElementById('event-date-title').innerText = dateFmt;
             
             let existingNote = userReminders[dateStr] || '';
             document.getElementById('custom-reminder-val').value = existingNote;
@@ -7185,14 +7154,29 @@
             let badge = document.getElementById('cal-note-indicator-badge');
             let clearBtn = document.getElementById('clear-reminder-btn');
             if (badge) badge.style.display = existingNote ? 'inline-block' : 'none';
-            if (clearBtn) clearBtn.style.display = existingNote ? 'block' : 'none';
+            if (clearBtn) clearBtn.style.display = existingNote ? 'inline-block' : 'none';
 
             let plan = srmPlanner[dateStr];
+            let descEl = document.getElementById('event-desc');
             if (plan) {
-                let badge = plan.type === 'Holiday' ? `<span class="special-badge" style="background: linear-gradient(135deg, #00cc66, #00994d); font-family: 'Montserrat', sans-serif;">Holiday</span>` : `<span class="special-badge" style="background: linear-gradient(135deg, #bf5af2, #9432c7); text-transform: uppercase; font-family: 'Montserrat', sans-serif;">${plan.type}</span>`;
-                document.getElementById('event-desc').innerHTML = `${badge} <br><br> ${plan.title || 'No additional details.'}`;
+                if (plan.type === 'Holiday') {
+                    descEl.innerHTML = `
+                        <div style="display:inline-flex; align-items:center; gap:6px; background:rgba(16,185,129,0.12); border:1px solid rgba(16,185,129,0.25); color:#10b981; border-radius:12px; padding:3px 10px; font-size:11px; font-weight:800; letter-spacing:0.5px; text-transform:uppercase; font-family:'Montserrat', sans-serif;">Holiday</div>
+                        <div style="margin-top:8px; font-size:14px; font-weight:600; color:#fff; font-family:'Montserrat', sans-serif;">${plan.title || 'Holiday'}</div>
+                    `;
+                } else if (plan.type === 'Day Order') {
+                    descEl.innerHTML = `
+                        <div style="display:inline-flex; align-items:center; gap:6px; background:rgba(191,90,242,0.12); border:1px solid rgba(191,90,242,0.25); color:#c084fc; border-radius:12px; padding:3px 10px; font-size:11px; font-weight:800; letter-spacing:0.5px; text-transform:uppercase; font-family:'Montserrat', sans-serif;">Day Order ${plan.value}</div>
+                        <div style="margin-top:6px; font-size:13px; font-weight:500; color:var(--text-sub); font-family:'Montserrat', sans-serif;">${plan.title || ('Regular Day Order ' + plan.value)}</div>
+                    `;
+                } else {
+                    descEl.innerHTML = `
+                        <div style="display:inline-flex; align-items:center; gap:6px; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); color:#fff; border-radius:12px; padding:3px 10px; font-size:11px; font-weight:800; letter-spacing:0.5px; text-transform:uppercase; font-family:'Montserrat', sans-serif;">${plan.type}</div>
+                        <div style="margin-top:6px; font-size:13px; font-weight:500; color:var(--text-sub); font-family:'Montserrat', sans-serif;">${plan.title || ''}</div>
+                    `;
+                }
             } else {
-                document.getElementById('event-desc').innerText = "No events scheduled for this day.";
+                descEl.innerHTML = `<div style="font-size:13px; color:var(--text-sub); font-weight:500; font-family:'Montserrat', sans-serif;">No events scheduled for this day.</div>`;
             }
         }
 
@@ -12403,368 +12387,7 @@ function initCalculators() {
 // ----------------------------------------------------
 // CGPA CALCULATOR
 // ----------------------------------------------------
-// ================= RATIO-D TARGET & SGPA PREDICTION =================
-        const GRADE_POINTS = { O: 10, "A+": 9, A: 8, "B+": 7, B: 6, C: 5, F: 0 };
-        const GRADE_TIERS = [
-            { label: "O", min: 91 },
-            { label: "A+", min: 81 },
-            { label: "A", min: 71 },
-            { label: "B+", min: 61 },
-            { label: "B", min: 56 },
-            { label: "C", min: 50 },
-        ];
-
-        let targetModalSubjects = [];
-        let activeTargetSubjectCode = null;
-        let targetGradesMap = JSON.parse(localStorage.getItem('squadTargetGrades') || '{}');
-        let expectedMarksMap = JSON.parse(localStorage.getItem('squadExpectedMarks') || '{}');
-        let ignoredTargetCodes = JSON.parse(localStorage.getItem('squadIgnoredSubjects') || '[]');
-
-        function openTargetModal(courseCode) {
-            history.pushState({ modal: 'target' }, '', '#target');
-            document.getElementById('target-modal').style.display = 'flex';
-            initTargetSubjects(courseCode);
-            renderTargetModal();
-            if (typeof triggerHaptic === 'function') triggerHaptic('light');
-        }
-
-        function closeTargetModal() {
-            document.getElementById('target-modal').style.display = 'none';
-            if (window.location.hash === '#target') history.back();
-        }
-
-        function openManualCgpaModal() {
-            document.getElementById('target-modal').style.display = 'none';
-            openCgpaCalculator();
-        }
-
-        function initTargetSubjects(preferredCode) {
-            targetModalSubjects = [];
-            let marksList = [];
-            let attList = [];
-            let coursesList = [];
-            try { marksList = JSON.parse(localStorage.getItem('squadMarks') || '[]'); } catch(e){}
-            try { attList = JSON.parse(localStorage.getItem('squadAttendance') || '[]'); } catch(e){}
-            try { coursesList = JSON.parse(localStorage.getItem('squadCourses') || '[]'); } catch(e){}
-
-            const seenCodes = new Set();
-
-            function getCredits(code, title) {
-                let match = coursesList.find(c => (c.code || c.courseCode || '').toUpperCase() === (code || '').toUpperCase());
-                if (match && (match.credit || match.credits)) {
-                    let v = parseFloat(match.credit || match.credits);
-                    if (!isNaN(v) && v > 0) return v;
-                }
-                match = attList.find(c => (c.code || c.courseCode || '').toUpperCase() === (code || '').toUpperCase());
-                if (match && (match.credit || match.credits)) {
-                    let v = parseFloat(match.credit || match.credits);
-                    if (!isNaN(v) && v > 0) return v;
-                }
-                return 3.0;
-            }
-
-            function isPracticalCheck(sub) {
-                let code = (sub.code || sub.courseCode || '').toLowerCase();
-                let title = (sub.courseTitle || sub.title || '').toLowerCase();
-                let slot = (sub.slot || '').toLowerCase();
-                let type = (sub.category || sub.type || '').toLowerCase();
-                return type.includes('practical') || type.includes('lab') || code.includes('-p') || code.endsWith('p') || code.endsWith('l') || slot.includes('p') || title.includes('lab') || title.includes('practical');
-            }
-
-            if (marksList && marksList.length > 0) {
-                marksList.forEach(m => {
-                    let code = (m.courseCode || m.code || 'THEORY').trim();
-                    if (!code || seenCodes.has(code.toUpperCase())) return;
-                    seenCodes.add(code.toUpperCase());
-
-                    let title = m.courseTitle || m.title || code;
-                    let perf = m['Test Performance'] || m.performance || '';
-                    let tests = Array.isArray(m.tests) ? m.tests : [];
-
-                    let got = 0, max = 0;
-                    if (tests.length > 0) {
-                        tests.forEach(t => {
-                            let mx = parseFloat(t.max || 0);
-                            let ob = parseFloat(t.obtained || 0);
-                            if (mx > 0) { max += mx; got += ob; }
-                        });
-                    } else if (perf) {
-                        const regex = /([^\/]+)\/([0-9.]+)\s*\|\s*([0-9.]+)/g;
-                        let match;
-                        while ((match = regex.exec(perf)) !== null) {
-                            let mx = parseFloat(match[2]);
-                            let ob = parseFloat(match[3]);
-                            if (mx > 0) { max += mx; got += ob; }
-                        }
-                    }
-
-                    targetModalSubjects.push({
-                        code: code,
-                        title: title,
-                        credits: getCredits(code, title),
-                        totalGot: got,
-                        totalMax: max,
-                        isPractical: isPracticalCheck(m)
-                    });
-                });
-            }
-
-            // Fallback from attendance if marks empty
-            if (targetModalSubjects.length === 0 && attList && attList.length > 0) {
-                attList.forEach(a => {
-                    let code = (a.courseCode || a.code || 'THEORY').trim();
-                    if (!code || seenCodes.has(code.toUpperCase())) return;
-                    seenCodes.add(code.toUpperCase());
-                    let title = a.courseTitle || a.title || code;
-                    targetModalSubjects.push({
-                        code: code,
-                        title: title,
-                        credits: getCredits(code, title),
-                        totalGot: 0,
-                        totalMax: 0,
-                        isPractical: isPracticalCheck(a)
-                    });
-                });
-            }
-
-            if (targetModalSubjects.length === 0) {
-                targetModalSubjects.push({
-                    code: 'SAMPLE101',
-                    title: 'Sample Course',
-                    credits: 3.0,
-                    totalGot: 40.0,
-                    totalMax: 50.0,
-                    isPractical: false
-                });
-            }
-
-            if (preferredCode && targetModalSubjects.some(s => s.code.toUpperCase() === preferredCode.toUpperCase())) {
-                activeTargetSubjectCode = preferredCode;
-            } else if (!activeTargetSubjectCode || !targetModalSubjects.some(s => s.code.toUpperCase() === activeTargetSubjectCode.toUpperCase())) {
-                activeTargetSubjectCode = targetModalSubjects[0].code;
-            }
-        }
-
-        function renderTargetModal() {
-            if (targetModalSubjects.length === 0) return;
-            const activeSub = targetModalSubjects.find(s => s.code.toUpperCase() === (activeTargetSubjectCode || '').toUpperCase()) || targetModalSubjects[0];
-            activeTargetSubjectCode = activeSub.code;
-
-            // Target Grade for this subject
-            let currentTargetMin = targetGradesMap[activeSub.code];
-            if (currentTargetMin === undefined) {
-                currentTargetMin = 91; // Default O
-                targetGradesMap[activeSub.code] = 91;
-            }
-
-            // Expected remaining for this subject
-            const isInternalOnly = activeSub.totalMax > 60;
-            const maxPossibleExpected = isInternalOnly ? Math.max(0, 100 - activeSub.totalMax) : Math.max(0, 60 - activeSub.totalMax);
-            let expectedMarks = expectedMarksMap[activeSub.code] || 0;
-            if (expectedMarks > maxPossibleExpected) {
-                expectedMarks = maxPossibleExpected;
-                expectedMarksMap[activeSub.code] = expectedMarks;
-            }
-
-            // Calculate Needed
-            const projectedInternals = activeSub.totalGot + expectedMarks;
-            const neededWeight = Math.max(0, currentTargetMin - projectedInternals);
-            let isCooked = false;
-            let semRequiredOutOfMax = 0;
-            const maxExternal = activeSub.isPractical ? 40 : 75;
-
-            if (isInternalOnly) {
-                const remainingInternal = Math.max(0, 100 - activeSub.totalMax);
-                isCooked = neededWeight > remainingInternal;
-                semRequiredOutOfMax = 0;
-            } else {
-                semRequiredOutOfMax = (neededWeight / 40.0) * maxExternal;
-                isCooked = neededWeight > 40;
-            }
-
-            // Calculate Predicted SGPA
-            let totalPoints = 0;
-            let totalCredits = 0;
-            targetModalSubjects.forEach(s => {
-                if (ignoredTargetCodes.includes(s.code)) return;
-                const cr = parseFloat(s.credits) || 3.0;
-                const sTargetMin = targetGradesMap[s.code] || 91;
-                const tier = GRADE_TIERS.find(g => g.min === sTargetMin) || { label: "O", min: 91 };
-                const gp = GRADE_POINTS[tier.label] || 10;
-                totalPoints += cr * gp;
-                totalCredits += cr;
-            });
-            const predictedGpa = totalCredits === 0 ? "0.00" : (totalPoints / totalCredits).toFixed(2);
-
-            // Update UI elements
-            const activeCodeEl = document.getElementById('target-active-code');
-            const activeTitleEl = document.getElementById('target-active-title');
-            if (activeCodeEl) activeCodeEl.innerText = activeSub.code;
-            if (activeTitleEl) activeTitleEl.innerText = activeSub.title.toLowerCase();
-
-            const sgpaEl = document.getElementById('target-predicted-sgpa');
-            if (sgpaEl) {
-                sgpaEl.innerText = predictedGpa;
-                let gpaVal = parseFloat(predictedGpa);
-                if (gpaVal >= 9.0) sgpaEl.style.color = '#10b981';
-                else if (gpaVal >= 8.0) sgpaEl.style.color = '#00cec9';
-                else if (gpaVal >= 7.0) sgpaEl.style.color = '#ffaa00';
-                else sgpaEl.style.color = '#ff4757';
-            }
-
-            const semLabelEl = document.getElementById('target-sem-label');
-            const semValEl = document.getElementById('target-sem-value');
-            const semMaxEl = document.getElementById('target-sem-max');
-
-            if (isInternalOnly) {
-                if (semLabelEl) semLabelEl.innerText = "no sem exam (internal only)";
-                if (semValEl) {
-                    semValEl.innerText = isCooked ? "cooked." : "internal";
-                    semValEl.style.color = isCooked ? "#FF4D4D" : "var(--text-sub)";
-                    semValEl.style.fontSize = isCooked ? "4rem" : "3rem";
-                }
-                if (semMaxEl) semMaxEl.style.display = "none";
-            } else if (isCooked) {
-                if (semLabelEl) semLabelEl.innerText = "sem marks needed";
-                if (semValEl) {
-                    semValEl.innerText = "cooked.";
-                    semValEl.style.color = "#FF4D4D";
-                    semValEl.style.fontSize = "4.2rem";
-                }
-                if (semMaxEl) semMaxEl.style.display = "none";
-            } else {
-                if (semLabelEl) semLabelEl.innerText = "sem marks needed";
-                if (semValEl) {
-                    semValEl.innerText = semRequiredOutOfMax <= 0 ? "0" : semRequiredOutOfMax.toFixed(1);
-                    semValEl.style.color = semRequiredOutOfMax <= 0 ? "#10b981" : "#ffaa00";
-                    semValEl.style.fontSize = "4.5rem";
-                }
-                if (semMaxEl) {
-                    semMaxEl.style.display = "inline";
-                    semMaxEl.innerText = "/" + maxExternal;
-                }
-            }
-
-            // Stats row
-            const curIntEl = document.getElementById('target-current-internals');
-            const maxIntEl = document.getElementById('target-max-internals');
-            const expInputEl = document.getElementById('target-expected-input');
-            const expMaxEl = document.getElementById('target-expected-max');
-
-            if (curIntEl) curIntEl.innerText = (Number.isInteger(activeSub.totalGot) ? activeSub.totalGot : activeSub.totalGot.toFixed(1));
-            if (maxIntEl) maxIntEl.innerText = "/" + (activeSub.totalMax || 60);
-            if (expInputEl) expInputEl.value = expectedMarks;
-            if (expMaxEl) expMaxEl.innerText = "/" + maxPossibleExpected;
-
-            // Target Grade Pills
-            const pillsContainer = document.getElementById('target-grade-pills');
-            if (pillsContainer) {
-                pillsContainer.innerHTML = GRADE_TIERS.map(g => {
-                    const isSel = currentTargetMin === g.min;
-                    return `
-                        <button type="button" onclick="setTargetGrade(${g.min})" style="
-                            padding: 12px 6px; border-radius: 14px; display:flex; flex-direction:column; align-items:center; justify-content:center;
-                            transition: all 0.2s; cursor:pointer;
-                            background: ${isSel ? 'var(--primary)' : 'rgba(255,255,255,0.04)'};
-                            color: ${isSel ? '#000' : 'var(--text-sub)'};
-                            border: 1px solid ${isSel ? 'var(--primary)' : 'rgba(255,255,255,0.1)'};
-                            box-shadow: ${isSel ? '0 0 16px rgba(255,170,0,0.35)' : 'none'};
-                        ">
-                            <span style="font-family:'Montserrat', sans-serif; font-size:18px; font-weight:900;">${g.label}</span>
-                            <span style="font-family:'Montserrat', sans-serif; font-size:10px; font-weight:700; opacity:0.8; margin-top:2px;">${g.min}+</span>
-                        </button>
-                    `;
-                }).join('');
-            }
-
-            // Subject scroll row
-            const scrollContainer = document.getElementById('target-subject-scroll');
-            if (scrollContainer) {
-                scrollContainer.innerHTML = targetModalSubjects.map(s => {
-                    const isActive = s.code.toUpperCase() === activeSub.code.toUpperCase();
-                    const isIgnored = ignoredTargetCodes.includes(s.code);
-                    return `
-                        <div style="display:flex; flex-direction:column; gap:6px; flex-shrink:0;">
-                            <button type="button" onclick="selectTargetSubject('${s.code}')" style="
-                                padding: 10px 14px; border-radius: 12px; display:flex; flex-direction:column; align-items:center; gap:2px;
-                                cursor:pointer; transition: all 0.2s; white-space:nowrap;
-                                background: ${isActive ? 'var(--primary)' : 'rgba(255,255,255,0.05)'};
-                                color: ${isActive ? '#000' : '#fff'};
-                                border: 1px solid ${isActive ? 'var(--primary)' : 'rgba(255,255,255,0.1)'};
-                                opacity: ${isIgnored ? '0.4' : '1'};
-                            ">
-                                <span style="font-family:'Montserrat', sans-serif; font-size:12px; font-weight:900; letter-spacing:0.5px;">${s.code}</span>
-                                <span style="font-family:'Montserrat', sans-serif; font-size:9.5px; font-weight:700; opacity:0.75;">${s.credits} CREDITS</span>
-                            </button>
-                            <button type="button" onclick="event.stopPropagation(); toggleTargetSubjectIgnore('${s.code}')" style="
-                                font-family:'Montserrat', sans-serif; font-size:8.5px; font-weight:800; text-transform:uppercase; letter-spacing:0.5px;
-                                padding: 3px 8px; border-radius:6px; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:4px;
-                                background: ${isIgnored ? 'rgba(255,255,255,0.06)' : 'rgba(255,170,0,0.15)'};
-                                color: ${isIgnored ? 'var(--text-sub)' : '#ffaa00'};
-                            ">
-                                <span style="width:4px; height:4px; border-radius:50%; background:currentColor;"></span>
-                                ${isIgnored ? 'enable' : 'disable'}
-                            </button>
-                        </div>
-                    `;
-                }).join('');
-            }
-        }
-
-        function selectTargetSubject(code) {
-            activeTargetSubjectCode = code;
-            if (typeof triggerHaptic === 'function') triggerHaptic('light');
-            renderTargetModal();
-        }
-
-        function setTargetGrade(minVal) {
-            if (!activeTargetSubjectCode) return;
-            targetGradesMap[activeTargetSubjectCode] = minVal;
-            localStorage.setItem('squadTargetGrades', JSON.stringify(targetGradesMap));
-            if (typeof triggerHaptic === 'function') triggerHaptic('light');
-            renderTargetModal();
-        }
-
-        function stepTargetExpected(delta) {
-            if (!activeTargetSubjectCode) return;
-            const activeSub = targetModalSubjects.find(s => s.code.toUpperCase() === activeTargetSubjectCode.toUpperCase());
-            if (!activeSub) return;
-            const isInternalOnly = activeSub.totalMax > 60;
-            const maxPossibleExpected = isInternalOnly ? Math.max(0, 100 - activeSub.totalMax) : Math.max(0, 60 - activeSub.totalMax);
-            let cur = expectedMarksMap[activeTargetSubjectCode] || 0;
-            let next = Math.max(0, Math.min(maxPossibleExpected, cur + delta));
-            expectedMarksMap[activeTargetSubjectCode] = next;
-            localStorage.setItem('squadExpectedMarks', JSON.stringify(expectedMarksMap));
-            if (typeof triggerHaptic === 'function') triggerHaptic('light');
-            renderTargetModal();
-        }
-
-        function setTargetExpected(val) {
-            if (!activeTargetSubjectCode) return;
-            const activeSub = targetModalSubjects.find(s => s.code.toUpperCase() === activeTargetSubjectCode.toUpperCase());
-            if (!activeSub) return;
-            const isInternalOnly = activeSub.totalMax > 60;
-            const maxPossibleExpected = isInternalOnly ? Math.max(0, 100 - activeSub.totalMax) : Math.max(0, 60 - activeSub.totalMax);
-            let num = parseFloat(val) || 0;
-            let clamped = Math.max(0, Math.min(maxPossibleExpected, num));
-            expectedMarksMap[activeTargetSubjectCode] = clamped;
-            localStorage.setItem('squadExpectedMarks', JSON.stringify(expectedMarksMap));
-            if (typeof triggerHaptic === 'function') triggerHaptic('light');
-            renderTargetModal();
-        }
-
-        function toggleTargetSubjectIgnore(code) {
-            if (ignoredTargetCodes.includes(code)) {
-                ignoredTargetCodes = ignoredTargetCodes.filter(c => c !== code);
-            } else {
-                ignoredTargetCodes.push(code);
-            }
-            localStorage.setItem('squadIgnoredSubjects', JSON.stringify(ignoredTargetCodes));
-            if (typeof triggerHaptic === 'function') triggerHaptic('light');
-            renderTargetModal();
-        }
-
-        function openCgpaCalculator() {
+function openCgpaCalculator() {
     history.pushState({ modal: 'cgpa' }, '', '#cgpa');
     initCalculators();
     document.getElementById('cgpa-modal').style.display = 'flex';
@@ -13279,93 +12902,7 @@ function predictDateRangeUI() {
 
     
 
-<!-- Ratio-D Minimalist Target & SGPA Modal -->
-    <div id="target-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:var(--bg-start); z-index:99999; flex-direction:column; overflow-y:auto; padding-bottom:50px;">
-        <!-- Header -->
-        <div style="padding: 16px 20px; display:flex; justify-content:space-between; align-items:center; position:sticky; top:0; background:rgba(10,12,18,0.92); backdrop-filter:blur(25px); -webkit-backdrop-filter:blur(25px); z-index:10; border-bottom:1px solid rgba(255,255,255,0.06);">
-            <div style="display:flex; flex-direction:column;">
-                <span style="font-family:'Montserrat', sans-serif; font-size:26px; font-weight:900; text-transform:uppercase; letter-spacing:0.15em; color:#fff;">TARGET</span>
-                <span style="font-family:'Montserrat', sans-serif; font-size:10px; font-weight:800; letter-spacing:0.2em; text-transform:lowercase; color:#ffaa00; margin-top:2px;">sgpa prediction</span>
-            </div>
-            <button onclick="closeTargetModal()" style="width:38px; height:38px; border-radius:50%; background:rgba(255,255,255,0.08); border:none; color:#fff; display:flex; align-items:center; justify-content:center; cursor:pointer; transition:all 0.2s;">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-            </button>
-        </div>
-
-        <div style="padding: 16px 20px; max-width: 600px; margin: 0 auto; width: 100%; box-sizing: border-box;">
-            <!-- Active Subject Pill -->
-            <div id="target-active-subject-card" style="width:100%; box-sizing:border-box; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:16px; padding:12px 16px; display:flex; align-items:center; gap:12px; margin-bottom:22px;">
-                <span id="target-active-code" style="font-family:'Montserrat', sans-serif; font-size:15px; font-weight:900; text-transform:uppercase; letter-spacing:1px; color:#fff; flex-shrink:0;">CODE</span>
-                <div style="width:1.5px; height:16px; background:rgba(255,255,255,0.2); flex-shrink:0;"></div>
-                <span id="target-active-title" style="font-family:'Montserrat', sans-serif; font-size:12px; font-weight:600; color:var(--text-sub); text-transform:lowercase; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0; flex:1;">subject</span>
-            </div>
-
-            <!-- Predicted SGPA Centerpiece -->
-            <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; margin-bottom:26px;">
-                <span style="font-family:'Montserrat', sans-serif; font-size:11px; font-weight:800; text-transform:lowercase; letter-spacing:0.2em; color:var(--text-sub); margin-bottom:6px;">predicted sgpa</span>
-                <span id="target-predicted-sgpa" style="font-family:'Montserrat', sans-serif; font-size:4.8rem; line-height:0.95; font-weight:900; letter-spacing:-2px; color:#10b981; transition:color 0.3s;">0.00</span>
-            </div>
-
-            <!-- Sem Marks Needed Centerpiece -->
-            <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; margin-bottom:26px;">
-                <span id="target-sem-label" style="font-family:'Montserrat', sans-serif; font-size:11px; font-weight:800; text-transform:lowercase; letter-spacing:0.15em; color:var(--text-sub); margin-bottom:6px;">sem marks needed</span>
-                <div style="display:flex; align-items:baseline; justify-content:center; gap:4px;">
-                    <span id="target-sem-value" style="font-family:'Montserrat', sans-serif; font-size:4.6rem; line-height:0.95; font-weight:900; letter-spacing:-2px; color:#ffaa00;">--</span>
-                    <span id="target-sem-max" style="font-family:'Montserrat', sans-serif; font-size:22px; font-weight:700; color:rgba(255,255,255,0.4);">/75</span>
-                </div>
-            </div>
-
-            <!-- Current Internals vs Expected Remaining Row -->
-            <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.08); border-radius:18px; padding:16px; margin-bottom:24px;">
-                <!-- Left: Current Internals -->
-                <div style="display:flex; flex-direction:column; align-items:flex-start;">
-                    <span style="font-family:'Montserrat', sans-serif; font-size:10px; font-weight:800; text-transform:lowercase; letter-spacing:0.15em; color:var(--text-sub); margin-bottom:6px;">current internals</span>
-                    <div style="display:flex; align-items:baseline; gap:2px;">
-                        <span id="target-current-internals" style="font-family:'Montserrat', sans-serif; font-size:2.2rem; line-height:1; font-weight:900; color:#fff;">--</span>
-                        <span id="target-max-internals" style="font-family:'Montserrat', sans-serif; font-size:12px; font-weight:700; color:var(--text-sub);">/60</span>
-                    </div>
-                </div>
-
-                <!-- Right: Expected Remaining Stepper -->
-                <div style="display:flex; flex-direction:column; align-items:flex-end;">
-                    <span style="font-family:'Montserrat', sans-serif; font-size:10px; font-weight:800; text-transform:lowercase; letter-spacing:0.15em; color:var(--text-sub); margin-bottom:6px;">expected remaining</span>
-                    <div style="display:flex; align-items:center; gap:6px; background:rgba(0,0,0,0.35); border-radius:12px; padding:4px 8px; border:1px solid rgba(255,255,255,0.1);">
-                        <button type="button" onclick="stepTargetExpected(-1)" style="width:32px; height:32px; border-radius:8px; background:rgba(255,255,255,0.08); border:none; color:#fff; font-weight:900; font-size:18px; cursor:pointer;">-</button>
-                        <div style="display:flex; align-items:baseline; min-width:48px; justify-content:center;">
-                            <input id="target-expected-input" type="number" min="0" onchange="setTargetExpected(this.value)" style="width:36px; background:transparent; border:none; color:#fff; text-align:center; font-family:'Montserrat', sans-serif; font-size:16px; font-weight:900; outline:none;" value="0">
-                            <span id="target-expected-max" style="font-family:'Montserrat', sans-serif; font-size:11px; font-weight:700; color:var(--text-sub);">/10</span>
-                        </div>
-                        <button type="button" onclick="stepTargetExpected(1)" style="width:32px; height:32px; border-radius:8px; background:var(--primary); border:none; color:#000; font-weight:900; font-size:18px; cursor:pointer;">+</button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Target Grade Grid -->
-            <div style="margin-bottom:24px;">
-                <span style="font-family:'Montserrat', sans-serif; font-size:10px; font-weight:800; text-transform:lowercase; letter-spacing:0.2em; color:var(--text-sub); margin-bottom:10px; display:block;">target grade</span>
-                <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:8px;" id="target-grade-pills">
-                    <!-- Populated dynamically: O, A+, A, B+, B, C -->
-                </div>
-            </div>
-
-            <!-- Horizontal Subject Scroll Bar -->
-            <div style="margin-bottom:20px;">
-                <span style="font-family:'Montserrat', sans-serif; font-size:10px; font-weight:800; text-transform:lowercase; letter-spacing:0.2em; color:var(--text-sub); margin-bottom:10px; display:block;">select subject</span>
-                <div id="target-subject-scroll" style="display:flex; gap:10px; overflow-x:auto; padding-bottom:10px;" class="no-scrollbar">
-                    <!-- Populated dynamically -->
-                </div>
-            </div>
-
-            <!-- Secondary Action: Open Multi-Sem CGPA Calculator -->
-            <div style="text-align:center; margin-top:20px; padding-top:16px; border-top:1px solid rgba(255,255,255,0.06);">
-                <button type="button" onclick="openManualCgpaModal()" style="background:none; border:none; color:var(--text-sub); font-size:12px; font-weight:700; cursor:pointer; text-decoration:underline; font-family:'Montserrat', sans-serif;">
-                    Manual Multi-Semester CGPA Calculator &rarr;
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- CGPA Calculator Modal -->
+<!-- CGPA Calculator Modal -->
     <div id="cgpa-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:var(--bg-start); z-index:99999; flex-direction:column; overflow-y:auto; padding-bottom:50px;">
         <div style="padding: 18px 20px; display:flex; align-items:center; gap:14px; position:sticky; top:0; background:rgba(10,12,18,0.85); backdrop-filter:blur(20px); z-index:10; border-bottom:1px solid rgba(255,255,255,0.06);">
             <button onclick="closeCgpaCalculator()" style="background:rgba(255,255,255,0.08); border:none; border-radius:50%; width:36px; height:36px; color:#fff; display:flex; align-items:center; justify-content:center; cursor:pointer;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg></button>
