@@ -8631,22 +8631,84 @@ function checkAndShowHolidayBanner(viewId) {
                 if (offlineData) return; // Already in offline cache
                 
                 if (!preloadedAudio) {
-                    preloadedAudio = new Audio();
+                    preloadedAudio = document.createElement('audio');
                     preloadedAudio.preload = 'auto';
-                    preloadedAudio.volume = 0;
                     preloadedAudio.muted = true;
+                    preloadedAudio.style.display = 'none';
+                    document.body.appendChild(preloadedAudio);
                 }
                 preloadedAudio.src = `${BACKEND_URL}/api/music/audio/${track.id}/stream`;
                 preloadedAudio.load();
             } catch(e) {}
         }
 
-        const audioPlayer = new Audio();
-        audioPlayer.preload = 'auto';
+        // Silent Web Audio keep-alive: keeps mobile OS audio pipeline & JS event loop awake in background
+        let keepAliveCtx = null;
+        let keepAliveSource = null;
+
+        function startAudioKeepAlive() {
+            try {
+                if ('audioSession' in navigator) {
+                    navigator.audioSession.type = 'playback';
+                }
+            } catch(e) {}
+
+            try {
+                const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+                if (!AudioContextClass) return;
+                if (!keepAliveCtx) {
+                    keepAliveCtx = new AudioContextClass();
+                }
+                if (keepAliveCtx.state === 'suspended') {
+                    keepAliveCtx.resume().catch(() => {});
+                }
+                if (!keepAliveSource) {
+                    const sampleRate = keepAliveCtx.sampleRate || 44100;
+                    const buffer = keepAliveCtx.createBuffer(1, sampleRate, sampleRate);
+                    const data = buffer.getChannelData(0);
+                    for (let i = 0; i < sampleRate; i++) data[i] = 0;
+
+                    keepAliveSource = keepAliveCtx.createBufferSource();
+                    keepAliveSource.buffer = buffer;
+                    keepAliveSource.loop = true;
+                    keepAliveSource.connect(keepAliveCtx.destination);
+                    keepAliveSource.start(0);
+                }
+            } catch(e) {
+                console.warn('Audio keep-alive warning:', e);
+            }
+        }
+
+        function stopAudioKeepAlive() {
+            try {
+                if (keepAliveCtx && keepAliveCtx.state === 'running') {
+                    keepAliveCtx.suspend().catch(() => {});
+                }
+            } catch(e) {}
+        }
+
+        // Persistent DOM-attached audio element with mobile playsinline attributes
+        let audioPlayer = document.getElementById('srm-hub-audio-player');
+        if (!audioPlayer) {
+            audioPlayer = document.createElement('audio');
+            audioPlayer.id = 'srm-hub-audio-player';
+            audioPlayer.preload = 'auto';
+            audioPlayer.playsInline = true;
+            audioPlayer.setAttribute('playsinline', '');
+            audioPlayer.setAttribute('webkit-playsinline', '');
+            audioPlayer.style.display = 'none';
+            document.body.appendChild(audioPlayer);
+        }
+
+        try {
+            if ('audioSession' in navigator) {
+                navigator.audioSession.type = 'playback';
+            }
+        } catch(e) {}
+
         audioPlayer.addEventListener('play', () => {
             isPlaying = true;
             isLoadingTrack = false;
-            isTransitioningTrack = false;
             updatePlayPauseBtn();
             if ('mediaSession' in navigator) {
                 navigator.mediaSession.playbackState = 'playing';
@@ -8655,7 +8717,6 @@ function checkAndShowHolidayBanner(viewId) {
         audioPlayer.addEventListener('playing', () => {
             isPlaying = true;
             isLoadingTrack = false;
-            isTransitioningTrack = false;
             updatePlayPauseBtn();
             if ('mediaSession' in navigator) {
                 navigator.mediaSession.playbackState = 'playing';
@@ -9291,11 +9352,13 @@ function checkAndShowHolidayBanner(viewId) {
 
                 setAction('play', () => {
                     userManuallyStopped = false;
+                    startAudioKeepAlive();
                     audioPlayer.play().catch(() => {});
                 });
                 setAction('pause', () => {
                     userManuallyStopped = true;
                     audioPlayer.pause();
+                    stopAudioKeepAlive();
                 });
                 setAction('previoustrack', () => {
                     prevMusicTrack(true);
@@ -9328,12 +9391,8 @@ function checkAndShowHolidayBanner(viewId) {
             }
         }
 
-        let isTransitioningTrack = false;
         async function playMusicTrack(index, userInitiated = true) {
-            if (index < 0 || index >= currentPlaylist.length) {
-                isTransitioningTrack = false;
-                return;
-            }
+            if (index < 0 || index >= currentPlaylist.length) return;
             const track = currentPlaylist[index];
             currentTrackIndex = index;
             nextTrackPreloaded = false;
@@ -9342,6 +9401,9 @@ function checkAndShowHolidayBanner(viewId) {
             isPlaying = true;
             playRequestId++;
             const currentReqId = playRequestId;
+
+            // Start/resume silent keep-alive to keep OS audio pipeline and JS thread active in background
+            startAudioKeepAlive();
 
             // Immediately keep lockscreen and OS MediaSession in 'playing' state with next track info!
             updateMediaSession(track);
@@ -9372,18 +9434,17 @@ function checkAndShowHolidayBanner(viewId) {
                 audioSrc = `${BACKEND_URL}/api/music/audio/${track.id}/stream`;
             }
 
-            // 3. Immediately assign src WITHOUT calling pause() or clearing src
-            // Crucial: Keeping media session unbroken avoids Android/iOS tab sleep during transitions
+            // 3. Immediately assign src and load
             audioPlayer.src = audioSrc;
+            audioPlayer.load();
 
-            // 4. Play synchronously within the user gesture or continuous background session
+            // 4. Play synchronously within the active media session
             const playPromise = audioPlayer.play();
             if (playPromise !== undefined) {
                 playPromise.then(() => {
                     consecutiveErrors = 0;
                     isLoadingTrack = false;
                     isPlaying = true;
-                    isTransitioningTrack = false;
                     updatePlayPauseBtn();
                     requestWakeLock();
                     updateMediaSession(track);
@@ -9403,7 +9464,6 @@ function checkAndShowHolidayBanner(viewId) {
                                     consecutiveErrors = 0;
                                     isLoadingTrack = false;
                                     isPlaying = true;
-                                    isTransitioningTrack = false;
                                     updatePlayPauseBtn();
                                 }).catch(() => {});
                             }
@@ -9487,11 +9547,13 @@ function checkAndShowHolidayBanner(viewId) {
             if (!audioPlayer.paused) {
                 userManuallyStopped = true;
                 audioPlayer.pause();
+                stopAudioKeepAlive();
                 if (playerVid && playerVid.style.display !== 'none') playerVid.pause();
                 if (fsVid && fsVid.style.display !== 'none') fsVid.pause();
                 if (bgVideoPlayer) bgVideoPlayer.pause();
             } else { 
                 userManuallyStopped = false;
+                startAudioKeepAlive();
                 audioPlayer.play().catch(e => console.warn(e)); 
                 if (playerVid && playerVid.style.display !== 'none') playerVid.play();
                 if (fsVid && fsVid.style.display !== 'none') fsVid.play();
@@ -9569,15 +9631,10 @@ function checkAndShowHolidayBanner(viewId) {
         }
 
         function handleMusicEnded() {
-            if (isTransitioningTrack) {
-                isTransitioningTrack = false;
-                return;
-            }
             if (isRepeat) {
                 audioPlayer.currentTime = 0;
                 audioPlayer.play().catch(e => { console.error('Repeat play failed:', e); });
             } else {
-                isTransitioningTrack = true;
                 nextMusicTrack(false);
             }
         }
@@ -9805,18 +9862,6 @@ function checkAndShowHolidayBanner(viewId) {
                 if(fillMobile) fillMobile.style.width = perc;
                 if(fillMini) fillMini.style.width = perc;
                 if(thumbMini) thumbMini.style.left = perc;
-
-                // Continuous background playback transition:
-                // If within 0.35s of the end of the track while screen is off/locked or active,
-                // seamlessly transition to the next track while the audio hardware output is still active!
-                if (!isRepeat && !userManuallyStopped && !isTransitioningTrack && currentPlaylist.length > 1) {
-                    const timeLeft = audioPlayer.duration - audioPlayer.currentTime;
-                    if (timeLeft > 0 && timeLeft <= 0.35) {
-                        isTransitioningTrack = true;
-                        nextMusicTrack(false);
-                        return;
-                    }
-                }
 
                 // Preload next track early in playback so it is cached before song ends
                 if (audioPlayer.currentTime > 5 && !nextTrackPreloaded && currentPlaylist.length > 1) {
