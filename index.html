@@ -2460,41 +2460,41 @@
             background-size: 200% 100%; animation: loadingBar 1.5s linear infinite; display: none;
         }
         @keyframes loadingBar { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
-        /* === FEATURE 1: VIDEO BACKGROUND (FULL PORTRAIT EDGE-TO-EDGE BLEED) === */
+        /* === FEATURE 1: VIDEO BACKGROUND (FULL BLEED ZERO GAP AT TOP, CRISP HD) === */
         .music-video-bg {
-          position: fixed !important;
+          position: absolute !important;
           top: 0 !important;
           left: 0 !important;
-          width: 100vw !important;
-          height: 100vh !important;
+          right: 0 !important;
+          bottom: 0 !important;
+          width: 100% !important;
+          height: 100% !important;
+          height: 100dvh !important;
           z-index: 0 !important;
           overflow: hidden !important;
           pointer-events: none !important;
-          background: transparent !important;
+          background: #000 !important;
         }
         .bg-video {
-          position: fixed !important;
-          top: 50% !important;
-          left: 50% !important;
-          transform: translate(-50%, -50%) !important;
-          width: 177.78vh !important;
-          height: 100vh !important;
-          min-width: 100vw !important;
-          min-height: 56.25vw !important;
+          position: absolute !important;
+          top: 0 !important;
+          left: 0 !important;
+          width: 100% !important;
+          height: 100% !important;
+          height: 100dvh !important;
           object-fit: cover !important;
-          filter: brightness(0.72) saturate(1.2) !important;
+          object-position: center center !important;
+          filter: brightness(0.85) saturate(1.15) !important;
           transition: opacity 0.8s ease !important;
           pointer-events: none !important;
         }
         .bg-yt-wrap {
-          position: fixed !important;
-          top: 50% !important;
-          left: 50% !important;
-          transform: translate(-50%, -50%) !important;
-          width: 177.78vh !important;
-          height: 100vh !important;
-          min-width: 100vw !important;
-          min-height: 56.25vw !important;
+          position: absolute !important;
+          top: 0 !important;
+          left: 0 !important;
+          width: 100% !important;
+          height: 100% !important;
+          height: 100dvh !important;
           pointer-events: none !important;
           overflow: hidden !important;
           z-index: 0 !important;
@@ -2504,17 +2504,19 @@
           position: absolute !important;
           top: 50% !important;
           left: 50% !important;
-          width: 100% !important;
-          height: 100% !important;
-          transform: translate(-50%, -50%) scale(1.15) !important;
+          transform: translate(-50%, -50%) !important;
+          width: 100vw !important;
+          height: 100dvh !important;
+          min-width: 177.78dvh !important;
+          min-height: 100dvh !important;
           border: none !important;
           pointer-events: none !important;
-          filter: brightness(0.72) contrast(1.08) saturate(1.15) !important;
+          filter: brightness(0.88) contrast(1.02) saturate(1.1) !important;
         }
         .bg-video-overlay {
           position: absolute !important;
           inset: 0 !important;
-          background: radial-gradient(circle at center, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.65) 100%) !important;
+          background: linear-gradient(180deg, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0.08) 40%, rgba(0,0,0,0.65) 100%) !important;
           pointer-events: none !important;
           z-index: 1 !important;
         }
@@ -2664,8 +2666,8 @@
         .volume-slider { width: 80px; margin-right: 15px; cursor: pointer; accent-color: #1DB954; }
         
         /* Fullscreen Player */
-        .music-fullscreen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 3000; background: #000; display: none; flex-direction: column; padding: 25px; padding-top: max(25px, env(safe-area-inset-top)); animation: slideUp 0.3s ease forwards; overflow: hidden; align-items: center; justify-content: flex-start; }
-        .fs-player-container { display: flex; flex-direction: column; min-height: calc(100vh - 50px); width: 100%; align-items: center; justify-content: center; position: relative; }
+        .music-fullscreen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; height: 100dvh; z-index: 3000; background: #000; display: none; flex-direction: column; padding: 0 !important; animation: slideUp 0.3s ease forwards; overflow: hidden; align-items: center; justify-content: flex-start; }
+        .fs-player-container { display: flex; flex-direction: column; min-height: 100dvh; width: 100%; align-items: center; justify-content: center; position: relative; padding: 25px; padding-top: max(25px, env(safe-area-inset-top)); box-sizing: border-box; }
         .fs-bg-orbs-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: -2; overflow: hidden; pointer-events: none; }
         .fs-orb { position: absolute; border-radius: 50%; filter: blur(70px); opacity: 0.85; transition: background 1.5s ease-in-out; }
         .fs-orb-1 { width: 320px; height: 320px; background: var(--fs-accent-1, rgba(255, 170, 0, 0.15)); top: -40px; left: -40px; animation: drift1 8s infinite alternate ease-in-out; }
@@ -2738,7 +2740,7 @@
             .mobile-progress-fill { height: 100%; background: #fff; width: 0%; transition: width 0.1s linear; }
             .player-right { gap: 15px; }
             .fs-cover { max-width: 100%; border-radius: 8px; }
-            .music-fullscreen { padding: 20px; padding-top: max(20px, env(safe-area-inset-top)); }
+            .music-fullscreen { padding: 0 !important; } .fs-player-container { padding: 20px; padding-top: max(20px, env(safe-area-inset-top)); }
             .volume-slider { display: none; }
         }
         @media (min-width: 769px) {
@@ -4568,7 +4570,7 @@
         <div id="music-video-bg" class="music-video-bg">
             <video id="bg-video-player" autoplay muted loop playsinline class="bg-video"></video>
             <div id="bg-yt-wrap" class="bg-yt-wrap" style="display: none; opacity: 0;">
-                <iframe id="bg-yt-iframe" style="width: 100%; height: 100%; border: none; object-fit: cover; pointer-events: none; filter: brightness(0.65) contrast(1.1);" allow="autoplay; encrypted-media; picture-in-picture"></iframe>
+                <iframe id="bg-yt-iframe" style="border: none; pointer-events: none;" allow="autoplay; encrypted-media; picture-in-picture"></iframe>
             </div>
             <div class="bg-video-overlay"></div>
         </div>
@@ -10467,12 +10469,12 @@ function checkAndShowHolidayBanner(viewId) {
 
         function getTrackCanvasLoopWindow(track) {
             const seed = getTrackHash((track.title || track.song || '') + ' ' + (track.artist || track.singers || ''));
-            // Start from high-energy middle segment (chorus between 40s and 75s)
-            let startSec = 40 + (seed % 36);
-            if (track && track.duration && track.duration > 15 && track.duration < 55) {
-                startSec = Math.max(2, Math.floor(track.duration / 2) - 5);
+            // Start from chorus/highlight segment (between 35s and 65s)
+            let startSec = 35 + (seed % 30);
+            if (track && track.duration && track.duration > 25 && track.duration < 65) {
+                startSec = Math.max(2, Math.floor(track.duration / 2) - 10);
             }
-            const endSec = startSec + 10; // Exactly 10-second loop
+            const endSec = startSec + 20; // 20-second loop window!
             return { startSec, endSec };
         }
 
@@ -10579,10 +10581,10 @@ function checkAndShowHolidayBanner(viewId) {
                         bgVideoPlayer.load();
 
                         bgVideoPlayer.onloadedmetadata = () => {
-                            const dur = bgVideoPlayer.duration || 30;
-                            const midStart = Math.max(2, Math.floor(dur / 2) - 5);
-                            const startSec = Math.min(midStart, Math.max(0, dur - 11));
-                            const endSec = Math.min(dur, startSec + 10);
+                            const dur = bgVideoPlayer.duration || 45;
+                            const midStart = Math.max(2, Math.floor(dur / 2) - 10);
+                            const startSec = Math.min(midStart, Math.max(0, dur - 21));
+                            const endSec = Math.min(dur, startSec + 20); // 20-second loop window!
                             bgVideoPlayer.currentTime = startSec;
                             bgVideoPlayer.ontimeupdate = () => {
                                 if (bgVideoPlayer.currentTime >= endSec || bgVideoPlayer.currentTime < startSec) {
@@ -10621,9 +10623,8 @@ function checkAndShowHolidayBanner(viewId) {
                         window.bgVideoCanvasLoopInterval = null;
                     }
 
-                    // DO NOT use &end parameter! The &end parameter terminates playback after 15s and causes YouTube to go black.
-                    // Instead, loop continuously and smoothly seekTo startSec every 12s without ever stopping.
-                    const embedUrl = `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&mute=1&controls=0&loop=1&playlist=${videoId}&start=${startSec}&playsinline=1&modestbranding=1&rel=0&iv_load_policy=3&disablekb=1&enablejsapi=1`;
+                    // Seamless continuous 20-second loop with 1080p HD quality request
+                    const embedUrl = `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&mute=1&controls=0&loop=1&playlist=${videoId}&start=${startSec}&playsinline=1&modestbranding=1&rel=0&iv_load_policy=3&disablekb=1&enablejsapi=1&vq=hd1080`;
                     if (!bgYtIframe.src || !bgYtIframe.src.includes(videoId)) {
                         bgYtIframe.src = embedUrl;
                     } else {
@@ -10638,10 +10639,33 @@ function checkAndShowHolidayBanner(viewId) {
                                 func: 'playVideo',
                                 args: ''
                             }), '*');
+                            bgYtIframe.contentWindow.postMessage(JSON.stringify({
+                                event: 'command',
+                                func: 'setPlaybackQuality',
+                                args: ['hd1080']
+                            }), '*');
                         } catch(e) {}
                     }
 
-                    // Seamless loop back to highlight hook without letting player end or go black
+                    // Force HD quality once ready
+                    setTimeout(() => {
+                        if (bgYtIframe && bgYtIframe.contentWindow) {
+                            try {
+                                bgYtIframe.contentWindow.postMessage(JSON.stringify({
+                                    event: 'command',
+                                    func: 'setPlaybackQuality',
+                                    args: ['hd1080']
+                                }), '*');
+                                bgYtIframe.contentWindow.postMessage(JSON.stringify({
+                                    event: 'command',
+                                    func: 'setPlaybackQualityRange',
+                                    args: ['hd1080', 'highres']
+                                }), '*');
+                            } catch(e) {}
+                        }
+                    }, 600);
+
+                    // Seamless 20-second loop back to highlight hook without letting player end or go black
                     window.bgVideoCanvasLoopInterval = setInterval(() => {
                         if (reqId === currentVideoRequestId && audioPlayer && !audioPlayer.paused && videoBackgroundEnabled) {
                             if (bgYtIframe && bgYtIframe.contentWindow) {
@@ -10651,10 +10675,15 @@ function checkAndShowHolidayBanner(viewId) {
                                         func: 'seekTo',
                                         args: [startSec, true]
                                     }), '*');
+                                    bgYtIframe.contentWindow.postMessage(JSON.stringify({
+                                        event: 'command',
+                                        func: 'setPlaybackQuality',
+                                        args: ['hd1080']
+                                    }), '*');
                                 } catch(e) {}
                             }
                         }
-                    }, 12000);
+                    }, 20000); // Exactly 20-second loop!
 
                     bgYtWrap.style.display = 'block';
                     setTimeout(() => {
