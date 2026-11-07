@@ -10152,7 +10152,6 @@ function checkAndShowHolidayBanner(viewId) {
                 navigator.mediaSession.playbackState = 'paused';
             }
         });
-        let isNearEndTriggered = false;
         let nextTrackPreloaded = false;
 
         audioPlayer.addEventListener('timeupdate', () => {
@@ -10162,8 +10161,8 @@ function checkAndShowHolidayBanner(viewId) {
 
             const timeLeft = audioPlayer.duration - audioPlayer.currentTime;
 
-            // 1. Warm cache for next track 12-15 seconds before the current track finishes
-            if (!nextTrackPreloaded && timeLeft <= 15 && timeLeft > 4) {
+            // Warm cache for next track 15 seconds before the current track finishes
+            if (!nextTrackPreloaded && timeLeft <= 15 && timeLeft > 3) {
                 nextTrackPreloaded = true;
                 let nextIdx = currentTrackIndex + 1;
                 if (isShuffle && currentPlaylist.length > 1) {
@@ -10174,15 +10173,6 @@ function checkAndShowHolidayBanner(viewId) {
                 if (currentPlaylist[nextIdx]) {
                     preloadNextTrack(currentPlaylist[nextIdx]);
                 }
-            }
-
-            // 2. Mobile Screen-Off Continuous Playback:
-            // Mobile Safari & Chrome revoke audio playback permissions the exact millisecond an element hits 'ended'.
-            // Transitioning ~400ms before natural completion while still actively in the 'playing' state
-            // ensures the OS treats swapping .src and calling .play() as an ongoing stream continuation.
-            if (timeLeft <= 0.45 && timeLeft > 0 && !isNearEndTriggered) {
-                isNearEndTriggered = true;
-                nextMusicTrack(false);
             }
         });
         audioPlayer.addEventListener('ended', () => {
@@ -10224,12 +10214,29 @@ function checkAndShowHolidayBanner(viewId) {
             }
         });
 
+        let bgPreloaderAudio = null;
         function preloadNextTrack(track) {
             if (!track) return;
-            const src = track.audio_url || track.audio_data;
-            if (src && src.startsWith('http')) {
-                fetch(src, { headers: { 'Range': 'bytes=0-131072' }, mode: 'cors' }).catch(() => {});
+            let src = null;
+            if (window.offlineAudioCache && window.offlineAudioCache.has(String(track.id))) {
+                src = window.offlineAudioCache.get(String(track.id));
+            } else if (track.audio_url) {
+                src = track.audio_url;
+            } else if (track.audio_data) {
+                src = track.audio_data;
+            } else {
+                src = `${BACKEND_URL}/api/music/audio/${track.id}/stream`;
             }
+            if (!src) return;
+            try {
+                if (!bgPreloaderAudio) {
+                    bgPreloaderAudio = document.createElement('audio');
+                    bgPreloaderAudio.preload = 'auto';
+                    bgPreloaderAudio.volume = 0;
+                }
+                bgPreloaderAudio.src = src;
+                bgPreloaderAudio.load();
+            } catch(e) {}
         }
 
         // ============ RENDER TRACKS / LOAD MUSIC ============
@@ -11034,10 +11041,10 @@ function checkAndShowHolidayBanner(viewId) {
                 isTransitioningTrack = false;
                 return;
             }
+            isTransitioningTrack = true;
             const track = currentPlaylist[index];
             currentTrackIndex = index;
             nextTrackPreloaded = false;
-            isNearEndTriggered = false;
             isLoadingTrack = true;
             userManuallyStopped = false;
             isPlaying = true;
@@ -11084,11 +11091,12 @@ function checkAndShowHolidayBanner(viewId) {
                 audioSrc = `${BACKEND_URL}/api/music/audio/${track.id}/stream`;
             }
 
-            // 3. Immediately assign src WITHOUT calling .load()
-            // Crucial: Avoiding .load() prevents MEDIA_ERR_ABORTED errors in Chrome Android & iOS Safari
+            // 3. Clean transition: pause active audio, assign new source, and load cleanly
+            audioPlayer.pause();
             audioPlayer.src = audioSrc;
+            audioPlayer.load();
 
-            // 4. Play synchronously within the active media session
+            // 4. Play synchronously within the active continuous media session
             const playPromise = audioPlayer.play();
             if (playPromise !== undefined) {
                 playPromise.then(() => {
@@ -11108,14 +11116,14 @@ function checkAndShowHolidayBanner(viewId) {
                     }
                 }).catch(err => {
                     console.warn("audioPlayer.play() waiting/rejected:", err);
-                    if (!userManuallyStopped) {
+                    isTransitioningTrack = false;
+                    if (!userManuallyStopped && !document.hidden) {
                         const onReady = () => {
                             if (!userManuallyStopped && audioPlayer.paused) {
                                 audioPlayer.play().then(() => {
                                     consecutiveErrors = 0;
                                     isLoadingTrack = false;
                                     isPlaying = true;
-                                    isTransitioningTrack = false;
                                     updatePlayPauseBtn();
                                 }).catch(() => {});
                             }
@@ -11124,6 +11132,8 @@ function checkAndShowHolidayBanner(viewId) {
                         audioPlayer.addEventListener('loadeddata', onReady, { once: true });
                     }
                 });
+            } else {
+                isTransitioningTrack = false;
             }
 
             // 5. Update UI (mini-player, lockscreen, fullscreen if visible)
@@ -11234,6 +11244,10 @@ function checkAndShowHolidayBanner(viewId) {
         }
 
         function nextMusicTrack(userInitiated = false) {
+            if (!currentPlaylist || currentPlaylist.length === 0) {
+                isTransitioningTrack = false;
+                return;
+            }
             if (isShuffle && currentPlaylist.length > 1) {
                 let randomIndex = currentTrackIndex;
                 while (randomIndex === currentTrackIndex) {
@@ -11241,15 +11255,19 @@ function checkAndShowHolidayBanner(viewId) {
                 }
                 playMusicTrack(randomIndex, userInitiated);
             } else {
-                if (currentTrackIndex < currentPlaylist.length - 1) {
-                    playMusicTrack(currentTrackIndex + 1, userInitiated);
-                } else if (currentPlaylist.length > 0) {
-                    playMusicTrack(0, userInitiated);
+                let nextIdx = currentTrackIndex + 1;
+                if (nextIdx >= currentPlaylist.length) {
+                    nextIdx = 0;
                 }
+                playMusicTrack(nextIdx, userInitiated);
             }
         }
 
         function prevMusicTrack(userInitiated = true) {
+            if (!currentPlaylist || currentPlaylist.length === 0) {
+                isTransitioningTrack = false;
+                return;
+            }
             if (isShuffle && currentPlaylist.length > 1) {
                 let randomIndex = currentTrackIndex;
                 while (randomIndex === currentTrackIndex) {
@@ -11257,11 +11275,11 @@ function checkAndShowHolidayBanner(viewId) {
                 }
                 playMusicTrack(randomIndex, userInitiated);
             } else {
-                if (currentTrackIndex > 0) {
-                    playMusicTrack(currentTrackIndex - 1, userInitiated);
-                } else if (currentPlaylist.length > 0) {
-                    playMusicTrack(currentPlaylist.length - 1, userInitiated);
+                let prevIdx = currentTrackIndex - 1;
+                if (prevIdx < 0) {
+                    prevIdx = currentPlaylist.length - 1;
                 }
+                playMusicTrack(prevIdx, userInitiated);
             }
         }
 
@@ -11282,12 +11300,18 @@ function checkAndShowHolidayBanner(viewId) {
         }
 
         function handleMusicEnded() {
+            if (isTransitioningTrack) return;
+            isTransitioningTrack = true;
             startAudioKeepAlive();
             if (isRepeat) {
                 audioPlayer.currentTime = 0;
-                audioPlayer.play().catch(e => { console.error('Repeat play failed:', e); });
-            } else if (!isNearEndTriggered) {
-                isNearEndTriggered = true;
+                audioPlayer.play().then(() => {
+                    isTransitioningTrack = false;
+                }).catch(e => {
+                    console.error('Repeat play failed:', e);
+                    isTransitioningTrack = false;
+                });
+            } else {
                 nextMusicTrack(false);
             }
         }
@@ -11540,16 +11564,7 @@ function checkAndShowHolidayBanner(viewId) {
                 if(fillMini) fillMini.style.width = perc;
                 if(thumbMini) thumbMini.style.left = perc;
 
-                // Seamless background transition: 0.35s before the end of the track,
-                // initiate next track while the audio hardware output is still active!
-                if (!isRepeat && !userManuallyStopped && !isTransitioningTrack && currentPlaylist.length > 1 && audioPlayer.duration > 0) {
-                    const timeLeft = audioPlayer.duration - audioPlayer.currentTime;
-                    if (timeLeft > 0 && timeLeft <= 0.35) {
-                        isTransitioningTrack = true;
-                        nextMusicTrack(false);
-                        return;
-                    }
-                }
+
 
                 // Preload next track early in playback so it is cached before song ends
                 if (audioPlayer.currentTime > 5 && !nextTrackPreloaded && currentPlaylist.length > 1) {
