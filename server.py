@@ -101,7 +101,7 @@ def clean_net_id(val):
 @app.route('/api/track_open', methods=['POST'])
 def track_open():
     data = request.json or {}
-    net_id = data.get('net_id', '').strip().lower()
+    net_id = clean_net_id(data.get('net_id', ''))
     if not net_id:
         return jsonify({'success': False})
     
@@ -790,9 +790,13 @@ def start_session():
                     code_key = (c.get('code') or c.get('courseCode') or c.get('course_code') or '').strip().upper()
                     if code_key:
                         course_by_code[code_key] = c
+                        norm_k = re.sub(r'[^A-Z0-9]', '', code_key)
+                        if norm_k:
+                            course_by_code[norm_k] = c
                 for item in merged_att:
                     ck = (item.get('courseCode') or item.get('code') or item.get('course_code') or '').strip().upper()
-                    mc = course_by_code.get(ck)
+                    norm_ck = re.sub(r'[^A-Z0-9]', '', ck)
+                    mc = course_by_code.get(ck) or course_by_code.get(norm_ck)
                     if mc:
                         c_cred = mc.get('credit') if mc.get('credit') is not None else mc.get('credits')
                         if c_cred is not None:
@@ -810,7 +814,8 @@ def start_session():
                             item['room'] = c_rm
                 for m_item in merged_marks:
                     ck = (m_item.get('courseCode') or m_item.get('code') or m_item.get('course_code') or '').strip().upper()
-                    mc = course_by_code.get(ck)
+                    norm_ck = re.sub(r'[^A-Z0-9]', '', ck)
+                    mc = course_by_code.get(ck) or course_by_code.get(norm_ck)
                     if mc:
                         c_cred = mc.get('credit') if mc.get('credit') is not None else mc.get('credits')
                         if c_cred is not None:
@@ -922,9 +927,13 @@ def portal_sync():
                 code_key = (c.get('code') or c.get('courseCode') or c.get('course_code') or '').strip().upper()
                 if code_key:
                     course_by_code[code_key] = c
+                    norm_k = re.sub(r'[^A-Z0-9]', '', code_key)
+                    if norm_k:
+                        course_by_code[norm_k] = c
             for item in att:
                 ck = (item.get('courseCode') or item.get('code') or item.get('course_code') or '').strip().upper()
-                mc = course_by_code.get(ck)
+                norm_ck = re.sub(r'[^A-Z0-9]', '', ck)
+                mc = course_by_code.get(ck) or course_by_code.get(norm_ck)
                 if mc:
                     c_cred = mc.get('credit') if mc.get('credit') is not None else mc.get('credits')
                     if c_cred is not None:
@@ -938,7 +947,8 @@ def portal_sync():
                         item['room'] = c_rm
             for m_item in marks:
                 ck = (m_item.get('courseCode') or m_item.get('code') or m_item.get('course_code') or '').strip().upper()
-                mc = course_by_code.get(ck)
+                norm_ck = re.sub(r'[^A-Z0-9]', '', ck)
+                mc = course_by_code.get(ck) or course_by_code.get(norm_ck)
                 if mc:
                     c_cred = mc.get('credit') if mc.get('credit') is not None else mc.get('credits')
                     if c_cred is not None:
@@ -2295,6 +2305,7 @@ def get_trending_music():
 def handle_user_music_library():
     if request.method == 'GET':
         net_id = request.args.get('net_id', '').strip()
+        net_id = (net_id.split('@')[0] if '@' in net_id else net_id).strip().lower()
         if not net_id:
             return jsonify({'success': False, 'error': 'net_id parameter required'}), 400
         conn = get_db()
@@ -2316,7 +2327,7 @@ def handle_user_music_library():
             
     elif request.method == 'POST':
         data = request.json or {}
-        net_id = data.get('net_id', '').strip()
+        net_id = clean_net_id(data.get('net_id', ''))
         library_data = data.get('library', {})
         if not net_id:
             return jsonify({'success': False, 'error': 'net_id required'}), 400

@@ -233,12 +233,10 @@ def get_course_credit(code: str, title: str, registered_courses: List[Dict[str, 
                     if cred > 0: return cred
                 except: pass
 
-    # 2. Standard SRM credit heuristics
+    # 2. Standard SRM credit heuristics (fallback when registered course credit unavailable)
     if ('21MAB' in clean_code or '18MAB' in clean_code or 'MAB' in clean_code or
         'MATHEMATICS' in clean_title or 'TRANSFORMS' in clean_title or 'CALCULUS' in clean_title or
         'LINEAR ALGEBRA' in clean_title or 'PROBABILITY' in clean_title):
-        return 4.0
-    if clean_code.endswith('J'):
         return 4.0
     elif clean_code.endswith('P') or clean_code.endswith('L') or 'LAB' in clean_title or 'PRACTICAL' in clean_title:
         return 2.0 if clean_code.endswith('P') else 1.5

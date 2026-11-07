@@ -3,7 +3,11 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#000000">
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#000000">
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#000000">
+    <meta name="navigation-bar-color" content="#000000">
     <title>SRM Student Hub - #1 SRMIST Academia Attendance, CGPA & Timetable Portal</title>
     
     <!-- SEO Meta Tags for Google, Brave, Bing, DuckDuckGo & all Web Browsers -->
@@ -173,6 +177,8 @@
             overscroll-behavior-y: none;
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
+            background-color: #000000 !important;
+            background: #000000 !important;
         }
 
         body {
@@ -1122,10 +1128,13 @@
 
         .gallery-title {
             font-family: 'Montserrat', sans-serif;
-            font-size: 2rem;
+            font-size: 1.8rem;
             color: var(--text-main);
-            margin-bottom: 40px;
+            margin-bottom: 14px;
             text-transform: uppercase;
+        }
+        .view-header {
+            margin-bottom: 12px;
         }
 
         .fade-in-up {
@@ -3923,7 +3932,7 @@
 
                 <!-- Single Playlist Detail View (Tracks & Reordering) -->
                 <div id="playlist-detail-view" style="display:none;">
-                    <div style="display:flex; align-items:center; gap:10px; margin-bottom: 14px;">
+                    <div id="playlist-detail-header" style="display:flex; align-items:center; gap:10px; margin-bottom: 14px;">
                         <button type="button" onclick="closePlaylistDetail()" style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 50%; width: 34px; height: 34px; display:flex; align-items:center; justify-content:center; color:#fff; cursor:pointer;">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
                         </button>
@@ -3931,11 +3940,15 @@
                             <h3 id="playlist-detail-title" style="font-family:'Montserrat', sans-serif; font-size: 1.15rem; font-weight: 800; color: #fff; margin:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Playlist</h3>
                             <p id="playlist-detail-count" style="color: var(--text-sub); font-size: 0.75rem; margin: 2px 0 0 0; font-family:'Montserrat', sans-serif;">0 tracks • Reorder songs below</p>
                         </div>
-                        <button type="button" id="playlist-detail-play-btn" onclick="playActivePlaylist()" style="background:#1DB954; color:#000; border:none; border-radius:20px; padding:6px 14px; font-size:0.75rem; font-weight:800; font-family:'Montserrat', sans-serif; display:flex; align-items:center; gap:5px; cursor:pointer;">
-                            <svg width="11" height="11" viewBox="0 0 24 24" fill="#000"><polygon points="5 3 19 12 5 21 5 3"/></svg> Play All
-                        </button>
+                        <div style="display:flex; gap:8px;">
+                            <button type="button" id="playlist-detail-delete-btn" onclick="if(activePlaylistId) deletePlaylist(activePlaylistId)" style="display:none; background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.3); color:#ef4444; border-radius:14px; padding:6px 12px; font-family:'Montserrat', sans-serif; font-size:11px; font-weight:700; cursor:pointer;">Delete</button>
+                            <button type="button" id="playlist-detail-play-btn" onclick="playActivePlaylist(false)" style="background:#1DB954; color:#000; border:none; border-radius:20px; padding:6px 14px; font-size:0.75rem; font-weight:800; font-family:'Montserrat', sans-serif; display:flex; align-items:center; gap:5px; cursor:pointer;">
+                                <svg width="11" height="11" viewBox="0 0 24 24" fill="#000"><polygon points="5 3 19 12 5 21 5 3"/></svg> Play All
+                            </button>
+                        </div>
                     </div>
                     <div id="playlist-detail-tracks-list"></div>
+                    <div id="playlist-tracks-list" style="display:none;"></div>
                 </div>
             </div>
 
@@ -3943,7 +3956,6 @@
             <div id="music-downloads-section" style="display:none;">
                 <div id="downloads-list" style="padding: 15px; padding-bottom: 120px;"></div>
             </div>
-        </div>
         </div>
         <div id="events-view" class="app-view">
             <div class="view-header">
@@ -4735,6 +4747,11 @@
         }
 
         window.addEventListener('load', () => {
+            try {
+                document.querySelectorAll('meta[name="theme-color"]').forEach(m => m.setAttribute('content', '#000000'));
+                let navMeta = document.querySelector('meta[name="navigation-bar-color"]');
+                if (navMeta) navMeta.setAttribute('content', '#000000');
+            } catch(e) {}
             if (isMobile && !isStandalone) {
                 const mobileLock = document.getElementById('mobile-lock');
                 if (mobileLock) mobileLock.style.display = 'flex';
@@ -6499,6 +6516,72 @@
             return null;
         }
 
+        // Ratio-D parity exact course credit matcher
+        function getSubjectCredits(sub, optionalCourses) {
+            if (!sub) return 0;
+            if (sub.credit !== undefined && sub.credit !== null && !isNaN(sub.credit) && Number(sub.credit) > 0) {
+                return parseFloat(sub.credit);
+            }
+            if (sub.credits !== undefined && sub.credits !== null && !isNaN(sub.credits) && Number(sub.credits) > 0) {
+                return parseFloat(sub.credits);
+            }
+
+            try {
+                let courses = optionalCourses;
+                if (!courses) {
+                    const raw = localStorage.getItem('squadCourses') || localStorage.getItem('squadTimetable');
+                    if (raw) courses = JSON.parse(raw);
+                }
+                let list = [];
+                if (Array.isArray(courses)) {
+                    list = courses;
+                } else if (courses && typeof courses === 'object') {
+                    if (Array.isArray(courses.courses)) {
+                        list = courses.courses;
+                    } else {
+                        list = Object.values(courses);
+                    }
+                }
+
+                const subCode = (sub.code || sub.courseCode || sub.id || '').toUpperCase().replace(/[^A-Z0-9]/g, '').trim();
+                const subTitle = (sub.title || sub.courseTitle || sub.name || '').toUpperCase().trim();
+                const isPractical = Boolean(sub.isPractical || (sub.type || '').toLowerCase().includes('practical') || (sub.type || '').toLowerCase().includes('lab'));
+
+                const match = list.find(c => {
+                    if (!c) return false;
+                    const cCode = (c.code || c.courseCode || '').toUpperCase().replace(/[^A-Z0-9]/g, '').trim();
+                    if (cCode && cCode === subCode) {
+                        const cType = (c.type || c.raw_type || c.kind || '').toLowerCase();
+                        const cIsPrac = cType.includes('lab') || cType.includes('practical');
+                        if (cIsPrac === isPractical) return true;
+                        return true;
+                    }
+                    const cTitle = (c.title || c.name || '').toUpperCase().trim();
+                    if (cTitle && subTitle && (cTitle === subTitle || cTitle.includes(subTitle) || subTitle.includes(cTitle))) {
+                        return true;
+                    }
+                    return false;
+                });
+
+                if (match) {
+                    const mCred = match.credit !== undefined ? match.credit : match.credits;
+                    if (mCred !== undefined && mCred !== null && !isNaN(mCred) && Number(mCred) > 0) {
+                        return parseFloat(mCred);
+                    }
+                }
+            } catch(e) {}
+
+            const code = (sub.code || sub.courseCode || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+            const title = (sub.title || sub.courseTitle || sub.name || '').toUpperCase();
+            if (code.includes('MAB') || title.includes('MATHEMATICS') || title.includes('CALCULUS') || title.includes('LINEAR ALGEBRA')) {
+                return 4.0;
+            }
+            if (code.endsWith('P') || code.endsWith('L') || title.includes('LAB') || title.includes('PRACTICAL')) {
+                return 2.0;
+            }
+            return 3.0;
+        }
+
         function renderAttendance(attData) {
             const list = document.getElementById('attendance-list');
             if (!list) return;
@@ -6553,7 +6636,7 @@
             workingAttData.forEach(sub => {
                 let cond = parseInt(sub.conducted) || 0;
                 let abs = parseInt(sub.absent) || 0;
-                let cred = parseFloat(sub.credit || sub.credits) || 0;
+                let cred = getSubjectCredits(sub);
                 totalConducted += cond;
                 totalAbsent += abs;
                 totalCredits += cred;
@@ -6644,7 +6727,7 @@
                 let cond = parseInt(sub.conducted) || 0;
                 let abs = parseInt(sub.absent) || 0;
                 let pres = cond - abs;
-                let subCredit = sub.credit || sub.credits || 0;
+                let subCredit = getSubjectCredits(sub);
                 let acronym = getSubjectAcronym(name, sub.courseCode);
 
                 let m = sub.bunk_margin !== undefined ? sub.bunk_margin : Math.floor((pres - 0.75 * cond) / 0.75);
@@ -6888,13 +6971,8 @@
         let scoreDisplay = hasCourseTests ? (Number.isInteger(c.obtained) ? c.obtained : c.obtained.toFixed(1)) : '--';
         let scoreColor = isEmergency ? '#ff4757' : (hasCourseTests ? '#ffffff' : 'rgba(255,255,255,0.4)');
 
-        // Check stored credits
-        let cCredits = 4;
-        try {
-            const savedCourses = JSON.parse(localStorage.getItem('squadCourses') || '[]');
-            const mc = savedCourses.find(sc => (sc.code || sc.courseCode || '').toUpperCase() === (c.code || '').toUpperCase());
-            if (mc && (mc.credit || mc.credits)) cCredits = parseFloat(mc.credit || mc.credits);
-        } catch(e) {}
+        // Check stored credits (Ratio-D matching)
+        let cCredits = getSubjectCredits(c);
 
         let chips = '';
         if (hasCourseTests) {
@@ -9146,13 +9224,13 @@ function checkAndShowHolidayBanner(viewId) {
 
         // --- USER ACCOUNT & LIBRARY BINDING (SRM PORTAL LOGIN) ---
         function getStudentNetId() {
+            const cur = (typeof getCurrentNetId === 'function' ? getCurrentNetId() : '');
+            if (cur && cur !== 'guest_user') return cur;
             try {
                 const prof = JSON.parse(localStorage.getItem('studentProfile') || '{}');
-                if (prof.net_id || prof.regNo) return (prof.net_id || prof.regNo).trim();
-                const squad = JSON.parse(localStorage.getItem('squadProfile') || '{}');
-                if (squad.net_id || squad.regNo) return (squad.net_id || squad.regNo).trim();
-                const saved = localStorage.getItem('srm_net_id') || localStorage.getItem('saved_reg_no');
-                if (saved) return saved.trim();
+                const raw = prof.net_id || prof.regNo || prof.netId || localStorage.getItem('syncRegNo') || localStorage.getItem('srm_net_id') || localStorage.getItem('saved_reg_no') || '';
+                const clean = (raw.split('@')[0] || '').toLowerCase().trim();
+                if (clean) return clean;
             } catch(e) {}
             return 'guest_user';
         }
@@ -9235,6 +9313,12 @@ function checkAndShowHolidayBanner(viewId) {
                         }
                     }
                     saveUserMusicLibrary(false);
+                    // Update UI immediately with fresh cloud data
+                    renderPlaylistsOverview();
+                    if (activePlaylistId) {
+                        const activePl = (userMusicLibrary.playlists || []).find(p => p.id === activePlaylistId);
+                        if (activePl) renderPlaylistTracks(activePl);
+                    }
                 }
             } catch(e) {}
         }
@@ -9266,6 +9350,7 @@ function checkAndShowHolidayBanner(viewId) {
                 renderRecentlyPlayed();
             } else if (tab === 'playlists') {
                 renderPlaylistsOverview();
+                syncUserMusicLibraryWithPortal();
             } else if (tab === 'downloads') {
                 loadDownloadsList();
             }
@@ -9749,12 +9834,19 @@ function checkAndShowHolidayBanner(viewId) {
             }
         }
 
+        function playActivePlaylist(shuffle = false) {
+            if (activePlaylistId) {
+                playWholePlaylist(activePlaylistId, shuffle);
+            }
+        }
+
         function openPlaylistDetail(playlistId) {
             activePlaylistId = playlistId;
             const overviewView = document.getElementById('playlists-overview-view');
             const detailView = document.getElementById('playlist-detail-view');
-            const header = document.getElementById('playlist-detail-header');
-            const tracksList = document.getElementById('playlist-tracks-list');
+            const titleEl = document.getElementById('playlist-detail-title');
+            const countEl = document.getElementById('playlist-detail-count');
+            const deleteBtn = document.getElementById('playlist-detail-delete-btn');
 
             if (overviewView) overviewView.style.display = 'none';
             if (detailView) detailView.style.display = 'block';
@@ -9763,29 +9855,10 @@ function checkAndShowHolidayBanner(viewId) {
             if (!playlist) return;
 
             const tracks = playlist.tracks || [];
-            if (header) {
-                header.innerHTML = `
-                    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:14px;">
-                        <div>
-                            <span style="font-family:'Montserrat', sans-serif; font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:1px; color:#1DB954;">Playlist</span>
-                            <h2 style="font-family:'Montserrat', sans-serif; font-size:22px; font-weight:900; color:#fff; margin:4px 0 6px 0;">${playlist.name}</h2>
-                            <div style="font-family:'Montserrat', sans-serif; font-size:11px; color:var(--text-sub);">${tracks.length} song${tracks.length===1?'':'s'} • Created ${new Date(playlist.created_at || Date.now()).toLocaleDateString()}</div>
-                        </div>
-                        ${playlist.id !== 'liked_songs' ? `
-                            <button type="button" onclick="deletePlaylist('${playlist.id}')" style="background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.3); color:#ef4444; border-radius:12px; padding:6px 12px; font-family:'Montserrat', sans-serif; font-size:11px; font-weight:700; cursor:pointer;">Delete</button>
-                        ` : ''}
-                    </div>
-                    <div style="display:flex; gap:10px;">
-                        <button type="button" onclick="playWholePlaylist('${playlist.id}', false)" style="display:flex; align-items:center; gap:8px; background:#1DB954; color:#000; border:none; border-radius:20px; padding:8px 18px; font-family:'Montserrat', sans-serif; font-size:12px; font-weight:800; cursor:pointer;">
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="#000"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-                            Play All
-                        </button>
-                        <button type="button" onclick="playWholePlaylist('${playlist.id}', true)" style="display:flex; align-items:center; gap:8px; background:rgba(255,255,255,0.08); color:#fff; border:1px solid rgba(255,255,255,0.12); border-radius:20px; padding:8px 16px; font-family:'Montserrat', sans-serif; font-size:12px; font-weight:700; cursor:pointer;">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line><polyline points="21 16 21 21 16 21"></polyline><line x1="15" y1="15" x2="21" y2="21"></line><line x1="4" y1="4" x2="9" y2="9"></line></svg>
-                            Shuffle
-                        </button>
-                    </div>
-                `;
+            if (titleEl) titleEl.innerText = playlist.name;
+            if (countEl) countEl.innerText = `${tracks.length} song${tracks.length===1?'':'s'} • Created ${new Date(playlist.created_at || Date.now()).toLocaleDateString()}`;
+            if (deleteBtn) {
+                deleteBtn.style.display = playlist.id !== 'liked_songs' ? 'inline-block' : 'none';
             }
 
             renderPlaylistTracks(playlist);
@@ -9797,7 +9870,7 @@ function checkAndShowHolidayBanner(viewId) {
         }
 
         function renderPlaylistTracks(playlist) {
-            const tracksList = document.getElementById('playlist-tracks-list');
+            const tracksList = document.getElementById('playlist-detail-tracks-list') || document.getElementById('playlist-tracks-list');
             if (!tracksList) return;
 
             const tracks = playlist.tracks || [];
@@ -9956,6 +10029,7 @@ function checkAndShowHolidayBanner(viewId) {
 
             closeAddToPlaylistModal();
             showNotification(`✓ Added to "${playlist.name}"`);
+            renderPlaylistsOverview();
             if (activePlaylistId === playlistId) {
                 renderPlaylistTracks(playlist);
             }

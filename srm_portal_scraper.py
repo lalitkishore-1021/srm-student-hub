@@ -689,7 +689,13 @@ def _parse_portal_marks(portal: SRMPortalSession, marks_html: Optional[str], cou
 
         perf_strings = [f"{t['test_name']}/{t['max']:.2f} | {t['obtained']:.2f}" for t in tests]
         perf_formatted = "   ".join(perf_strings) if perf_strings else "No tests available."
-        credit = get_course_credit(code, title, courses_list)
+        course_lookup = {c["code"]: c for c in courses_list if c.get("code")}
+        c_meta = course_lookup.get(code, {}) or course_lookup.get(re.sub(r'[^A-Z0-9]', '', code), {})
+        cred_from_meta = c_meta.get("credit") if c_meta.get("credit") is not None else c_meta.get("credits")
+        if cred_from_meta is not None and float(cred_from_meta) > 0:
+            credit = float(cred_from_meta)
+        else:
+            credit = get_course_credit(code, title, courses_list)
 
         marks_list.append({
             "courseTitle": title,
