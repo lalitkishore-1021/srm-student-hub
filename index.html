@@ -9083,6 +9083,39 @@ function checkAndShowHolidayBanner(viewId) {
         }
         
         // ================= COMPLETE SPOTIFY-GRADE MUSIC LOUNGE CONTROLLER =================
+        function escapeHtml(str) {
+            if (str === null || str === undefined) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+        window.escapeHtml = escapeHtml;
+        window.escHtml = escapeHtml;
+
+        function safeFmtDuration(seconds) {
+            if (isNaN(seconds) || seconds === null || seconds === undefined) return '';
+            const totalSec = Math.floor(Math.max(0, Number(seconds)));
+            if (totalSec <= 0) return '';
+            const min = Math.floor(totalSec / 60);
+            const sec = totalSec % 60;
+            return `${min}:${sec < 10 ? '0' : ''}${sec}`;
+        }
+        window.safeFmtDuration = safeFmtDuration;
+
+        function getTrackHash(str) {
+            let hash = 0;
+            const s = String(str || '');
+            for (let i = 0; i < s.length; i++) {
+                hash = ((hash << 5) - hash) + s.charCodeAt(i);
+                hash |= 0;
+            }
+            return Math.abs(hash);
+        }
+        window.getTrackHash = getTrackHash;
+
         let currentPlaylist = [];
         let currentTrackIndex = -1;
         let isPlaying = false;
@@ -9401,14 +9434,14 @@ function checkAndShowHolidayBanner(viewId) {
             let html = '';
             tracks.forEach((t, i) => {
                 const cover = t.cover_url || 'images/app-icon.svg';
-                const durationFmt = t.duration ? formatTime(t.duration) : '';
+                const durationFmt = t.duration ? safeFmtDuration(t.duration) : '';
                 html += `
                     <div style="display:flex; align-items:center; justify-content:space-between; padding:10px 14px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); border-radius:14px; margin-bottom:8px; cursor:pointer; transition:all 0.2s;" onclick="playTrackFromSearch(${i})" onmouseover="this.style.background='rgba(255,255,255,0.08)'" onmouseout="this.style.background='rgba(255,255,255,0.03)'">
                         <div style="display:flex; align-items:center; gap:12px; min-width:0; flex:1;">
                             <img src="${cover}" style="width:46px; height:46px; border-radius:10px; object-fit:cover; flex-shrink:0; background:#1a1a24;" onerror="this.src='images/app-icon.svg'">
                             <div style="min-width:0; flex:1;">
-                                <div style="color:#fff; font-family:'Montserrat', sans-serif; font-size:13px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${t.title}</div>
-                                <div style="color:var(--text-sub); font-family:'Montserrat', sans-serif; font-size:11px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-top:2px;">${t.artist || 'Unknown Artist'} ${t.album ? '• ' + t.album : ''}</div>
+                                <div style="color:#fff; font-family:'Montserrat', sans-serif; font-size:13px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(t.title || 'Untitled')}</div>
+                                <div style="color:var(--text-sub); font-family:'Montserrat', sans-serif; font-size:11px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-top:2px;">${escapeHtml(t.artist || 'Unknown Artist')} ${t.album ? '• ' + escapeHtml(t.album) : ''}</div>
                             </div>
                         </div>
                         <div style="display:flex; align-items:center; gap:10px; flex-shrink:0; margin-left:10px;">
@@ -9517,15 +9550,17 @@ function checkAndShowHolidayBanner(viewId) {
             tracks.forEach((t, index) => {
                 const cover = t.cover_url || (t.has_cover ? `${BACKEND_URL}/api/music/cover/${t.id}.jpg` : (t.cover_data || 'images/app-icon.svg'));
                 const num = (index + 1).toString().padStart(2, '0');
-                const durationFmt = t.duration ? formatTime(t.duration) : '';
+                const durationFmt = t.duration ? safeFmtDuration(t.duration) : '';
+                const songTitle = escapeHtml(t.title || 'Untitled Track');
+                const songArtist = escapeHtml(t.artist || 'SRM Hub');
                 html += `
                     <div style="display:flex; align-items:center; justify-content:space-between; padding:10px 14px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.05); border-radius:14px; cursor:pointer; transition:all 0.2s;" onclick="playTrackFromExplore(${index})" onmouseover="this.style.background='rgba(255,255,255,0.07)'" onmouseout="this.style.background='rgba(255,255,255,0.03)'">
                         <div style="display:flex; align-items:center; gap:12px; min-width:0; flex:1;">
                             <span style="font-family:'Montserrat', sans-serif; font-size:12px; font-weight:800; color:#1DB954; width:22px; flex-shrink:0;">${num}</span>
                             <img src="${cover}" style="width:46px; height:46px; border-radius:10px; object-fit:cover; flex-shrink:0; background:#1a1a24;" onerror="this.src='images/app-icon.svg'">
                             <div style="min-width:0; flex:1;">
-                                <div style="color:#fff; font-family:'Montserrat', sans-serif; font-size:13px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(t.title)}</div>
-                                <div style="color:var(--text-sub); font-family:'Montserrat', sans-serif; font-size:11px; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(t.artist || 'SRM Hub')}</div>
+                                <div style="color:#fff; font-family:'Montserrat', sans-serif; font-size:13px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${songTitle}</div>
+                                <div style="color:var(--text-sub); font-family:'Montserrat', sans-serif; font-size:11px; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${songArtist}</div>
                             </div>
                         </div>
                         <div style="display:flex; align-items:center; gap:10px; flex-shrink:0; margin-left:8px;">
@@ -10285,6 +10320,47 @@ function checkAndShowHolidayBanner(viewId) {
         let videoBackgroundEnabled = true;
         window.musicVideoCache = new Map();
         let currentVideoRequestId = 0;
+        let currentCanvasLoopStart = null;
+        let currentCanvasLoopEnd = null;
+
+        function getTrackCanvasLoopWindow(track) {
+            const seed = getTrackHash((track.title || track.song || '') + ' ' + (track.artist || track.singers || ''));
+            // Start from high-energy middle segment (chorus between 40s and 75s)
+            let startSec = 40 + (seed % 36);
+            if (track && track.duration && track.duration > 15 && track.duration < 55) {
+                startSec = Math.max(2, Math.floor(track.duration / 2) - 5);
+            }
+            const endSec = startSec + 10; // Exactly 10-second loop
+            return { startSec, endSec };
+        }
+
+        if (!window.hasRegisteredYtCanvasListener) {
+            window.hasRegisteredYtCanvasListener = true;
+            window.addEventListener('message', (event) => {
+                try {
+                    let data = event.data;
+                    if (typeof data === 'string') data = JSON.parse(data);
+                    if (data && data.event === 'onStateChange') {
+                        // 0 = ENDED, 2 = PAUSED (hitting endSec parameter)
+                        if ((data.info === 0 || data.info === 2) && currentCanvasLoopStart !== null && videoBackgroundEnabled && audioPlayer && !audioPlayer.paused) {
+                            const bgYtIframe = document.getElementById('bg-yt-iframe');
+                            if (bgYtIframe && bgYtIframe.contentWindow) {
+                                bgYtIframe.contentWindow.postMessage(JSON.stringify({
+                                    event: 'command',
+                                    func: 'seekTo',
+                                    args: [currentCanvasLoopStart, true]
+                                }), '*');
+                                bgYtIframe.contentWindow.postMessage(JSON.stringify({
+                                    event: 'command',
+                                    func: 'playVideo',
+                                    args: ''
+                                }), '*');
+                            }
+                        }
+                    }
+                } catch(e) {}
+            });
+        }
 
         function toggleCanvasMode() {
             videoBackgroundEnabled = !videoBackgroundEnabled;
@@ -10352,6 +10428,20 @@ function checkAndShowHolidayBanner(viewId) {
                     bgVideoPlayer.onloadeddata = showVideo;
                     bgVideoPlayer.src = directVideoSrc;
                     bgVideoPlayer.load();
+
+                    // 10-second middle loop for direct uploaded video
+                    bgVideoPlayer.onloadedmetadata = () => {
+                        const dur = bgVideoPlayer.duration || 30;
+                        const midStart = Math.max(2, Math.floor(dur / 2) - 5);
+                        const startSec = Math.min(midStart, Math.max(0, dur - 11));
+                        const endSec = Math.min(dur, startSec + 10);
+                        bgVideoPlayer.currentTime = startSec;
+                        bgVideoPlayer.ontimeupdate = () => {
+                            if (bgVideoPlayer.currentTime >= endSec || bgVideoPlayer.currentTime < startSec) {
+                                bgVideoPlayer.currentTime = startSec;
+                            }
+                        };
+                    };
                     bgVideoPlayer.play().catch(() => {});
                 }
                 return;
@@ -10369,10 +10459,53 @@ function checkAndShowHolidayBanner(viewId) {
                     if (reqId !== currentVideoRequestId) return;
                     if (!videoId || !bgYtWrap || !bgYtIframe) return;
 
-                    const embedUrl = `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&mute=1&controls=0&loop=1&playlist=${videoId}&playsinline=1&modestbranding=1&rel=0&iv_load_policy=3&disablekb=1&enablejsapi=1`;
+                    // 10-second loop from middle of track
+                    const { startSec, endSec } = getTrackCanvasLoopWindow(track);
+                    currentCanvasLoopStart = startSec;
+                    currentCanvasLoopEnd = endSec;
+
+                    if (window.bgVideoCanvasLoopInterval) {
+                        clearInterval(window.bgVideoCanvasLoopInterval);
+                        window.bgVideoCanvasLoopInterval = null;
+                    }
+
+                    const embedUrl = `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&mute=1&controls=0&loop=1&playlist=${videoId}&start=${startSec}&end=${endSec}&playsinline=1&modestbranding=1&rel=0&iv_load_policy=3&disablekb=1&enablejsapi=1`;
                     if (!bgYtIframe.src || !bgYtIframe.src.includes(videoId)) {
                         bgYtIframe.src = embedUrl;
+                    } else {
+                        try {
+                            bgYtIframe.contentWindow.postMessage(JSON.stringify({
+                                event: 'command',
+                                func: 'seekTo',
+                                args: [startSec, true]
+                            }), '*');
+                            bgYtIframe.contentWindow.postMessage(JSON.stringify({
+                                event: 'command',
+                                func: 'playVideo',
+                                args: ''
+                            }), '*');
+                        } catch(e) {}
                     }
+
+                    // Seamless 10s loop timer for YouTube Canvas
+                    window.bgVideoCanvasLoopInterval = setInterval(() => {
+                        if (reqId === currentVideoRequestId && audioPlayer && !audioPlayer.paused && videoBackgroundEnabled) {
+                            if (bgYtIframe && bgYtIframe.contentWindow) {
+                                try {
+                                    bgYtIframe.contentWindow.postMessage(JSON.stringify({
+                                        event: 'command',
+                                        func: 'seekTo',
+                                        args: [startSec, true]
+                                    }), '*');
+                                    bgYtIframe.contentWindow.postMessage(JSON.stringify({
+                                        event: 'command',
+                                        func: 'playVideo',
+                                        args: ''
+                                    }), '*');
+                                } catch(e) {}
+                            }
+                        }
+                    }, 10000);
 
                     bgYtWrap.style.display = 'block';
                     setTimeout(() => {
@@ -10618,6 +10751,11 @@ function checkAndShowHolidayBanner(viewId) {
             consecutiveErrors = 0;
             playRequestId++;
             const currentReqId = playRequestId;
+
+            if (window.bgVideoCanvasLoopInterval) {
+                clearInterval(window.bgVideoCanvasLoopInterval);
+                window.bgVideoCanvasLoopInterval = null;
+            }
 
             // Immediately keep lockscreen and OS MediaSession in 'playing' state with next track info!
             updateMediaSession(track);
