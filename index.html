@@ -2473,7 +2473,7 @@
           z-index: 0 !important;
           overflow: hidden !important;
           pointer-events: auto !important;
-          background: #000 !important;
+          background: transparent !important;
         }
         .bg-video {
           position: absolute !important;
@@ -2519,6 +2519,8 @@
           background: linear-gradient(180deg, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0.08) 40%, rgba(0,0,0,0.65) 100%) !important;
           pointer-events: auto !important;
           z-index: 2 !important;
+          opacity: 0;
+          transition: opacity 0.6s ease !important;
         }
         /* === FEATURE 2: LYRICS BOTTOM SHEET === */
         .fs-lyrics-bottom-sheet {
@@ -10150,8 +10152,38 @@ function checkAndShowHolidayBanner(viewId) {
                 navigator.mediaSession.playbackState = 'paused';
             }
         });
+        let isNearEndTriggered = false;
+        let nextTrackPreloaded = false;
+
         audioPlayer.addEventListener('timeupdate', () => {
             if (typeof updateMusicProgress === 'function') updateMusicProgress();
+
+            if (!audioPlayer.duration || audioPlayer.paused || userManuallyStopped || isRepeat) return;
+
+            const timeLeft = audioPlayer.duration - audioPlayer.currentTime;
+
+            // 1. Warm cache for next track 12-15 seconds before the current track finishes
+            if (!nextTrackPreloaded && timeLeft <= 15 && timeLeft > 4) {
+                nextTrackPreloaded = true;
+                let nextIdx = currentTrackIndex + 1;
+                if (isShuffle && currentPlaylist.length > 1) {
+                    nextIdx = Math.floor(Math.random() * currentPlaylist.length);
+                } else if (nextIdx >= currentPlaylist.length) {
+                    nextIdx = 0;
+                }
+                if (currentPlaylist[nextIdx]) {
+                    preloadNextTrack(currentPlaylist[nextIdx]);
+                }
+            }
+
+            // 2. Mobile Screen-Off Continuous Playback:
+            // Mobile Safari & Chrome revoke audio playback permissions the exact millisecond an element hits 'ended'.
+            // Transitioning ~400ms before natural completion while still actively in the 'playing' state
+            // ensures the OS treats swapping .src and calling .play() as an ongoing stream continuation.
+            if (timeLeft <= 0.45 && timeLeft > 0 && !isNearEndTriggered) {
+                isNearEndTriggered = true;
+                nextMusicTrack(false);
+            }
         });
         audioPlayer.addEventListener('ended', () => {
             if (typeof handleMusicEnded === 'function') handleMusicEnded();
@@ -10181,9 +10213,13 @@ function checkAndShowHolidayBanner(viewId) {
                     audioPlayer.play().catch(() => {});
                 }
                 const track = currentPlaylist[currentTrackIndex];
-                if (track && track.has_video && isPlaying) {
-                    const bgVid = document.getElementById('bg-video-player');
-                    if (bgVid && bgVid.paused) bgVid.play().catch(() => {});
+                if (track) {
+                    const fsCover = document.getElementById('fs-cover');
+                    if (fsCover) extractAlbumColors(fsCover);
+                    const isFsOpen = document.getElementById('music-fullscreen')?.style.display === 'flex';
+                    if (isFsOpen && videoBackgroundEnabled) {
+                        updateVideoBackground(track);
+                    }
                 }
             }
         });
@@ -10479,45 +10515,67 @@ function checkAndShowHolidayBanner(viewId) {
             return { startSec, endSec };
         }
 
+        function showMatchedVideoCanvas() {
+            const bgYtWrap = document.getElementById('bg-yt-wrap');
+            const fsCoverContainer = document.getElementById('fs-cover-container');
+            const bgOverlay = document.querySelector('.bg-video-overlay');
+
+            if (bgYtWrap && videoBackgroundEnabled) {
+                bgYtWrap.style.transition = 'opacity 0.6s ease';
+                bgYtWrap.style.opacity = '1';
+            }
+            if (bgOverlay && videoBackgroundEnabled) {
+                bgOverlay.style.opacity = '1';
+            }
+            if (fsCoverContainer && videoBackgroundEnabled) {
+                fsCoverContainer.style.transition = 'opacity 0.5s ease';
+                fsCoverContainer.style.opacity = '0';
+                fsCoverContainer.style.pointerEvents = 'none';
+            }
+        }
+
         if (!window.hasRegisteredYtCanvasListener) {
             window.hasRegisteredYtCanvasListener = true;
             window.addEventListener('message', (event) => {
                 try {
                     let data = event.data;
                     if (typeof data === 'string') data = JSON.parse(data);
-                    if (data && data.event === 'onStateChange') {
-                        const bgYtWrap = document.getElementById('bg-yt-wrap');
-                        const bgYtIframe = document.getElementById('bg-yt-iframe');
-                        const fsCoverContainer = document.getElementById('fs-cover-container');
+                    if (!data) return;
 
-                        // 1 = PLAYING (video has fully buffered and is ACTUALLY rendering frames!)
-                        if (data.info === 1) {
-                            if (bgYtWrap && videoBackgroundEnabled) {
-                                bgYtWrap.style.transition = 'opacity 0.6s ease';
-                                bgYtWrap.style.opacity = '1';
-                            }
-                            // Smoothly fade out center album cover only once video is actually playing!
-                            if (fsCoverContainer && videoBackgroundEnabled) {
-                                fsCoverContainer.style.transition = 'opacity 0.5s ease';
-                                fsCoverContainer.style.opacity = '0';
-                                fsCoverContainer.style.pointerEvents = 'none';
-                            }
-                        }
+                    const bgYtIframe = document.getElementById('bg-yt-iframe');
 
-                        // 0 = ENDED, 2 = PAUSED -> auto resume & loop without ever stopping
-                        if ((data.info === 0 || data.info === 2) && currentCanvasLoopStart !== null && videoBackgroundEnabled && audioPlayer && !audioPlayer.paused) {
-                            if (bgYtIframe && bgYtIframe.contentWindow) {
-                                bgYtIframe.contentWindow.postMessage(JSON.stringify({
-                                    event: 'command',
-                                    func: 'seekTo',
-                                    args: [currentCanvasLoopStart, true]
-                                }), '*');
-                                bgYtIframe.contentWindow.postMessage(JSON.stringify({
-                                    event: 'command',
-                                    func: 'playVideo',
-                                    args: ''
-                                }), '*');
-                            }
+                    // Detect YouTube playback starting across all formats:
+                    // 1) Official onStateChange (info === 1)
+                    // 2) Raw infoDelivery (info.playerState === 1 or info.currentTime > 0)
+                    // 3) General info payload with state 1
+                    const isPlayingMsg = (
+                        (data.event === 'onStateChange' && data.info === 1) ||
+                        (data.event === 'infoDelivery' && data.info && (data.info.playerState === 1 || (typeof data.info.currentTime === 'number' && data.info.currentTime > 0))) ||
+                        (data.info && (data.info === 1 || data.info.playerState === 1))
+                    );
+
+                    if (isPlayingMsg) {
+                        showMatchedVideoCanvas();
+                    }
+
+                    // 0 = ENDED, 2 = PAUSED -> auto resume & loop without ever stopping
+                    const isLoopTrigger = (
+                        (data.event === 'onStateChange' && (data.info === 0 || data.info === 2)) ||
+                        (data.event === 'infoDelivery' && data.info && (data.info.playerState === 0 || data.info.playerState === 2))
+                    );
+
+                    if (isLoopTrigger && currentCanvasLoopStart !== null && videoBackgroundEnabled && audioPlayer && !audioPlayer.paused) {
+                        if (bgYtIframe && bgYtIframe.contentWindow) {
+                            bgYtIframe.contentWindow.postMessage(JSON.stringify({
+                                event: 'command',
+                                func: 'seekTo',
+                                args: [currentCanvasLoopStart, true]
+                            }), '*');
+                            bgYtIframe.contentWindow.postMessage(JSON.stringify({
+                                event: 'command',
+                                func: 'playVideo',
+                                args: ''
+                            }), '*');
                         }
                     }
                 } catch(e) {}
@@ -10587,6 +10645,8 @@ function checkAndShowHolidayBanner(viewId) {
                             shown = true;
                             bgVideoPlayer.style.transition = 'opacity 0.6s ease';
                             bgVideoPlayer.style.opacity = '1';
+                            const bgOverlay = document.querySelector('.bg-video-overlay');
+                            if (bgOverlay) bgOverlay.style.opacity = '1';
                             if (fsCoverContainer) {
                                 fsCoverContainer.style.opacity = '0';
                                 fsCoverContainer.style.pointerEvents = 'none';
@@ -10644,14 +10704,31 @@ function checkAndShowHolidayBanner(viewId) {
                     // Seamless continuous 30-second loop with 1080p HD quality & zero native controls
                     const embedUrl = `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&mute=1&controls=0&disablekb=1&fs=0&modestbranding=1&rel=0&iv_load_policy=3&loop=1&playlist=${videoId}&start=${startSec}&playsinline=1&enablejsapi=1&vq=hd1080`;
                     
-                    // Keep cover page 100% visible and video hidden until frames actively render
+                    // Keep cover page and glowing ambient colors 100% visible while loading (zero black screen)
                     bgYtWrap.style.display = 'block';
                     bgYtWrap.style.opacity = '0';
+                    const bgOverlay = document.querySelector('.bg-video-overlay');
+                    if (bgOverlay) bgOverlay.style.opacity = '0';
                     if (fsCoverContainer) {
                         fsCoverContainer.style.display = 'flex';
                         fsCoverContainer.style.opacity = '1';
                         fsCoverContainer.style.pointerEvents = 'auto';
                     }
+
+                    // Handshake with YouTube iframe on load
+                    bgYtIframe.onload = () => {
+                        try {
+                            bgYtIframe.contentWindow.postMessage(JSON.stringify({ event: 'listening' }), '*');
+                        } catch(e) {}
+                    };
+
+                    // Guaranteed smooth reveal: if postMessage is delayed by mobile browser sandbox,
+                    // smoothly crossfade at 900ms so video is ALWAYS revealed and NEVER stuck hidden!
+                    setTimeout(() => {
+                        if (reqId === currentVideoRequestId && videoBackgroundEnabled && audioPlayer && !audioPlayer.paused) {
+                            showMatchedVideoCanvas();
+                        }
+                    }, 900);
 
                     if (!bgYtIframe.src || !bgYtIframe.src.includes(videoId)) {
                         bgYtIframe.src = embedUrl;
@@ -10759,6 +10836,10 @@ function checkAndShowHolidayBanner(viewId) {
                 fsCoverContainer.style.display = 'flex';
                 fsCoverContainer.style.opacity = '1';
                 fsCoverContainer.style.pointerEvents = 'auto';
+            }
+            const bgOverlay = document.querySelector('.bg-video-overlay');
+            if (bgOverlay && !videoBackgroundEnabled) {
+                bgOverlay.style.opacity = '0';
             }
             const coverSrc = (track && (track.cover_data || track.cover_url)) || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMzMzIi8+PC9zdmc+';
             const fsBgBlur = document.getElementById('fs-bg-blur');
@@ -10956,6 +11037,7 @@ function checkAndShowHolidayBanner(viewId) {
             const track = currentPlaylist[index];
             currentTrackIndex = index;
             nextTrackPreloaded = false;
+            isNearEndTriggered = false;
             isLoadingTrack = true;
             userManuallyStopped = false;
             isPlaying = true;
@@ -11204,7 +11286,8 @@ function checkAndShowHolidayBanner(viewId) {
             if (isRepeat) {
                 audioPlayer.currentTime = 0;
                 audioPlayer.play().catch(e => { console.error('Repeat play failed:', e); });
-            } else {
+            } else if (!isNearEndTriggered) {
+                isNearEndTriggered = true;
                 nextMusicTrack(false);
             }
         }
@@ -11249,6 +11332,7 @@ function checkAndShowHolidayBanner(viewId) {
 
         function extractAlbumColors(imgEl) {
             try {
+                if (!imgEl) return;
                 const canvas = document.createElement('canvas');
                 canvas.width = 5;
                 canvas.height = 5;
@@ -11260,9 +11344,10 @@ function checkAndShowHolidayBanner(viewId) {
                 const r2 = imgData[50], g2 = imgData[51], b2 = imgData[52];
                 const r3 = imgData[96], g3 = imgData[97], b3 = imgData[98];
                 
-                const color1 = `rgba(${r1}, ${g1}, ${b1}, 0.15)`;
-                const color2 = `rgba(${r2}, ${g2}, ${b2}, 0.25)`;
-                const color3 = `rgba(${r3}, ${g3}, ${b3}, 0.20)`;
+                // Rich, luminous ambient color intensities
+                const color1 = `rgba(${r1}, ${g1}, ${b1}, 0.30)`;
+                const color2 = `rgba(${r2}, ${g2}, ${b2}, 0.40)`;
+                const color3 = `rgba(${r3}, ${g3}, ${b3}, 0.32)`;
                 
                 const fsEl = document.getElementById('music-fullscreen');
                 if (fsEl) {
@@ -11271,12 +11356,22 @@ function checkAndShowHolidayBanner(viewId) {
                     fsEl.style.setProperty('--fs-accent-3', color3);
                 }
             } catch (e) {
-                // Fallback for CORS
+                // Dynamic fallback for CORS protected covers (seeded by track title & artist)
+                const track = (typeof currentPlaylist !== 'undefined' && currentTrackIndex >= 0) ? currentPlaylist[currentTrackIndex] : null;
+                const seed = track ? getTrackHash((track.title || track.song || '') + ' ' + (track.artist || track.singers || '')) : 42;
+                const dynamicPalettes = [
+                    ['rgba(255, 64, 129, 0.32)', 'rgba(124, 77, 255, 0.40)', 'rgba(0, 229, 255, 0.28)'],
+                    ['rgba(255, 145, 0, 0.32)', 'rgba(255, 23, 68, 0.38)', 'rgba(101, 31, 255, 0.28)'],
+                    ['rgba(0, 230, 118, 0.32)', 'rgba(41, 121, 255, 0.40)', 'rgba(170, 0, 255, 0.28)'],
+                    ['rgba(245, 0, 87, 0.32)', 'rgba(255, 214, 0, 0.38)', 'rgba(0, 176, 255, 0.28)'],
+                    ['rgba(179, 136, 255, 0.35)', 'rgba(24, 255, 255, 0.38)', 'rgba(255, 82, 82, 0.28)']
+                ];
+                const pal = dynamicPalettes[Math.abs(seed) % dynamicPalettes.length];
                 const fsEl = document.getElementById('music-fullscreen');
                 if (fsEl) {
-                    fsEl.style.setProperty('--fs-accent-1', 'rgba(255, 170, 0, 0.15)');
-                    fsEl.style.setProperty('--fs-accent-2', 'rgba(138, 43, 226, 0.25)');
-                    fsEl.style.setProperty('--fs-accent-3', 'rgba(0, 255, 200, 0.20)');
+                    fsEl.style.setProperty('--fs-accent-1', pal[0]);
+                    fsEl.style.setProperty('--fs-accent-2', pal[1]);
+                    fsEl.style.setProperty('--fs-accent-3', pal[2]);
                 }
             }
         }
