@@ -1679,7 +1679,7 @@
             transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
         }
 
-        .tt-batch-wrapper {
+        .tt-batch-wrapper { display: none !important; 
             display: flex;
             justify-content: center;
             align-items: center;
@@ -4166,13 +4166,7 @@
                     <p style="margin: 0; font-size: 0.8rem; color: var(--text-sub);">No classes today. Take a break and recharge.</p>
                 </div>
             </div>
-            <!-- BATCH SWITCHER -->
-            <div class="tt-batch-wrapper">
-                <div class="tt-batch-pill-box">
-                    <button type="button" class="tt-batch-btn active" id="tt-batch-btn-1" onclick="switchTimetableBatch(1)">Batch 1</button>
-                    <button type="button" class="tt-batch-btn" id="tt-batch-btn-2" onclick="switchTimetableBatch(2)">Batch 2</button>
-                </div>
-            </div>
+
             <div class="tt-day-selector">
                 <div class="day-btn" onclick="renderDay(1, this)">Day 1</div>
                 <div class="day-btn" onclick="renderDay(2, this)">Day 2</div>
@@ -7121,30 +7115,6 @@
             noData.style.display = 'none';
             grid.style.display = 'block';
 
-            // Auto-detect and synchronize batch
-            let detected = detectTimetableBatch(timetableData);
-            let savedBatch = localStorage.getItem("syncBatch");
-            if (!savedBatch) {
-                try {
-                    let prof = JSON.parse(localStorage.getItem('studentProfile') || '{}');
-                    if (prof.batch) savedBatch = prof.batch;
-                } catch(e) {}
-            }
-            if (savedBatch && (savedBatch === "1" || savedBatch === "2" || savedBatch === 1 || savedBatch === 2)) {
-                currentBatch = parseInt(savedBatch, 10);
-            } else {
-                currentBatch = detected;
-            }
-
-            if (detected !== currentBatch) {
-                timetableData = convertTimetableBatch(timetableData, currentBatch);
-                try {
-                    localStorage.setItem('squadTimetable', JSON.stringify(timetableData));
-                } catch(e) {}
-            }
-
-            updateBatchButtonsUI(currentBatch);
-
             setInitialTimetableDay();
         }
         function setInitialTimetableDay() {
@@ -7196,6 +7166,20 @@
                     let isPeriod = String(c.time).toLowerCase().includes('period');
                     if (isPeriod && realSubjects.has(normalizeStr(c.subject))) return false;
                     return true;
+                });
+
+                // Chronological sort by start time (Ratio-D parity)
+                deduplicated.sort((a, b) => {
+                    const getMinutes = (tStr) => {
+                        if (!tStr) return 9999;
+                        const m = String(tStr).match(/(\d{1,2}):(\d{2})/);
+                        if (!m) return 9999;
+                        let h = parseInt(m[1], 10);
+                        const min = parseInt(m[2], 10);
+                        if (h >= 1 && h <= 6) h += 12; // PM adjustment
+                        return h * 60 + min;
+                    };
+                    return getMinutes(a.time_from || a.time) - getMinutes(b.time_from || b.time);
                 });
 
                 let uniqueSet = new Set();
@@ -10457,71 +10441,79 @@ function checkAndShowHolidayBanner(viewId) {
             clearTimeout(bgFadeTimeout);
             clearTimeout(coverHideTimeout);
 
-            // If user explicitly toggled video canvas off, show classic album cover
+            // ALWAYS ensure the album cover is visibly rendered as the reliable base: zero black screen!
+            if (fsCoverContainer) {
+                fsCoverContainer.style.display = 'flex';
+                fsCoverContainer.style.opacity = '1';
+            }
+            applyCoverFallback(track, musicVideoBg);
+
+            // If user explicitly toggled video canvas off, keep classic album cover only
             if (!videoBackgroundEnabled) {
                 if (bgVideoPlayer) { bgVideoPlayer.style.opacity = '0'; bgVideoPlayer.pause(); bgVideoPlayer.src = ''; }
                 if (bgYtWrap) { bgYtWrap.style.display = 'none'; bgYtWrap.style.opacity = '0'; if (bgYtIframe) bgYtIframe.src = ''; }
-                if (fsCoverContainer) { fsCoverContainer.style.display = 'flex'; fsCoverContainer.style.opacity = '1'; }
-                applyCoverFallback(track, musicVideoBg);
                 return;
-            }
-
-            // In video mode: Hide the square album cover container so video is full portrait!
-            if (fsCoverContainer) {
-                fsCoverContainer.style.display = 'none';
-                fsCoverContainer.style.opacity = '0';
             }
 
             currentVideoRequestId++;
             const reqId = currentVideoRequestId;
 
-            // Priority 1: Campus uploaded video directly attached to track
-            const directVideoSrc = videoData || (track && track.video_data) || (track && track.has_video && !track.is_online ? `${BACKEND_URL}/api/music/video/${track.id}` : null);
+            // Detect Campus Hub / user uploaded tracks
+            const isCampusTrack = Boolean(
+                track && (
+                    track.is_campus ||
+                    track.is_uploaded ||
+                    track.source === 'campus' ||
+                    track.source === 'local' ||
+                    !track.is_online ||
+                    track.uploaded_by ||
+                    (typeof campusUploadsCache !== 'undefined' && Array.isArray(campusUploadsCache) && campusUploadsCache.some(c => String(c.id) === String(track.id)))
+                )
+            );
 
-            if (directVideoSrc && directVideoSrc.trim() !== '') {
-                if (bgYtWrap) { bgYtWrap.style.display = 'none'; bgYtWrap.style.opacity = '0'; if (bgYtIframe) bgYtIframe.src = ''; }
-                const oldFallback = musicVideoBg.querySelector('.bg-cover-fallback');
-                if (oldFallback) oldFallback.remove();
-
-                let shown = false;
-                const showVideo = () => {
-                    if (shown) return;
-                    shown = true;
+            // Campus Hub tracks: ONLY use video uploaded/provided from backend. Do NOT auto-match external video!
+            if (isCampusTrack) {
+                const directVideoSrc = videoData || (track && track.video_data) || (track && track.video_url) || (track && track.canvas_url) || (track && track.has_video ? `${BACKEND_URL}/api/music/video/${track.id}` : null);
+                if (directVideoSrc && directVideoSrc.trim() !== '') {
+                    if (bgYtWrap) { bgYtWrap.style.display = 'none'; bgYtWrap.style.opacity = '0'; if (bgYtIframe) bgYtIframe.src = ''; }
                     if (bgVideoPlayer) {
-                        bgVideoPlayer.style.transition = 'opacity 0.8s ease';
-                        bgVideoPlayer.style.opacity = '1';
-                    }
-                    if (fsCoverContainer) {
-                        fsCoverContainer.style.display = 'none';
-                    }
-                };
-
-                if (bgVideoPlayer) {
-                    bgVideoPlayer.onplaying = showVideo;
-                    bgVideoPlayer.oncanplay = showVideo;
-                    bgVideoPlayer.onloadeddata = showVideo;
-                    bgVideoPlayer.src = directVideoSrc;
-                    bgVideoPlayer.load();
-
-                    // 10-second middle loop for direct uploaded video
-                    bgVideoPlayer.onloadedmetadata = () => {
-                        const dur = bgVideoPlayer.duration || 30;
-                        const midStart = Math.max(2, Math.floor(dur / 2) - 5);
-                        const startSec = Math.min(midStart, Math.max(0, dur - 11));
-                        const endSec = Math.min(dur, startSec + 10);
-                        bgVideoPlayer.currentTime = startSec;
-                        bgVideoPlayer.ontimeupdate = () => {
-                            if (bgVideoPlayer.currentTime >= endSec || bgVideoPlayer.currentTime < startSec) {
-                                bgVideoPlayer.currentTime = startSec;
-                            }
+                        let shown = false;
+                        const showVideo = () => {
+                            if (shown) return;
+                            shown = true;
+                            bgVideoPlayer.style.transition = 'opacity 0.6s ease';
+                            bgVideoPlayer.style.opacity = '1';
                         };
-                    };
-                    bgVideoPlayer.play().catch(() => {});
+                        bgVideoPlayer.onplaying = showVideo;
+                        bgVideoPlayer.oncanplay = showVideo;
+                        bgVideoPlayer.onerror = () => { applyCoverFallback(track, musicVideoBg); };
+                        bgVideoPlayer.src = directVideoSrc;
+                        bgVideoPlayer.load();
+
+                        bgVideoPlayer.onloadedmetadata = () => {
+                            const dur = bgVideoPlayer.duration || 30;
+                            const midStart = Math.max(2, Math.floor(dur / 2) - 5);
+                            const startSec = Math.min(midStart, Math.max(0, dur - 11));
+                            const endSec = Math.min(dur, startSec + 10);
+                            bgVideoPlayer.currentTime = startSec;
+                            bgVideoPlayer.ontimeupdate = () => {
+                                if (bgVideoPlayer.currentTime >= endSec || bgVideoPlayer.currentTime < startSec) {
+                                    bgVideoPlayer.currentTime = startSec;
+                                }
+                            };
+                        };
+                        bgVideoPlayer.play().catch(() => {});
+                    }
+                } else {
+                    // No video was uploaded for this campus track: cleanly show cover art with zero black screen
+                    if (bgVideoPlayer) { bgVideoPlayer.style.opacity = '0'; bgVideoPlayer.pause(); bgVideoPlayer.src = ''; }
+                    if (bgYtWrap) { bgYtWrap.style.display = 'none'; bgYtWrap.style.opacity = '0'; if (bgYtIframe) bgYtIframe.src = ''; }
+                    applyCoverFallback(track, musicVideoBg);
                 }
                 return;
             }
 
-            // Priority 2: Online track or Campus track without manual video: Automatic Video Match!
+            // Streaming / Online tracks: Instant video background with seamless continuous looping
             if (track && (track.title || track.song)) {
                 if (bgVideoPlayer) { bgVideoPlayer.style.opacity = '0'; bgVideoPlayer.pause(); bgVideoPlayer.src = ''; }
 
@@ -10533,17 +10525,17 @@ function checkAndShowHolidayBanner(viewId) {
                     if (reqId !== currentVideoRequestId) return;
                     if (!videoId || !bgYtWrap || !bgYtIframe) return;
 
-                    // 10-second loop from middle of track
-                    const { startSec, endSec } = getTrackCanvasLoopWindow(track);
+                    const { startSec } = getTrackCanvasLoopWindow(track);
                     currentCanvasLoopStart = startSec;
-                    currentCanvasLoopEnd = endSec;
 
                     if (window.bgVideoCanvasLoopInterval) {
                         clearInterval(window.bgVideoCanvasLoopInterval);
                         window.bgVideoCanvasLoopInterval = null;
                     }
 
-                    const embedUrl = `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&mute=1&controls=0&loop=1&playlist=${videoId}&start=${startSec}&end=${endSec}&playsinline=1&modestbranding=1&rel=0&iv_load_policy=3&disablekb=1&enablejsapi=1`;
+                    // DO NOT use &end parameter! The &end parameter terminates playback after 15s and causes YouTube to go black.
+                    // Instead, loop continuously and smoothly seekTo startSec every 12s without ever stopping.
+                    const embedUrl = `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&mute=1&controls=0&loop=1&playlist=${videoId}&start=${startSec}&playsinline=1&modestbranding=1&rel=0&iv_load_policy=3&disablekb=1&enablejsapi=1`;
                     if (!bgYtIframe.src || !bgYtIframe.src.includes(videoId)) {
                         bgYtIframe.src = embedUrl;
                     } else {
@@ -10561,7 +10553,7 @@ function checkAndShowHolidayBanner(viewId) {
                         } catch(e) {}
                     }
 
-                    // Seamless 10s loop timer for YouTube Canvas
+                    // Seamless loop back to highlight hook without letting player end or go black
                     window.bgVideoCanvasLoopInterval = setInterval(() => {
                         if (reqId === currentVideoRequestId && audioPlayer && !audioPlayer.paused && videoBackgroundEnabled) {
                             if (bgYtIframe && bgYtIframe.contentWindow) {
@@ -10571,25 +10563,17 @@ function checkAndShowHolidayBanner(viewId) {
                                         func: 'seekTo',
                                         args: [startSec, true]
                                     }), '*');
-                                    bgYtIframe.contentWindow.postMessage(JSON.stringify({
-                                        event: 'command',
-                                        func: 'playVideo',
-                                        args: ''
-                                    }), '*');
                                 } catch(e) {}
                             }
                         }
-                    }, 10000);
+                    }, 12000);
 
                     bgYtWrap.style.display = 'block';
                     setTimeout(() => {
                         if (reqId === currentVideoRequestId && bgYtWrap) {
                             bgYtWrap.style.opacity = '1';
-                            if (fsCoverContainer) {
-                                fsCoverContainer.style.display = 'none';
-                            }
                         }
-                    }, 250);
+                    }, 350);
                 };
 
                 if (window.musicVideoCache.has(cacheKey)) {
@@ -10618,7 +10602,7 @@ function checkAndShowHolidayBanner(viewId) {
         function applyCoverFallback(track, musicVideoBg) {
             if (!musicVideoBg) return;
             const fsCoverContainer = document.getElementById('fs-cover-container');
-            if (fsCoverContainer && !videoBackgroundEnabled) {
+            if (fsCoverContainer) {
                 fsCoverContainer.style.display = 'flex';
                 fsCoverContainer.style.opacity = '1';
             }
@@ -10631,8 +10615,8 @@ function checkAndShowHolidayBanner(viewId) {
             if (oldFallback) oldFallback.remove();
             musicVideoBg.insertBefore(img, musicVideoBg.querySelector('.bg-video-overlay'));
             img.style.opacity = '0';
-            img.style.transition = 'opacity 1.2s ease';
-            bgFadeTimeout = setTimeout(() => { img.style.opacity = '1'; }, 100);
+            img.style.transition = 'opacity 0.8s ease';
+            bgFadeTimeout = setTimeout(() => { img.style.opacity = '1'; }, 50);
         }
 
         async function loadLyricsForTrack(track) {
@@ -10932,13 +10916,8 @@ function checkAndShowHolidayBanner(viewId) {
 
             const fsCoverContainer = document.getElementById('fs-cover-container');
             if (fsCoverContainer) {
-                if (videoBackgroundEnabled) {
-                    fsCoverContainer.style.display = 'none';
-                    fsCoverContainer.style.opacity = '0';
-                } else {
-                    fsCoverContainer.style.display = 'flex';
-                    fsCoverContainer.style.opacity = '1';
-                }
+                fsCoverContainer.style.display = 'flex';
+                fsCoverContainer.style.opacity = '1';
             }
 
             const fsTitle = document.getElementById('fs-title');

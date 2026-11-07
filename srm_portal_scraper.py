@@ -415,7 +415,18 @@ def _parse_portal_timetable_and_courses(html_content: Optional[str]) -> Tuple[Di
         return final_tt, courses_list
 
     soup = BeautifulSoup(html_content, "html.parser")
-    courses_map = {}
+    variants: Dict[str, List[Dict[str, Any]]] = {}
+    courses_map: Dict[str, Dict[str, Any]] = {}
+    known_slots = set()
+
+    def slot_tokens(s_str: str) -> set:
+        if not s_str: return set()
+        return {s.replace(" ", "").upper() for s in re.split(r'[,/]', s_str) if s.strip()}
+
+    # 1. Parse Course info table
+    room_split = re.compile(r"[,/]|(?:\s+(?:Drafting|Lab|Room|Hall))", re.I)
+    abbr_regex = re.compile(r"\(([^)]+)\)")
+    lab_regex = re.compile(r"(lab|practical)", re.I)
 
     for table in soup.find_all("table"):
         headers = [th.get_text(" ", strip=True).lower() for th in table.find_all("th")]
@@ -438,8 +449,8 @@ def _parse_portal_timetable_and_courses(html_content: Optional[str]) -> Tuple[Di
                     except Exception:
                         c_credit = get_course_credit(c_code, c_name)
 
-                    clean_room = re.split(r"[,/]|(?:\s+(?:Drafting|Lab|Room|Hall))", raw_room, flags=re.I)[0].strip() if raw_room else ""
-                    m_abbr = re.search(r"\(([^)]+)\)", building)
+                    clean_room = room_split.split(raw_room)[0].strip() if raw_room else ""
+                    m_abbr = abbr_regex.search(building)
                     b_abbr = m_abbr.group(1).strip().upper() if m_abbr else ""
                     if clean_room and b_abbr and not clean_room.upper().startswith(b_abbr):
                         full_room = f"{b_abbr} {clean_room}"
@@ -447,7 +458,7 @@ def _parse_portal_timetable_and_courses(html_content: Optional[str]) -> Tuple[Di
                         full_room = clean_room or b_abbr or "TBA"
 
                     slots = [s.strip().upper() for s in c_slot.split(",") if s.strip()]
-                    is_lab = bool(re.search(r"\b(lab|practical)\b", c_name, flags=re.I)) or any(s.startswith("P") for s in slots)
+                    is_lab = bool(lab_regex.search(c_name)) or any(s.startswith("P") or s.startswith("L") for s in slots)
                     ctype = "Practical" if is_lab else "Theory"
 
                     c_info = {
@@ -461,84 +472,135 @@ def _parse_portal_timetable_and_courses(html_content: Optional[str]) -> Tuple[Di
                         "room": full_room,
                     }
                     courses_list.append(c_info)
+                    variants.setdefault(c_code, []).append(c_info)
                     if c_code not in courses_map:
                         courses_map[c_code] = c_info
+                    for tok in slot_tokens(c_slot):
+                        known_slots.add(tok)
 
-    # Find day order grid table
-    for table in soup.find_all("table"):
-        day_rows = {}
+    # 2. Find and classify all Day Order grid tables (Ratio-D parity)
+    time_regex = re.compile(r"(\d{1,2}:\d{2})\s*-\s*(\d{1,2}:\d{2})")
+    day_regex = re.compile(r"^Day\s*([1-5])$", re.I)
+
+    grids = []
+    for t_idx, table in enumerate(soup.find_all("table")):
+        rows = {}
         for row in table.find_all("tr"):
-            cols = [td.get_text(" ", strip=True) for td in row.find_all("td")]
+            cols = [td.get_text(" ", strip=True) for td in row.find_all(["td", "th"])]
             if not cols:
                 continue
-            m_day = re.search(r"^Day\s*([1-5])$", cols[0].strip(), re.I)
-            if m_day:
-                day_rows[m_day.group(1)] = cols[1:]
-
-        if not day_rows:
+            m = day_regex.search(cols[0].strip())
+            if m:
+                rows[m.group(1)] = cols[1:]
+        if not rows:
             continue
 
-        # Check if this grid contains course codes
-        sample_vals = [v.strip() for r in day_rows.values() for v in r if v.strip() and v.strip() not in ("-", "--")]
-        if not any(v in courses_map for v in sample_vals):
-            continue
+        # Header times from table headers
+        times = []
+        for tr in table.find_all(["thead", "tr"]):
+            cells = [td.get_text(" ", strip=True) for td in tr.find_all(["th", "td"])]
+            matched = []
+            for c in cells:
+                tm = time_regex.search(c)
+                if tm:
+                    matched.append(f"{tm.group(1)} - {tm.group(2)}")
+            if len(matched) >= 2:
+                times = matched
+                break
 
-        for day_num, cell_codes in day_rows.items():
-            for idx, raw_code in enumerate(cell_codes):
-                if idx >= len(SRM_PERIOD_TIMES):
-                    break
-                code = raw_code.strip()
-                if not code or code in ("-", "--"):
-                    continue
-                pt = SRM_PERIOD_TIMES[idx]
-                c_info = courses_map.get(code, {
+        course_hits = sum(1 for codes in rows.values() for c in codes if c in variants)
+        slot_hits = sum(1 for codes in rows.values() for s in codes if s.replace(" ", "").upper() in known_slots)
+
+        grids.append({
+            "idx": t_idx,
+            "rows": rows,
+            "times": times,
+            "course_hits": course_hits,
+            "slot_hits": slot_hits,
+        })
+
+    if not grids:
+        return final_tt, courses_list
+
+    # Pick grid with highest course_hits
+    best_grid = max(grids, key=lambda g: g["course_hits"])
+    slot_grid = None
+    other_grids = [g for g in grids if g["idx"] != best_grid["idx"]]
+    if other_grids:
+        best_slot_g = max(other_grids, key=lambda g: g["slot_hits"])
+        if best_slot_g["slot_hits"] > 0:
+            slot_grid = best_slot_g
+
+    # 3. Populate final timetable with exact branch times and course variants
+    for day_num, codes in best_grid["rows"].items():
+        for i, code_val in enumerate(codes):
+            code = code_val.strip()
+            if not code or code in ("-", "--"):
+                continue
+
+            if best_grid["times"] and i < len(best_grid["times"]):
+                p_time = best_grid["times"][i]
+                start_t, end_t = p_time.split(" - ")
+            elif i < len(SRM_PERIOD_TIMES):
+                pt = SRM_PERIOD_TIMES[i]
+                p_time = f"{pt['start']} - {pt['end']}"
+                start_t, end_t = pt["start"], pt["end"]
+            else:
+                p_time = "TBA"
+                start_t, end_t = "TBA", "TBA"
+
+            actual_slot = None
+            if slot_grid:
+                slot_row = slot_grid["rows"].get(day_num, [])
+                if i < len(slot_row):
+                    actual_slot = slot_row[i].strip()
+
+            choices = variants.get(code, [])
+            chosen = None
+            if choices:
+                if actual_slot:
+                    norm_actual = actual_slot.replace(" ", "").upper()
+                    for c in choices:
+                        if norm_actual in slot_tokens(c.get("slot", "")):
+                            chosen = c
+                            break
+                if not chosen:
+                    chosen = choices[0]
+            else:
+                chosen = courses_map.get(code)
+
+            if not chosen:
+                chosen = {
                     "code": code,
                     "title": code,
                     "type": "Theory",
                     "room": "TBA",
                     "faculty": "TBA",
-                    "slot": "",
-                })
-                entry = {
-                    "time": f"{pt['start']} - {pt['end']}",
-                    "time_from": pt["start"],
-                    "time_to": pt["end"],
-                    "subject": c_info["title"],
-                    "code": code,
-                    "room": c_info.get("room", "TBA"),
-                    "faculty": c_info.get("faculty", "TBA"),
-                    "type": c_info.get("type", "Theory"),
-                    "slot": c_info.get("slot", ""),
-                    "period": pt["period"],
-                    "period_end": pt["period"],
+                    "slot": actual_slot or "",
                 }
-                last = final_tt[day_num][-1] if final_tt[day_num] else None
-                if (
-                    last
-                    and last["code"] == entry["code"]
-                    and last["period_end"] + 1 == pt["period"]
-                ):
-                    last["time"] = f"{last['time_from']} - {pt['end']}"
-                    last["time_to"] = pt["end"]
-                    last["period_end"] = pt["period"]
-                else:
-                    final_tt[day_num].append(entry)
-        break
 
-    B1_LAB_NUMS = set(range(6, 11)) | set(range(11, 16)) | set(range(26, 31)) | set(range(31, 36)) | set(range(46, 51))
-    B2_LAB_NUMS = set(range(1, 6)) | set(range(16, 21)) | set(range(21, 26)) | set(range(36, 41)) | set(range(41, 46))
-    b1_hits, b2_hits = 0, 0
-    for c in courses_list:
-        slot_raw = str(c.get("slot", "")).upper()
-        for m_slot in re.finditer(r'P(\d+)(?:\s*-\s*P?(\d+))?', slot_raw):
-            start_num = int(m_slot.group(1))
-            end_num = int(m_slot.group(2)) if m_slot.group(2) else start_num
-            for p_num in range(start_num, end_num + 1):
-                if p_num in B1_LAB_NUMS:
-                    b1_hits += 1
-                if p_num in B2_LAB_NUMS:
-                    b2_hits += 1
-    final_tt["batch"] = "2" if b2_hits > b1_hits else "1"
+            entry = {
+                "time": p_time,
+                "time_from": start_t,
+                "time_to": end_t,
+                "subject": chosen["title"],
+                "code": chosen["code"],
+                "room": chosen.get("room", "TBA"),
+                "faculty": chosen.get("faculty", "TBA"),
+                "type": chosen.get("type", "Theory"),
+                "slot": actual_slot or chosen.get("slot", ""),
+                "period": i + 1,
+                "period_end": i + 1,
+            }
+
+            last = final_tt[day_num][-1] if final_tt[day_num] else None
+            if (last and last["code"] == entry["code"] and last["type"] == entry["type"] and last["period_end"] + 1 == entry["period"]):
+                last["time"] = f"{last['time_from']} - {end_t}"
+                last["time_to"] = end_t
+                last["period_end"] = entry["period"]
+            else:
+                final_tt[day_num].append(entry)
+
     return final_tt, courses_list
 
 
