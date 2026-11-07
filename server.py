@@ -793,10 +793,26 @@ def start_session():
                         norm_k = re.sub(r'[^A-Z0-9]', '', code_key)
                         if norm_k:
                             course_by_code[norm_k] = c
-                for item in merged_att:
-                    ck = (item.get('courseCode') or item.get('code') or item.get('course_code') or '').strip().upper()
+                            base_k = re.sub(r'(REGULAR|THEORY|PRACTICAL|LAB)$', '', norm_k)
+                            if base_k:
+                                course_by_code[base_k] = c
+
+                def match_meta_course(item_obj):
+                    ck = (item_obj.get('courseCode') or item_obj.get('code') or item_obj.get('course_code') or '').strip().upper()
                     norm_ck = re.sub(r'[^A-Z0-9]', '', ck)
-                    mc = course_by_code.get(ck) or course_by_code.get(norm_ck)
+                    base_ck = re.sub(r'(REGULAR|THEORY|PRACTICAL|LAB)$', '', norm_ck)
+                    matched = course_by_code.get(ck) or course_by_code.get(norm_ck) or course_by_code.get(base_ck)
+                    if not matched:
+                        item_t = re.sub(r'[^A-Z0-9]', '', (item_obj.get('courseTitle') or item_obj.get('title') or '').upper())
+                        if item_t:
+                            for cc in merged_courses:
+                                cc_t = re.sub(r'[^A-Z0-9]', '', (cc.get('title') or cc.get('name') or '').upper())
+                                if cc_t and (cc_t == item_t or cc_t in item_t or item_t in cc_t):
+                                    return cc
+                    return matched
+
+                for item in merged_att:
+                    mc = match_meta_course(item)
                     if mc:
                         c_cred = mc.get('credit') if mc.get('credit') is not None else mc.get('credits')
                         if c_cred is not None:
@@ -813,9 +829,7 @@ def start_session():
                         if c_rm and not item.get('room'):
                             item['room'] = c_rm
                 for m_item in merged_marks:
-                    ck = (m_item.get('courseCode') or m_item.get('code') or m_item.get('course_code') or '').strip().upper()
-                    norm_ck = re.sub(r'[^A-Z0-9]', '', ck)
-                    mc = course_by_code.get(ck) or course_by_code.get(norm_ck)
+                    mc = match_meta_course(m_item)
                     if mc:
                         c_cred = mc.get('credit') if mc.get('credit') is not None else mc.get('credits')
                         if c_cred is not None:
@@ -930,10 +944,26 @@ def portal_sync():
                     norm_k = re.sub(r'[^A-Z0-9]', '', code_key)
                     if norm_k:
                         course_by_code[norm_k] = c
-            for item in att:
-                ck = (item.get('courseCode') or item.get('code') or item.get('course_code') or '').strip().upper()
+                        base_k = re.sub(r'(REGULAR|THEORY|PRACTICAL|LAB)$', '', norm_k)
+                        if base_k:
+                            course_by_code[base_k] = c
+
+            def match_sync_course(item_obj):
+                ck = (item_obj.get('courseCode') or item_obj.get('code') or item_obj.get('course_code') or '').strip().upper()
                 norm_ck = re.sub(r'[^A-Z0-9]', '', ck)
-                mc = course_by_code.get(ck) or course_by_code.get(norm_ck)
+                base_ck = re.sub(r'(REGULAR|THEORY|PRACTICAL|LAB)$', '', norm_ck)
+                matched = course_by_code.get(ck) or course_by_code.get(norm_ck) or course_by_code.get(base_ck)
+                if not matched:
+                    item_t = re.sub(r'[^A-Z0-9]', '', (item_obj.get('courseTitle') or item_obj.get('title') or '').upper())
+                    if item_t:
+                        for cc in courses:
+                            cc_t = re.sub(r'[^A-Z0-9]', '', (cc.get('title') or cc.get('name') or '').upper())
+                            if cc_t and (cc_t == item_t or cc_t in item_t or item_t in cc_t):
+                                return cc
+                return matched
+
+            for item in att:
+                mc = match_sync_course(item)
                 if mc:
                     c_cred = mc.get('credit') if mc.get('credit') is not None else mc.get('credits')
                     if c_cred is not None:
@@ -946,9 +976,7 @@ def portal_sync():
                     if c_rm and not item.get('room'):
                         item['room'] = c_rm
             for m_item in marks:
-                ck = (m_item.get('courseCode') or m_item.get('code') or m_item.get('course_code') or '').strip().upper()
-                norm_ck = re.sub(r'[^A-Z0-9]', '', ck)
-                mc = course_by_code.get(ck) or course_by_code.get(norm_ck)
+                mc = match_sync_course(m_item)
                 if mc:
                     c_cred = mc.get('credit') if mc.get('credit') is not None else mc.get('credits')
                     if c_cred is not None:

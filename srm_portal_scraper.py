@@ -429,18 +429,32 @@ def _parse_portal_timetable_and_courses(html_content: Optional[str]) -> Tuple[Di
     lab_regex = re.compile(r"(lab|practical)", re.I)
 
     for table in soup.find_all("table"):
-        headers = [th.get_text(" ", strip=True).lower() for th in table.find_all("th")]
-        if any("course code" in h for h in headers) and any("faculty" in h for h in headers):
+        headers = [th.get_text(" ", strip=True).lower() for th in table.find_all(["th", "td"])]
+        if any("course code" in h for h in headers) and any("faculty" in h or "slot" in h for h in headers):
+            # Dynamic column mapping
+            code_col, name_col, credit_col, slot_col, faculty_col, bld_col, room_col = 0, 1, 2, 3, 4, 5, 7
+            for h_idx, h in enumerate(headers):
+                if "code" in h: code_col = h_idx
+                elif "name" in h or "title" in h: name_col = h_idx
+                elif "credit" in h: credit_col = h_idx
+                elif "slot" in h: slot_col = h_idx
+                elif "faculty" in h or "staff" in h: faculty_col = h_idx
+                elif "building" in h: bld_col = h_idx
+                elif "room" in h: room_col = h_idx
+
             for row in table.find_all("tr"):
                 cols = [td.get_text(" ", strip=True) for td in row.find_all("td")]
-                if len(cols) >= 5:
-                    c_code = cols[0].strip()
-                    c_name = cols[1].strip()
-                    c_credits_str = cols[2].strip()
-                    c_slot = cols[3].strip()
-                    c_faculty = cols[4].strip()
-                    building = cols[5].strip() if len(cols) > 5 else ""
-                    raw_room = cols[7].strip() if len(cols) > 7 else ""
+                if len(cols) >= 4:
+                    c_code = cols[code_col].strip() if code_col < len(cols) else cols[0].strip()
+                    c_name = cols[name_col].strip() if name_col < len(cols) else (cols[1].strip() if len(cols) > 1 else "")
+                    c_credits_str = cols[credit_col].strip() if credit_col < len(cols) else (cols[2].strip() if len(cols) > 2 else "")
+                    c_slot = cols[slot_col].strip() if slot_col < len(cols) else (cols[3].strip() if len(cols) > 3 else "")
+                    c_faculty = cols[faculty_col].strip() if faculty_col < len(cols) else "TBA"
+                    building = cols[bld_col].strip() if bld_col < len(cols) else ""
+                    raw_room = cols[room_col].strip() if room_col < len(cols) else ""
+
+                    if not c_code or c_code.isdigit() or len(c_code) < 4:
+                        continue
 
                     try:
                         c_credit = float(c_credits_str)
@@ -465,6 +479,7 @@ def _parse_portal_timetable_and_courses(html_content: Optional[str]) -> Tuple[Di
                         "code": c_code,
                         "title": c_name,
                         "credit": c_credit,
+                        "credits": c_credit,
                         "category": ctype,
                         "type": ctype,
                         "faculty": c_faculty or "TBA",
@@ -604,20 +619,37 @@ def _parse_portal_timetable_and_courses(html_content: Optional[str]) -> Tuple[Di
     return final_tt, courses_list
 
 
+def _find_course_meta(cd: str, nm: str, courses_list: List[Dict[str, Any]]) -> Dict[str, Any]:
+    norm_cd = re.sub(r'[^A-Z0-9]', '', (cd or '').upper())
+    base_cd = re.sub(r'(REGULAR|THEORY|PRACTICAL|LAB)$', '', norm_cd)
+    norm_nm = re.sub(r'[^A-Z0-9]', '', (nm or '').upper())
+
+    for c in courses_list:
+        rc_cd = re.sub(r'[^A-Z0-9]', '', str(c.get("code", "")).upper())
+        base_rc = re.sub(r'(REGULAR|THEORY|PRACTICAL|LAB)$', '', rc_cd)
+        if rc_cd and (rc_cd == norm_cd or base_rc == base_cd or norm_cd.startswith(base_rc) or base_cd.startswith(base_rc)):
+            return c
+
+    for c in courses_list:
+        rc_nm = re.sub(r'[^A-Z0-9]', '', str(c.get("title", c.get("name", ""))).upper())
+        if rc_nm and (rc_nm == norm_nm or norm_nm in rc_nm or rc_nm in norm_nm):
+            return c
+
+    return {}
+
 def _parse_portal_attendance(html_content: Optional[str], courses_list: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     att_list = []
     if not html_content:
         return att_list
 
     soup = BeautifulSoup(html_content, "html.parser")
-    course_lookup = {c["code"]: c for c in courses_list if c.get("code")}
 
     for row in soup.find_all("tr"):
         cells = [c.get_text(" ", strip=True) for c in row.find_all(["td", "th"])]
         if len(cells) < 6:
             continue
         code = cells[0].strip()
-        if not re.match(r"^[A-Z0-9]{6,12}$", code):
+        if not re.match(r"^[A-Z0-9]{4,15}$", code):
             continue
         try:
             conducted = int(cells[2])
@@ -628,8 +660,17 @@ def _parse_portal_attendance(html_content: Optional[str], courses_list: List[Dic
             continue
 
         title = cells[1].strip()
-        c_meta = course_lookup.get(code, {})
-        credit = get_course_credit(code, title, courses_list)
+        c_meta = _find_course_meta(code, title, courses_list)
+        cred_from_meta = c_meta.get("credit") if c_meta.get("credit") is not None else c_meta.get("credits")
+        if cred_from_meta is not None and str(cred_from_meta).strip() not in ("", "0"):
+            try:
+                credit = float(cred_from_meta)
+                if credit.is_integer(): credit = int(credit)
+            except Exception:
+                credit = get_course_credit(code, title, courses_list)
+        else:
+            credit = get_course_credit(code, title, courses_list)
+
         safe_margin, classes_needed, status_badge = calculate_bunk_margin_and_needed(percent, conducted, absent)
 
         att_list.append({
@@ -644,6 +685,7 @@ def _parse_portal_attendance(html_content: Optional[str], courses_list: List[Dic
             "present": present,
             "attended": percent,
             "credit": credit,
+            "credits": credit,
             "bunk_margin": safe_margin,
             "classes_needed": classes_needed,
             "status_badge": status_badge,
@@ -751,11 +793,14 @@ def _parse_portal_marks(portal: SRMPortalSession, marks_html: Optional[str], cou
 
         perf_strings = [f"{t['test_name']}/{t['max']:.2f} | {t['obtained']:.2f}" for t in tests]
         perf_formatted = "   ".join(perf_strings) if perf_strings else "No tests available."
-        course_lookup = {c["code"]: c for c in courses_list if c.get("code")}
-        c_meta = course_lookup.get(code, {}) or course_lookup.get(re.sub(r'[^A-Z0-9]', '', code), {})
+        c_meta = _find_course_meta(code, title, courses_list)
         cred_from_meta = c_meta.get("credit") if c_meta.get("credit") is not None else c_meta.get("credits")
-        if cred_from_meta is not None and float(cred_from_meta) > 0:
-            credit = float(cred_from_meta)
+        if cred_from_meta is not None and str(cred_from_meta).strip() not in ("", "0"):
+            try:
+                credit = float(cred_from_meta)
+                if credit.is_integer(): credit = int(credit)
+            except Exception:
+                credit = get_course_credit(code, title, courses_list)
         else:
             credit = get_course_credit(code, title, courses_list)
 
@@ -767,6 +812,7 @@ def _parse_portal_marks(portal: SRMPortalSession, marks_html: Optional[str], cou
             "Test Performance": perf_formatted,
             "tests": tests,
             "credit": credit,
+            "credits": credit,
         })
 
     return marks_list
