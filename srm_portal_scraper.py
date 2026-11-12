@@ -194,7 +194,7 @@ class SRMPortalSession:
         self.load_ms = None
 
     def load_captcha(self) -> bool:
-        r = self.session.get(LOGIN_URL, timeout=10)
+        r = self.session.get(LOGIN_URL, timeout=18)
         text = r.text
         m = re.search(r"window\.SECURE_CONFIG\s*=\s*\{[^}]*?nonce\s*:\s*'([^']+)'", text)
         if not m:
@@ -229,7 +229,7 @@ class SRMPortalSession:
                 "Accept": "image/png, image/jpeg, image/svg+xml, image/*",
                 "Referer": LOGIN_URL,
             },
-            timeout=10,
+            timeout=18,
         )
         if cr.status_code == 200 and cr.content:
             self.captcha_bytes = cr.content
@@ -260,7 +260,7 @@ class SRMPortalSession:
         fp_body[self.domain_field_name] = dtoken
         fp_body[self.captcha_field_name] = cptoken
 
-        resp = self.session.post(LOGIN_SERVLET, data=fp_body, timeout=12)
+        resp = self.session.post(LOGIN_SERVLET, data=fp_body, timeout=18)
         body = resp.text or ""
         self.last_status = resp.status_code
         self.last_url = str(resp.url)
@@ -298,7 +298,7 @@ class SRMPortalSession:
 
     def get_attendance_html(self) -> Optional[str]:
         try:
-            r = self.session.get(ATT_URL, timeout=10)
+            r = self.session.get(ATT_URL, timeout=15)
             url_l = str(r.url).lower()
             txt_l = r.text.lower()
             if (
@@ -316,7 +316,7 @@ class SRMPortalSession:
 
     def get_marks_html(self) -> Optional[str]:
         try:
-            r = self.session.get(MARKS_URL, timeout=10)
+            r = self.session.get(MARKS_URL, timeout=15)
             if r.status_code == 200 and "table" in r.text.lower():
                 return r.text
         except Exception:
@@ -326,7 +326,7 @@ class SRMPortalSession:
     def get_inner_marks_html(self, subject_id: str, status: str = "2") -> Optional[str]:
         try:
             payload = {"iden": "1", "hdnSubjectId": subject_id, "status": status}
-            r = self.session.post(INNER_MARKS_URL, data=payload, timeout=8)
+            r = self.session.post(INNER_MARKS_URL, data=payload, timeout=12)
             if r.status_code == 200:
                 return r.text
         except Exception:
@@ -694,7 +694,7 @@ def _parse_portal_attendance(html_content: Optional[str], courses_list: List[Dic
     return att_list
 
 
-def _parse_portal_marks(portal: SRMPortalSession, marks_html: Optional[str], courses_list: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+def _parse_portal_marks(portal: SRMPortalSession, marks_html: Optional[str], courses_list: List[Dict[str, Any]], att_list: Optional[List[Dict[str, Any]]] = None) -> List[Dict[str, Any]]:
     marks_list = []
     if not marks_html:
         return marks_list
@@ -815,6 +815,34 @@ def _parse_portal_marks(portal: SRMPortalSession, marks_html: Optional[str], cou
             "credits": credit,
         })
 
+    # Merge any registered courses from courses_list or att_list that don't have test entries yet
+    marked_codes = {s["code"].upper() for s in raw_subjects}
+    candidate_sources = list(courses_list) + (att_list or [])
+    for c in candidate_sources:
+        c_code = (c.get("code") or c.get("courseCode") or "").strip().upper()
+        if c_code and c_code not in marked_codes:
+            c_title = c.get("title") or c.get("courseTitle") or c_code
+            c_cred = c.get("credit") if c.get("credit") is not None else c.get("credits")
+            if c_cred is None or str(c_cred).strip() in ("", "0"):
+                c_cred = get_course_credit(c_code, c_title, courses_list)
+            else:
+                try:
+                    c_cred = float(c_cred)
+                    if c_cred.is_integer(): c_cred = int(c_cred)
+                except Exception:
+                    c_cred = get_course_credit(c_code, c_title, courses_list)
+            marks_list.append({
+                "courseTitle": c_title,
+                "courseCode": c_code,
+                "courseType": "Theory",
+                "performance": "No tests conducted yet",
+                "Test Performance": "No tests conducted yet",
+                "tests": [],
+                "credit": c_cred,
+                "credits": c_cred,
+            })
+            marked_codes.add(c_code)
+
     return marks_list
 
 
@@ -836,7 +864,7 @@ def fetch_portal_data(username: str, password: str) -> Dict[str, Any]:
     att_html = None
     active_portal = None
 
-    for attempt in range(1, 3):
+    for attempt in range(1, 4):
         portal = SRMPortalSession()
         try:
             if not portal.load_captcha() or not portal.captcha_bytes:
@@ -874,7 +902,7 @@ def fetch_portal_data(username: str, password: str) -> Dict[str, Any]:
 
     timetable, courses_list = _parse_portal_timetable_and_courses(tt_html)
     att_list = _parse_portal_attendance(att_html, courses_list)
-    marks_list = _parse_portal_marks(active_portal, marks_html, courses_list)
+    marks_list = _parse_portal_marks(active_portal, marks_html, courses_list, att_list=att_list)
     profile = _parse_portal_profile(prof_html, netid)
 
     print(

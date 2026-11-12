@@ -212,39 +212,51 @@ def calculate_bunk_margin_and_needed(pct: float, conducted: int, absent: int) ->
         return 0, needed, "cooked"
 
 def get_course_credit(code: str, title: str, registered_courses: List[Dict[str, Any]] = None) -> float:
-    """Accurately calculates or matches SRM course credits"""
+    """Accurately calculates or matches SRM course credits with Ratio-D parity"""
     clean_code = (code or '').upper().strip()
     clean_title = (title or '').upper().strip()
 
-    # 1. Match from registered course table if available
+    # 1. Standard SRM 2021 Regulation Course Credit Overrides (Ratio-D parity)
+    if clean_code.endswith('J'):
+        return 4.0
+    if clean_code == '21CSC203P' or 'ADVANCED PROGRAMMING' in clean_title:
+        return 4.0
+    if clean_code == '21CSS201T' or 'ORGANIZATION AND ARCHITECTURE' in clean_title:
+        return 4.0
+    if clean_code == '21LEM201T' or 'PROFESSIONAL ETHICS' in clean_title:
+        return 0.0
+    if clean_code == '21LEM202T' or 'UNIVERSAL HUMAN VALUES' in clean_title or 'UHV' in clean_title:
+        return 3.0
+    if ('21MAB' in clean_code or '18MAB' in clean_code or 'MAB' in clean_code or
+        'MATHEMATICS' in clean_title or 'TRANSFORMS' in clean_title or 'CALCULUS' in clean_title or
+        'LINEAR ALGEBRA' in clean_title or 'PROBABILITY' in clean_title or 'BOUNDARY VALUE' in clean_title):
+        return 4.0
+
+    # 2. Match from registered course table if available
     if registered_courses:
         base_c = re.sub(r'[^A-Z0-9]', '', clean_code)
         for rc in registered_courses:
-            rc_code = re.sub(r'[^A-Z0-9]', '', str(rc.get('code', '')).upper())
+            rc_code = re.sub(r'[^A-Z0-9]', '', str(rc.get('code', rc.get('courseCode', ''))).upper())
             if rc_code and (rc_code == base_c or rc_code.startswith(base_c[:8]) or base_c.startswith(rc_code[:8])):
                 try:
-                    cred = float(rc.get('credit', 0))
-                    if cred > 0: return cred
+                    cred_val = rc.get('credit') if rc.get('credit') is not None else rc.get('credits')
+                    if cred_val is not None:
+                        return float(cred_val)
                 except: pass
-            rc_title = str(rc.get('title', '')).upper().strip()
-            if rc_title and rc_title == clean_title:
+            rc_title = str(rc.get('title', rc.get('courseTitle', ''))).upper().strip()
+            if rc_title and (rc_title == clean_title or rc_title in clean_title or clean_title in rc_title):
                 try:
-                    cred = float(rc.get('credit', 0))
-                    if cred > 0: return cred
+                    cred_val = rc.get('credit') if rc.get('credit') is not None else rc.get('credits')
+                    if cred_val is not None:
+                        return float(cred_val)
                 except: pass
 
-    # 2. Standard SRM credit heuristics (fallback when registered course credit unavailable)
-    if ('21MAB' in clean_code or '18MAB' in clean_code or 'MAB' in clean_code or
-        'MATHEMATICS' in clean_title or 'TRANSFORMS' in clean_title or 'CALCULUS' in clean_title or
-        'LINEAR ALGEBRA' in clean_title or 'PROBABILITY' in clean_title):
-        return 4.0
-    elif clean_code.endswith('P') or clean_code.endswith('L') or 'LAB' in clean_title or 'PRACTICAL' in clean_title:
+    # 3. Fallback type-based heuristics
+    if clean_code.endswith('P') or clean_code.endswith('L') or 'LAB' in clean_title or 'PRACTICAL' in clean_title:
         return 2.0 if clean_code.endswith('P') else 1.5
-    elif 'PROJECT' in clean_title or 'CAPSTONE' in clean_title:
+    if 'PROJECT' in clean_title or 'CAPSTONE' in clean_title:
         return 3.0
-    elif ('UNIVERSAL HUMAN VALUES' in clean_title or 'UHV' in clean_title or 'SKILL' in clean_title or 
-          'CONSTITUTION' in clean_title or 'VALUE EDUCATION' in clean_title):
-        return 1.0
+
     return 3.0
 
 def parse_student_profile(soup: BeautifulSoup, raw_html: str, net_id: str) -> Dict[str, Any]:

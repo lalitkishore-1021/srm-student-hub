@@ -4051,8 +4051,12 @@
         </div>
 
         <div id="marks-view" class="app-view">
-            <div class="view-header">
-                <h2 class="gallery-title">Marks Tracker</h2>
+            <div class="view-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2 class="gallery-title" style="margin: 0;">Marks Tracker</h2>
+                <button onclick="openPortalSyncModal()" class="icon-btn" style="position: static; font-size: 0.85rem; padding: 8px 14px; border-radius: 12px; background: rgba(255,170,0,0.12); border: 1px solid rgba(255,170,0,0.3); color: #ffaa00; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
+                    Update Marks
+                </button>
             </div>
 
             <div style="text-align: center; margin-bottom: 15px; display: none;">
@@ -5827,10 +5831,11 @@
             }, 1000);
 
             try {
+                const savedPortalPwd = localStorage.getItem('syncPortalPwd') || '';
                 const initRes = await fetch(`${BACKEND_URL}/api/start_session`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json", "X-App-Key": "srm-hub-protected-x9f2" },
-                    body: JSON.stringify({ regNo: regNo, pwd: pwd, batch: currentBatch })
+                    body: JSON.stringify({ regNo: regNo, pwd: pwd, portalPwd: savedPortalPwd, batch: currentBatch })
                 });
 
                 const initData = await initRes.json();
@@ -6560,65 +6565,49 @@
         // Ratio-D parity exact course credit matcher
         function getSubjectCredits(sub, optionalCourses) {
             if (!sub) return 0;
-            if (sub.credit !== undefined && sub.credit !== null && !isNaN(sub.credit) && Number(sub.credit) > 0) {
-                return parseFloat(sub.credit);
-            }
-            if (sub.credits !== undefined && sub.credits !== null && !isNaN(sub.credits) && Number(sub.credits) > 0) {
-                return parseFloat(sub.credits);
-            }
+            const code = (sub.code || sub.courseCode || sub.id || '').toUpperCase().replace(/[^A-Z0-9]/g, '').trim();
+            const title = (sub.title || sub.courseTitle || sub.name || '').toUpperCase().trim();
 
+            // Explicit known course overrides for SRM B.Tech 2021 Regulation (Ratio-D parity)
+            if (code.endsWith('J')) return 4.0;
+            if (code === '21CSC203P' || title.includes('ADVANCED PROGRAMMING')) return 4.0;
+            if (code === '21CSS201T' || title.includes('ORGANIZATION AND ARCHITECTURE')) return 4.0;
+            if (code === '21LEM201T' || title.includes('PROFESSIONAL ETHICS')) return 0.0;
+            if (code === '21LEM202T' || title.includes('UNIVERSAL HUMAN VALUES') || title.includes('UHV')) return 3.0;
+            if (code.includes('MAB') || title.includes('MATHEMATICS') || title.includes('TRANSFORMS') || title.includes('CALCULUS') || title.includes('BOUNDARY VALUE')) return 4.0;
+
+            // 1. Check exact match from squadCourses (scraped directly from Academia)
             try {
                 let courses = optionalCourses;
                 if (!courses) {
-                    const raw = localStorage.getItem('squadCourses') || localStorage.getItem('squadTimetable');
+                    const raw = localStorage.getItem('squadCourses');
                     if (raw) courses = JSON.parse(raw);
                 }
-                let list = [];
                 if (Array.isArray(courses)) {
-                    list = courses;
-                } else if (courses && typeof courses === 'object') {
-                    if (Array.isArray(courses.courses)) {
-                        list = courses.courses;
-                    } else {
-                        list = Object.values(courses);
-                    }
-                }
-
-                const subCode = (sub.code || sub.courseCode || sub.id || '').toUpperCase().replace(/[^A-Z0-9]/g, '').trim();
-                const baseSubCode = subCode.replace(/(REGULAR|THEORY|PRACTICAL|LAB)$/i, '');
-                const subTitle = (sub.title || sub.courseTitle || sub.name || '').toUpperCase().replace(/[^A-Z0-9]/g, '').trim();
-                const isPractical = Boolean(sub.isPractical || (sub.type || '').toLowerCase().includes('practical') || (sub.type || '').toLowerCase().includes('lab'));
-
-                const match = list.find(c => {
-                    if (!c) return false;
-                    const cCode = (c.code || c.courseCode || '').toUpperCase().replace(/[^A-Z0-9]/g, '').trim();
-                    const baseCCode = cCode.replace(/(REGULAR|THEORY|PRACTICAL|LAB)$/i, '');
-                    if (cCode && (cCode === subCode || baseCCode === baseSubCode || (baseCCode && baseSubCode.startsWith(baseCCode)) || (baseSubCode && baseCCode.startsWith(baseSubCode)))) {
-                        return true;
-                    }
-                    const cTitle = (c.title || c.name || '').toUpperCase().replace(/[^A-Z0-9]/g, '').trim();
-                    if (cTitle && subTitle && (cTitle === subTitle || cTitle.includes(subTitle) || subTitle.includes(cTitle))) {
-                        return true;
-                    }
-                    return false;
-                });
-
-                if (match) {
-                    const mCred = match.credit !== undefined ? match.credit : match.credits;
-                    if (mCred !== undefined && mCred !== null && !isNaN(mCred) && Number(mCred) > 0) {
+                    const match = courses.find(c => {
+                        if (!c) return false;
+                        const cCode = (c.code || c.courseCode || '').toUpperCase().replace(/[^A-Z0-9]/g, '').trim();
+                        if (cCode && (cCode === code || code.startsWith(cCode) || cCode.startsWith(code))) return true;
+                        const cTitle = (c.title || c.name || '').toUpperCase().trim();
+                        if (cTitle && title && (cTitle === title || cTitle.includes(title) || title.includes(cTitle))) return true;
+                        return false;
+                    });
+                    const mCred = match ? (match.credit !== undefined ? match.credit : match.credits) : undefined;
+                    if (mCred !== undefined && mCred !== null && !isNaN(mCred)) {
                         return parseFloat(mCred);
                     }
                 }
             } catch(e) {}
 
-            const code = (sub.code || sub.courseCode || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
-            const title = (sub.title || sub.courseTitle || sub.name || '').toUpperCase();
-            if (code.includes('MAB') || title.includes('MATHEMATICS') || title.includes('CALCULUS') || title.includes('LINEAR ALGEBRA')) {
-                return 4.0;
+            // 2. Direct credit if already set on sub
+            const rawSubCredit = sub.credit !== undefined ? sub.credit : sub.credits;
+            if (rawSubCredit !== undefined && rawSubCredit !== null && !isNaN(rawSubCredit)) {
+                return parseFloat(rawSubCredit);
             }
-            if (code.endsWith('P') || code.endsWith('L') || title.includes('LAB') || title.includes('PRACTICAL')) {
-                return 2.0;
-            }
+
+            // 3. Fallback type-based rules
+            if (code.endsWith('P') || code.endsWith('L') || title.includes('LAB') || title.includes('PRACTICAL')) return 2.0;
+
             return 3.0;
         }
 

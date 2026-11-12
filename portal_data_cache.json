@@ -9,12 +9,13 @@
         "faculty": "",
         "slot": "",
         "room": "",
-        "conducted": 58,
-        "absent": 3,
-        "present": 55,
-        "attended": 94.83,
+        "conducted": 82,
+        "absent": 10,
+        "present": 72,
+        "attended": 87.8,
         "credit": 4.0,
-        "bunk_margin": 15,
+        "credits": 4.0,
+        "bunk_margin": 14,
         "classes_needed": 0,
         "status_badge": "safe",
         "classes_per_cycle": 1
@@ -26,11 +27,12 @@
         "faculty": "",
         "slot": "",
         "room": "",
-        "conducted": 55,
-        "absent": 1,
-        "present": 54,
-        "attended": 98.18,
+        "conducted": 73,
+        "absent": 5,
+        "present": 68,
+        "attended": 93.15,
         "credit": 4.0,
+        "credits": 4.0,
         "bunk_margin": 17,
         "classes_needed": 0,
         "status_badge": "safe",
@@ -43,12 +45,13 @@
         "faculty": "",
         "slot": "",
         "room": "",
-        "conducted": 40,
-        "absent": 1,
-        "present": 39,
-        "attended": 97.5,
-        "credit": 2.0,
-        "bunk_margin": 12,
+        "conducted": 56,
+        "absent": 3,
+        "present": 53,
+        "attended": 94.64,
+        "credit": 4.0,
+        "credits": 4.0,
+        "bunk_margin": 14,
         "classes_needed": 0,
         "status_badge": "safe",
         "classes_per_cycle": 1
@@ -60,12 +63,13 @@
         "faculty": "",
         "slot": "",
         "room": "",
-        "conducted": 43,
-        "absent": 2,
-        "present": 41,
-        "attended": 95.35,
-        "credit": 3.0,
-        "bunk_margin": 11,
+        "conducted": 59,
+        "absent": 8,
+        "present": 51,
+        "attended": 86.44,
+        "credit": 4.0,
+        "credits": 4.0,
+        "bunk_margin": 9,
         "classes_needed": 0,
         "status_badge": "safe",
         "classes_per_cycle": 1
@@ -77,11 +81,12 @@
         "faculty": "",
         "slot": "",
         "room": "",
-        "conducted": 10,
-        "absent": 0,
-        "present": 10,
-        "attended": 100.0,
-        "credit": 3.0,
+        "conducted": 14,
+        "absent": 1,
+        "present": 13,
+        "attended": 92.86,
+        "credit": 0.0,
+        "credits": 0.0,
         "bunk_margin": 3,
         "classes_needed": 0,
         "status_badge": "safe",
@@ -98,7 +103,8 @@
         "absent": 0,
         "present": 4,
         "attended": 100.0,
-        "credit": 1.0,
+        "credit": 3.0,
+        "credits": 3.0,
         "bunk_margin": 1,
         "classes_needed": 0,
         "status_badge": "safe",
@@ -111,12 +117,13 @@
         "faculty": "",
         "slot": "",
         "room": "",
-        "conducted": 45,
-        "absent": 3,
-        "present": 42,
-        "attended": 93.33,
+        "conducted": 60,
+        "absent": 7,
+        "present": 53,
+        "attended": 88.33,
         "credit": 4.0,
-        "bunk_margin": 11,
+        "credits": 4.0,
+        "bunk_margin": 10,
         "classes_needed": 0,
         "status_badge": "safe",
         "classes_per_cycle": 1
@@ -141,14 +148,15 @@
             "obtained": 17.7
           }
         ],
-        "credit": 2.0
+        "credit": 4.0,
+        "credits": 4.0
       },
       {
         "courseTitle": "COMPUTER ORGANIZATION AND ARCHITECTURE",
         "courseCode": "21CSS201T",
         "courseType": "Theory",
-        "performance": "FT-I/5.00 | 4.10   FT-II/15.00 | 9.60",
-        "Test Performance": "FT-I/5.00 | 4.10   FT-II/15.00 | 9.60",
+        "performance": "FT-I/5.00 | 4.10   FT-II/15.00 | 9.60   FT-III/15.00 | 8.10",
+        "Test Performance": "FT-I/5.00 | 4.10   FT-II/15.00 | 9.60   FT-III/15.00 | 8.10",
         "tests": [
           {
             "test_name": "FT-I",
@@ -159,9 +167,15 @@
             "test_name": "FT-II",
             "max": 15.0,
             "obtained": 9.6
+          },
+          {
+            "test_name": "FT-III",
+            "max": 15.0,
+            "obtained": 8.1
           }
         ],
-        "credit": 3.0
+        "credit": 4.0,
+        "credits": 4.0
       },
       {
         "courseTitle": "DATA STRUCTURES AND ALGORITHMS",
@@ -181,7 +195,8 @@
             "obtained": 3.5
           }
         ],
-        "credit": 4.0
+        "credit": 4.0,
+        "credits": 4.0
       },
       {
         "courseTitle": "OPERATING SYSTEMS",
@@ -201,29 +216,36 @@
             "obtained": 6.0
           }
         ],
-        "credit": 4.0
+        "credit": 4.0,
+        "credits": 4.0
       },
       {
         "courseTitle": "PROFESSIONAL ETHICS",
         "courseCode": "21LEM201T",
         "courseType": "Theory",
-        "performance": "FML-I/20.00 | 10.00",
-        "Test Performance": "FML-I/20.00 | 10.00",
+        "performance": "FML-I/20.00 | 10.00   FML-II/60.00 | 55.00",
+        "Test Performance": "FML-I/20.00 | 10.00   FML-II/60.00 | 55.00",
         "tests": [
           {
             "test_name": "FML-I",
             "max": 20.0,
             "obtained": 10.0
+          },
+          {
+            "test_name": "FML-II",
+            "max": 60.0,
+            "obtained": 55.0
           }
         ],
-        "credit": 3.0
+        "credit": 0.0,
+        "credits": 0.0
       },
       {
         "courseTitle": "TRANSFORMS AND BOUNDARY VALUE PROBLEMS",
         "courseCode": "21MAB201T",
         "courseType": "Theory",
-        "performance": "FT-I/5.00 | 5.00   FT-II/15.00 | 6.60",
-        "Test Performance": "FT-I/5.00 | 5.00   FT-II/15.00 | 6.60",
+        "performance": "FT-I/5.00 | 5.00   FT-II/15.00 | 6.60   FT-III/15.00 | 12.50   LLT-I/10.00 | 10.00",
+        "Test Performance": "FT-I/5.00 | 5.00   FT-II/15.00 | 6.60   FT-III/15.00 | 12.50   LLT-I/10.00 | 10.00",
         "tests": [
           {
             "test_name": "FT-I",
@@ -234,9 +256,30 @@
             "test_name": "FT-II",
             "max": 15.0,
             "obtained": 6.6
+          },
+          {
+            "test_name": "FT-III",
+            "max": 15.0,
+            "obtained": 12.5
+          },
+          {
+            "test_name": "LLT-I",
+            "max": 10.0,
+            "obtained": 10.0
           }
         ],
-        "credit": 4.0
+        "credit": 4.0,
+        "credits": 4.0
+      },
+      {
+        "courseTitle": "UNIVERSAL HUMAN VALUES - II: UNDERSTANDING HARMONY AND ETHICAL HUMAN CONDUCT",
+        "courseCode": "21LEM202T",
+        "courseType": "Theory",
+        "performance": "No tests conducted yet",
+        "Test Performance": "No tests conducted yet",
+        "tests": [],
+        "credit": 3,
+        "credits": 3
       }
     ],
     "profile": {
@@ -246,7 +289,7 @@
       "department": "Faculty of Engineering and Technology, Kattankulathur",
       "section": "",
       "semester": "III SEMESTER",
-      "batch": "2025",
+      "batch": "1",
       "mobile": "8247555458",
       "email": "bl9209@srmist.edu.in"
     },
