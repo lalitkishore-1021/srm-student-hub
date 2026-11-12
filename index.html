@@ -5516,10 +5516,11 @@
                 netIdInput.value = cleanNetId;
             }
             
-            // Auto populate saved portal password if available
-            const savedPortalPwd = localStorage.getItem('syncPortalPwd') || '';
+            // Auto populate saved portal password ONLY IF it belongs to this specific netid
+            const savedNetId = (localStorage.getItem('syncPortalNetId') || localStorage.getItem('syncRegNo') || '').split('@')[0].trim().toLowerCase();
+            const savedPortalPwd = (cleanNetId && savedNetId === cleanNetId) ? (localStorage.getItem('syncPortalPwd') || '') : '';
             const pwdInput = document.getElementById('portal-modal-pwd');
-            if (pwdInput && savedPortalPwd) {
+            if (pwdInput) {
                 pwdInput.value = savedPortalPwd;
             }
             
@@ -5573,10 +5574,23 @@
             let netId = rawId.split('@')[0].trim().toLowerCase();
             let portalPwd = (pwdInput ? pwdInput.value : '').trim();
             
-            // Auto-normalize DOB separators (e.g. 15-08-2003 or 15/08/2003 -> 15082003)
-            if (/^\d{2}[-/.]\d{2}[-/.]\d{4}$/.test(portalPwd)) {
-                portalPwd = portalPwd.replace(/[-/.]/g, '');
+            // Auto-normalize DOB separators and missing leading zeros (e.g. 5-8-2004 or 15/08/2003 -> 05082004)
+            const dobMatch = portalPwd.match(/^(\d{1,2})[-/.](\d{1,2})[-/.](\d{4})$/);
+            if (dobMatch) {
+                portalPwd = `${dobMatch[1].padStart(2, '0')}${dobMatch[2].padStart(2, '0')}${dobMatch[3]}`;
                 if (pwdInput) pwdInput.value = portalPwd;
+            }
+            
+            // Check if user accidentally entered Register Number (RA...) instead of NetID
+            if (/^RA\d{6,}/i.test(netId)) {
+                if (statusBox) {
+                    statusBox.style.display = 'block';
+                    statusBox.style.background = 'rgba(255, 71, 87, 0.15)';
+                    statusBox.style.border = '1px solid rgba(255, 71, 87, 0.4)';
+                    statusBox.style.color = '#ff6b81';
+                    statusBox.innerText = 'Student Portal requires your SRM NetID (e.g. bl9209), not your Register Number (RA...).';
+                }
+                return;
             }
             
             if (!netId || !portalPwd) {
@@ -5636,6 +5650,7 @@
                 
                 // Success - store password locally for 3-hr background auto sync
                 localStorage.setItem('syncPortalPwd', portalPwd);
+                localStorage.setItem('syncPortalNetId', netId);
                 
                 const attList = Array.isArray(data.data) ? data.data : [];
                 const marksList = Array.isArray(data.marks) ? data.marks : [];
@@ -5782,6 +5797,12 @@
                 return;
             }
 
+            const currentNetId = regNo.split('@')[0].trim().toLowerCase();
+            if (/^RA\d{6,}/i.test(currentNetId)) {
+                alert("Please enter your SRM NetID (e.g. bl9209) or SRM Email ID. Academia does not accept Register Numbers (RA...).");
+                return;
+            }
+
             document.getElementById('login-form-container').style.display = 'none';
             document.getElementById('login-loader-container').style.display = 'flex';
             
@@ -5831,7 +5852,8 @@
             }, 1000);
 
             try {
-                const savedPortalPwd = localStorage.getItem('syncPortalPwd') || '';
+                const savedNetId = (localStorage.getItem('syncPortalNetId') || localStorage.getItem('syncRegNo') || '').split('@')[0].trim().toLowerCase();
+                const savedPortalPwd = (currentNetId && savedNetId === currentNetId) ? (localStorage.getItem('syncPortalPwd') || '') : '';
                 const initRes = await fetch(`${BACKEND_URL}/api/start_session`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json", "X-App-Key": "srm-hub-protected-x9f2" },

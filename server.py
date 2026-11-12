@@ -542,10 +542,20 @@ def get_portal_data_with_fallback(net_id, portal_pwd):
     if not clean_id or not portal_pwd:
         return {'success': False, 'error': 'Missing Student Portal credentials'}
 
-    # Auto-normalize Date of Birth format if entered with separators (e.g. 15-08-2003 -> 15082003)
+    # Auto-normalize Date of Birth format if entered with separators or unpadded digits (e.g. 5-8-2004 -> 05082004)
     import re
-    if re.match(r'^\d{2}[-/.]\d{2}[-/.]\d{4}$', portal_pwd):
-        portal_pwd = re.sub(r'[-/.]', '', portal_pwd)
+    m_dob = re.match(r'^(\d{1,2})[-/.](\d{1,2})[-/.](\d{4})$', portal_pwd)
+    if m_dob:
+        day, month, year = m_dob.groups()
+        portal_pwd = f"{int(day):02d}{int(month):02d}{year}"
+
+    # Catch accidental Register Number entered instead of NetID
+    if clean_id.startswith('ra') and len(clean_id) > 8 and any(c.isdigit() for c in clean_id[2:]):
+        return {
+            'success': False,
+            'error': 'SRM Student Portal requires your NetID (e.g. bl9209), not your Register Number (RA...).',
+            'reason': 'invalid_netid'
+        }
 
     # 1. Primary: Direct sp.srmist.edu.in scraper (fast, fresh live university data)
     p_res = None
@@ -633,8 +643,13 @@ def get_portal_data_with_fallback(net_id, portal_pwd):
         }
 
     err = (p_res or {}).get('error', 'SRM Portal authentication failed.')
-    if any(w in err.lower() for w in ['invalid', 'password', 'credential', 'user id']):
-        err = 'Invalid SRM Student Portal Password. Student Portal (sp.srmist.edu.in) uses a separate password from Academia (default is your Date of Birth in DDMMYYYY format). You can reset it at https://ssp.srmist.edu.in/resetpassword/'
+    reason = (p_res or {}).get('reason')
+    if reason == 'account_locked' or 'locked' in err.lower():
+        err = 'Your SRM Student Portal account is temporarily locked due to previous failed attempts. Please unlock or reset it at https://ssp.srmist.edu.in/resetpassword/'
+    elif reason == 'invalid_netid':
+        err = (p_res or {}).get('error')
+    elif any(w in err.lower() for w in ['invalid', 'password', 'credential', 'user id']):
+        err = 'Invalid SRM Student Portal Password. Note: sp.srmist.edu.in uses a separate password from Academia (default is your Date of Birth in DDMMYYYY format, e.g. 15082003). You can reset it at https://ssp.srmist.edu.in/resetpassword/'
     return {'success': False, 'error': err, 'reason': (p_res or {}).get('reason')}
 
 def scrape_academia_worker(reg_no, pwd, batch, out_queue):
@@ -929,8 +944,13 @@ def portal_sync():
         p_res = get_portal_data_with_fallback(net_id, portal_pwd)
         if not p_res or not p_res.get('success'):
             err = (p_res or {}).get('error', 'SRM Portal authentication failed.')
-            if any(w in err.lower() for w in ['invalid', 'password', 'credential', 'user id']):
-                err = 'Invalid SRM Student Portal Password. Student Portal (sp.srmist.edu.in) uses a separate password from Academia (default is your Date of Birth in DDMMYYYY format). You can reset it at https://ssp.srmist.edu.in/resetpassword/'
+            reason = (p_res or {}).get('reason')
+            if reason == 'account_locked' or 'locked' in err.lower():
+                err = 'Your SRM Student Portal account is temporarily locked due to previous failed attempts. Please unlock or reset it at https://ssp.srmist.edu.in/resetpassword/'
+            elif reason == 'invalid_netid':
+                err = (p_res or {}).get('error')
+            elif any(w in err.lower() for w in ['invalid', 'password', 'credential', 'user id']):
+                err = 'Invalid SRM Student Portal Password. Note: sp.srmist.edu.in uses a separate password from Academia (default is your Date of Birth in DDMMYYYY format, e.g. 15082003). You can reset it at https://ssp.srmist.edu.in/resetpassword/'
             return jsonify({'success': False, 'error': err})
 
         att = p_res.get('data', [])
