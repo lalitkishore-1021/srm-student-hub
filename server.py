@@ -626,7 +626,7 @@ def get_portal_data_with_fallback(net_id, portal_pwd):
                     else:
                         return {
                             'success': False,
-                            'error': 'Invalid SRM Student Portal Password. Student Portal (sp.srmist.edu.in) uses a separate password from Academia (default is your Date of Birth in DDMMYYYY format). Reset at https://ssp.srmist.edu.in/resetpassword/',
+                            'error': 'Invalid NetID or Student Portal password. You can reset your password at https://ssp.srmist.edu.in/resetpassword/',
                             'reason': 'invalid_credentials'
                         }
     except Exception as ce:
@@ -649,7 +649,7 @@ def get_portal_data_with_fallback(net_id, portal_pwd):
     elif reason == 'invalid_netid':
         err = (p_res or {}).get('error')
     elif any(w in err.lower() for w in ['invalid', 'password', 'credential', 'user id']):
-        err = 'Invalid SRM Student Portal Password. Note: sp.srmist.edu.in uses a separate password from Academia (default is your Date of Birth in DDMMYYYY format, e.g. 15082003). You can reset it at https://ssp.srmist.edu.in/resetpassword/'
+        err = 'Invalid NetID or Student Portal password. You can reset your password at https://ssp.srmist.edu.in/resetpassword/'
     return {'success': False, 'error': err, 'reason': (p_res or {}).get('reason')}
 
 def scrape_academia_worker(reg_no, pwd, batch, out_queue):
@@ -950,7 +950,7 @@ def portal_sync():
             elif reason == 'invalid_netid':
                 err = (p_res or {}).get('error')
             elif any(w in err.lower() for w in ['invalid', 'password', 'credential', 'user id']):
-                err = 'Invalid SRM Student Portal Password. Note: sp.srmist.edu.in uses a separate password from Academia (default is your Date of Birth in DDMMYYYY format, e.g. 15082003). You can reset it at https://ssp.srmist.edu.in/resetpassword/'
+                err = 'Invalid NetID or Student Portal password. You can reset your password at https://ssp.srmist.edu.in/resetpassword/'
             return jsonify({'success': False, 'error': err})
 
         att = p_res.get('data', [])
