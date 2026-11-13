@@ -7444,7 +7444,11 @@
                         statusBox.style.border = '1px solid rgba(255, 71, 87, 0.4)';
                         statusBox.style.color = '#ff6b81';
                         const err = data.error || 'Failed to authenticate with SRM Student Portal.';
-                        statusBox.innerHTML = `<div>${err}</div><div style="margin-top:6px;"><a href="https://ssp.srmist.edu.in/resetpassword/" target="_blank" rel="noopener noreferrer" style="color: #ffaa00; text-decoration: underline; font-weight: 700; font-size: 0.8rem;">Click here to reset your Portal Password on SSP &rarr;</a></div>`;
+                        const isCredentialIssue = /password|credential|locked|invalid|user id/i.test(err);
+                        const resetLink = isCredentialIssue 
+                            ? `<div style="margin-top:6px;"><a href="https://ssp.srmist.edu.in/resetpassword/" target="_blank" rel="noopener noreferrer" style="color: #ffaa00; text-decoration: underline; font-weight: 700; font-size: 0.8rem;">Click here to reset your Portal Password on SSP &rarr;</a></div>` 
+                            : '';
+                        statusBox.innerHTML = `<div>${err}</div>${resetLink}`;
                     }
                     return;
                 }

@@ -10,5 +10,3 @@ services:
         value: 0
       - key: DATABASE_URL
         sync: false
-      - key: ALLOWED_NET_ID
-        sync: false

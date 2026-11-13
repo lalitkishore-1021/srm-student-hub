@@ -857,10 +857,6 @@ def fetch_portal_data(username: str, password: str) -> Dict[str, Any]:
     if not netid or not password:
         return {"success": False, "error": "Missing Student Portal credentials"}
 
-    import re
-    if re.match(r'^\d{2}[-/.]\d{2}[-/.]\d{4}$', password):
-        password = re.sub(r'[-/.]', '', password)
-
     att_html = None
     active_portal = None
 
@@ -883,6 +879,15 @@ def fetch_portal_data(username: str, password: str) -> Dict[str, Any]:
             except Exception:
                 pass
 
+    # Fallback if parallel pre-load returned no ready sessions
+    if not portals_ready:
+        try:
+            fb_p = SRMPortalSession()
+            if fb_p.load_captcha() and fb_p.captcha_bytes:
+                portals_ready.append(fb_p)
+        except Exception as e:
+            print(f"[{netid}] Fallback portal session error: {e}")
+
     for attempt, portal in enumerate(portals_ready, 1):
         try:
             solved = solve_captcha_bytes(portal.captcha_bytes)
@@ -903,6 +908,27 @@ def fetch_portal_data(username: str, password: str) -> Dict[str, Any]:
         except Exception as e:
             print(f"[{netid}] [PORTAL] Attempt {attempt} error: {e}")
             continue
+
+    # If first attempts failed with wrong captcha, try one fresh attempt
+    if not active_portal:
+        try:
+            fresh_p = SRMPortalSession()
+            if fresh_p.load_captcha() and fresh_p.captcha_bytes:
+                fresh_solved = solve_captcha_bytes(fresh_p.captcha_bytes)
+                if fresh_solved:
+                    print(f"[{netid}] [PORTAL-OCR] Final fresh retry predicted: '{fresh_solved}'")
+                    res = fresh_p.login_attempt(netid, password, fresh_solved)
+                    if res.get("ok"):
+                        att_html = res.get("att_html")
+                        active_portal = fresh_p
+                        print(f"[{netid}] [PORTAL] Login succeeded on fresh retry!")
+                    else:
+                        reason = res.get("reason", "")
+                        if reason in ("invalid_credentials", "account_locked"):
+                            msg = res.get("message", "Invalid Student Portal credentials")
+                            return {"success": False, "error": msg, "reason": reason}
+        except Exception as fe:
+            print(f"[{netid}] Final fresh retry error: {fe}")
 
     if not active_portal or not att_html:
         return {"success": False, "error": "Could not authenticate with SRM Student Portal"}

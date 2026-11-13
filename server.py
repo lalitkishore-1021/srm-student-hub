@@ -18,17 +18,6 @@ import time
 
 # --- ANTI-SCRAPING PROTECTIONS ---
 API_SECRET_KEY = os.environ.get("API_SECRET_KEY", "srm-hub-protected-x9f2")
-# OWNER LOCK: Set ALLOWED_NET_ID env var to your NetID to restrict syncing to only yourself
-# e.g. ALLOWED_NET_ID=sg8215  (case-insensitive, without @srmist.edu.in)
-_ALLOWED_NET_ID_RAW = os.environ.get("ALLOWED_NET_ID", "").strip().lower()
-ALLOWED_NET_ID = _ALLOWED_NET_ID_RAW.split("@")[0] if _ALLOWED_NET_ID_RAW else None
-
-def is_allowed_user(reg_no_or_net_id: str) -> bool:
-    """Returns True if ALLOWED_NET_ID is not set (open) or if the user matches."""
-    if not ALLOWED_NET_ID:
-        return True  # No restriction set, anyone can use
-    clean = (reg_no_or_net_id or "").strip().lower().split("@")[0]
-    return clean == ALLOWED_NET_ID
 ip_rate_limits = defaultdict(list)
 MAX_LOGIN_ATTEMPTS = 30
 RATE_LIMIT_WINDOW = 60 # seconds
@@ -553,20 +542,34 @@ def get_portal_data_with_fallback(net_id, portal_pwd):
     if not clean_id or not portal_pwd:
         return {'success': False, 'error': 'Missing Student Portal credentials'}
 
-    # Auto-normalize Date of Birth format if entered with separators or unpadded digits (e.g. 5-8-2004 -> 05082004)
-    import re
-    m_dob = re.match(r'^(\d{1,2})[-/.](\d{1,2})[-/.](\d{4})$', portal_pwd)
-    if m_dob:
-        day, month, year = m_dob.groups()
-        portal_pwd = f"{int(day):02d}{int(month):02d}{year}"
-
-    # Catch accidental Register Number entered instead of NetID
+    # Catch accidental Register Number entered instead of NetID and try auto-resolving
     if clean_id.startswith('ra') and len(clean_id) > 8 and any(c.isdigit() for c in clean_id[2:]):
-        return {
-            'success': False,
-            'error': 'SRM Student Portal requires your NetID (e.g. bl9209), not your Register Number (RA...).',
-            'reason': 'invalid_netid'
-        }
+        try:
+            conn = get_db()
+            if conn:
+                cur = conn.cursor()
+                if DATABASE_URL:
+                    cur.execute("SELECT net_id FROM students WHERE UPPER(register_no) = %s LIMIT 1", (clean_id.upper(),))
+                else:
+                    cur.execute("SELECT net_id FROM students WHERE UPPER(register_no) = ? LIMIT 1", (clean_id.upper(),))
+                row = cur.fetchone()
+                cur.close()
+                conn.close()
+                if row and row[0]:
+                    print(f"Auto-resolved Register No {clean_id} -> NetID {row[0]}")
+                    clean_id = str(row[0]).strip().lower()
+                else:
+                    return {
+                        'success': False,
+                        'error': 'SRM Student Portal requires your NetID (e.g. bl9209), not your Register Number (RA...).',
+                        'reason': 'invalid_netid'
+                    }
+        except Exception:
+            return {
+                'success': False,
+                'error': 'SRM Student Portal requires your NetID (e.g. bl9209), not your Register Number (RA...).',
+                'reason': 'invalid_netid'
+            }
 
     # 1. Primary: Direct sp.srmist.edu.in scraper (fast, fresh live university data)
     p_res = None
@@ -686,11 +689,6 @@ def start_session():
         client_ip = client_ip.split(',')[0].strip()
     if is_rate_limited(client_ip):
         return jsonify({'success': False, 'error': 'Too many requests. Please try again later.'}), 429
-
-    # Owner whitelist check
-    req_reg = (data.get('regNo') or '').strip()
-    if not is_allowed_user(req_reg):
-        return jsonify({'success': False, 'error': 'This app is restricted to its owner only. Contact the owner for access.'}), 403
 
     sync_id = str(uuid.uuid4())
     sync_jobs[sync_id] = {'status': 'processing', 'timestamp': time.time()}
@@ -955,10 +953,6 @@ def portal_sync():
 
     if not net_id or not portal_pwd:
         return jsonify({'success': False, 'error': 'Please enter your SRM Student Portal Password.'}), 400
-
-    # Owner whitelist check
-    if not is_allowed_user(net_id):
-        return jsonify({'success': False, 'error': 'This app is restricted to its owner only. Contact the owner for access.'}), 403
 
     try:
         p_res = get_portal_data_with_fallback(net_id, portal_pwd)
