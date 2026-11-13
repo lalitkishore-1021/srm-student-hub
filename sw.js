@@ -1,5 +1,5 @@
 // Change this version number every time you want to force phones to update!
-const CACHE_NAME = 'srm-hub-v63-background-stream-fix';
+const CACHE_NAME = 'srm-hub-v65-no-class-reminders';
 
 const ASSETS_TO_CACHE = [
     '/',
@@ -208,52 +208,9 @@ async function checkAndTriggerBackgroundNotifications() {
     const minutes = now.getMinutes();
     const timeFloat = hours + (minutes / 60);
 
-    // 1. Check cached timetable data for upcoming classes
-    try {
-        const cache = await caches.open('srm-offline-data');
-        const cachedRes = await cache.match('/offline-schedule-data.json');
-        if (cachedRes) {
-            const data = await cachedRes.json();
-            const tt = data.timetable || {};
-            const currentDayNum = (now.getDay() || 7).toString();
-            const classes = tt[currentDayNum] || [];
-            const nowMins = hours * 60 + minutes;
+    // Class timetable notifications removed per user request
 
-            classes.forEach(c => {
-                if (!c.time && !c.time_from) return;
-                const startTimeStr = c.time_from || (c.time.split('-')[0] || '').trim();
-                const parts = startTimeStr.split(':');
-                if (parts.length >= 2) {
-                    let ch = parseInt(parts[0]);
-                    const cm = parseInt(parts[1]);
-                    // If times are in 12-hour format like 01:25 PM
-                    if (ch < 8 && ch >= 1) ch += 12;
-                    const classMins = ch * 60 + cm;
-                    const diff = classMins - nowMins;
-
-                    // Trigger notification 15 mins before class
-                    if (diff >= 5 && diff <= 18) {
-                        self.registration.showNotification(`Class in ${diff}m: ${c.subject || c.code}`, {
-                            body: `Room ${c.room || 'TBA'} • ${startTimeStr} - ${c.faculty || 'SRM Faculty'}`,
-                            icon: '/images/app-icon.svg',
-                            badge: '/images/app-icon.svg',
-                            sound: '/audio/srm-notification.wav',
-                            silent: false,
-                            tag: 'class-alert-' + (c.code || startTimeStr),
-                            renotify: true,
-                            vibrate: [120, 80, 120, 80, 240],
-                            data: { url: '/#timetable-view' }
-                        });
-                        broadcastSoundToClients();
-                    }
-                }
-            });
-        }
-    } catch(e) {
-        console.warn('Background TT check error:', e);
-    }
-
-    // 2. Mess timings notification
+    // 1. Mess timings notification
     if (timeFloat >= 7.3 && timeFloat < 7.7) {
         self.registration.showNotification("Breakfast Time - SRM Mess", {
             body: "Breakfast is being served right now in the mess.",

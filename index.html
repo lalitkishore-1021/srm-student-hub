@@ -15131,45 +15131,8 @@ function checkAndShowHolidayBanner(viewId) {
         // CSS moved up to style block
 
         /* ================= PREMIUM ANIMATIONS ================= */
-        // ================= TIMETABLE PUSH NOTIFICATIONS =================
-        let notificationInterval = null;
-        function setupTimetableNotifications() {
-            if (!("Notification" in window)) return;
-            if (Notification.permission === "default") {
-                Notification.requestPermission();
-            }
-            if (notificationInterval) clearInterval(notificationInterval);
-            
-            notificationInterval = setInterval(() => {
-                if (Notification.permission !== "granted") return;
-                const ttDict = JSON.parse(localStorage.getItem('squadTimetable') || '{}');
-                const now = new Date();
-                const currentDayNum = now.getDay() || 7; 
-                const classes = ttDict[currentDayNum.toString()] || [];
-                
-                const nowMins = now.getHours() * 60 + now.getMinutes();
-                
-                classes.forEach(c => {
-                    if (!c.startTime) return;
-                    const parts = c.startTime.split(':');
-                    if (parts.length < 2) return;
-                    const startMins = parseInt(parts[0]) * 60 + parseInt(parts[1]);
-                    // Check if class is exactly 10 mins from now
-                    if (startMins - nowMins === 10) {
-                        const notifiedKey = `notified_${now.toDateString()}_${c.courseCode}`;
-                        if (!localStorage.getItem(notifiedKey)) {
-                            new Notification("Class in 10 mins! ", {
-                                body: `${c.subject} - ${c.roomNo}`,
-                                icon: "/images/app-icon.svg"
-                            });
-                            localStorage.setItem(notifiedKey, "true");
-                        }
-                    }
-                });
-            }, 60000);
-        }
-        
-        setTimeout(setupTimetableNotifications, 5000);
+        // ================= TIMETABLE PUSH NOTIFICATIONS (DISABLED) =================
+        function setupTimetableNotifications() {}
 
         // ================= SPOTTED AT SRM =================
         async function loadSpottedFeed() {

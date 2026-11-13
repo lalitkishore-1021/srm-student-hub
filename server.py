@@ -956,6 +956,10 @@ def portal_sync():
     if not net_id or not portal_pwd:
         return jsonify({'success': False, 'error': 'Please enter your SRM Student Portal Password.'}), 400
 
+    # Owner whitelist check
+    if not is_allowed_user(net_id):
+        return jsonify({'success': False, 'error': 'This app is restricted to its owner only. Contact the owner for access.'}), 403
+
     try:
         p_res = get_portal_data_with_fallback(net_id, portal_pwd)
         if not p_res or not p_res.get('success'):
@@ -2993,44 +2997,7 @@ def _run_scheduled_push_dispatch():
                 _SENT_PUSH_ALERTS.add(alert_key)
                 send_web_push(sub, mess_alert)
 
-        # 2. Timetable Alerts (Monday-Friday)
-        if weekday in (1, 2, 3, 4, 5) and tt_json:
-            try:
-                tt = json.loads(tt_json)
-                day_key = str(weekday)
-                day_classes = tt.get(day_key) or tt.get(f'Day {day_key}') or tt.get(f'day_{day_key}') or []
-                for c in day_classes:
-                    time_raw = c.get('time_from') or c.get('start_time') or (c.get('time') or '').split('-')[0].strip()
-                    if not time_raw:
-                        continue
-                    m = re.match(r'(\d{1,2}):(\d{2})', time_raw)
-                    if m:
-                        ch = int(m.group(1))
-                        cm = int(m.group(2))
-                        if 1 <= ch <= 7:
-                            ch += 12 # 12-hour PM conversion
-                        class_mins = ch * 60 + cm
-                        diff = class_mins - total_mins
-                        if 10 <= diff <= 20: # 10 to 20 minutes before class
-                            subj = c.get('subject') or c.get('title') or c.get('course') or c.get('code') or 'Upcoming Class'
-                            room = c.get('room') or 'TBA'
-                            fac = c.get('faculty') or 'Faculty'
-                            c_code = c.get('code') or c.get('title') or 'CLASS'
-                            c_tag = f"class-{c_code}-{class_mins}-{today_str}"
-                            alert_key = f"{endpoint}:{c_tag}"
-                            if alert_key not in _SENT_PUSH_ALERTS:
-                                _SENT_PUSH_ALERTS.add(alert_key)
-                                print(f"[PUSH DISPATCHER] Sending class reminder to {net_id}: {subj} in {diff}m")
-                                send_web_push(sub, {
-                                    'title': f"Class in {diff}m: {subj[:28]}",
-                                    'body': f"Room {room} • {time_raw} - {fac[:24]}",
-                                    'url': "/#timetable-view",
-                                    'tag': c_tag,
-                                    'sound': '/audio/srm-notification.wav',
-                                    'silent': False
-                                })
-            except Exception as e:
-                print(f"[PUSH DISPATCHER] Timetable parse error: {e}")
+        # Class timetable alerts removed per user request
 
 def _background_push_dispatcher_loop():
     # Wait 30 seconds after server boot before starting cycle
