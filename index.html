@@ -2397,9 +2397,10 @@
             background-image: linear-gradient(rgba(245,158,11,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(245,158,11,0.03) 1px, transparent 1px);
             background-size: 40px 40px;
         }
-        .orb-1, .orb-2 { position: fixed; border-radius: 50%; pointer-events: none; z-index: 0; filter: blur(50px); }
-        .orb-1 { width: 400px; height: 400px; background: radial-gradient(circle, rgba(245,158,11,0.15), transparent 70%); top: 10%; left: 5%; animation: floatOrb 12s ease-in-out infinite; }
-        .orb-2 { width: 450px; height: 450px; background: radial-gradient(circle, rgba(138,43,226,0.25), transparent 70%); bottom: 10%; right: 5%; animation: floatOrb 15s ease-in-out infinite reverse; }
+        .orb-1, .orb-2, .orb-3 { position: fixed; border-radius: 50%; pointer-events: none; z-index: 0; filter: blur(65px); }
+        .orb-1 { width: 440px; height: 440px; background: radial-gradient(circle, rgba(245,158,11,0.14), transparent 70%); top: 10%; left: 5%; animation: floatOrb 12s ease-in-out infinite; }
+        .orb-2 { width: 500px; height: 500px; background: radial-gradient(circle, rgba(138,43,226,0.25), transparent 70%); bottom: 12%; right: 5%; animation: floatOrb 15s ease-in-out infinite reverse; }
+        .orb-3 { width: 400px; height: 400px; background: radial-gradient(circle, rgba(138,43,226,0.20), transparent 70%); top: 48%; left: 32%; animation: floatOrb 18s ease-in-out infinite alternate; }
         @keyframes floatOrb { 0%, 100% { transform: translate(0,0) scale(1); } 50% { transform: translate(80px, -120px) scale(1.15); } }
         
         
@@ -2666,21 +2667,23 @@
             position: absolute;
             top: -80px;
             right: -60px;
-            width: 380px;
-            height: 380px;
-            background: radial-gradient(circle, rgba(255, 255, 255, 0.05) 0%, rgba(140, 140, 160, 0.04) 50%, transparent 70%);
+            width: 420px;
+            height: 420px;
+            background: radial-gradient(circle, rgba(138, 43, 226, 0.22) 0%, rgba(138, 43, 226, 0.08) 50%, transparent 70%);
             border-radius: 50%;
-            filter: blur(50px);
+            filter: blur(55px);
+            animation: floatOrb 14s ease-in-out infinite alternate;
         }
         .levyra-halo-2 {
             position: absolute;
             top: 360px;
             left: -80px;
-            width: 320px;
-            height: 320px;
-            background: radial-gradient(circle, rgba(140, 140, 160, 0.04) 0%, rgba(255, 255, 255, 0.02) 50%, transparent 70%);
+            width: 380px;
+            height: 380px;
+            background: radial-gradient(circle, rgba(138, 43, 226, 0.18) 0%, rgba(138, 43, 226, 0.05) 50%, transparent 70%);
             border-radius: 50%;
-            filter: blur(60px);
+            filter: blur(65px);
+            animation: floatOrb 16s ease-in-out infinite alternate-reverse;
         }
         .levyra-ambient-wave {
             position: absolute;
@@ -3447,21 +3450,21 @@
             display: none !important;
         }
         .levyra-bottom-dock {
-            position: fixed;
-            bottom: calc(12px + env(safe-area-inset-bottom, 0px));
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 2100;
+            position: fixed !important;
+            bottom: calc(14px + env(safe-area-inset-bottom, 0px)) !important;
+            left: 50% !important;
+            transform: translateX(-50%) !important;
+            z-index: 2100 !important;
             display: none !important;
             align-items: center;
-            background: rgba(22, 22, 28, 0.82) !important;
-            backdrop-filter: blur(50px) saturate(200%) !important;
-            -webkit-backdrop-filter: blur(50px) saturate(200%) !important;
-            border: 1px solid rgba(255, 255, 255, 0.14) !important;
+            background: rgba(22, 22, 28, 0.75) !important;
+            backdrop-filter: blur(40px) saturate(200%) !important;
+            -webkit-backdrop-filter: blur(40px) saturate(200%) !important;
+            border: 1px solid rgba(255, 255, 255, 0.18) !important;
             border-radius: 9999px !important;
             padding: 6px 10px;
             gap: 6px;
-            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.18) !important;
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.22) !important;
         }
         body.in-music-lounge .levyra-bottom-dock {
             display: flex !important;
@@ -3917,10 +3920,10 @@
             width: calc(100% - 24px) !important;
             max-width: 580px !important;
             height: 64px;
-            background: rgba(22, 24, 36, 0.84) !important;
-            backdrop-filter: blur(40px) saturate(200%) !important;
-            -webkit-backdrop-filter: blur(40px) saturate(200%) !important;
-            border: 1px solid rgba(255, 255, 255, 0.14) !important;
+            background: rgba(22, 24, 36, 0.65) !important;
+            backdrop-filter: blur(40px) saturate(210%) !important;
+            -webkit-backdrop-filter: blur(40px) saturate(210%) !important;
+            border: 1px solid rgba(255, 255, 255, 0.18) !important;
             border-radius: 20px !important;
             display: flex;
             align-items: center;
@@ -3929,7 +3932,7 @@
             z-index: 2150;
             transition: bottom 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
             cursor: pointer;
-            box-shadow: 0 14px 40px rgba(0, 0, 0, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.18) !important;
+            box-shadow: 0 14px 40px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.25) !important;
             overflow: hidden;
         }
         .music-player-bar.active {
@@ -4032,19 +4035,20 @@
             width: 100%;
             height: 100%;
             z-index: -1;
-            background: linear-gradient(180deg, rgba(8, 9, 13, 0.2) 0%, rgba(8, 9, 13, 0.5) 100%);
+            background: linear-gradient(180deg, rgba(0, 0, 0, 0.08) 0%, rgba(0, 0, 0, 0.28) 100%);
+            pointer-events: none;
         }
         .fs-glass-panel {
             width: calc(100% - 10px);
             box-sizing: border-box;
             max-width: 500px;
-            background: rgba(20, 22, 32, 0.45) !important;
-            backdrop-filter: blur(55px) saturate(220%) brightness(1.08) !important;
-            -webkit-backdrop-filter: blur(55px) saturate(220%) brightness(1.08) !important;
-            border: 1px solid rgba(255, 255, 255, 0.18) !important;
+            background: rgba(255, 255, 255, 0.09) !important;
+            backdrop-filter: blur(45px) saturate(220%) brightness(1.1) !important;
+            -webkit-backdrop-filter: blur(45px) saturate(220%) brightness(1.1) !important;
+            border: 1px solid rgba(255, 255, 255, 0.22) !important;
             border-radius: 28px !important;
             padding: 24px 20px 20px 20px;
-            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.35);
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -4851,6 +4855,13 @@
         </div>
     </div>
 
+    <!-- Global Ambient Levitating Orbs (Violet & Amber) -->
+    <div id="global-ambient-orbs" style="position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden;">
+        <div class="orb-1"></div>
+        <div class="orb-2"></div>
+        <div class="orb-3"></div>
+    </div>
+
     <div id="main-content">
         <div style="display: flex; align-items: center; gap: 12px; cursor: pointer; user-select: none; margin-bottom: 20px;" onclick="document.querySelector('.nav-item').click();">
             <img src="images/app-icon.svg" style="width: 38px; height: 38px; border-radius: 10px; box-shadow: 0 4px 12px rgba(255,170,0,0.25);">
@@ -5623,26 +5634,6 @@
                     <div id="downloads-list" style="padding-bottom: 40px;"></div>
                 </div>
             </div>
-
-            <!-- LEVYRA FLOATING BOTTOM DOCK -->
-            <div id="levyra-bottom-dock" class="levyra-bottom-dock">
-                <button type="button" id="levyra-dock-home" class="levyra-dock-item active" onclick="switchLevyraDock('home')">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
-                    <span>Home</span>
-                </button>
-                <button type="button" id="levyra-dock-explore" class="levyra-dock-item" onclick="switchLevyraDock('explore')">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>
-                    <span>Explore</span>
-                </button>
-                <button type="button" id="levyra-dock-search" class="levyra-dock-item" onclick="switchLevyraDock('search')">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                    <span>Search</span>
-                </button>
-                <button type="button" id="levyra-dock-library" class="levyra-dock-item" onclick="switchLevyraDock('library')">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
-                    <span>Library</span>
-                </button>
-            </div>
         </div>
         <div id="events-view" class="app-view">
             <div class="view-header">
@@ -6237,6 +6228,26 @@
                 <p id="music-status" style="font-size: 0.85rem; font-weight: bold; text-align: center; min-height: 20px; color: rgba(255,255,255,0.7); margin-top: 10px;"></p>
             </div>
         </div>
+    </div>
+
+    <!-- LEVYRA FLOATING BOTTOM DOCK -->
+    <div id="levyra-bottom-dock" class="levyra-bottom-dock">
+        <button type="button" id="levyra-dock-home" class="levyra-dock-item active" onclick="switchLevyraDock('home')">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+            <span>Home</span>
+        </button>
+        <button type="button" id="levyra-dock-explore" class="levyra-dock-item" onclick="switchLevyraDock('explore')">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>
+            <span>Explore</span>
+        </button>
+        <button type="button" id="levyra-dock-search" class="levyra-dock-item" onclick="switchLevyraDock('search')">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            <span>Search</span>
+        </button>
+        <button type="button" id="levyra-dock-library" class="levyra-dock-item" onclick="switchLevyraDock('library')">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+            <span>Library</span>
+        </button>
     </div>
 
     <!-- MUSIC PLAYER BAR -->
