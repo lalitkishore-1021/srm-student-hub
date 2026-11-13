@@ -3307,6 +3307,469 @@
         .music-artist { color: var(--levyra-text-sub); font-size: 0.75rem; margin: 0; font-weight: 500; }
         .music-play-btn { background: var(--levyra-cyan); color: #08090D; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: none; cursor: pointer; transition: all 0.2s; flex-shrink: 0; box-shadow: 0 4px 12px var(--levyra-cyan-glow); }
 
+        /* Levyra Authentic Floating Bottom Dock */
+        body.in-music-lounge .app-nav {
+            display: none !important;
+        }
+        .levyra-bottom-dock {
+            position: fixed;
+            bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 2500;
+            display: none;
+            align-items: center;
+            background: rgba(14, 16, 22, 0.94);
+            backdrop-filter: blur(28px) saturate(180%);
+            -webkit-backdrop-filter: blur(28px) saturate(180%);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 9999px;
+            padding: 6px 10px;
+            gap: 6px;
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.75), 0 0 20px rgba(0, 229, 255, 0.15);
+        }
+        body.in-music-lounge .levyra-bottom-dock {
+            display: flex;
+        }
+        .levyra-dock-item {
+            background: transparent;
+            border: 1px solid transparent;
+            color: var(--levyra-text-sub);
+            padding: 8px 16px;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            cursor: pointer;
+            transition: all 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
+            user-select: none;
+            text-decoration: none;
+        }
+        .levyra-dock-item:hover {
+            color: #fff;
+            background: rgba(255, 255, 255, 0.05);
+        }
+        .levyra-dock-item.active {
+            background: rgba(0, 229, 255, 0.15);
+            border-color: rgba(0, 229, 255, 0.38);
+            color: var(--levyra-cyan);
+            font-weight: 800;
+            box-shadow: 0 4px 16px var(--levyra-cyan-glow);
+        }
+        .levyra-dock-item svg {
+            flex-shrink: 0;
+            transition: transform 0.2s ease;
+        }
+        .levyra-dock-item.active svg {
+            transform: scale(1.08);
+        }
+
+        /* Levyra Orbit Shelf */
+        .levyra-orbit-shelf {
+            padding: 0 18px 16px 18px;
+            position: relative;
+            z-index: 2;
+        }
+        .levyra-orbit-row {
+            display: flex;
+            gap: 16px;
+            overflow-x: auto;
+            scroll-behavior: smooth;
+            padding: 6px 2px 10px 2px;
+        }
+        .levyra-orbit-row::-webkit-scrollbar { display: none; }
+        .levyra-orbit-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 7px;
+            width: 74px;
+            flex-shrink: 0;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+        .levyra-orbit-card:hover {
+            transform: translateY(-3px);
+        }
+        .levyra-orbit-avatar-wrap {
+            position: relative;
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            padding: 2px;
+            background: linear-gradient(135deg, rgba(0, 229, 255, 0.6), rgba(138, 43, 226, 0.6));
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.5);
+        }
+        .levyra-orbit-avatar {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
+            display: block;
+            background: var(--levyra-canvas-mid);
+        }
+        .levyra-orbit-name {
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: #fff;
+            text-align: center;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            width: 100%;
+        }
+
+        /* Levyra Top 50 Podium Cards (19_top_50.webp) */
+        .levyra-podium-container {
+            padding: 0 16px 20px 16px;
+            position: relative;
+            z-index: 2;
+        }
+        .levyra-podium-cards {
+            display: grid;
+            grid-template-columns: 1fr 1.08fr 1fr;
+            gap: 10px;
+            align-items: flex-end;
+            margin-bottom: 20px;
+        }
+        .levyra-podium-card {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--levyra-border);
+            border-radius: 20px;
+            padding: 12px 10px 14px 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+            backdrop-filter: blur(15px);
+        }
+        .levyra-podium-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--levyra-cyan);
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5);
+        }
+        .levyra-podium-card.rank-1 {
+            background: linear-gradient(180deg, rgba(255, 215, 0, 0.12) 0%, rgba(20, 22, 30, 0.8) 100%);
+            border-color: rgba(255, 215, 0, 0.4);
+            box-shadow: 0 10px 30px rgba(255, 215, 0, 0.15);
+            padding-top: 18px;
+            padding-bottom: 18px;
+        }
+        .levyra-podium-card.rank-2 {
+            background: linear-gradient(180deg, rgba(192, 192, 192, 0.1) 0%, rgba(20, 22, 30, 0.8) 100%);
+            border-color: rgba(192, 192, 192, 0.35);
+        }
+        .levyra-podium-card.rank-3 {
+            background: linear-gradient(180deg, rgba(205, 127, 50, 0.1) 0%, rgba(20, 22, 30, 0.8) 100%);
+            border-color: rgba(205, 127, 50, 0.35);
+        }
+        .levyra-podium-badge {
+            font-size: 0.72rem;
+            font-weight: 900;
+            padding: 3px 10px;
+            border-radius: 9999px;
+            margin-bottom: 8px;
+            letter-spacing: 0.5px;
+        }
+        .rank-1 .levyra-podium-badge {
+            background: #FFD700;
+            color: #08090D;
+            box-shadow: 0 2px 10px rgba(255, 215, 0, 0.5);
+        }
+        .rank-2 .levyra-podium-badge {
+            background: #C0C0C0;
+            color: #08090D;
+        }
+        .rank-3 .levyra-podium-badge {
+            background: #CD7F32;
+            color: #08090D;
+        }
+        .levyra-podium-thumb-wrap {
+            position: relative;
+            width: 72px;
+            height: 72px;
+            border-radius: 14px;
+            overflow: hidden;
+            margin-bottom: 8px;
+            box-shadow: 0 6px 16px rgba(0,0,0,0.4);
+        }
+        .rank-1 .levyra-podium-thumb-wrap {
+            width: 86px;
+            height: 86px;
+            border-radius: 16px;
+        }
+        .levyra-podium-thumb {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+        .levyra-podium-title {
+            color: #fff;
+            font-size: 0.78rem;
+            font-weight: 700;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            width: 100%;
+            margin-bottom: 2px;
+        }
+        .levyra-podium-artist {
+            color: var(--levyra-text-sub);
+            font-size: 0.68rem;
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            width: 100%;
+        }
+
+        /* Levyra Curated Collection Card (11_collections.webp) */
+        .levyra-curated-card {
+            margin: 0 16px 24px 16px;
+            background: linear-gradient(135deg, rgba(20, 22, 32, 0.95), rgba(14, 16, 24, 0.9));
+            border: 1px solid var(--levyra-border);
+            border-radius: 22px;
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            box-shadow: 0 12px 35px rgba(0, 0, 0, 0.5);
+            position: relative;
+            z-index: 2;
+        }
+        .levyra-clover-artwork {
+            width: 90px;
+            height: 90px;
+            border-radius: 16px;
+            overflow: hidden;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: 1fr 1fr;
+            gap: 2px;
+            background: rgba(255, 255, 255, 0.05);
+            flex-shrink: 0;
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+        }
+        .levyra-clover-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+        .levyra-curated-info {
+            flex: 1;
+            min-width: 0;
+        }
+        .levyra-curated-tag {
+            font-size: 0.65rem;
+            font-weight: 800;
+            color: var(--levyra-cyan);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .levyra-curated-title {
+            color: #fff;
+            font-size: 1.05rem;
+            font-weight: 800;
+            margin: 3px 0 4px 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .levyra-curated-sub {
+            color: var(--levyra-text-sub);
+            font-size: 0.74rem;
+            line-height: 1.35;
+            margin: 0 0 10px 0;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .levyra-curated-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        /* Levyra Explore 4 Expressive Squircles Grid (05_explore.webp) */
+        .levyra-squircle-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            padding: 0 16px 20px 16px;
+            position: relative;
+            z-index: 2;
+        }
+        .levyra-squircle-tile {
+            border-radius: 20px;
+            padding: 16px 14px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: all 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .levyra-squircle-tile:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+        }
+        .squircle-new {
+            background: linear-gradient(135deg, rgba(0, 229, 255, 0.16) 0%, rgba(20, 22, 30, 0.9) 100%);
+            border-color: rgba(0, 229, 255, 0.3);
+        }
+        .squircle-samples {
+            background: linear-gradient(135deg, rgba(138, 43, 226, 0.16) 0%, rgba(20, 22, 30, 0.9) 100%);
+            border-color: rgba(138, 43, 226, 0.3);
+        }
+        .squircle-moods {
+            background: linear-gradient(135deg, rgba(255, 64, 129, 0.16) 0%, rgba(20, 22, 30, 0.9) 100%);
+            border-color: rgba(255, 64, 129, 0.3);
+        }
+        .squircle-campus {
+            background: linear-gradient(135deg, rgba(255, 170, 0, 0.16) 0%, rgba(20, 22, 30, 0.9) 100%);
+            border-color: rgba(255, 170, 0, 0.3);
+        }
+        .levyra-squircle-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            background: rgba(255, 255, 255, 0.08);
+        }
+        .levyra-squircle-title {
+            color: #fff;
+            font-size: 0.82rem;
+            font-weight: 800;
+            line-height: 1.25;
+        }
+        .levyra-squircle-sub {
+            color: var(--levyra-text-sub);
+            font-size: 0.68rem;
+            font-weight: 500;
+            margin-top: 2px;
+        }
+
+        /* Fullscreen Player Authentic Levyra Details (player.png) */
+        .fs-pill-toggle {
+            display: flex;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid var(--levyra-border);
+            border-radius: 9999px;
+            padding: 3px 4px;
+            gap: 2px;
+        }
+        .fs-pill-option {
+            background: transparent;
+            border: none;
+            color: var(--levyra-text-sub);
+            font-size: 0.72rem;
+            font-weight: 700;
+            padding: 5px 12px;
+            border-radius: 9999px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .fs-pill-option.active {
+            background: var(--levyra-cyan);
+            color: #08090D;
+            box-shadow: 0 2px 10px var(--levyra-cyan-glow);
+        }
+        .fs-artist-identity {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+        .fs-artist-avatar-cluster {
+            display: flex;
+            align-items: center;
+        }
+        .fs-artist-avatar-circle {
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            border: 2px solid #08090D;
+            object-fit: cover;
+            margin-left: -8px;
+        }
+        .fs-artist-avatar-circle:first-child {
+            margin-left: 0;
+        }
+        .fs-written-by {
+            font-size: 0.68rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: var(--levyra-text-sub);
+        }
+        .fs-stats-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 12px 0 16px 0;
+            width: 100%;
+        }
+        .fs-stat-pill {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid var(--levyra-border);
+            border-radius: 9999px;
+            padding: 6px 14px;
+            font-size: 0.74rem;
+            font-weight: 700;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .fs-stat-pill:hover, .fs-stat-pill.active {
+            background: rgba(0, 229, 255, 0.15);
+            border-color: var(--levyra-cyan);
+            color: var(--levyra-cyan);
+        }
+        .fs-action-dock {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            width: 100%;
+            padding-top: 14px;
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+            margin-top: 14px;
+        }
+        .fs-dock-btn {
+            background: none;
+            border: none;
+            color: var(--levyra-text-sub);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            font-size: 0.65rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .fs-dock-btn:hover, .fs-dock-btn.active {
+            color: var(--levyra-cyan);
+        }
+
         /* Floating Mini Player Dock (Section 4 & 7) */
         .music-player-bar {
             position: fixed;
@@ -3335,6 +3798,9 @@
         .music-player-bar.active {
             bottom: 82px !important;
         }
+        body.in-music-lounge .music-player-bar.active {
+            bottom: calc(72px + env(safe-area-inset-bottom, 0px)) !important;
+        }
         @media (min-width: 769px) {
             .music-player-bar {
                 left: 50% !important;
@@ -3344,6 +3810,9 @@
             }
             .music-player-bar.active {
                 bottom: 24px !important;
+            }
+            body.in-music-lounge .music-player-bar.active {
+                bottom: calc(76px + env(safe-area-inset-bottom, 0px)) !important;
             }
         }
         .player-left { display: flex; align-items: center; flex: 1; min-width: 0; }
@@ -4679,7 +5148,7 @@
         </div>
 
         <div id="music-view" class="app-view">
-            <!-- Levyra Aura Ambient Halos (Section 9) -->
+            <!-- Levyra Aura Ambient Halos -->
             <div class="levyra-aura-layer">
                 <div class="levyra-halo-1"></div>
                 <div class="levyra-halo-2"></div>
@@ -4688,7 +5157,7 @@
                 </svg>
             </div>
 
-            <!-- Levyra Identity & Greeting Header Surface (Section 5) -->
+            <!-- Levyra Header Surface -->
             <div class="levyra-header">
                 <div class="levyra-header-top">
                     <div class="levyra-identity">
@@ -4699,9 +5168,9 @@
                         </div>
                     </div>
                     <div class="levyra-header-actions">
-                        <button type="button" class="levyra-nav-btn" onclick="switchNav('home-view', document.querySelector('.nav-item'))">
+                        <button type="button" class="levyra-nav-btn" onclick="exitMusicLounge()">
                             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-                            <span>Home</span>
+                            <span>SRM Hub</span>
                         </button>
                         <button type="button" class="levyra-nav-btn primary" onclick="document.getElementById('musicSubmitModal').style.display='flex';">
                             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
@@ -4709,75 +5178,22 @@
                         </button>
                     </div>
                 </div>
-
-                <!-- Instant Search Bar (Capsule) -->
-                <div class="levyra-search-wrapper" id="music-search-box">
-                    <svg class="levyra-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                    <input type="text" id="music-search-input" class="levyra-search-input" placeholder="Search songs, artists, albums..." oninput="handleMusicSearchInput(this.value)" onfocus="handleMusicSearchFocus()" onkeydown="if(event.key==='Enter') executeMusicSearch(this.value, true)">
-                    <button id="music-search-clear-btn" class="levyra-clear-btn" onclick="clearMusicSearch()" style="display:none;" title="Clear">✕</button>
-                </div>
-
-                <!-- Search History Panel -->
-                <div id="music-search-history-panel" style="display:none; margin-top:10px; background: rgba(14, 16, 22, 0.96); backdrop-filter:blur(20px); border: 1px solid var(--levyra-border); border-radius: 18px; padding: 12px 14px; box-shadow: 0 15px 35px rgba(0,0,0,0.5);">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-                        <span style="font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:1px; color:var(--levyra-text-sub);">Recent Searches</span>
-                        <button type="button" onclick="clearSearchHistory()" style="background:none; border:none; color:var(--levyra-text-sub); font-size:11px; font-weight:700; cursor:pointer;" onmouseover="this.style.color='var(--levyra-pink)'" onmouseout="this.style.color='var(--levyra-text-sub)'">Clear All</button>
-                    </div>
-                    <div id="music-search-history-chips" style="display:flex; flex-wrap:wrap; gap:8px;"></div>
-                </div>
-
-                <!-- Live Search Results Container -->
-                <div id="music-search-results-panel" style="display:none; margin-top:12px;">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                        <span id="music-search-results-title" style="font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:1px; color:var(--levyra-cyan);">Top Results</span>
-                        <button type="button" onclick="closeSearchResults()" style="background:none; border:none; color:var(--levyra-text-sub); font-size:11px; font-weight:700; cursor:pointer;">Close</button>
-                    </div>
-                    <div id="music-search-results-list"></div>
-                </div>
             </div>
 
-            <!-- Levyra Mood Selector Chips (Section 2 & 7) -->
-            <div class="levyra-mood-strip no-scrollbar">
-                <button type="button" class="levyra-chip active" onclick="filterMusicGenre('trending', this)">Top Trending</button>
-                <button type="button" class="levyra-chip" onclick="filterMusicGenre('energize', this)">Energize</button>
-                <button type="button" class="levyra-chip" onclick="filterMusicGenre('chill', this)">Chill & Relax</button>
-                <button type="button" class="levyra-chip" onclick="filterMusicGenre('focus', this)">Focus</button>
-                <button type="button" class="levyra-chip" onclick="filterMusicGenre('party', this)">Party</button>
-                <button type="button" class="levyra-chip" onclick="filterMusicGenre('bollywood', this)">Bollywood</button>
-                <button type="button" class="levyra-chip" onclick="filterMusicGenre('campus', this)">Campus Hub</button>
-            </div>
-
-            <!-- Levyra Segmented Tabs -->
-            <div class="levyra-tabs-strip no-scrollbar">
-                <button onclick="switchMusicTab('explore')" id="music-tab-explore" class="levyra-tab-btn active">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>
-                    <span>Discover</span>
-                </button>
-                <button onclick="switchMusicTab('recent')" id="music-tab-recent" class="levyra-tab-btn">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-                    <span>Recently Played</span>
-                </button>
-                <button onclick="switchMusicTab('playlists')" id="music-tab-playlists" class="levyra-tab-btn">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>
-                    <span>Playlists</span>
-                </button>
-                <button onclick="switchMusicTab('downloads')" id="music-tab-downloads" class="levyra-tab-btn">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                    <span>Downloads</span>
-                </button>
-            </div>
-
-            <!-- SECTION 1: Discover & Shelves (Explore) -->
-            <div id="music-explore-section">
-                <!-- Editorial Spotlight Hero Card (Hero 22dp) -->
+            <!-- PAGE 1: HOME (My soundtrack, Your Orbit, Top 50 Podium & Chart, Curated For You) -->
+            <div id="levyra-page-home" class="levyra-page" style="display:block;">
+                <!-- Cinematic "My soundtrack" Hero Card -->
                 <div class="levyra-hero-card" id="levyra-hero-card">
                     <img id="levyra-hero-img" class="levyra-hero-bg" src="images/app-icon.svg" alt="Featured">
                     <div class="levyra-hero-overlay"></div>
                     <div class="levyra-hero-content">
                         <div class="levyra-hero-meta">
-                            <span class="levyra-hero-tag">EDITORIAL SPOTLIGHT</span>
-                            <h2 id="levyra-hero-title" class="levyra-hero-title">Loading Featured...</h2>
-                            <p id="levyra-hero-artist" class="levyra-hero-artist">Levyra DeepSound</p>
+                            <div style="display:inline-flex; align-items:center; gap:6px; background:rgba(0, 229, 255, 0.12); border:1px solid rgba(0, 229, 255, 0.3); border-radius:9999px; padding:3px 10px; margin-bottom:8px;">
+                                <div style="width:7px; height:7px; border-radius:50%; background:var(--levyra-cyan); box-shadow:0 0 8px var(--levyra-cyan);"></div>
+                                <span id="levyra-hero-radio-badge" style="font-size:0.65rem; font-weight:800; color:var(--levyra-cyan); letter-spacing:1px; text-transform:uppercase;">RADIO STATION</span>
+                            </div>
+                            <h2 id="levyra-hero-title" class="levyra-hero-title">My soundtrack</h2>
+                            <p id="levyra-hero-artist" class="levyra-hero-artist">Based on your taste &amp; university trending</p>
                         </div>
                         <div class="levyra-hero-actions">
                             <button type="button" id="levyra-hero-add-btn" class="levyra-hero-add-btn" title="Add to Playlist">
@@ -4790,44 +5206,257 @@
                     </div>
                 </div>
 
-                <!-- Shelf 1: Quick Picks (Horizontal Shelf) -->
-                <div id="levyra-quick-picks-shelf" style="margin-bottom: 8px;">
-                    <div class="levyra-shelf-header">
+                <!-- Your Orbit Shelf (Horizontal Artist Rotation) -->
+                <div class="levyra-orbit-shelf" id="levyra-orbit-shelf">
+                    <div class="levyra-shelf-header" style="padding:0 0 8px 0;">
                         <div>
-                            <span class="levyra-shelf-title">Quick Picks</span>
-                            <span class="levyra-shelf-sub">Jump back in</span>
+                            <span class="levyra-shelf-title">Your Orbit</span>
+                            <span class="levyra-shelf-sub">Artists in your rotation</span>
                         </div>
                     </div>
-                    <div class="levyra-quick-picks-row no-scrollbar" id="levyra-quick-picks-list">
-                        <!-- Populated dynamically by loadTrendingMusic -->
+                    <div class="levyra-orbit-row" id="levyra-orbit-row">
+                        <!-- Populated dynamically -->
                     </div>
                 </div>
 
-                <!-- Shelf 2: Chartbusters & Trending Track Rows -->
-                <div class="levyra-shelf-header" style="padding-top: 6px;">
-                    <div>
-                        <span id="music-section-title" class="levyra-shelf-title">CHARTBUSTERS</span>
-                        <span id="music-section-count" class="levyra-shelf-sub">(50 TRACKS)</span>
+                <!-- Top 50 Charts: Podium + Numbered Rows -->
+                <div class="levyra-podium-container" id="levyra-top50-section">
+                    <div class="levyra-shelf-header" style="padding:0 0 12px 0;">
+                        <div>
+                            <span class="levyra-shelf-title">Top 50 Charts</span>
+                            <span id="music-section-count" class="levyra-shelf-sub">(50 TRACKS)</span>
+                        </div>
+                        <button id="music-play-all-btn" onclick="playAllExploreTracks()" class="levyra-nav-btn primary" style="padding: 6px 14px; font-size: 0.74rem;">
+                            <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                            <span>Play All</span>
+                        </button>
                     </div>
-                    <button id="music-play-all-btn" onclick="playAllExploreTracks()" class="levyra-nav-btn primary" style="padding: 6px 14px; font-size: 0.74rem;">
-                        <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-                        <span>Play All</span>
-                    </button>
+
+                    <!-- 3 Vertical Podium Cards -->
+                    <div class="levyra-podium-cards" id="levyra-podium-cards">
+                        <!-- Populated dynamically: Rank 2, Rank 1, Rank 3 -->
+                    </div>
+
+                    <!-- Ranked Track Rows (04, 05, 06...) -->
+                    <div id="music-all-section">
+                        <div id="music-tracks-list" style="padding-bottom: 20px;"></div>
+                    </div>
                 </div>
 
-                <div id="music-all-section">
-                    <div id="music-tracks-list" style="padding-bottom: 20px;"></div>
+                <!-- Curated For You Collection Card -->
+                <div class="levyra-curated-card" id="levyra-curated-card">
+                    <div class="levyra-clover-artwork" id="levyra-clover-artwork">
+                        <img class="levyra-clover-img" src="images/app-icon.svg" id="clover-img-1" alt="">
+                        <img class="levyra-clover-img" src="images/app-icon.svg" id="clover-img-2" alt="">
+                        <img class="levyra-clover-img" src="images/app-icon.svg" id="clover-img-3" alt="">
+                        <img class="levyra-clover-img" src="images/app-icon.svg" id="clover-img-4" alt="">
+                    </div>
+                    <div class="levyra-curated-info">
+                        <span class="levyra-curated-tag">COLLECTION</span>
+                        <h4 class="levyra-curated-title">Curated Mixes &amp; Campus Sound</h4>
+                        <p class="levyra-curated-sub">Handcrafted blend of university charts, indie releases, and energetic study tracks.</p>
+                        <div class="levyra-curated-actions">
+                            <button type="button" onclick="playAllExploreTracks()" class="levyra-nav-btn primary" style="padding: 6px 14px; font-size: 0.74rem;">
+                                <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                                <span>Play All</span>
+                            </button>
+                            <button type="button" onclick="shuffleAllExploreTracks()" class="levyra-nav-btn" style="padding: 6px 12px; font-size: 0.74rem;">
+                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg>
+                                <span>Shuffle</span>
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <!-- SECTION 2: Dedicated Recently Played View -->
-            <div id="music-recent-section" style="display:none; padding-bottom: 40px;">
+            <!-- PAGE 2: EXPLORE (4 Expressive Squircles, Fresh Currents Shelf, Mood Chips) -->
+            <div id="levyra-page-explore" class="levyra-page" style="display:none;">
                 <div class="levyra-shelf-header" style="margin-bottom: 12px;">
                     <div>
-                        <h3 style="font-size: 1.1rem; font-weight: 800; color: #fff; margin:0;">Recently Played</h3>
-                        <p style="color: var(--levyra-text-sub); font-size: 0.75rem; margin: 3px 0 0 0;">Tracks you recently listened to</p>
+                        <h3 style="font-size: 1.15rem; font-weight: 800; color: #fff; margin:0;">Explore &amp; Discover</h3>
+                        <p style="color: var(--levyra-text-sub); font-size: 0.74rem; margin: 3px 0 0 0;">Browse new sounds, samples, and campus collections</p>
                     </div>
-                    <div style="display:flex; gap:8px;">
+                </div>
+
+                <!-- 4 Expressive Squircles (05_explore.webp) -->
+                <div class="levyra-squircle-grid">
+                    <div class="levyra-squircle-tile squircle-new" onclick="filterMusicGenre('trending', null)">
+                        <div class="levyra-squircle-icon">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#00E5FF" stroke-width="2.2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                        </div>
+                        <div>
+                            <div class="levyra-squircle-title">New Releases</div>
+                            <div class="levyra-squircle-sub">Fresh this week</div>
+                        </div>
+                    </div>
+                    <div class="levyra-squircle-tile squircle-samples" onclick="filterMusicGenre('energize', null)">
+                        <div class="levyra-squircle-icon">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8A2BE2" stroke-width="2.2"><path d="M2 10v4M6 6v12M10 3v18M14 8v8M18 5v14M22 10v4"/></svg>
+                        </div>
+                        <div>
+                            <div class="levyra-squircle-title">Samples &amp; Beats</div>
+                            <div class="levyra-squircle-sub">High energy vibes</div>
+                        </div>
+                    </div>
+                    <div class="levyra-squircle-tile squircle-moods" onclick="filterMusicGenre('chill', null)">
+                        <div class="levyra-squircle-icon">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FF4081" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><path d="M8 12a4 4 0 0 1 8 0"/></svg>
+                        </div>
+                        <div>
+                            <div class="levyra-squircle-title">Moods &amp; Genres</div>
+                            <div class="levyra-squircle-sub">Chill, study &amp; focus</div>
+                        </div>
+                    </div>
+                    <div class="levyra-squircle-tile squircle-campus" onclick="filterMusicGenre('campus', null)">
+                        <div class="levyra-squircle-icon">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ffaa00" stroke-width="2.2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+                        </div>
+                        <div>
+                            <div class="levyra-squircle-title">Campus Hub</div>
+                            <div class="levyra-squircle-sub">Student creations</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Filter Pills -->
+                <div class="levyra-mood-strip no-scrollbar" style="padding-top: 4px;">
+                    <button type="button" class="levyra-chip active" onclick="filterMusicGenre('trending', this)">Top Trending</button>
+                    <button type="button" class="levyra-chip" onclick="filterMusicGenre('energize', this)">Energize</button>
+                    <button type="button" class="levyra-chip" onclick="filterMusicGenre('chill', this)">Chill &amp; Relax</button>
+                    <button type="button" class="levyra-chip" onclick="filterMusicGenre('focus', this)">Focus</button>
+                    <button type="button" class="levyra-chip" onclick="filterMusicGenre('party', this)">Party</button>
+                    <button type="button" class="levyra-chip" onclick="filterMusicGenre('bollywood', this)">Bollywood</button>
+                    <button type="button" class="levyra-chip" onclick="filterMusicGenre('campus', this)">Campus Hub</button>
+                </div>
+
+                <!-- Fresh Currents Shelf -->
+                <div id="levyra-fresh-currents-shelf" style="margin-bottom: 24px;">
+                    <div class="levyra-shelf-header">
+                        <div>
+                            <span class="levyra-shelf-title">Fresh Currents</span>
+                            <span class="levyra-shelf-sub">Discovery radar</span>
+                        </div>
+                        <button onclick="playAllExploreTracks()" class="levyra-nav-btn primary" style="padding: 6px 14px; font-size: 0.74rem;">
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                            <span>Play All</span>
+                        </button>
+                    </div>
+                    <div class="levyra-quick-picks-row no-scrollbar" id="levyra-fresh-currents-row">
+                        <!-- Populated dynamically -->
+                    </div>
+                </div>
+
+                <div id="levyra-explore-tracks-container" style="padding: 0 16px;">
+                    <!-- Track list for selected genre -->
+                    <div id="levyra-explore-tracks-list"></div>
+                </div>
+            </div>
+
+            <!-- PAGE 3: SEARCH (Capsule search, history, instant results & artist spotlight) -->
+            <div id="levyra-page-search" class="levyra-page" style="display:none; padding-bottom: 40px;">
+                <div style="padding: 0 16px 16px 16px;">
+                    <div class="levyra-search-wrapper" id="music-search-box">
+                        <svg class="levyra-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                        <input type="text" id="music-search-input" class="levyra-search-input" placeholder="Search songs, artists, albums..." oninput="handleMusicSearchInput(this.value)" onfocus="handleMusicSearchFocus()" onkeydown="if(event.key==='Enter') executeMusicSearch(this.value, true)">
+                        <button id="music-search-clear-btn" class="levyra-clear-btn" onclick="clearMusicSearch()" style="display:none;" title="Clear">✕</button>
+                    </div>
+
+                    <!-- Search History Panel -->
+                    <div id="music-search-history-panel" style="display:none; margin-top:10px; background: rgba(14, 16, 22, 0.96); backdrop-filter:blur(20px); border: 1px solid var(--levyra-border); border-radius: 18px; padding: 12px 14px; box-shadow: 0 15px 35px rgba(0,0,0,0.5);">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                            <span style="font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:1px; color:var(--levyra-text-sub);">Recent Searches</span>
+                            <button type="button" onclick="clearSearchHistory()" style="background:none; border:none; color:var(--levyra-text-sub); font-size:11px; font-weight:700; cursor:pointer;" onmouseover="this.style.color='var(--levyra-pink)'" onmouseout="this.style.color='var(--levyra-text-sub)'">Clear All</button>
+                        </div>
+                        <div id="music-search-history-chips" style="display:flex; flex-wrap:wrap; gap:8px;"></div>
+                    </div>
+
+                    <!-- Live Search Results Container -->
+                    <div id="music-search-results-panel" style="display:none; margin-top:14px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                            <span id="music-search-results-title" style="font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:1px; color:var(--levyra-cyan);">Top Results</span>
+                            <button type="button" onclick="closeSearchResults()" style="background:none; border:none; color:var(--levyra-text-sub); font-size:11px; font-weight:700; cursor:pointer;">Close</button>
+                        </div>
+                        <div id="music-search-results-list"></div>
+                    </div>
+                </div>
+
+                <!-- Artists You Listen To (10_search.webp) -->
+                <div id="levyra-search-artists-shelf">
+                    <div class="levyra-shelf-header">
+                        <div>
+                            <span class="levyra-shelf-title">Artists You Listen To</span>
+                            <span class="levyra-shelf-sub">Top charts</span>
+                        </div>
+                    </div>
+                    <div class="levyra-orbit-row" id="levyra-search-artists-row">
+                        <!-- Populated dynamically -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- PAGE 4: LIBRARY (Playlists, Recently Played, Downloads) -->
+            <div id="levyra-page-library" class="levyra-page" style="display:none; padding-bottom: 40px;">
+                <div class="levyra-shelf-header" style="margin-bottom: 12px;">
+                    <div>
+                        <h3 style="font-size: 1.15rem; font-weight: 800; color: #fff; margin:0;">Library</h3>
+                        <p style="color: var(--levyra-text-sub); font-size: 0.74rem; margin: 3px 0 0 0;">Your collections, playlists and saved songs</p>
+                    </div>
+                    <button type="button" onclick="openCreatePlaylistModal()" class="levyra-nav-btn primary" style="padding: 7px 15px; font-size: 0.76rem;">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                        <span>New Playlist</span>
+                    </button>
+                </div>
+
+                <!-- Library Tabs Strip -->
+                <div class="levyra-tabs-strip no-scrollbar">
+                    <button onclick="switchLibrarySubTab('playlists')" id="lib-tab-playlists" class="levyra-tab-btn active">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>
+                        <span>Playlists</span>
+                    </button>
+                    <button onclick="switchLibrarySubTab('recent')" id="lib-tab-recent" class="levyra-tab-btn">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                        <span>Recently Played</span>
+                    </button>
+                    <button onclick="switchLibrarySubTab('downloads')" id="lib-tab-downloads" class="levyra-tab-btn">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                        <span>Downloads</span>
+                    </button>
+                </div>
+
+                <!-- SUB-VIEW 1: Playlists Grid -->
+                <div id="music-playlists-section" style="display:block;">
+                    <div id="playlists-overview-view">
+                        <div id="music-playlists-grid" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; padding: 0 16px;"></div>
+                    </div>
+
+                    <!-- Single Playlist Detail View -->
+                    <div id="playlist-detail-view" style="display:none; padding: 0 16px;">
+                        <div id="playlist-detail-header" style="display:flex; align-items:center; gap:12px; margin-bottom: 16px; padding: 12px 0;">
+                            <button type="button" onclick="closePlaylistDetail()" class="levyra-row-action-btn" title="Back to Playlists">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                            </button>
+                            <div style="flex:1; overflow:hidden;">
+                                <h3 id="playlist-detail-title" style="font-size: 1.2rem; font-weight: 900; color: #fff; margin:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Playlist</h3>
+                                <p id="playlist-detail-count" style="color: var(--levyra-text-sub); font-size: 0.74rem; margin: 2px 0 0 0;">0 tracks</p>
+                            </div>
+                            <div style="display:flex; gap:8px;">
+                                <button type="button" id="playlist-detail-delete-btn" onclick="if(activePlaylistId) deletePlaylist(activePlaylistId)" style="display:none;" class="levyra-delete-btn" title="Delete Playlist">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                                </button>
+                                <button type="button" id="playlist-detail-play-btn" onclick="playActivePlaylist(false)" class="levyra-nav-btn primary" style="padding: 7px 14px; font-size:0.75rem;">
+                                    <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                                    <span>Play All</span>
+                                </button>
+                            </div>
+                        </div>
+                        <div id="playlist-detail-tracks-list"></div>
+                        <div id="playlist-tracks-list" style="display:none;"></div>
+                    </div>
+                </div>
+
+                <!-- SUB-VIEW 2: Recently Played -->
+                <div id="music-recent-section" style="display:none; padding: 0 16px;">
+                    <div style="display:flex; justify-content:flex-end; gap:8px; margin-bottom: 12px;">
                         <button type="button" onclick="playAllRecentlyPlayed()" class="levyra-nav-btn primary" style="padding: 6px 14px; font-size: 0.74rem;">
                             <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
                             <span>Play All</span>
@@ -4836,54 +5465,33 @@
                             <span>Clear</span>
                         </button>
                     </div>
-                </div>
-                <div id="music-recent-list"></div>
-            </div>
-
-            <!-- SECTION 3: Custom Playlists View & Manager -->
-            <div id="music-playlists-section" style="display:none; padding-bottom: 40px;">
-                <div id="playlists-overview-view">
-                    <div class="levyra-shelf-header" style="margin-bottom: 14px;">
-                        <div>
-                            <h3 style="font-size: 1.1rem; font-weight: 800; color: #fff; margin:0;">Your Playlists</h3>
-                            <p style="color: var(--levyra-text-sub); font-size: 0.75rem; margin: 3px 0 0 0;">Curated personal collections and mixes</p>
-                        </div>
-                        <button type="button" onclick="openCreatePlaylistModal()" class="levyra-nav-btn primary" style="padding: 7px 15px; font-size: 0.76rem;">
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                            <span>New Playlist</span>
-                        </button>
-                    </div>
-                    <div id="music-playlists-grid" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; padding: 0 16px;"></div>
+                    <div id="music-recent-list"></div>
                 </div>
 
-                <!-- Single Playlist Detail View (Tracks & Reordering) -->
-                <div id="playlist-detail-view" style="display:none; padding: 0 16px;">
-                    <div id="playlist-detail-header" style="display:flex; align-items:center; gap:12px; margin-bottom: 16px; padding: 12px 0;">
-                        <button type="button" onclick="closePlaylistDetail()" class="levyra-row-action-btn" title="Back to Playlists">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-                        </button>
-                        <div style="flex:1; overflow:hidden;">
-                            <h3 id="playlist-detail-title" style="font-size: 1.2rem; font-weight: 900; color: #fff; margin:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Playlist</h3>
-                            <p id="playlist-detail-count" style="color: var(--levyra-text-sub); font-size: 0.74rem; margin: 2px 0 0 0;">0 tracks</p>
-                        </div>
-                        <div style="display:flex; gap:8px;">
-                            <button type="button" id="playlist-detail-delete-btn" onclick="if(activePlaylistId) deletePlaylist(activePlaylistId)" style="display:none;" class="levyra-delete-btn" title="Delete Playlist">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-                            </button>
-                            <button type="button" id="playlist-detail-play-btn" onclick="playActivePlaylist(false)" class="levyra-nav-btn primary" style="padding: 7px 14px; font-size:0.75rem;">
-                                <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-                                <span>Play All</span>
-                            </button>
-                        </div>
-                    </div>
-                    <div id="playlist-detail-tracks-list"></div>
-                    <div id="playlist-tracks-list" style="display:none;"></div>
+                <!-- SUB-VIEW 3: Downloads -->
+                <div id="music-downloads-section" style="display:none; padding: 0 16px;">
+                    <div id="downloads-list" style="padding-bottom: 40px;"></div>
                 </div>
             </div>
 
-            <!-- SECTION 4: Downloads View -->
-            <div id="music-downloads-section" style="display:none;">
-                <div id="downloads-list" style="padding: 15px; padding-bottom: 40px;"></div>
+            <!-- LEVYRA FLOATING BOTTOM DOCK -->
+            <div id="levyra-bottom-dock" class="levyra-bottom-dock">
+                <button type="button" id="levyra-dock-home" class="levyra-dock-item active" onclick="switchLevyraDock('home')">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+                    <span>Home</span>
+                </button>
+                <button type="button" id="levyra-dock-explore" class="levyra-dock-item" onclick="switchLevyraDock('explore')">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>
+                    <span>Explore</span>
+                </button>
+                <button type="button" id="levyra-dock-search" class="levyra-dock-item" onclick="switchLevyraDock('search')">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                    <span>Search</span>
+                </button>
+                <button type="button" id="levyra-dock-library" class="levyra-dock-item" onclick="switchLevyraDock('library')">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+                    <span>Library</span>
+                </button>
             </div>
         </div>
         <div id="events-view" class="app-view">
@@ -5502,56 +6110,100 @@
         
         <div class="fs-player-container">
             <div class="fs-header" style="display:flex; justify-content:space-between; align-items:center;">
-                <button class="fs-close" onclick="closeFullscreenPlayer()"><svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg></button>
-                <div style="display:flex; align-items:center; gap:8px;">
-                    <span style="font-family:'Montserrat',sans-serif; font-weight:700; font-size:0.82rem; letter-spacing:1.5px; text-transform:uppercase;">Now Playing</span>
-                    <button id="fs-canvas-toggle-btn" onclick="toggleCanvasMode()" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(0,229,255,0.3); border-radius: 14px; padding: 3px 8px; font-size: 10px; font-weight: 700; color: #00E5FF; cursor: pointer; display: flex; align-items: center; gap: 4px; font-family:'Montserrat',sans-serif;" title="Toggle Video Background">
-                        <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
-                        <span id="fs-canvas-toggle-text">Video</span>
+                <button class="fs-close" onclick="closeFullscreenPlayer()" title="Minimize"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg></button>
+                
+                <!-- Authentic Levyra Audio / Video Mode Toggle Pill -->
+                <div class="fs-pill-toggle">
+                    <button id="fs-mode-audio-btn" class="fs-pill-option active" onclick="switchFsPlayerMode('audio')">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>
+                        <span>Audio</span>
+                    </button>
+                    <button id="fs-mode-video-btn" class="fs-pill-option" onclick="switchFsPlayerMode('video')">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                        <span>Video</span>
                     </button>
                 </div>
-                <button class="fs-close" id="fs-download-btn" onclick="downloadCurrentTrack()" style="font-size:24px;" title="Download Offline"><svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg></button>
+
+                <button class="fs-close" id="fs-download-btn" onclick="downloadCurrentTrack()" title="Download Track"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg></button>
             </div>
+
+            <!-- Artist Identity Row (player.png) -->
+            <div class="fs-artist-identity" id="fs-artist-identity-row" style="margin-top: 10px;">
+                <div class="fs-artist-avatar-cluster" id="fs-artist-avatar-cluster">
+                    <img id="fs-artist-avatar-1" class="fs-artist-avatar-circle" src="images/app-icon.svg" alt="Artist">
+                </div>
+                <span class="fs-written-by" id="fs-written-by-text">WRITTEN BY SRM HUB</span>
+            </div>
+
             <div id="fs-cover-container" class="fs-cover-container">
                 <img id="fs-cover" class="fs-cover" src="" alt="Cover">
                 <video id="fs-video" class="fs-cover" loop muted playsinline style="display: none; box-shadow: 0 20px 45px rgba(0,0,0,0.55);"></video>
             </div>
-        <div class="fs-glass-panel">
-            <div class="fs-info">
-                <h2 id="fs-title" class="fs-title">No track</h2>
-                <p id="fs-artist" class="fs-artist">-</p>
-            </div>
-            <div class="fs-progress-container">
-                <div class="fs-progress-bar" id="fs-progress-bar" onclick="seekMusicFS(event)">
-                    <div class="fs-progress-fill" id="fs-progress-fill"></div>
-                </div>
-                <div class="fs-time-row">
-                    <span id="fs-time-current">0:00</span>
-                    <span id="fs-time-total">0:00</span>
-                </div>
-            </div>
-            <div class="fs-controls">
-                <button class="ctrl-btn" id="shuffle-btn-fs" onclick="toggleShuffle()"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M10.59 9.17L5.41 4 4 5.41l5.17 5.17 1.42-1.41zM14.5 4l2.04 2.04L4 18.59 5.41 20 17.96 7.46 20 9.5V4h-5.5zm.33 9.41l-1.41 1.41 3.13 3.13L14.5 20H20v-5.5l-2.04 2.04-3.13-3.13z"/></svg></button>
-                <button class="ctrl-btn" onclick="prevMusicTrack()"><svg viewBox="0 0 24 24" width="36" height="36" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg></button>
-                <button class="fs-play-btn" id="fs-play-btn" onclick="toggleMusicPlay()">
-                    <svg viewBox="0 0 24 24" width="36" height="36" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
-                </button>
-                <button class="ctrl-btn" onclick="nextMusicTrack()"><svg viewBox="0 0 24 24" width="36" height="36" fill="currentColor"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg></button>
-                <button class="ctrl-btn" id="repeat-btn-fs" onclick="toggleRepeat()"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z"/></svg></button>
-            </div>
-            <!-- Bottom utility buttons -->
-            <div class="fs-utility-row">
-                <button class="fs-util-btn" onclick="shareCurrentTrack()" title="Share Track"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z"/></svg></button>
-                <button class="fs-util-btn" onclick="toggleLyrics()" title="Lyrics"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M21.99 4c0-1.1-.89-2-1.99-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h14l4 4-.01-18zM18 14H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/></svg></button>
-                <button class="fs-util-btn" id="fs-add-video-btn" onclick="document.getElementById('edit-video-upload').click()" title="Add Video" style="display: none;"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4zM15 16H5V8h10v8zm-5-1h2v-2h2v-2h-2V9h-2v2H8v2h2v2z"/></svg></button>
-                <input type="file" id="edit-video-upload" accept="video/mp4,video/webm" style="display: none;" onchange="uploadTrackVideo(this)">
-                <div style="position:relative; display:inline-block;">
-                    <button class="fs-util-btn" onclick="toggleSleepTimerMenu()" title="Sleep Timer"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg></button>
-                    <div id="sleep-timer-menu" style="display:none; position:absolute; bottom:40px; left:-50px; background:rgba(20,20,30,0.95); border-radius:12px; border:1px solid rgba(255,255,255,0.1); flex-direction:column; overflow:hidden; z-index:100; backdrop-filter:blur(10px); min-width: 120px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
-                        <button onclick="setSleepTimer(15)" style="background:none; border:none; color:#fff; padding:12px 20px; cursor:pointer; font-size:0.95rem; text-align:left; border-bottom:1px solid rgba(255,255,255,0.05); width:100%;">15 mins</button>
-                        <button onclick="setSleepTimer(25)" style="background:none; border:none; color:#fff; padding:12px 20px; cursor:pointer; font-size:0.95rem; text-align:left; border-bottom:1px solid rgba(255,255,255,0.05); width:100%;">25 mins</button>
-                        <button onclick="setSleepTimer(30)" style="background:none; border:none; color:#fff; padding:12px 20px; cursor:pointer; font-size:0.95rem; text-align:left; width:100%;">30 mins</button>
+
+            <div class="fs-glass-panel">
+                <div class="fs-info" style="display:flex; justify-content:space-between; align-items:flex-start;">
+                    <div style="flex:1; overflow:hidden; padding-right:10px;">
+                        <h2 id="fs-title" class="fs-title">No track</h2>
+                        <p id="fs-artist" class="fs-artist">-</p>
                     </div>
+                    <button id="fs-star-btn" class="fs-util-btn" onclick="toggleStarCurrentTrack()" style="padding:6px; color:var(--levyra-cyan);" title="Favorite">
+                        <svg id="fs-star-icon" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                    </button>
+                </div>
+
+                <!-- Interactive Stats Row (player.png) -->
+                <div class="fs-stats-row">
+                    <div class="fs-stat-pill" id="fs-stat-like" onclick="likeCurrentTrack()">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M1 21h4V9H1v12zm22-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.59 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-2z"/></svg>
+                        <span id="fs-like-count">1.4k</span>
+                    </div>
+                    <div class="fs-stat-pill" id="fs-stat-dislike" onclick="dislikeCurrentTrack()">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M15 3H6c-.83 0-1.54.5-1.84 1.22l-3.02 7.05c-.09.23-.14.47-.14.73v2c0 1.1.9 2 2 2h6.31l-.95 4.57-.03.32c0 .41.17.79.44 1.06L9.83 23l6.59-6.59c.37-.36.59-.86.59-1.41V5c0-1.1-.9-2-2-2zm4 0v12h4V3h-4z"/></svg>
+                    </div>
+                    <div class="fs-stat-pill" onclick="shareCurrentTrack()">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                        <span>Lounge</span>
+                    </div>
+                </div>
+
+                <div class="fs-progress-container">
+                    <div class="fs-progress-bar" id="fs-progress-bar" onclick="seekMusicFS(event)">
+                        <div class="fs-progress-fill" id="fs-progress-fill"></div>
+                    </div>
+                    <div class="fs-time-row">
+                        <span id="fs-time-current">0:00</span>
+                        <span id="fs-time-total">0:00</span>
+                    </div>
+                </div>
+
+                <div class="fs-controls">
+                    <button class="ctrl-btn" id="shuffle-btn-fs" onclick="toggleShuffle()" title="Shuffle"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M10.59 9.17L5.41 4 4 5.41l5.17 5.17 1.42-1.41zM14.5 4l2.04 2.04L4 18.59 5.41 20 17.96 7.46 20 9.5V4h-5.5zm.33 9.41l-1.41 1.41 3.13 3.13L14.5 20H20v-5.5l-2.04 2.04-3.13-3.13z"/></svg></button>
+                    <button class="ctrl-btn" onclick="prevMusicTrack()" title="Previous"><svg viewBox="0 0 24 24" width="34" height="34" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg></button>
+                    <button class="fs-play-btn" id="fs-play-btn" onclick="toggleMusicPlay()" title="Play / Pause">
+                        <svg viewBox="0 0 24 24" width="34" height="34" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+                    </button>
+                    <button class="ctrl-btn" onclick="nextMusicTrack()" title="Next"><svg viewBox="0 0 24 24" width="34" height="34" fill="currentColor"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg></button>
+                    <button class="ctrl-btn" id="repeat-btn-fs" onclick="toggleRepeat()" title="Repeat"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z"/></svg></button>
+                </div>
+
+                <!-- Bottom Action Dock (player.png) -->
+                <div class="fs-action-dock">
+                    <button type="button" class="fs-dock-btn" onclick="openFullscreenQueue()">
+                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+                        <span>Queue</span>
+                    </button>
+                    <button type="button" class="fs-dock-btn" onclick="toggleLyrics()">
+                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                        <span>Lyrics</span>
+                    </button>
+                    <button type="button" class="fs-dock-btn" id="fs-canvas-toggle-btn" onclick="toggleCanvasMode()">
+                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+                        <span id="fs-canvas-toggle-text">Canvas</span>
+                    </button>
+                    <button type="button" class="fs-dock-btn" onclick="downloadCurrentTrack()">
+                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                        <span>Download</span>
+                    </button>
                 </div>
             </div>
         </div>
@@ -5877,9 +6529,21 @@
             const appNav = document.querySelector('.app-nav');
             if (viewId === 'movies-view') {
                 document.body.classList.add('in-movies-hub');
+                document.body.classList.remove('in-music-lounge');
+                const dock = document.getElementById('levyra-bottom-dock');
+                if (dock) dock.style.display = 'none';
                 if (appNav) appNav.style.setProperty('display', 'none', 'important');
+            } else if (viewId === 'music-view') {
+                document.body.classList.add('in-music-lounge');
+                document.body.classList.remove('in-movies-hub');
+                if (appNav) appNav.style.setProperty('display', 'none', 'important');
+                const dock = document.getElementById('levyra-bottom-dock');
+                if (dock) dock.style.display = 'flex';
             } else {
                 document.body.classList.remove('in-movies-hub');
+                document.body.classList.remove('in-music-lounge');
+                const dock = document.getElementById('levyra-bottom-dock');
+                if (dock) dock.style.display = 'none';
                 if (appNav && typeof isLoggedIn !== 'undefined' && isLoggedIn) {
                     appNav.style.display = 'flex';
                 }
@@ -5887,6 +6551,13 @@
             
             window.scrollTo({ top: 0, behavior: 'smooth' });
             if (pushToHistory) history.pushState({ viewId: viewId }, '', `#${viewId}`);
+        }
+
+        function exitMusicLounge() {
+            document.body.classList.remove('in-music-lounge');
+            const dock = document.getElementById('levyra-bottom-dock');
+            if (dock) dock.style.display = 'none';
+            switchNav('home-view', document.querySelector('.nav-item'));
         }
 
         function reloadMoviesIframe() {
@@ -10300,42 +10971,149 @@ function checkAndShowHolidayBanner(viewId) {
             el.innerText = studentName ? `${greeting}, ${studentName}` : greeting;
         }
 
-        // --- TAB & FOLDER NAVIGATION ---
-        function switchMusicTab(tab) {
+        // --- AUTHENTIC LEVYRA DOCK & PAGE SWITCHING ---
+        function switchLevyraDock(page) {
             updateLevyraGreeting();
-            const tabs = ['explore', 'recent', 'playlists', 'downloads'];
-            tabs.forEach(t => {
-                const btn = document.getElementById('music-tab-' + t);
-                const sec = document.getElementById('music-' + (t === 'recent' ? 'recent' : (t === 'playlists' ? 'playlists' : (t === 'downloads' ? 'downloads' : 'explore'))) + '-section');
-                if (btn && sec) {
-                    if (t === tab) {
+            const pages = ['home', 'explore', 'search', 'library'];
+            pages.forEach(p => {
+                const btn = document.getElementById('levyra-dock-' + p);
+                const el = document.getElementById('levyra-page-' + p);
+                if (btn) {
+                    if (p === page) {
                         btn.classList.add('active');
-                        btn.style.background = 'rgba(0, 229, 255, 0.14)';
-                        btn.style.borderColor = 'rgba(0, 229, 255, 0.4)';
-                        btn.style.color = '#fff';
-                        btn.style.fontWeight = '800';
-                        btn.style.boxShadow = '0 4px 15px rgba(0, 229, 255, 0.2)';
-                        sec.style.display = 'block';
                     } else {
                         btn.classList.remove('active');
-                        btn.style.background = 'transparent';
-                        btn.style.borderColor = 'transparent';
-                        btn.style.color = 'var(--levyra-text-sub)';
-                        btn.style.fontWeight = '600';
-                        btn.style.boxShadow = 'none';
-                        sec.style.display = 'none';
                     }
+                }
+                if (el) {
+                    el.style.display = (p === page) ? 'block' : 'none';
                 }
             });
 
-            if (tab === 'recent') {
-                renderRecentlyPlayed();
-            } else if (tab === 'playlists') {
+            if (page === 'home') {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            } else if (page === 'explore') {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            } else if (page === 'search') {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                const inp = document.getElementById('music-search-input');
+                if (inp) setTimeout(() => inp.focus(), 150);
+            } else if (page === 'library') {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
                 renderPlaylistsOverview();
                 syncUserMusicLibraryWithPortal();
+            }
+        }
+
+        function switchLibrarySubTab(tab) {
+            const tabs = ['playlists', 'recent', 'downloads'];
+            tabs.forEach(t => {
+                const btn = document.getElementById('lib-tab-' + t);
+                const sec = document.getElementById('music-' + (t === 'recent' ? 'recent' : (t === 'playlists' ? 'playlists' : 'downloads')) + '-section');
+                if (btn) {
+                    if (t === tab) {
+                        btn.classList.add('active');
+                    } else {
+                        btn.classList.remove('active');
+                    }
+                }
+                if (sec) {
+                    sec.style.display = (t === tab) ? 'block' : 'none';
+                }
+            });
+
+            if (tab === 'playlists') {
+                renderPlaylistsOverview();
+            } else if (tab === 'recent') {
+                renderRecentlyPlayed();
             } else if (tab === 'downloads') {
                 loadDownloadsList();
             }
+        }
+
+        // Backward compatibility shim
+        function switchMusicTab(tab) {
+            if (tab === 'explore') switchLevyraDock('home');
+            else {
+                switchLevyraDock('library');
+                switchLibrarySubTab(tab);
+            }
+        }
+
+        function shuffleAllExploreTracks() {
+            if (!currentExploreTracks || currentExploreTracks.length === 0) return;
+            isShuffle = true;
+            const shuffleBtnFs = document.getElementById('shuffle-btn-fs');
+            if (shuffleBtnFs) shuffleBtnFs.classList.add('active');
+            const randIdx = Math.floor(Math.random() * currentExploreTracks.length);
+            playTrackFromExplore(randIdx);
+        }
+
+        function switchFsPlayerMode(mode) {
+            const audioBtn = document.getElementById('fs-mode-audio-btn');
+            const videoBtn = document.getElementById('fs-mode-video-btn');
+            if (audioBtn && videoBtn) {
+                if (mode === 'video') {
+                    videoBtn.classList.add('active');
+                    audioBtn.classList.remove('active');
+                    if (!canvasMode) toggleCanvasMode();
+                } else {
+                    audioBtn.classList.add('active');
+                    videoBtn.classList.remove('active');
+                    if (canvasMode) toggleCanvasMode();
+                }
+            }
+        }
+
+        function toggleStarCurrentTrack() {
+            if (currentTrackIndex === -1 || !currentPlaylist[currentTrackIndex]) return;
+            const track = currentPlaylist[currentTrackIndex];
+            const starIcon = document.getElementById('fs-star-icon');
+            
+            if (!userMusicLibrary.playlists) userMusicLibrary.playlists = [];
+            let favPlaylist = userMusicLibrary.playlists.find(p => p.id === 'favorites' || p.title === 'Favorites');
+            if (!favPlaylist) {
+                favPlaylist = { id: 'favorites', title: 'Favorites', created_at: Date.now(), tracks: [] };
+                userMusicLibrary.playlists.unshift(favPlaylist);
+            }
+            
+            const existingIdx = favPlaylist.tracks.findIndex(t => String(t.id) === String(track.id));
+            if (existingIdx !== -1) {
+                favPlaylist.tracks.splice(existingIdx, 1);
+                if (starIcon) {
+                    starIcon.setAttribute('fill', 'none');
+                    starIcon.style.color = 'var(--levyra-cyan)';
+                }
+            } else {
+                favPlaylist.tracks.unshift(track);
+                if (starIcon) {
+                    starIcon.setAttribute('fill', 'var(--levyra-cyan)');
+                    starIcon.style.color = 'var(--levyra-cyan)';
+                }
+            }
+            saveUserMusicLibrary();
+        }
+
+        function likeCurrentTrack() {
+            const pill = document.getElementById('fs-stat-like');
+            const countEl = document.getElementById('fs-like-count');
+            if (pill) {
+                pill.classList.toggle('active');
+                if (countEl) {
+                    const current = parseFloat(countEl.innerText) || 1.4;
+                    countEl.innerText = pill.classList.contains('active') ? (current + 0.1).toFixed(1) + 'k' : (current - 0.1).toFixed(1) + 'k';
+                }
+            }
+        }
+
+        function dislikeCurrentTrack() {
+            const pill = document.getElementById('fs-stat-dislike');
+            if (pill) pill.classList.toggle('active');
+            nextMusicTrack();
+        }
+
+        function openFullscreenQueue() {
+            toggleLyrics();
         }
 
         // --- SPOTIFY & LEVYRA INSTANT SEARCH & SEARCH HISTORY ---
@@ -10546,13 +11324,13 @@ function checkAndShowHolidayBanner(viewId) {
                 else if (genre === 'chill') titleEl.innerText = 'CHILL & RELAX';
                 else if (genre === 'focus') titleEl.innerText = 'DEEP FOCUS';
                 else if (genre === 'party') titleEl.innerText = 'PARTY BEATS';
-                else titleEl.innerText = 'CHARTBUSTERS';
+                else titleEl.innerText = 'TOP 50 CHARTS';
             }
 
             list.innerHTML = `
                 <div style="display:flex; flex-direction:column; gap:8px;">
                     ${Array(6).fill(`
-                    <div style="display:flex; align-items:center; padding:12px 14px; margin: 0 16px 8px 16px; background:rgba(255,255,255,0.03); border:1px solid var(--levyra-border); border-radius:16px;">
+                    <div style="display:flex; align-items:center; padding:12px 14px; margin: 0 0 8px 0; background:rgba(255,255,255,0.03); border:1px solid var(--levyra-border); border-radius:16px;">
                         <div style="width:52px; height:52px; border-radius:12px; background:rgba(255,255,255,0.08); margin-right:12px;"></div>
                         <div style="flex:1;">
                             <div style="height:14px; width:65%; margin-bottom:8px; background:rgba(255,255,255,0.08); border-radius:4px;"></div>
@@ -10589,11 +11367,12 @@ function checkAndShowHolidayBanner(viewId) {
 
                 if (countEl) countEl.innerText = `(${tracks.length} TRACKS)`;
 
-                // Update Levyra Editorial Spotlight Hero Card
+                // 1. Update Cinematic "My soundtrack" Hero Card
                 const heroCard = document.getElementById('levyra-hero-card');
                 const heroImg = document.getElementById('levyra-hero-img');
                 const heroTitle = document.getElementById('levyra-hero-title');
                 const heroArtist = document.getElementById('levyra-hero-artist');
+                const heroRadioBadge = document.getElementById('levyra-hero-radio-badge');
                 const heroPlayBtn = document.getElementById('levyra-hero-play-btn');
                 const heroAddBtn = document.getElementById('levyra-hero-add-btn');
 
@@ -10601,46 +11380,159 @@ function checkAndShowHolidayBanner(viewId) {
                     const topTrack = tracks[0];
                     const topCover = topTrack.cover_url || (topTrack.has_cover ? `${BACKEND_URL}/api/music/cover/${topTrack.id}.jpg` : 'images/app-icon.svg');
                     heroImg.src = topCover;
-                    heroTitle.innerText = topTrack.title || 'Spotlight Selection';
-                    heroArtist.innerText = topTrack.artist || 'Levyra Editorial';
+                    heroTitle.innerText = topTrack.title || 'My soundtrack';
+                    heroArtist.innerText = topTrack.artist ? `Radio Station: ${topTrack.artist}` : 'Based on your taste & university trending';
+                    if (heroRadioBadge) {
+                        heroRadioBadge.innerText = topTrack.artist ? `RADIO: ${topTrack.artist.toUpperCase()}` : 'RADIO STATION';
+                    }
                     heroCard.style.display = 'flex';
                     if (heroPlayBtn) heroPlayBtn.onclick = () => playTrackFromExplore(0);
                     if (heroAddBtn) heroAddBtn.onclick = () => openAddToPlaylistModal(topTrack);
                 }
 
-                // Update Levyra Quick Picks Shelf
-                const qpShelf = document.getElementById('levyra-quick-picks-shelf');
-                const qpList = document.getElementById('levyra-quick-picks-list');
-                if (qpShelf && qpList) {
-                    if (tracks.length > 1) {
-                        qpShelf.style.display = 'block';
-                        const quickTracks = tracks.slice(1, 9);
-                        let qpHtml = '';
-                        quickTracks.forEach((qt, qIdx) => {
-                            const realIdx = qIdx + 1;
-                            const qCover = qt.cover_url || (qt.has_cover ? `${BACKEND_URL}/api/music/cover/${qt.id}.jpg` : 'images/app-icon.svg');
-                            qpHtml += `
-                                <div class="levyra-quick-card" onclick="playTrackFromExplore(${realIdx})">
-                                    <div class="levyra-quick-thumb-wrap">
-                                        <img src="${qCover}" class="levyra-quick-thumb" onerror="this.src='images/app-icon.svg'">
-                                        <div class="levyra-quick-hover-play">
-                                            <div style="width:36px; height:36px; border-radius:50%; background:var(--levyra-cyan); color:#08090D; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 12px var(--levyra-cyan-glow);">
-                                                <svg width="12" height="12" viewBox="0 0 24 24" fill="#08090D" style="margin-left:1px;"><polygon points="6 4 20 12 6 20 6 4"/></svg>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="levyra-quick-title">${escapeHtml(qt.title || 'Untitled')}</div>
-                                    <div class="levyra-quick-artist">${escapeHtml(qt.artist || 'Unknown')}</div>
+                // 2. Update "Your Orbit" Shelf (Horizontal Artist Rotation)
+                const orbitRow = document.getElementById('levyra-orbit-row');
+                if (orbitRow && tracks.length > 1) {
+                    const artistMap = new Map();
+                    tracks.slice(1, 18).forEach((t, i) => {
+                        const rawArtist = (t.artist || 'Artist').split(',')[0].split('&')[0].trim();
+                        if (!artistMap.has(rawArtist)) {
+                            const cov = t.cover_url || (t.has_cover ? `${BACKEND_URL}/api/music/cover/${t.id}.jpg` : 'images/app-icon.svg');
+                            artistMap.set(rawArtist, { trackIndex: i + 1, cover: cov });
+                        }
+                    });
+                    let orbitHtml = '';
+                    let oCount = 0;
+                    artistMap.forEach((meta, aName) => {
+                        if (oCount >= 8) return;
+                        oCount++;
+                        orbitHtml += `
+                            <div class="levyra-orbit-card" onclick="playTrackFromExplore(${meta.trackIndex})">
+                                <div class="levyra-orbit-avatar-wrap">
+                                    <img src="${meta.cover}" class="levyra-orbit-avatar" onerror="this.src='images/app-icon.svg'" alt="${escapeHtml(aName)}">
                                 </div>
-                            `;
-                        });
-                        qpList.innerHTML = qpHtml;
-                    } else {
-                        qpShelf.style.display = 'none';
+                                <div class="levyra-orbit-name">${escapeHtml(aName)}</div>
+                            </div>
+                        `;
+                    });
+                    orbitRow.innerHTML = orbitHtml;
+                }
+
+                // 3. Update "Top 50 Charts" Podium Cards (19_top_50.webp)
+                const podiumCards = document.getElementById('levyra-podium-cards');
+                if (podiumCards && tracks.length >= 3) {
+                    const t1 = tracks[0];
+                    const t2 = tracks[1];
+                    const t3 = tracks[2];
+                    const c1 = t1.cover_url || (t1.has_cover ? `${BACKEND_URL}/api/music/cover/${t1.id}.jpg` : 'images/app-icon.svg');
+                    const c2 = t2.cover_url || (t2.has_cover ? `${BACKEND_URL}/api/music/cover/${t2.id}.jpg` : 'images/app-icon.svg');
+                    const c3 = t3.cover_url || (t3.has_cover ? `${BACKEND_URL}/api/music/cover/${t3.id}.jpg` : 'images/app-icon.svg');
+
+                    podiumCards.innerHTML = `
+                        <!-- Rank 2: Silver -->
+                        <div class="levyra-podium-card rank-2" onclick="playTrackFromExplore(1)">
+                            <span class="levyra-podium-badge">#2</span>
+                            <div class="levyra-podium-thumb-wrap">
+                                <img src="${c2}" class="levyra-podium-thumb" onerror="this.src='images/app-icon.svg'" alt="">
+                            </div>
+                            <div class="levyra-podium-title">${escapeHtml(t2.title || 'Track 2')}</div>
+                            <div class="levyra-podium-artist">${escapeHtml(t2.artist || 'Artist')}</div>
+                        </div>
+
+                        <!-- Rank 1: Gold (Center) -->
+                        <div class="levyra-podium-card rank-1" onclick="playTrackFromExplore(0)">
+                            <span class="levyra-podium-badge">#1</span>
+                            <div class="levyra-podium-thumb-wrap">
+                                <img src="${c1}" class="levyra-podium-thumb" onerror="this.src='images/app-icon.svg'" alt="">
+                            </div>
+                            <div class="levyra-podium-title">${escapeHtml(t1.title || 'Track 1')}</div>
+                            <div class="levyra-podium-artist">${escapeHtml(t1.artist || 'Artist')}</div>
+                        </div>
+
+                        <!-- Rank 3: Bronze -->
+                        <div class="levyra-podium-card rank-3" onclick="playTrackFromExplore(2)">
+                            <span class="levyra-podium-badge">#3</span>
+                            <div class="levyra-podium-thumb-wrap">
+                                <img src="${c3}" class="levyra-podium-thumb" onerror="this.src='images/app-icon.svg'" alt="">
+                            </div>
+                            <div class="levyra-podium-title">${escapeHtml(t3.title || 'Track 3')}</div>
+                            <div class="levyra-podium-artist">${escapeHtml(t3.artist || 'Artist')}</div>
+                        </div>
+                    `;
+                }
+
+                // 4. Update Numbered Tracks List (04, 05, 06...)
+                const remainingTracks = tracks.length > 3 ? tracks.slice(3) : tracks;
+                const startRank = tracks.length > 3 ? 3 : 0;
+                renderExploreTracksList(remainingTracks, list, genre, startRank);
+
+                // 5. Update Curated For You Clover Artwork (11_collections.webp)
+                if (tracks.length >= 7) {
+                    for (let c = 1; c <= 4; c++) {
+                        const cloverImg = document.getElementById(`clover-img-${c}`);
+                        if (cloverImg && tracks[c + 2]) {
+                            const trackCover = tracks[c + 2].cover_url || (tracks[c + 2].has_cover ? `${BACKEND_URL}/api/music/cover/${tracks[c + 2].id}.jpg` : 'images/app-icon.svg');
+                            cloverImg.src = trackCover;
+                        }
                     }
                 }
 
-                renderExploreTracksList(tracks, list, genre);
+                // 6. Update Explore Page Fresh Currents shelf & track list
+                const freshRow = document.getElementById('levyra-fresh-currents-row');
+                if (freshRow && tracks.length > 0) {
+                    let freshHtml = '';
+                    tracks.slice(0, 10).forEach((qt, qIdx) => {
+                        const qCover = qt.cover_url || (qt.has_cover ? `${BACKEND_URL}/api/music/cover/${qt.id}.jpg` : 'images/app-icon.svg');
+                        freshHtml += `
+                            <div class="levyra-quick-card" onclick="playTrackFromExplore(${qIdx})">
+                                <div class="levyra-quick-thumb-wrap">
+                                    <img src="${qCover}" class="levyra-quick-thumb" onerror="this.src='images/app-icon.svg'" alt="">
+                                    <div class="levyra-quick-hover-play">
+                                        <div style="width:36px; height:36px; border-radius:50%; background:var(--levyra-cyan); color:#08090D; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 12px var(--levyra-cyan-glow);">
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="#08090D" style="margin-left:1px;"><polygon points="6 4 20 12 6 20 6 4"/></svg>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="levyra-quick-title">${escapeHtml(qt.title || 'Untitled')}</div>
+                                <div class="levyra-quick-artist">${escapeHtml(qt.artist || 'Unknown')}</div>
+                            </div>
+                        `;
+                    });
+                    freshRow.innerHTML = freshHtml;
+                }
+
+                const exploreList = document.getElementById('levyra-explore-tracks-list');
+                if (exploreList) {
+                    renderExploreTracksList(tracks, exploreList, genre, 0);
+                }
+
+                // 7. Update Search Page Artists shelf
+                const searchArtistsRow = document.getElementById('levyra-search-artists-row');
+                if (searchArtistsRow && tracks.length > 0) {
+                    const saMap = new Map();
+                    tracks.forEach((t, i) => {
+                        const rawArtist = (t.artist || 'Artist').split(',')[0].split('&')[0].trim();
+                        if (!saMap.has(rawArtist)) {
+                            const cov = t.cover_url || (t.has_cover ? `${BACKEND_URL}/api/music/cover/${t.id}.jpg` : 'images/app-icon.svg');
+                            saMap.set(rawArtist, { trackIndex: i, cover: cov });
+                        }
+                    });
+                    let saHtml = '';
+                    let saCount = 0;
+                    saMap.forEach((meta, aName) => {
+                        if (saCount >= 8) return;
+                        saCount++;
+                        saHtml += `
+                            <div class="levyra-orbit-card" onclick="selectSearchHistoryQuery('${aName.replace(/'/g, "\\'")}')">
+                                <div class="levyra-orbit-avatar-wrap">
+                                    <img src="${meta.cover}" class="levyra-orbit-avatar" onerror="this.src='images/app-icon.svg'" alt="">
+                                </div>
+                                <div class="levyra-orbit-name">${escapeHtml(aName)}</div>
+                            </div>
+                        `;
+                    });
+                    searchArtistsRow.innerHTML = saHtml;
+                }
             } catch(e) {
                 console.error('Failed to load music:', e);
                 list.innerHTML = `<div style="text-align:center; color:var(--levyra-pink); padding:40px; font-size:13px;">Unable to load tracks. Please check connection.</div>`;
@@ -10653,7 +11545,7 @@ function checkAndShowHolidayBanner(viewId) {
             loadTrendingMusic(genre);
         }
 
-        function renderExploreTracksList(tracks, listContainer, genre = 'trending') {
+        function renderExploreTracksList(tracks, listContainer, genre = 'trending', startRank = 0) {
             if (!tracks || tracks.length === 0) {
                 const countEl = document.getElementById('music-section-count');
                 if (countEl) countEl.innerText = '(0 TRACKS)';
@@ -10674,16 +11566,17 @@ function checkAndShowHolidayBanner(viewId) {
 
             let html = '';
             tracks.forEach((t, index) => {
+                const realIndex = startRank + index;
                 const cover = t.cover_url || (t.has_cover ? `${BACKEND_URL}/api/music/cover/${t.id}.jpg` : (t.cover_data || 'images/app-icon.svg'));
-                const num = (index + 1).toString().padStart(2, '0');
+                const num = (realIndex + 1).toString().padStart(2, '0');
                 const durationFmt = t.duration ? safeFmtDuration(t.duration) : '';
                 const songTitle = escapeHtml(t.title || 'Untitled Track');
                 const songArtist = escapeHtml(t.artist || 'SRM Hub');
                 html += `
-                    <div class="levyra-track-row" onclick="playTrackFromExplore(${index})">
+                    <div class="levyra-track-row" onclick="playTrackFromExplore(${realIndex})" style="margin: 0 0 8px 0;">
                         <div class="levyra-track-left">
                             <span class="levyra-track-rank">${num}</span>
-                            <img src="${cover}" class="levyra-track-thumb" onerror="this.src='images/app-icon.svg'">
+                            <img src="${cover}" class="levyra-track-thumb" onerror="this.src='images/app-icon.svg'" alt="">
                             <div class="levyra-track-info">
                                 <div class="levyra-track-title">${songTitle}</div>
                                 <div class="levyra-track-artist">${songArtist}</div>
@@ -10691,10 +11584,10 @@ function checkAndShowHolidayBanner(viewId) {
                         </div>
                         <div class="levyra-track-actions">
                             ${durationFmt ? `<span class="levyra-track-duration">${durationFmt}</span>` : ''}
-                            <button type="button" class="levyra-row-action-btn" onclick="event.stopPropagation(); openAddToPlaylistModal(currentExploreTracks[${index}])" title="Add to Playlist">
+                            <button type="button" class="levyra-row-action-btn" onclick="event.stopPropagation(); openAddToPlaylistModal(currentExploreTracks[${realIndex}])" title="Add to Playlist">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
                             </button>
-                            <button type="button" class="levyra-row-play-btn" onclick="event.stopPropagation(); playTrackFromExplore(${index})" title="Play">
+                            <button type="button" class="levyra-row-play-btn" onclick="event.stopPropagation(); playTrackFromExplore(${realIndex})" title="Play">
                                 <svg width="11" height="11" viewBox="0 0 24 24" fill="#08090D" style="margin-left:1px;"><polygon points="6 4 20 12 6 20 6 4"/></svg>
                             </button>
                         </div>
@@ -11643,7 +12536,18 @@ function checkAndShowHolidayBanner(viewId) {
         function toggleCanvasMode() {
             videoBackgroundEnabled = !videoBackgroundEnabled;
             const btnText = document.getElementById('fs-canvas-toggle-text');
-            if (btnText) btnText.innerText = videoBackgroundEnabled ? 'Video' : 'Cover';
+            if (btnText) btnText.innerText = videoBackgroundEnabled ? 'Canvas' : 'Audio';
+            const audioBtn = document.getElementById('fs-mode-audio-btn');
+            const videoBtn = document.getElementById('fs-mode-video-btn');
+            if (audioBtn && videoBtn) {
+                if (videoBackgroundEnabled) {
+                    videoBtn.classList.add('active');
+                    audioBtn.classList.remove('active');
+                } else {
+                    audioBtn.classList.add('active');
+                    videoBtn.classList.remove('active');
+                }
+            }
             const track = currentPlaylist[currentTrackIndex];
             if (track) {
                 updateVideoBackground(track);
@@ -12221,6 +13125,21 @@ function checkAndShowHolidayBanner(viewId) {
             const fsArtist = document.getElementById('fs-artist');
             if (fsArtist) fsArtist.innerText = track.artist;
 
+            const writtenByEl = document.getElementById('fs-written-by-text');
+            if (writtenByEl) {
+                writtenByEl.innerText = `WRITTEN BY ${(track.artist || 'SRM HUB').toUpperCase()}`;
+            }
+            const artistAvatar = document.getElementById('fs-artist-avatar-1');
+            if (artistAvatar) {
+                artistAvatar.src = coverSrc;
+            }
+            const starIcon = document.getElementById('fs-star-icon');
+            if (starIcon) {
+                const favPlaylist = (userMusicLibrary.playlists || []).find(p => p.id === 'favorites' || p.title === 'Favorites');
+                const isFav = favPlaylist && favPlaylist.tracks.some(t => String(t.id) === String(track.id));
+                starIcon.setAttribute('fill', isFav ? 'var(--levyra-cyan)' : 'none');
+            }
+
             const myNetId = getCurrentNetId();
             const isOwner = myNetId && track.net_id && myNetId === (track.net_id || '').toLowerCase();
             const addVideoBtn = document.getElementById('fs-add-video-btn');
@@ -12718,6 +13637,34 @@ function checkAndShowHolidayBanner(viewId) {
             // Force extraction immediately if already loaded
             if (fsCover.complete) {
                 extractAlbumColors(fsCover);
+            }
+
+            // Sync mode pill switcher
+            const audioBtn = document.getElementById('fs-mode-audio-btn');
+            const videoBtn = document.getElementById('fs-mode-video-btn');
+            if (audioBtn && videoBtn) {
+                if (canvasMode) {
+                    videoBtn.classList.add('active');
+                    audioBtn.classList.remove('active');
+                } else {
+                    audioBtn.classList.add('active');
+                    videoBtn.classList.remove('active');
+                }
+            }
+
+            const writtenByEl = document.getElementById('fs-written-by-text');
+            if (writtenByEl) {
+                writtenByEl.innerText = `WRITTEN BY ${(track.artist || 'SRM HUB').toUpperCase()}`;
+            }
+            const artistAvatar = document.getElementById('fs-artist-avatar-1');
+            if (artistAvatar) {
+                artistAvatar.src = coverSrc;
+            }
+            const starIcon = document.getElementById('fs-star-icon');
+            if (starIcon) {
+                const favPlaylist = (userMusicLibrary.playlists || []).find(p => p.id === 'favorites' || p.title === 'Favorites');
+                const isFav = favPlaylist && favPlaylist.tracks.some(t => String(t.id) === String(track.id));
+                starIcon.setAttribute('fill', isFav ? 'var(--levyra-cyan)' : 'none');
             }
             
             document.getElementById('music-fullscreen').style.display = 'flex';
