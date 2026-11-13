@@ -2527,26 +2527,28 @@
           opacity: 0;
           transition: opacity 0.6s ease !important;
         }
-        /* === FEATURE 2: LYRICS BOTTOM SHEET === */
-        .fs-lyrics-bottom-sheet {
+        /* === FEATURE 2: LYRICS & QUEUE BOTTOM SHEETS === */
+        .fs-lyrics-bottom-sheet, .fs-queue-bottom-sheet {
           position: absolute;
           bottom: 0;
           left: 0;
           width: 100%;
-          height: 60%;
-          background: rgba(245, 158, 11, 0.1); /* Amber/orange tint */
-          backdrop-filter: blur(40px) saturate(180%);
-          -webkit-backdrop-filter: blur(40px) saturate(180%);
-          border-top-left-radius: 24px;
-          border-top-right-radius: 24px;
-          border-top: 1px solid rgba(245, 158, 11, 0.2);
+          height: 72%;
+          background: rgba(18, 20, 30, 0.90) !important;
+          backdrop-filter: blur(45px) saturate(200%);
+          -webkit-backdrop-filter: blur(45px) saturate(200%);
+          border-top-left-radius: 28px;
+          border-top-right-radius: 28px;
+          border-top: 1px solid rgba(255, 255, 255, 0.14);
           transform: translateY(100%);
-          transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+          transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
           z-index: 50;
-          display: flex;
+          display: none;
           flex-direction: column;
+          box-shadow: 0 -20px 60px rgba(0, 0, 0, 0.75);
         }
-        .fs-lyrics-bottom-sheet.active {
+        .fs-lyrics-bottom-sheet.active, .fs-queue-bottom-sheet.active {
+          display: flex !important;
           transform: translateY(0);
         }
         .fs-lyrics-handle {
@@ -3122,26 +3124,208 @@
             margin-top: 2px;
         }
 
-        /* Compact Track Rows (Section 6) */
+        /* Apple Music Glassmorphism Track Rows & Controls */
+        .apple-track-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 9px 12px;
+            margin: 0 0 6px 0;
+            border-radius: 14px;
+            background: rgba(255, 255, 255, 0.025);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            transition: all 0.18s ease;
+            cursor: pointer;
+            user-select: none;
+        }
+        .apple-track-row:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.12);
+            transform: translateX(2px);
+        }
+        .apple-track-row:active {
+            background: rgba(255, 255, 255, 0.12);
+            transform: scale(0.99);
+        }
+        .apple-track-row.playing {
+            background: rgba(0, 229, 255, 0.08);
+            border-color: rgba(0, 229, 255, 0.3);
+        }
+        .apple-track-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex: 1;
+            min-width: 0;
+        }
+        .apple-track-rank {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: rgba(255, 255, 255, 0.38);
+            min-width: 20px;
+            text-align: center;
+        }
+        .apple-track-thumb {
+            width: 44px;
+            height: 44px;
+            border-radius: 10px;
+            object-fit: cover;
+            flex-shrink: 0;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+            background: var(--levyra-canvas-mid);
+        }
+        .apple-track-info {
+            flex: 1;
+            min-width: 0;
+            overflow: hidden;
+        }
+        .apple-track-title {
+            color: #fff;
+            font-size: 0.94rem;
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-bottom: 2px;
+        }
+        .apple-track-artist {
+            color: rgba(255, 255, 255, 0.58);
+            font-size: 0.78rem;
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .apple-track-right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-shrink: 0;
+            margin-left: 8px;
+        }
+        .apple-track-duration {
+            font-size: 0.78rem;
+            color: rgba(255, 255, 255, 0.45);
+            font-weight: 500;
+            font-variant-numeric: tabular-nums;
+        }
+        .apple-more-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            color: rgba(255, 255, 255, 0.75);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.18s ease;
+        }
+        .apple-more-btn:hover {
+            background: rgba(255, 255, 255, 0.18);
+            color: #fff;
+            transform: scale(1.08);
+        }
+        .apple-back-btn {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            background: transparent;
+            border: none;
+            color: #fff;
+            font-size: 0.92rem;
+            font-weight: 600;
+            cursor: pointer;
+            padding: 6px 10px 6px 0;
+            transition: opacity 0.18s;
+        }
+        .apple-back-btn:hover {
+            opacity: 0.75;
+        }
+        .apple-hero-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 13px 20px;
+            border-radius: 14px;
+            font-size: 0.95rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            user-select: none;
+            border: none;
+        }
+        .apple-hero-btn.primary {
+            background: rgba(255, 255, 255, 0.16);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            border: 1px solid rgba(255, 255, 255, 0.22);
+            color: #fff;
+            box-shadow: 0 4px 18px rgba(0, 0, 0, 0.25);
+        }
+        .apple-hero-btn.primary:hover {
+            background: rgba(255, 255, 255, 0.26);
+            transform: scale(1.02);
+        }
+        .apple-hero-btn.secondary {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            color: #fff;
+        }
+        .apple-hero-btn.secondary:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: scale(1.02);
+        }
+        .apple-sheet-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 13px 16px;
+            background: transparent;
+            border: none;
+            border-radius: 14px;
+            color: #fff;
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Montserrat', sans-serif;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-align: left;
+            width: 100%;
+            box-sizing: border-box;
+            transition: background 0.18s ease;
+        }
+        .apple-sheet-item:hover, .apple-sheet-item:active {
+            background: rgba(255, 255, 255, 0.08);
+        }
+        .apple-sheet-item svg {
+            flex-shrink: 0;
+        }
+
+        /* Compact Track Rows (Legacy Compatibility) */
         .levyra-track-row {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 10px 14px;
-            margin: 0 16px 8px 16px;
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid var(--levyra-border);
-            border-radius: var(--levyra-radius-card);
+            padding: 9px 12px;
+            margin: 0 16px 6px 16px;
+            background: rgba(255, 255, 255, 0.025);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 14px;
             cursor: pointer;
-            transition: all 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
+            transition: all 0.18s ease;
             position: relative;
             z-index: 2;
         }
         .levyra-track-row:hover {
-            background: rgba(255, 255, 255, 0.07);
-            border-color: var(--levyra-border-hover);
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.12);
+            transform: translateX(2px);
         }
         .levyra-track-left {
             display: flex;
@@ -3151,17 +3335,17 @@
             flex: 1;
         }
         .levyra-track-rank {
-            font-size: 0.8rem;
-            font-weight: 800;
-            color: var(--levyra-cyan);
-            width: 22px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: rgba(255, 255, 255, 0.38);
+            width: 20px;
             text-align: center;
             flex-shrink: 0;
         }
         .levyra-track-thumb {
-            width: 52px;
-            height: 52px;
-            border-radius: var(--levyra-radius-sm);
+            width: 44px;
+            height: 44px;
+            border-radius: 10px;
             object-fit: cover;
             flex-shrink: 0;
             background: var(--levyra-canvas-mid);
@@ -3173,15 +3357,15 @@
         }
         .levyra-track-title {
             color: #fff;
-            font-size: 0.88rem;
-            font-weight: 700;
+            font-size: 0.94rem;
+            font-weight: 600;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
         }
         .levyra-track-artist {
-            color: var(--levyra-text-sub);
-            font-size: 0.74rem;
+            color: rgba(255, 255, 255, 0.58);
+            font-size: 0.78rem;
             font-weight: 500;
             white-space: nowrap;
             overflow: hidden;
@@ -3196,48 +3380,47 @@
             margin-left: 10px;
         }
         .levyra-track-duration {
-            font-size: 0.72rem;
-            color: var(--levyra-text-sub);
-            font-weight: 600;
+            font-size: 0.78rem;
+            color: rgba(255, 255, 255, 0.45);
+            font-weight: 500;
         }
         .levyra-row-action-btn {
             width: 32px;
             height: 32px;
             border-radius: 50%;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid var(--levyra-border);
-            color: var(--levyra-text-sub);
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            color: rgba(255, 255, 255, 0.75);
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: all 0.18s ease;
         }
         .levyra-row-action-btn:hover {
-            background: rgba(255, 255, 255, 0.14);
+            background: rgba(255, 255, 255, 0.18);
             color: #fff;
-            border-color: rgba(255, 255, 255, 0.2);
-            transform: scale(1.05);
+            transform: scale(1.08);
         }
         .levyra-row-play-btn {
-            width: 34px;
-            height: 34px;
+            width: 32px;
+            height: 32px;
             border-radius: 50%;
-            background: var(--levyra-cyan);
-            border: none;
-            color: #08090D;
+            background: rgba(255, 255, 255, 0.12);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            color: #fff;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            box-shadow: 0 4px 12px var(--levyra-cyan-glow);
-            transition: transform 0.15s ease;
+            transition: all 0.18s ease;
         }
         .levyra-row-play-btn:hover {
-            transform: scale(1.1);
+            background: rgba(255, 255, 255, 0.22);
+            transform: scale(1.08);
         }
 
-        /* Playlist Cards & Reorder Controls */
+        /* Playlist Cards */
         .levyra-playlist-card {
             background: rgba(255, 255, 255, 0.04);
             border: 1px solid var(--levyra-border);
@@ -3252,81 +3435,36 @@
             transform: translateY(-3px);
             box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
         }
-        .levyra-reorder-group {
-            display: flex;
-            flex-direction: column;
-            gap: 3px;
-            margin-right: 8px;
-            flex-shrink: 0;
-        }
-        .levyra-order-btn {
-            cursor: pointer;
-            background: rgba(255, 255, 255, 0.06);
-            border: 1px solid var(--levyra-border);
-            border-radius: 6px;
-            width: 24px;
-            height: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #fff;
-            padding: 0;
-            transition: all 0.15s ease;
-        }
-        .levyra-order-btn:hover:not(:disabled) {
-            background: rgba(0, 229, 255, 0.2);
-            border-color: var(--levyra-cyan);
-            color: var(--levyra-cyan);
-        }
-        .levyra-delete-btn {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.04);
-            border: 1px solid var(--levyra-border);
-            color: var(--levyra-text-sub);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-        .levyra-delete-btn:hover {
-            background: rgba(255, 64, 129, 0.15);
-            border-color: rgba(255, 64, 129, 0.4);
-            color: var(--levyra-pink);
-            transform: scale(1.05);
-        }
 
         /* Legacy compatibility wrappers */
         .music-card { background: rgba(255, 255, 255, 0.03); border: 1px solid var(--levyra-border); border-radius: var(--levyra-radius-card); padding: 12px; display: flex; align-items: center; gap: 14px; margin-bottom: 8px; transition: all 0.22s; cursor: pointer; }
         .music-card:hover { background: rgba(255, 255, 255, 0.07); border-color: var(--levyra-border-hover); transform: translateY(-2px); }
-        .music-cover { width: 52px; height: 52px; border-radius: var(--levyra-radius-sm); object-fit: cover; background: var(--levyra-canvas-mid); }
+        .music-cover { width: 48px; height: 48px; border-radius: var(--levyra-radius-sm); object-fit: cover; background: var(--levyra-canvas-mid); }
         .music-info { flex: 1; overflow: hidden; }
         .music-title { color: #fff; font-size: 0.95rem; font-weight: 700; margin: 0 0 3px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .music-artist { color: var(--levyra-text-sub); font-size: 0.75rem; margin: 0; font-weight: 500; }
         .music-play-btn { background: var(--levyra-cyan); color: #08090D; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: none; cursor: pointer; transition: all 0.2s; flex-shrink: 0; box-shadow: 0 4px 12px var(--levyra-cyan-glow); }
 
-        /* Levyra Authentic Floating Bottom Dock */
+        /* Levyra Authentic Floating Bottom Dock - Apple Music Glassmorphism */
         body.in-music-lounge .app-nav {
             display: none !important;
         }
         .levyra-bottom-dock {
             position: fixed;
-            bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+            bottom: calc(12px + env(safe-area-inset-bottom, 0px));
             left: 50%;
             transform: translateX(-50%);
-            z-index: 2500;
+            z-index: 2200;
             display: none;
             align-items: center;
-            background: rgba(14, 16, 22, 0.94);
-            backdrop-filter: blur(28px) saturate(180%);
-            -webkit-backdrop-filter: blur(28px) saturate(180%);
-            border: 1px solid rgba(255, 255, 255, 0.12);
-            border-radius: 9999px;
+            background: rgba(18, 20, 30, 0.78) !important;
+            backdrop-filter: blur(40px) saturate(200%) !important;
+            -webkit-backdrop-filter: blur(40px) saturate(200%) !important;
+            border: 1px solid rgba(255, 255, 255, 0.14) !important;
+            border-radius: 9999px !important;
             padding: 6px 10px;
             gap: 6px;
-            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.75), 0 0 20px rgba(0, 229, 255, 0.15);
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
         }
         body.in-music-lounge .levyra-bottom-dock {
             display: flex;
@@ -3334,11 +3472,11 @@
         .levyra-dock-item {
             background: transparent;
             border: 1px solid transparent;
-            color: var(--levyra-text-sub);
+            color: rgba(255, 255, 255, 0.6);
             padding: 8px 16px;
             border-radius: 9999px;
             font-size: 0.75rem;
-            font-weight: 700;
+            font-weight: 600;
             display: flex;
             align-items: center;
             gap: 7px;
@@ -3349,14 +3487,14 @@
         }
         .levyra-dock-item:hover {
             color: #fff;
-            background: rgba(255, 255, 255, 0.05);
+            background: rgba(255, 255, 255, 0.08);
         }
         .levyra-dock-item.active {
-            background: rgba(0, 229, 255, 0.15);
-            border-color: rgba(0, 229, 255, 0.38);
-            color: var(--levyra-cyan);
-            font-weight: 800;
-            box-shadow: 0 4px 16px var(--levyra-cyan-glow);
+            background: rgba(255, 255, 255, 0.14) !important;
+            border-color: rgba(255, 255, 255, 0.2) !important;
+            color: #fff !important;
+            font-weight: 700;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35) !important;
         }
         .levyra-dock-item svg {
             flex-shrink: 0;
@@ -3770,49 +3908,45 @@
             color: var(--levyra-cyan);
         }
 
-        /* Floating Mini Player Dock (Section 4 & 7) */
+        /* Floating Mini Player Dock - Apple Music Glassmorphism */
         .music-player-bar {
             position: fixed;
             bottom: -110px;
-            left: 12px;
-            width: calc(100% - 24px);
-            max-width: 600px;
-            margin: 0 auto;
-            right: 12px;
-            height: 72px;
-            background: rgba(12, 13, 18, 0.94) !important;
-            backdrop-filter: blur(35px) saturate(180%);
-            -webkit-backdrop-filter: blur(35px) saturate(180%);
-            border: 1px solid rgba(0, 229, 255, 0.25) !important;
-            border-radius: 18px !important;
+            left: 50% !important;
+            transform: translateX(-50%) !important;
+            width: calc(100% - 24px) !important;
+            max-width: 580px !important;
+            height: 64px;
+            background: rgba(22, 24, 36, 0.84) !important;
+            backdrop-filter: blur(40px) saturate(200%) !important;
+            -webkit-backdrop-filter: blur(40px) saturate(200%) !important;
+            border: 1px solid rgba(255, 255, 255, 0.14) !important;
+            border-radius: 20px !important;
             display: flex;
             align-items: center;
             justify-content: space-between;
             padding: 0 16px;
-            z-index: 2000;
+            z-index: 2150;
             transition: bottom 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
             cursor: pointer;
-            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.7), 0 0 25px rgba(0, 229, 255, 0.12) !important;
+            box-shadow: 0 14px 40px rgba(0, 0, 0, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.18) !important;
             overflow: hidden;
         }
         .music-player-bar.active {
-            bottom: 82px !important;
+            bottom: 84px !important;
         }
         body.in-music-lounge .music-player-bar.active {
-            bottom: calc(72px + env(safe-area-inset-bottom, 0px)) !important;
+            bottom: calc(76px + env(safe-area-inset-bottom, 0px)) !important;
         }
         @media (min-width: 769px) {
             .music-player-bar {
-                left: 50% !important;
-                right: auto !important;
-                transform: translateX(-50%) !important;
-                width: 580px !important;
+                width: 560px !important;
             }
             .music-player-bar.active {
                 bottom: 24px !important;
             }
             body.in-music-lounge .music-player-bar.active {
-                bottom: calc(76px + env(safe-area-inset-bottom, 0px)) !important;
+                bottom: calc(78px + env(safe-area-inset-bottom, 0px)) !important;
             }
         }
         .player-left { display: flex; align-items: center; flex: 1; min-width: 0; }
@@ -4102,32 +4236,33 @@
             color: #fff;
             transform: scale(1.1);
         }
-        .fs-lyrics-bottom-sheet {
+        .fs-lyrics-bottom-sheet, .fs-queue-bottom-sheet {
             position: absolute;
             bottom: 0;
             left: 0;
             width: 100%;
             height: 75%;
-            background: rgba(12, 13, 18, 0.94) !important;
-            border-top: 1px solid rgba(0, 229, 255, 0.3) !important;
-            border-radius: 36px 36px 0 0;
-            padding: 20px 20px 0 20px;
+            background: rgba(18, 20, 30, 0.90) !important;
+            border-top: 1px solid rgba(255, 255, 255, 0.14) !important;
+            border-radius: 32px 32px 0 0;
+            padding: 16px 20px 0 20px;
             overflow: hidden;
-            display: flex;
+            display: none;
             flex-direction: column;
             color: #fff;
             font-size: 1.1rem;
             line-height: 1.8;
             text-align: left;
-            backdrop-filter: blur(40px) saturate(200%);
-            -webkit-backdrop-filter: blur(40px) saturate(200%);
+            backdrop-filter: blur(45px) saturate(200%);
+            -webkit-backdrop-filter: blur(45px) saturate(200%);
             z-index: 50;
             box-sizing: border-box;
             transform: translateY(100%);
-            transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
-            box-shadow: 0 -20px 50px rgba(0, 0, 0, 0.6);
+            transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
+            box-shadow: 0 -20px 60px rgba(0, 0, 0, 0.75);
         }
-        .fs-lyrics-bottom-sheet.active {
+        .fs-lyrics-bottom-sheet.active, .fs-queue-bottom-sheet.active {
+            display: flex !important;
             transform: translateY(0);
         }
         .fs-lyrics-handle {
@@ -5429,26 +5564,41 @@
                         <div id="music-playlists-grid" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; padding: 0 16px;"></div>
                     </div>
 
-                    <!-- Single Playlist Detail View -->
-                    <div id="playlist-detail-view" style="display:none; padding: 0 16px;">
-                        <div id="playlist-detail-header" style="display:flex; align-items:center; gap:12px; margin-bottom: 16px; padding: 12px 0;">
-                            <button type="button" onclick="closePlaylistDetail()" class="levyra-row-action-btn" title="Back to Playlists">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                    <!-- Apple Music Single Playlist Detail View -->
+                    <div id="playlist-detail-view" style="display:none; padding: 0 16px 110px 16px;">
+                        <!-- Apple Navigation Row -->
+                        <div style="display:flex; justify-content:space-between; align-items:center; padding: 10px 0; margin-bottom: 6px;">
+                            <button type="button" onclick="closePlaylistDetail()" class="apple-back-btn" title="Back to Library">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 18l-6-6 6-6"/></svg>
+                                <span>Library</span>
                             </button>
-                            <div style="flex:1; overflow:hidden;">
-                                <h3 id="playlist-detail-title" style="font-size: 1.2rem; font-weight: 900; color: #fff; margin:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Playlist</h3>
-                                <p id="playlist-detail-count" style="color: var(--levyra-text-sub); font-size: 0.74rem; margin: 2px 0 0 0;">0 tracks</p>
+                            <button type="button" id="playlist-detail-options-btn" onclick="openPlaylistOptions(activePlaylistId)" class="apple-more-btn" title="Playlist Options">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"></circle><circle cx="12" cy="12" r="2"></circle><circle cx="19" cy="12" r="2"></circle></svg>
+                            </button>
+                        </div>
+
+                        <!-- Apple Music Playlist Hero Header -->
+                        <div class="apple-playlist-hero" style="display:flex; flex-direction:column; align-items:center; text-align:center; padding: 6px 0 20px 0;">
+                            <div id="playlist-detail-art-container" style="width:150px; height:150px; border-radius:18px; overflow:hidden; box-shadow:0 14px 35px rgba(0,0,0,0.6); margin-bottom:14px; background:var(--levyra-canvas-mid); display:flex; align-items:center; justify-content:center;">
+                                <img id="playlist-detail-hero-art" src="images/app-icon.svg" style="width:100%; height:100%; object-fit:cover;" onerror="this.src='images/app-icon.svg'" alt="Playlist Art">
                             </div>
-                            <div style="display:flex; gap:8px;">
-                                <button type="button" id="playlist-detail-delete-btn" onclick="if(activePlaylistId) deletePlaylist(activePlaylistId)" style="display:none;" class="levyra-delete-btn" title="Delete Playlist">
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                            <h2 id="playlist-detail-title" style="font-size:1.45rem; font-weight:800; color:#fff; margin:0 0 4px 0; letter-spacing:-0.2px;">Playlist</h2>
+                            <p id="playlist-detail-count" style="color:rgba(255,255,255,0.6); font-size:0.82rem; margin:0 0 16px 0; font-weight:500;">0 songs</p>
+                            
+                            <!-- Apple Music Dual Play & Shuffle Glass Buttons -->
+                            <div style="display:flex; gap:12px; width:100%; max-width:360px;">
+                                <button type="button" id="playlist-detail-play-btn" onclick="playActivePlaylist(false)" class="apple-hero-btn primary" style="flex:1;">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                                    <span>Play</span>
                                 </button>
-                                <button type="button" id="playlist-detail-play-btn" onclick="playActivePlaylist(false)" class="levyra-nav-btn primary" style="padding: 7px 14px; font-size:0.75rem;">
-                                    <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-                                    <span>Play All</span>
+                                <button type="button" id="playlist-detail-shuffle-btn" onclick="playActivePlaylist(true)" class="apple-hero-btn secondary" style="flex:1;">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M10.59 9.17L5.41 4 4 5.41l5.17 5.17 1.42-1.41zM14.5 4l2.04 2.04L4 18.59 5.41 20 17.96 7.46 20 9.5V4h-5.5zm.33 9.41l-1.41 1.41 3.13 3.13L14.5 20H20v-5.5l-2.04 2.04-3.13-3.13z"/></svg>
+                                    <span>Shuffle</span>
                                 </button>
                             </div>
                         </div>
+
+                        <!-- Tracks List Container -->
                         <div id="playlist-detail-tracks-list"></div>
                         <div id="playlist-tracks-list" style="display:none;"></div>
                     </div>
@@ -5963,6 +6113,56 @@
         </div>
     </div>
 
+    <!-- APPLE MUSIC GLASSMORPHIC ACTION SHEET -->
+    <div id="appleMusicActionSheet" class="modal-overlay" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.65); backdrop-filter:blur(25px); -webkit-backdrop-filter:blur(25px); z-index:999999; justify-content:center; align-items:flex-end;" onclick="if(event.target===this) closeAppleMusicActionSheet()">
+        <div class="apple-sheet-container" style="background:rgba(20,22,32,0.88); backdrop-filter:blur(45px) saturate(200%); -webkit-backdrop-filter:blur(45px) saturate(200%); border:1px solid rgba(255,255,255,0.14); border-radius:28px 28px 0 0; width:100%; max-width:480px; padding:18px 20px calc(24px + env(safe-area-inset-bottom, 0px)) 20px; box-shadow:0 -16px 50px rgba(0,0,0,0.7); animation:slideUp 0.28s cubic-bezier(0.2, 0.8, 0.2, 1); box-sizing:border-box;">
+            <!-- Grab handle -->
+            <div style="width:36px; height:5px; background:rgba(255,255,255,0.25); border-radius:9999px; margin:0 auto 16px auto;"></div>
+            
+            <!-- Track Header Preview -->
+            <div id="apple-sheet-track-preview" style="display:flex; align-items:center; gap:14px; padding-bottom:14px; border-bottom:1px solid rgba(255,255,255,0.08); margin-bottom:10px;">
+                <img id="apple-sheet-cover" src="images/app-icon.svg" style="width:48px; height:48px; border-radius:10px; object-fit:cover; box-shadow:0 6px 16px rgba(0,0,0,0.5);" alt="">
+                <div style="flex:1; min-width:0;">
+                    <div id="apple-sheet-title" style="color:#fff; font-size:0.96rem; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Song Title</div>
+                    <div id="apple-sheet-artist" style="color:rgba(255,255,255,0.58); font-size:0.8rem; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Artist</div>
+                </div>
+            </div>
+
+            <!-- Apple Music Options List -->
+            <div class="apple-sheet-options" style="display:flex; flex-direction:column; gap:2px; margin-bottom:14px;">
+                <button type="button" class="apple-sheet-item" onclick="appleSheetPlayNext()">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+                    <span>Play Next</span>
+                </button>
+                <button type="button" class="apple-sheet-item" onclick="appleSheetPlayLater()">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polygon points="5 3 19 12 5 21 5 3"></polygon><line x1="19" y1="5" x2="19" y2="19"></line></svg>
+                    <span>Play Last</span>
+                </button>
+                <button type="button" class="apple-sheet-item" onclick="appleSheetAddToPlaylist()">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path><line x1="12" y1="7" x2="12" y2="13"></line><line x1="9" y1="10" x2="15" y2="10"></line></svg>
+                    <span>Add to a Playlist...</span>
+                </button>
+                <button type="button" id="apple-sheet-remove-btn" class="apple-sheet-item" style="display:none; color:#FF453A;" onclick="appleSheetRemoveFromPlaylist()">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FF453A" stroke-width="2.2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                    <span style="color:#FF453A;">Remove from Playlist</span>
+                </button>
+                <button type="button" class="apple-sheet-item" onclick="appleSheetDownload()">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                    <span>Download</span>
+                </button>
+                <button type="button" class="apple-sheet-item" onclick="appleSheetShare()">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
+                    <span>Share Track</span>
+                </button>
+            </div>
+
+            <!-- Cancel Button -->
+            <button type="button" onclick="closeAppleMusicActionSheet()" style="width:100%; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.12); color:#fff; border-radius:9999px; padding:12px; font-family:'Montserrat', sans-serif; font-size:0.92rem; font-weight:700; cursor:pointer; transition:background 0.2s;">
+                Cancel
+            </button>
+        </div>
+    </div>
+
     <!-- MUSIC SUBMIT MODAL -->
         <!-- ADD TO PLAYLIST MODAL -->
     <div id="addToPlaylistModal" class="modal-overlay" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.85); backdrop-filter:blur(24px); -webkit-backdrop-filter:blur(24px); z-index:999999; justify-content:center; align-items:center;" onclick="if(event.target===this) closeAddToPlaylistModal()">
@@ -6207,11 +6407,28 @@
                 </div>
             </div>
         </div>
+
+        <!-- Apple Music Fullscreen Queue Sheet -->
+        <div id="fs-queue-container" class="fs-queue-bottom-sheet" style="display:none;">
+            <div class="fs-lyrics-handle" onclick="toggleFullscreenQueue()"></div>
+            <div style="display:flex; justify-content:space-between; align-items:center; padding: 0 16px 14px 16px; border-bottom: 1px solid rgba(255,255,255,0.08);">
+                <div style="font-size: 1rem; font-weight: 800; color: #fff; letter-spacing: 0.5px;">Playing Next</div>
+                <button type="button" onclick="toggleFullscreenQueue()" class="apple-more-btn" style="width:28px; height:28px;" title="Close Queue">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+            </div>
+            <div id="fs-queue-tracks-list" style="flex:1; overflow-y:auto; padding: 12px 12px 40px 12px;"></div>
         </div>
         
-        <!-- Spotify-style bottom sheet lyrics -->
-        <div id="fs-lyrics-container" class="fs-lyrics-bottom-sheet">
+        <!-- Apple Music style bottom sheet lyrics -->
+        <div id="fs-lyrics-container" class="fs-lyrics-bottom-sheet" style="display:none;">
             <div class="fs-lyrics-handle" onclick="toggleLyrics()"></div>
+            <div style="display:flex; justify-content:space-between; align-items:center; padding: 0 16px 14px 16px; border-bottom: 1px solid rgba(255,255,255,0.08);">
+                <div style="font-size: 1rem; font-weight: 800; color: #fff; letter-spacing: 0.5px;">Lyrics</div>
+                <button type="button" onclick="toggleLyrics()" class="apple-more-btn" style="width:28px; height:28px;" title="Close Lyrics">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+            </div>
             <div id="fs-lyrics-content" style="padding-bottom: 50px;">
                 Loading lyrics...
             </div>
@@ -6544,6 +6761,10 @@
                 document.body.classList.remove('in-music-lounge');
                 const dock = document.getElementById('levyra-bottom-dock');
                 if (dock) dock.style.display = 'none';
+                const lyricsSheet = document.getElementById('fs-lyrics-container');
+                if (lyricsSheet) { lyricsSheet.classList.remove('active'); lyricsSheet.style.display = 'none'; }
+                const queueSheet = document.getElementById('fs-queue-container');
+                if (queueSheet) { queueSheet.classList.remove('active'); queueSheet.style.display = 'none'; }
                 if (appNav && typeof isLoggedIn !== 'undefined' && isLoggedIn) {
                     appNav.style.display = 'flex';
                 }
@@ -10718,19 +10939,23 @@ function checkAndShowHolidayBanner(viewId) {
                 const songTitle = escapeHtml(t.title || 'Untitled Track');
                 const songArtist = escapeHtml(t.artist || 'SRM Hub');
                 html += `
-                <div class="levyra-track-row" data-id="${t.id}" onclick="playOfflineTrack('${t.id}')">
-                    <div class="levyra-track-left">
-                        <span class="levyra-track-rank" style="cursor:grab; opacity:0.6;">⋮⋮</span>
-                        <img src="${cover}" class="levyra-track-thumb" onerror="this.src='images/app-icon.svg'">
-                        <div class="levyra-track-info">
-                            <div class="levyra-track-title">${songTitle}</div>
-                            <div class="levyra-track-artist">${songArtist}</div>
+                <div class="apple-track-row" data-id="${t.id}" onclick="playOfflineTrack('${t.id}')">
+                    <div class="apple-track-left">
+                        <span class="apple-track-rank">${i + 1}</span>
+                        <img src="${cover}" class="apple-track-thumb" onerror="this.src='images/app-icon.svg'" alt="">
+                        <div class="apple-track-info">
+                            <div class="apple-track-title">${songTitle}</div>
+                            <div class="apple-track-artist">${songArtist}</div>
                         </div>
                     </div>
-                    <div class="levyra-track-actions">
-                        <span style="color:var(--levyra-cyan); font-size:10px; font-weight:700; background:rgba(0,229,255,0.12); padding:3px 8px; border-radius:9999px;">Offline</span>
-                        <button type="button" class="levyra-row-play-btn" onclick="event.stopPropagation(); playOfflineTrack('${t.id}')" title="Play">
-                            <svg width="11" height="11" viewBox="0 0 24 24" fill="#08090D" style="margin-left:1px;"><polygon points="6 4 20 12 6 20 6 4"/></svg>
+                    <div class="apple-track-right">
+                        <span style="color:var(--levyra-cyan, #00E5FF); font-size:10px; font-weight:700; background:rgba(0,229,255,0.12); padding:3px 8px; border-radius:9999px;">Offline</span>
+                        <button type="button" class="apple-more-btn" onclick="event.stopPropagation(); openAppleMusicActionSheet(typeof offlineTracksCache !== 'undefined' ? offlineTracksCache.find(x=>String(x.id)==='${t.id}') : null)" title="More Options">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                                <circle cx="5" cy="12" r="2"></circle>
+                                <circle cx="12" cy="12" r="2"></circle>
+                                <circle cx="19" cy="12" r="2"></circle>
+                            </svg>
                         </button>
                     </div>
                 </div>`;
@@ -10832,6 +11057,8 @@ function checkAndShowHolidayBanner(viewId) {
         let pendingAddToPlaylistTrack = null;
         let activePlaylistId = null;
         let searchDebounceTimer = null;
+        window.canvasMode = true;
+        let canvasMode = true;
 
         // In-memory offline cache for instant synchronous playback without async gaps
         window.offlineAudioCache = new Map();
@@ -11052,17 +11279,183 @@ function checkAndShowHolidayBanner(viewId) {
         function switchFsPlayerMode(mode) {
             const audioBtn = document.getElementById('fs-mode-audio-btn');
             const videoBtn = document.getElementById('fs-mode-video-btn');
-            if (audioBtn && videoBtn) {
-                if (mode === 'video') {
-                    videoBtn.classList.add('active');
-                    audioBtn.classList.remove('active');
-                    if (!canvasMode) toggleCanvasMode();
-                } else {
-                    audioBtn.classList.add('active');
-                    videoBtn.classList.remove('active');
-                    if (canvasMode) toggleCanvasMode();
-                }
+            if (mode === 'video') {
+                if (videoBtn) videoBtn.classList.add('active');
+                if (audioBtn) audioBtn.classList.remove('active');
+                if (!videoBackgroundEnabled) toggleCanvasMode();
+            } else {
+                if (audioBtn) audioBtn.classList.add('active');
+                if (videoBtn) videoBtn.classList.remove('active');
+                if (videoBackgroundEnabled) toggleCanvasMode();
             }
+        }
+
+        let activeAppleSheetTrack = null;
+        let activeAppleSheetContext = null;
+
+        function openAppleMusicActionSheet(track, context = null) {
+            if (!track) return;
+            activeAppleSheetTrack = track;
+            activeAppleSheetContext = context;
+
+            const modal = document.getElementById('appleMusicActionSheet');
+            const coverEl = document.getElementById('apple-sheet-cover');
+            const titleEl = document.getElementById('apple-sheet-title');
+            const artistEl = document.getElementById('apple-sheet-artist');
+            const removeBtn = document.getElementById('apple-sheet-remove-btn');
+
+            if (coverEl) coverEl.src = track.cover_url || (track.has_cover ? `${BACKEND_URL}/api/music/cover/${track.id}.jpg` : (track.cover_data || 'images/app-icon.svg'));
+            if (titleEl) titleEl.innerText = track.title || 'Song Title';
+            if (artistEl) artistEl.innerText = track.artist || 'Artist';
+
+            if (removeBtn) {
+                const inCustomPlaylist = context && context.playlistId && context.playlistId !== 'liked_songs' && context.playlistId !== 'favorites';
+                removeBtn.style.display = inCustomPlaylist ? 'flex' : 'none';
+            }
+
+            if (modal) modal.style.display = 'flex';
+        }
+
+        function closeAppleMusicActionSheet() {
+            const modal = document.getElementById('appleMusicActionSheet');
+            if (modal) modal.style.display = 'none';
+            activeAppleSheetTrack = null;
+            activeAppleSheetContext = null;
+        }
+
+        function appleSheetPlayNext() {
+            if (!activeAppleSheetTrack) return;
+            const track = activeAppleSheetTrack;
+            closeAppleMusicActionSheet();
+            
+            if (!currentPlaylist || currentPlaylist.length === 0) {
+                currentPlaylist = [track];
+                playMusicTrack(0, true);
+                showNotification(`Playing next: ${track.title}`);
+                return;
+            }
+            
+            const insertIdx = currentTrackIndex + 1;
+            currentPlaylist.splice(insertIdx, 0, track);
+            showNotification(`Playing next: ${track.title}`);
+        }
+
+        function appleSheetPlayLater() {
+            if (!activeAppleSheetTrack) return;
+            const track = activeAppleSheetTrack;
+            closeAppleMusicActionSheet();
+            
+            if (!currentPlaylist || currentPlaylist.length === 0) {
+                currentPlaylist = [track];
+                playMusicTrack(0, true);
+                showNotification(`Added to queue: ${track.title}`);
+                return;
+            }
+            
+            currentPlaylist.push(track);
+            showNotification(`Added to queue: ${track.title}`);
+        }
+
+        function appleSheetAddToPlaylist() {
+            const track = activeAppleSheetTrack;
+            closeAppleMusicActionSheet();
+            if (track) openAddToPlaylistModal(track);
+        }
+
+        function appleSheetRemoveFromPlaylist() {
+            if (!activeAppleSheetContext || !activeAppleSheetContext.playlistId) return;
+            const { playlistId, trackIdx } = activeAppleSheetContext;
+            closeAppleMusicActionSheet();
+            removeTrackFromPlaylist(playlistId, trackIdx);
+            showNotification("Removed from playlist");
+        }
+
+        function appleSheetDownload() {
+            const track = activeAppleSheetTrack;
+            closeAppleMusicActionSheet();
+            if (!track) return;
+            const audioSrc = track.audio_url || `${BACKEND_URL}/api/music/stream/${track.id}`;
+            const link = document.createElement('a');
+            link.href = audioSrc;
+            link.download = `${track.title || 'song'} - ${track.artist || 'artist'}.mp3`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            showNotification(`Downloading ${track.title}...`);
+        }
+
+        function appleSheetShare() {
+            const track = activeAppleSheetTrack;
+            closeAppleMusicActionSheet();
+            if (!track) return;
+            if (navigator.share) {
+                navigator.share({
+                    title: track.title,
+                    text: `Listen to "${track.title}" by ${track.artist} on SRM Student Hub Music Lounge`,
+                    url: window.location.origin + window.location.pathname + '#music'
+                }).catch(() => {});
+            } else {
+                navigator.clipboard?.writeText(window.location.origin + window.location.pathname + '#music');
+                showNotification("Share link copied to clipboard");
+            }
+        }
+
+        function toggleFullscreenQueue() {
+            const queueSheet = document.getElementById('fs-queue-container');
+            const lyricsSheet = document.getElementById('fs-lyrics-container');
+            if (!queueSheet) return;
+            
+            if (lyricsSheet && lyricsSheet.classList.contains('active')) {
+                lyricsSheet.classList.remove('active');
+                lyricsSheet.style.display = 'none';
+            }
+            
+            if (queueSheet.classList.contains('active')) {
+                queueSheet.classList.remove('active');
+                setTimeout(() => { if (!queueSheet.classList.contains('active')) queueSheet.style.display = 'none'; }, 250);
+                return;
+            }
+            
+            renderFullscreenQueueTracks();
+            queueSheet.style.display = 'flex';
+            void queueSheet.offsetHeight;
+            queueSheet.classList.add('active');
+        }
+
+        function renderFullscreenQueueTracks() {
+            const list = document.getElementById('fs-queue-tracks-list');
+            if (!list) return;
+            
+            if (!currentPlaylist || currentPlaylist.length === 0) {
+                list.innerHTML = `<div style="text-align:center; color:rgba(255,255,255,0.5); padding:30px 10px; font-size:13px;">No tracks in queue.</div>`;
+                return;
+            }
+            
+            let html = '';
+            currentPlaylist.forEach((t, i) => {
+                const cover = t.cover_url || (t.has_cover ? `${BACKEND_URL}/api/music/cover/${t.id}.jpg` : (t.cover_data || 'images/app-icon.svg'));
+                const isCurrent = (i === currentTrackIndex);
+                html += `
+                    <div class="apple-track-row ${isCurrent ? 'playing' : ''}" onclick="playMusicTrack(${i}, true)" style="margin-bottom:6px;">
+                        <div class="apple-track-left">
+                            <span class="apple-track-rank" ${isCurrent ? 'style="color:var(--levyra-cyan, #00E5FF); font-weight:900;"' : ''}>${isCurrent ? '▶' : (i + 1)}</span>
+                            <img src="${cover}" class="apple-track-thumb" onerror="this.src='images/app-icon.svg'" alt="">
+                            <div class="apple-track-info">
+                                <div class="apple-track-title" ${isCurrent ? 'style="color:var(--levyra-cyan, #00E5FF);"' : ''}>${escapeHtml(t.title || 'Untitled')}</div>
+                                <div class="apple-track-artist">${escapeHtml(t.artist || 'SRM Hub')}</div>
+                            </div>
+                        </div>
+                        <div class="apple-track-right">
+                            <span class="apple-track-duration">${t.duration ? safeFmtDuration(t.duration) : ''}</span>
+                        </div>
+                    </div>
+                `;
+            });
+            list.innerHTML = html;
+        }
+
+        function openFullscreenQueue() {
+            toggleFullscreenQueue();
         }
 
         function toggleStarCurrentTrack() {
@@ -11110,10 +11503,6 @@ function checkAndShowHolidayBanner(viewId) {
             const pill = document.getElementById('fs-stat-dislike');
             if (pill) pill.classList.toggle('active');
             nextMusicTrack();
-        }
-
-        function openFullscreenQueue() {
-            toggleLyrics();
         }
 
         // --- SPOTIFY & LEVYRA INSTANT SEARCH & SEARCH HISTORY ---
@@ -11279,21 +11668,22 @@ function checkAndShowHolidayBanner(viewId) {
                 const cover = t.cover_url || (t.has_cover ? `${BACKEND_URL}/api/music/cover/${t.id}.jpg` : 'images/app-icon.svg');
                 const durationFmt = t.duration ? safeFmtDuration(t.duration) : '';
                 html += `
-                    <div class="levyra-track-row" onclick="playTrackFromSearch(${i})" style="margin: 0 0 8px 0;">
-                        <div class="levyra-track-left">
-                            <img src="${cover}" class="levyra-track-thumb" onerror="this.src='images/app-icon.svg'">
-                            <div class="levyra-track-info">
-                                <div class="levyra-track-title">${escapeHtml(t.title || 'Untitled')}</div>
-                                <div class="levyra-track-artist">${escapeHtml(t.artist || 'Unknown Artist')} ${t.album ? '• ' + escapeHtml(t.album) : ''}</div>
+                    <div class="apple-track-row" onclick="playTrackFromSearch(${i})" style="margin: 0 0 6px 0;">
+                        <div class="apple-track-left">
+                            <img src="${cover}" class="apple-track-thumb" onerror="this.src='images/app-icon.svg'" alt="">
+                            <div class="apple-track-info">
+                                <div class="apple-track-title">${escapeHtml(t.title || 'Untitled')}</div>
+                                <div class="apple-track-artist">${escapeHtml(t.artist || 'Unknown Artist')} ${t.album ? '• ' + escapeHtml(t.album) : ''}</div>
                             </div>
                         </div>
-                        <div class="levyra-track-actions">
-                            ${durationFmt ? `<span class="levyra-track-duration">${durationFmt}</span>` : ''}
-                            <button type="button" class="levyra-row-action-btn" onclick="event.stopPropagation(); openAddToPlaylistModal(currentSearchResults[${i}])" title="Add to Playlist">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
-                            </button>
-                            <button type="button" class="levyra-row-play-btn" onclick="event.stopPropagation(); playTrackFromSearch(${i})" title="Play">
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill="#08090D" style="margin-left:1px;"><polygon points="6 4 20 12 6 20 6 4"/></svg>
+                        <div class="apple-track-right">
+                            ${durationFmt ? `<span class="apple-track-duration">${durationFmt}</span>` : ''}
+                            <button type="button" class="apple-more-btn" onclick="event.stopPropagation(); openAppleMusicActionSheet(currentSearchResults[${i}])" title="More Options">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                                    <circle cx="5" cy="12" r="2"></circle>
+                                    <circle cx="12" cy="12" r="2"></circle>
+                                    <circle cx="19" cy="12" r="2"></circle>
+                                </svg>
                             </button>
                         </div>
                     </div>
@@ -11573,22 +11963,23 @@ function checkAndShowHolidayBanner(viewId) {
                 const songTitle = escapeHtml(t.title || 'Untitled Track');
                 const songArtist = escapeHtml(t.artist || 'SRM Hub');
                 html += `
-                    <div class="levyra-track-row" onclick="playTrackFromExplore(${realIndex})" style="margin: 0 0 8px 0;">
-                        <div class="levyra-track-left">
-                            <span class="levyra-track-rank">${num}</span>
-                            <img src="${cover}" class="levyra-track-thumb" onerror="this.src='images/app-icon.svg'" alt="">
-                            <div class="levyra-track-info">
-                                <div class="levyra-track-title">${songTitle}</div>
-                                <div class="levyra-track-artist">${songArtist}</div>
+                    <div class="apple-track-row" onclick="playTrackFromExplore(${realIndex})" style="margin: 0 0 6px 0;">
+                        <div class="apple-track-left">
+                            <span class="apple-track-rank">${num}</span>
+                            <img src="${cover}" class="apple-track-thumb" onerror="this.src='images/app-icon.svg'" alt="">
+                            <div class="apple-track-info">
+                                <div class="apple-track-title">${songTitle}</div>
+                                <div class="apple-track-artist">${songArtist}</div>
                             </div>
                         </div>
-                        <div class="levyra-track-actions">
-                            ${durationFmt ? `<span class="levyra-track-duration">${durationFmt}</span>` : ''}
-                            <button type="button" class="levyra-row-action-btn" onclick="event.stopPropagation(); openAddToPlaylistModal(currentExploreTracks[${realIndex}])" title="Add to Playlist">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
-                            </button>
-                            <button type="button" class="levyra-row-play-btn" onclick="event.stopPropagation(); playTrackFromExplore(${realIndex})" title="Play">
-                                <svg width="11" height="11" viewBox="0 0 24 24" fill="#08090D" style="margin-left:1px;"><polygon points="6 4 20 12 6 20 6 4"/></svg>
+                        <div class="apple-track-right">
+                            ${durationFmt ? `<span class="apple-track-duration">${durationFmt}</span>` : ''}
+                            <button type="button" class="apple-more-btn" onclick="event.stopPropagation(); openAppleMusicActionSheet(currentExploreTracks[${realIndex}])" title="More Options">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                                    <circle cx="5" cy="12" r="2"></circle>
+                                    <circle cx="12" cy="12" r="2"></circle>
+                                    <circle cx="19" cy="12" r="2"></circle>
+                                </svg>
                             </button>
                         </div>
                     </div>
@@ -11649,20 +12040,21 @@ function checkAndShowHolidayBanner(viewId) {
             tracks.forEach((t, i) => {
                 const cover = t.cover_url || (t.has_cover ? `${BACKEND_URL}/api/music/cover/${t.id}.jpg` : 'images/app-icon.svg');
                 html += `
-                    <div class="levyra-track-row" onclick="playTrackFromRecent(${i})">
-                        <div class="levyra-track-left">
-                            <img src="${cover}" class="levyra-track-thumb" onerror="this.src='images/app-icon.svg'">
-                            <div class="levyra-track-info">
-                                <div class="levyra-track-title">${escapeHtml(t.title || 'Untitled')}</div>
-                                <div class="levyra-track-artist">${escapeHtml(t.artist || 'Artist')}</div>
+                    <div class="apple-track-row" onclick="playTrackFromRecent(${i})" style="margin: 0 0 6px 0;">
+                        <div class="apple-track-left">
+                            <img src="${cover}" class="apple-track-thumb" onerror="this.src='images/app-icon.svg'" alt="">
+                            <div class="apple-track-info">
+                                <div class="apple-track-title">${escapeHtml(t.title || 'Untitled')}</div>
+                                <div class="apple-track-artist">${escapeHtml(t.artist || 'Artist')}</div>
                             </div>
                         </div>
-                        <div class="levyra-track-actions">
-                            <button type="button" class="levyra-row-action-btn" onclick="event.stopPropagation(); openAddToPlaylistModal(userMusicLibrary.recently_played[${i}])" title="Add to Playlist">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
-                            </button>
-                            <button type="button" class="levyra-row-play-btn" onclick="event.stopPropagation(); playTrackFromRecent(${i})" title="Play">
-                                <svg width="11" height="11" viewBox="0 0 24 24" fill="#08090D" style="margin-left:1px;"><polygon points="6 4 20 12 6 20 6 4"/></svg>
+                        <div class="apple-track-right">
+                            <button type="button" class="apple-more-btn" onclick="event.stopPropagation(); openAppleMusicActionSheet(userMusicLibrary.recently_played[${i}])" title="More Options">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                                    <circle cx="5" cy="12" r="2"></circle>
+                                    <circle cx="12" cy="12" r="2"></circle>
+                                    <circle cx="19" cy="12" r="2"></circle>
+                                </svg>
                             </button>
                         </div>
                     </div>
@@ -11788,7 +12180,7 @@ function checkAndShowHolidayBanner(viewId) {
             const detailView = document.getElementById('playlist-detail-view');
             const titleEl = document.getElementById('playlist-detail-title');
             const countEl = document.getElementById('playlist-detail-count');
-            const deleteBtn = document.getElementById('playlist-detail-delete-btn');
+            const heroArt = document.getElementById('playlist-detail-hero-art');
 
             if (overviewView) overviewView.style.display = 'none';
             if (detailView) detailView.style.display = 'block';
@@ -11797,13 +12189,33 @@ function checkAndShowHolidayBanner(viewId) {
             if (!playlist) return;
 
             const tracks = playlist.tracks || [];
-            if (titleEl) titleEl.innerText = playlist.name;
-            if (countEl) countEl.innerText = `${tracks.length} track${tracks.length===1?'':'s'} • Created ${new Date(playlist.created_at || Date.now()).toLocaleDateString()}`;
-            if (deleteBtn) {
-                deleteBtn.style.display = playlist.id !== 'liked_songs' ? 'flex' : 'none';
+            if (titleEl) titleEl.innerText = playlist.name || playlist.title || 'Playlist';
+            if (countEl) countEl.innerText = `${tracks.length} song${tracks.length === 1 ? '' : 's'}`;
+            if (heroArt) {
+                if (tracks.length > 0 && (tracks[0].cover_url || tracks[0].has_cover || tracks[0].cover_data)) {
+                    heroArt.src = tracks[0].cover_url || (tracks[0].has_cover ? `${BACKEND_URL}/api/music/cover/${tracks[0].id}.jpg` : (tracks[0].cover_data || 'images/app-icon.svg'));
+                } else {
+                    heroArt.src = 'images/app-icon.svg';
+                }
             }
 
             renderPlaylistTracks(playlist);
+        }
+
+        function openPlaylistOptions(playlistId) {
+            const playlist = (userMusicLibrary.playlists || []).find(p => p.id === playlistId);
+            if (!playlist) return;
+            
+            const isLikedSongs = (playlist.id === 'liked_songs' || playlist.id === 'favorites');
+            if (isLikedSongs) {
+                showNotification("Default playlists cannot be deleted.");
+                return;
+            }
+            
+            if (confirm(`Delete playlist "${playlist.name || playlist.title}"?`)) {
+                deletePlaylist(playlistId);
+                closePlaylistDetail();
+            }
         }
 
         function closePlaylistDetail() {
@@ -11817,51 +12229,36 @@ function checkAndShowHolidayBanner(viewId) {
 
             const tracks = playlist.tracks || [];
             if (tracks.length === 0) {
-                tracksList.innerHTML = `<div style="text-align:center; color:var(--levyra-text-sub); padding:40px; font-size:13px;">This playlist is empty.<br>Search or explore songs and tap bookmark to add them here!</div>`;
+                tracksList.innerHTML = `<div style="text-align:center; color:rgba(255,255,255,0.45); padding:50px 20px; font-size:13px; font-weight:500;">This playlist is empty.<br><span style="font-size:12px; opacity:0.75;">Tap ••• on any track in Search or Lounge to add it here.</span></div>`;
                 return;
             }
 
-            let html = `
-                <div style="display:flex; justify-content:space-between; align-items:center; font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:1px; color:var(--levyra-text-sub); margin-bottom:12px; padding:0 4px;">
-                    <span>Tracks (${tracks.length})</span>
-                    <span>Order & Manage</span>
-                </div>
-            `;
-
+            let html = '';
             tracks.forEach((t, i) => {
-                const cover = t.cover_url || (t.has_cover ? `${BACKEND_URL}/api/music/cover/${t.id}.jpg` : 'images/app-icon.svg');
-                const num = (i + 1).toString().padStart(2, '0');
+                const cover = t.cover_url || (t.has_cover ? `${BACKEND_URL}/api/music/cover/${t.id}.jpg` : (t.cover_data || 'images/app-icon.svg'));
                 const songTitle = escapeHtml(t.title || 'Untitled Track');
                 const songArtist = escapeHtml(t.artist || 'SRM Hub');
+                const durationFmt = t.duration ? safeFmtDuration(t.duration) : '';
+                const isCurrentlyPlaying = (currentPlaylist === playlist.tracks && currentTrackIndex === i && audioPlayer && !audioPlayer.paused);
+                
                 html += `
-                    <div class="levyra-track-row" style="margin: 0 0 8px 0;" data-id="${t.id}">
-                        <!-- Left: Sleek Reorder Controls -->
-                        <div class="levyra-reorder-group">
-                            <button type="button" class="levyra-order-btn" onclick="event.stopPropagation(); moveTrackInPlaylist('${playlist.id}', ${i}, ${i-1})" ${i===0 ? 'disabled style="opacity:0.2; cursor:default;"' : ''} title="Move Up">
-                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="18 15 12 9 6 15"/></svg>
-                            </button>
-                            <button type="button" class="levyra-order-btn" onclick="event.stopPropagation(); moveTrackInPlaylist('${playlist.id}', ${i}, ${i+1})" ${i===tracks.length-1 ? 'disabled style="opacity:0.2; cursor:default;"' : ''} title="Move Down">
-                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="6 9 12 15 18 9"/></svg>
-                            </button>
-                        </div>
-
-                        <!-- Center: Song Details -->
-                        <div class="levyra-track-left" style="cursor:pointer;" onclick="playTrackFromPlaylist('${playlist.id}', ${i})">
-                            <span class="levyra-track-rank">${num}</span>
-                            <img src="${cover}" class="levyra-track-thumb" onerror="this.src='images/app-icon.svg'">
-                            <div class="levyra-track-info">
-                                <div class="levyra-track-title">${songTitle}</div>
-                                <div class="levyra-track-artist">${songArtist}</div>
+                    <div class="apple-track-row ${isCurrentlyPlaying ? 'playing' : ''}" onclick="playTrackFromPlaylist('${playlist.id}', ${i})" data-id="${t.id}">
+                        <div class="apple-track-left">
+                            <span class="apple-track-rank">${i + 1}</span>
+                            <img src="${cover}" class="apple-track-thumb" onerror="this.src='images/app-icon.svg'" alt="">
+                            <div class="apple-track-info">
+                                <div class="apple-track-title" ${isCurrentlyPlaying ? 'style="color:var(--levyra-cyan, #00E5FF);"' : ''}>${songTitle}</div>
+                                <div class="apple-track-artist">${songArtist}</div>
                             </div>
                         </div>
-
-                        <!-- Right: Actions -->
-                        <div class="levyra-track-actions">
-                            <button type="button" class="levyra-row-play-btn" onclick="event.stopPropagation(); playTrackFromPlaylist('${playlist.id}', ${i})" title="Play">
-                                <svg width="11" height="11" viewBox="0 0 24 24" fill="#08090D" style="margin-left:1px;"><polygon points="6 4 20 12 6 20 6 4"/></svg>
-                            </button>
-                            <button type="button" class="levyra-delete-btn" onclick="event.stopPropagation(); removeTrackFromPlaylist('${playlist.id}', ${i})" title="Remove from playlist">
-                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                        <div class="apple-track-right">
+                            ${durationFmt ? `<span class="apple-track-duration">${durationFmt}</span>` : ''}
+                            <button type="button" class="apple-more-btn" onclick="event.stopPropagation(); openAppleMusicActionSheet(userMusicLibrary.playlists.find(p=>p.id==='${playlist.id}')?.tracks[${i}], {playlistId:'${playlist.id}', trackIdx:${i}})" title="More Options">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                                    <circle cx="5" cy="12" r="2"></circle>
+                                    <circle cx="12" cy="12" r="2"></circle>
+                                    <circle cx="19" cy="12" r="2"></circle>
+                                </svg>
                             </button>
                         </div>
                     </div>
@@ -11870,7 +12267,7 @@ function checkAndShowHolidayBanner(viewId) {
 
             tracksList.innerHTML = html;
 
-            // Initialize Sortable if library is available
+            // Initialize Sortable for drag-and-drop playlist reordering
             if (typeof Sortable !== 'undefined') {
                 try {
                     if (window.playlistTracksSortable) window.playlistTracksSortable.destroy();
@@ -11878,7 +12275,7 @@ function checkAndShowHolidayBanner(viewId) {
                         animation: 200,
                         delay: 150,
                         delayOnTouchOnly: true,
-                        handle: '.levyra-track-left',
+                        handle: '.apple-track-left',
                         onEnd: function(evt) {
                             if (evt.oldIndex !== undefined && evt.newIndex !== undefined && evt.oldIndex !== evt.newIndex) {
                                 moveTrackInPlaylist(playlist.id, evt.oldIndex, evt.newIndex);
@@ -11909,14 +12306,12 @@ function checkAndShowHolidayBanner(viewId) {
         }
 
         function deletePlaylist(playlistId) {
-            if (playlistId === 'liked_songs') return;
-            if (confirm("Are you sure you want to delete this playlist?")) {
-                const idx = (userMusicLibrary.playlists || []).findIndex(p => p.id === playlistId);
-                if (idx !== -1) {
-                    userMusicLibrary.playlists.splice(idx, 1);
-                    saveUserMusicLibrary();
-                    renderPlaylistsOverview();
-                }
+            if (playlistId === 'liked_songs' || playlistId === 'favorites') return;
+            const idx = (userMusicLibrary.playlists || []).findIndex(p => p.id === playlistId);
+            if (idx !== -1) {
+                userMusicLibrary.playlists.splice(idx, 1);
+                saveUserMusicLibrary();
+                renderPlaylistsOverview();
             }
         }
 
@@ -12535,6 +12930,8 @@ function checkAndShowHolidayBanner(viewId) {
 
         function toggleCanvasMode() {
             videoBackgroundEnabled = !videoBackgroundEnabled;
+            window.canvasMode = videoBackgroundEnabled;
+            canvasMode = videoBackgroundEnabled;
             const btnText = document.getElementById('fs-canvas-toggle-text');
             if (btnText) btnText.innerText = videoBackgroundEnabled ? 'Canvas' : 'Audio';
             const audioBtn = document.getElementById('fs-mode-audio-btn');
@@ -12548,7 +12945,7 @@ function checkAndShowHolidayBanner(viewId) {
                     videoBtn.classList.remove('active');
                 }
             }
-            const track = currentPlaylist[currentTrackIndex];
+            const track = (currentPlaylist && currentPlaylist[currentTrackIndex]) || (typeof currentExploreTracks !== 'undefined' && currentExploreTracks[currentTrackIndex]);
             if (track) {
                 updateVideoBackground(track);
             }
@@ -13431,17 +13828,26 @@ function checkAndShowHolidayBanner(viewId) {
 
         async function toggleLyrics() {
             const sheet = document.getElementById('fs-lyrics-container');
+            const queueSheet = document.getElementById('fs-queue-container');
             const content = document.getElementById('fs-lyrics-content');
             if (!sheet || !content) return;
             
+            if (queueSheet && queueSheet.classList.contains('active')) {
+                queueSheet.classList.remove('active');
+                queueSheet.style.display = 'none';
+            }
+            
             if (sheet.classList.contains('active')) {
                 sheet.classList.remove('active');
+                setTimeout(() => { if (!sheet.classList.contains('active')) sheet.style.display = 'none'; }, 250);
                 return;
             }
             
+            sheet.style.display = 'flex';
+            void sheet.offsetHeight;
             sheet.classList.add('active');
             
-            const track = currentPlaylist[currentTrackIndex];
+            const track = (currentPlaylist && currentPlaylist[currentTrackIndex]) || (typeof currentExploreTracks !== 'undefined' && currentExploreTracks[currentTrackIndex]);
             if (!track) {
                 content.innerText = "No track playing.";
                 return;
@@ -13613,37 +14019,37 @@ function checkAndShowHolidayBanner(viewId) {
         }
         
         function openFullscreenPlayer(e, force = false) {
-            if(e && e.target.closest('.player-controls') || e && e.target.closest('.progress-container') || e && e.target.closest('.player-right')) return;
+            if(e && (e.target.closest('.player-controls') || e.target.closest('.progress-container') || e.target.closest('.player-right') || e.target.closest('button') || e.target.closest('#mini-progress-bar'))) return;
             if(!audioPlayer.src && !force) return;
             
-            const track = currentPlaylist[currentTrackIndex];
-            document.getElementById('fs-title').innerText = track.title;
-            document.getElementById('fs-artist').innerText = track.artist;
+            const track = (currentPlaylist && currentPlaylist[currentTrackIndex]) || (typeof currentExploreTracks !== 'undefined' && currentExploreTracks[currentTrackIndex]) || (typeof currentSearchResults !== 'undefined' && currentSearchResults[currentTrackIndex]) || { title: 'SRM Hub Music', artist: 'Playing' };
             
-            const coverSrc = track.cover_data || track.cover_url || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMzMzIi8+PC9zdmc+';
+            const titleEl = document.getElementById('fs-title');
+            if (titleEl) titleEl.innerText = track.title || 'No track';
+            const artistEl = document.getElementById('fs-artist');
+            if (artistEl) artistEl.innerText = track.artist || '-';
+            
+            const coverSrc = track.cover_data || track.cover_url || (track.has_cover ? `${BACKEND_URL}/api/music/cover/${track.id}.jpg` : 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMzMzIi8+PC9zdmc+');
             const fsCover = document.getElementById('fs-cover');
-            fsCover.crossOrigin = 'anonymous';
-            fsCover.src = coverSrc;
+            if (fsCover) {
+                fsCover.crossOrigin = 'anonymous';
+                fsCover.src = coverSrc;
+                if (fsCover.complete) {
+                    extractAlbumColors(fsCover);
+                }
+            }
             
             // Sync repeat and shuffle buttons style
-            if (document.getElementById('repeat-btn-fs')) {
-                document.getElementById('repeat-btn-fs').style.color = isRepeat ? '#00E5FF' : '#fff';
-            }
-            const shuffleBtn = document.getElementById('shuffle-btn-fs');
-            if (shuffleBtn) {
-                shuffleBtn.style.color = isShuffle ? '#00E5FF' : '#fff';
-            }
+            const rptBtn = document.getElementById('repeat-btn-fs');
+            if (rptBtn) rptBtn.style.color = isRepeat ? 'var(--levyra-cyan, #00E5FF)' : '#fff';
+            const shfBtn = document.getElementById('shuffle-btn-fs');
+            if (shfBtn) shfBtn.style.color = isShuffle ? 'var(--levyra-cyan, #00E5FF)' : '#fff';
             
-            // Force extraction immediately if already loaded
-            if (fsCover.complete) {
-                extractAlbumColors(fsCover);
-            }
-
-            // Sync mode pill switcher
+            // Sync mode pill switcher safely
             const audioBtn = document.getElementById('fs-mode-audio-btn');
             const videoBtn = document.getElementById('fs-mode-video-btn');
             if (audioBtn && videoBtn) {
-                if (canvasMode) {
+                if (videoBackgroundEnabled) {
                     videoBtn.classList.add('active');
                     audioBtn.classList.remove('active');
                 } else {
@@ -13661,13 +14067,15 @@ function checkAndShowHolidayBanner(viewId) {
                 artistAvatar.src = coverSrc;
             }
             const starIcon = document.getElementById('fs-star-icon');
-            if (starIcon) {
+            if (starIcon && userMusicLibrary && userMusicLibrary.playlists) {
                 const favPlaylist = (userMusicLibrary.playlists || []).find(p => p.id === 'favorites' || p.title === 'Favorites');
-                const isFav = favPlaylist && favPlaylist.tracks.some(t => String(t.id) === String(track.id));
-                starIcon.setAttribute('fill', isFav ? 'var(--levyra-cyan)' : 'none');
+                const isFav = favPlaylist && favPlaylist.tracks && favPlaylist.tracks.some(t => String(t.id) === String(track.id));
+                starIcon.setAttribute('fill', isFav ? 'var(--levyra-cyan, #00E5FF)' : 'none');
             }
             
-            document.getElementById('music-fullscreen').style.display = 'flex';
+            const fsModal = document.getElementById('music-fullscreen');
+            if (fsModal) fsModal.style.display = 'flex';
+            
             const fab = document.getElementById('ai-fab');
             if (fab) fab.classList.add('hidden-fab');
             
@@ -13676,13 +14084,26 @@ function checkAndShowHolidayBanner(viewId) {
                 updateVideoBackground(track);
             }
             
-            if (!force && !history.state?.fsMusic) {
+            if (!force && (!history.state || !history.state.fsMusic)) {
                 history.pushState({fsMusic: true}, '');
             }
         }
         
         function closeFullscreenPlayer(fromPopState = false) {
-            document.getElementById('music-fullscreen').style.display = 'none';
+            const fsModal = document.getElementById('music-fullscreen');
+            if (fsModal) fsModal.style.display = 'none';
+            
+            const lyricsSheet = document.getElementById('fs-lyrics-container');
+            if (lyricsSheet) {
+                lyricsSheet.classList.remove('active');
+                lyricsSheet.style.display = 'none';
+            }
+            const queueSheet = document.getElementById('fs-queue-container');
+            if (queueSheet) {
+                queueSheet.classList.remove('active');
+                queueSheet.style.display = 'none';
+            }
+            
             const activeView = document.querySelector('.app-view.active');
             if (activeView && activeView.id === 'home-view') {
                 const fab = document.getElementById('ai-fab');
