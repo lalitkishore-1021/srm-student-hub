@@ -1,5 +1,5 @@
 // Change this version number every time you want to force phones to update!
-const CACHE_NAME = 'srm-hub-v62-theme-credits-fix';
+const CACHE_NAME = 'srm-hub-v63-background-stream-fix';
 
 const ASSETS_TO_CACHE = [
     '/',
@@ -55,8 +55,19 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
     const url = new URL(event.request.url);
 
-    // CRITICAL BYPASS: Never cache API requests
-    if (url.pathname.startsWith('/api/')) {
+    // CRITICAL BYPASS: Never intercept API requests, media streams, Range requests, or CDN audio/video
+    // Bypassing event.respondWith allows browser native network stack to handle 206 Partial Content streams,
+    // which prevents audio freezing when the screen is locked/turned off in Brave, Chrome, and PWA mode.
+    if (
+        url.pathname.startsWith('/api/') ||
+        event.request.headers.has('range') ||
+        event.request.destination === 'audio' ||
+        event.request.destination === 'video' ||
+        url.pathname.match(/\.(mp3|wav|ogg|m4a|aac|flac|mp4|webm)$/i) ||
+        url.hostname.includes('supabase.co') ||
+        url.hostname.includes('googlevideo.com') ||
+        url.hostname.includes('youtube.com')
+    ) {
         return; 
     }
 

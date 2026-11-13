@@ -194,7 +194,7 @@ class SRMPortalSession:
         self.load_ms = None
 
     def load_captcha(self) -> bool:
-        r = self.session.get(LOGIN_URL, timeout=18)
+        r = self.session.get(LOGIN_URL, timeout=12)
         text = r.text
         m = re.search(r"window\.SECURE_CONFIG\s*=\s*\{[^}]*?nonce\s*:\s*'([^']+)'", text)
         if not m:
@@ -229,7 +229,7 @@ class SRMPortalSession:
                 "Accept": "image/png, image/jpeg, image/svg+xml, image/*",
                 "Referer": LOGIN_URL,
             },
-            timeout=18,
+            timeout=12,
         )
         if cr.status_code == 200 and cr.content:
             self.captcha_bytes = cr.content
@@ -260,7 +260,7 @@ class SRMPortalSession:
         fp_body[self.domain_field_name] = dtoken
         fp_body[self.captcha_field_name] = cptoken
 
-        resp = self.session.post(LOGIN_SERVLET, data=fp_body, timeout=18)
+        resp = self.session.post(LOGIN_SERVLET, data=fp_body, timeout=12)
         body = resp.text or ""
         self.last_status = resp.status_code
         self.last_url = str(resp.url)
@@ -864,15 +864,31 @@ def fetch_portal_data(username: str, password: str) -> Dict[str, Any]:
     att_html = None
     active_portal = None
 
-    for attempt in range(1, 4):
-        portal = SRMPortalSession()
+    # Pre-load 2 portals in parallel so retry attempt has captcha ready instantly (Ratio-D fast path)
+    portals_ready = []
+    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pre_ex:
+        def _load_one(_unused):
+            p = SRMPortalSession()
+            try:
+                ok = p.load_captcha()
+                return p if (ok and p.captcha_bytes) else None
+            except Exception:
+                return None
+        pfuts = [pre_ex.submit(_load_one, i) for i in range(2)]
+        for pft in concurrent.futures.as_completed(pfuts, timeout=15):
+            try:
+                pp = pft.result()
+                if pp:
+                    portals_ready.append(pp)
+            except Exception:
+                pass
+
+    for attempt, portal in enumerate(portals_ready, 1):
         try:
-            if not portal.load_captcha() or not portal.captcha_bytes:
-                continue
             solved = solve_captcha_bytes(portal.captcha_bytes)
             if not solved:
                 continue
-            print(f"[{netid}] [PORTAL-OCR] Attempt {attempt}/2 predicted captcha: '{solved}'")
+            print(f"[{netid}] [PORTAL-OCR] Attempt {attempt}/{len(portals_ready)} predicted captcha: '{solved}'")
             res = portal.login_attempt(netid, password, solved)
             if res.get("ok"):
                 att_html = res.get("att_html")
@@ -886,7 +902,7 @@ def fetch_portal_data(username: str, password: str) -> Dict[str, Any]:
                 return {"success": False, "error": msg, "reason": reason}
         except Exception as e:
             print(f"[{netid}] [PORTAL] Attempt {attempt} error: {e}")
-            break
+            continue
 
     if not active_portal or not att_html:
         return {"success": False, "error": "Could not authenticate with SRM Student Portal"}

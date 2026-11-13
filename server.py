@@ -18,6 +18,17 @@ import time
 
 # --- ANTI-SCRAPING PROTECTIONS ---
 API_SECRET_KEY = os.environ.get("API_SECRET_KEY", "srm-hub-protected-x9f2")
+# OWNER LOCK: Set ALLOWED_NET_ID env var to your NetID to restrict syncing to only yourself
+# e.g. ALLOWED_NET_ID=sg8215  (case-insensitive, without @srmist.edu.in)
+_ALLOWED_NET_ID_RAW = os.environ.get("ALLOWED_NET_ID", "").strip().lower()
+ALLOWED_NET_ID = _ALLOWED_NET_ID_RAW.split("@")[0] if _ALLOWED_NET_ID_RAW else None
+
+def is_allowed_user(reg_no_or_net_id: str) -> bool:
+    """Returns True if ALLOWED_NET_ID is not set (open) or if the user matches."""
+    if not ALLOWED_NET_ID:
+        return True  # No restriction set, anyone can use
+    clean = (reg_no_or_net_id or "").strip().lower().split("@")[0]
+    return clean == ALLOWED_NET_ID
 ip_rate_limits = defaultdict(list)
 MAX_LOGIN_ATTEMPTS = 30
 RATE_LIMIT_WINDOW = 60 # seconds
@@ -675,6 +686,11 @@ def start_session():
         client_ip = client_ip.split(',')[0].strip()
     if is_rate_limited(client_ip):
         return jsonify({'success': False, 'error': 'Too many requests. Please try again later.'}), 429
+
+    # Owner whitelist check
+    req_reg = (data.get('regNo') or '').strip()
+    if not is_allowed_user(req_reg):
+        return jsonify({'success': False, 'error': 'This app is restricted to its owner only. Contact the owner for access.'}), 403
 
     sync_id = str(uuid.uuid4())
     sync_jobs[sync_id] = {'status': 'processing', 'timestamp': time.time()}

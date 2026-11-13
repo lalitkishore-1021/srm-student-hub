@@ -6713,7 +6713,11 @@
 
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('sw.js').catch(err => console.log('SW Failed:', err));
+                navigator.serviceWorker.register('sw.js').then((reg) => {
+                    if (reg) {
+                        try { reg.update(); } catch(e) {}
+                    }
+                }).catch(err => console.log('SW Failed:', err));
             });
             navigator.serviceWorker.addEventListener('message', (event) => {
                 if (event.data && event.data.type === 'PLAY_NOTIFICATION_SOUND') {
@@ -12407,8 +12411,31 @@ function checkAndShowHolidayBanner(viewId) {
             audioPlayer.playsInline = true;
             audioPlayer.setAttribute('playsinline', '');
             audioPlayer.setAttribute('webkit-playsinline', '');
-            audioPlayer.style.display = 'none';
+            audioPlayer.crossOrigin = 'anonymous';
+            // Rendered offscreen with minimal opacity (NOT display:none) so Chromium Blink
+            // keeps it in the active layout tree and doesn't suspend playback when the screen is locked
+            audioPlayer.style.cssText = 'position: fixed; bottom: 0; left: 0; width: 1px; height: 1px; opacity: 0.01; pointer-events: none; z-index: -100;';
             document.body.appendChild(audioPlayer);
+        }
+
+        // Continuous Audio Bridge Element:
+        // When switching tracks or buffering during screen-off, Android's audio subsystem will
+        // immediately suspend the browser process if the active audio output stream drops to 0.
+        // A silent looping audio element keeps Android's audio hardware channel continuously active.
+        let audioBridge = document.getElementById('srm-hub-audio-bridge');
+        if (!audioBridge) {
+            audioBridge = document.createElement('audio');
+            audioBridge.id = 'srm-hub-audio-bridge';
+            audioBridge.loop = true;
+            audioBridge.preload = 'auto';
+            audioBridge.playsInline = true;
+            audioBridge.setAttribute('playsinline', '');
+            audioBridge.setAttribute('webkit-playsinline', '');
+            audioBridge.style.cssText = 'position: fixed; bottom: 0; left: 0; width: 1px; height: 1px; opacity: 0.01; pointer-events: none; z-index: -100;';
+            // Valid minimal silent WAV (44-byte RIFF header + 2-byte silent PCM)
+            audioBridge.src = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA';
+            audioBridge.volume = 0.01;
+            document.body.appendChild(audioBridge);
         }
 
         try {
@@ -12422,6 +12449,11 @@ function checkAndShowHolidayBanner(viewId) {
         let keepAliveSource = null;
 
         function startAudioKeepAlive() {
+            try {
+                if (audioBridge && audioBridge.paused && !userManuallyStopped) {
+                    audioBridge.play().catch(() => {});
+                }
+            } catch(e) {}
             try {
                 if (!audioKeepAliveCtx) {
                     const AudioContextClass = window.AudioContext || window.webkitAudioContext;
@@ -12447,6 +12479,11 @@ function checkAndShowHolidayBanner(viewId) {
         }
 
         function stopAudioKeepAlive() {
+            try {
+                if (audioBridge && !audioBridge.paused) {
+                    audioBridge.pause();
+                }
+            } catch(e) {}
             try {
                 if (keepAliveSource) {
                     keepAliveSource.stop();
@@ -12540,6 +12577,16 @@ function checkAndShowHolidayBanner(viewId) {
                     if (isFsOpen && videoBackgroundEnabled) {
                         updateVideoBackground(track);
                     }
+                }
+            } else if (document.visibilityState === 'hidden') {
+                // Pause background/fullscreen video decoders to free mobile GPU/CPU for background audio streaming
+                const bgVid = document.getElementById('bg-video-player');
+                if (bgVid && !bgVid.paused) {
+                    bgVid.pause();
+                }
+                const fsVid = document.getElementById('fs-video');
+                if (fsVid && !fsVid.paused) {
+                    fsVid.pause();
                 }
             }
         });
@@ -13340,6 +13387,7 @@ function checkAndShowHolidayBanner(viewId) {
 
                 setAction('play', () => {
                     userManuallyStopped = false;
+                    startAudioKeepAlive();
                     audioPlayer.play().catch(() => {});
                 });
                 setAction('pause', () => {
@@ -13370,6 +13418,14 @@ function checkAndShowHolidayBanner(viewId) {
                     const skip = details.seekOffset || 10;
                     audioPlayer.currentTime = Math.min(audioPlayer.currentTime + skip, audioPlayer.duration || 0);
                     updateMediaSessionPositionState();
+                });
+                setAction('stop', () => {
+                    userManuallyStopped = true;
+                    audioPlayer.pause();
+                    stopAudioKeepAlive();
+                    if ('mediaSession' in navigator) {
+                        navigator.mediaSession.playbackState = 'none';
+                    }
                 });
 
                 updateMediaSessionPositionState();
@@ -13440,6 +13496,7 @@ function checkAndShowHolidayBanner(viewId) {
             audioPlayer.load();
 
             // 4. Play synchronously within the active continuous media session
+            startAudioKeepAlive();
             const playPromise = audioPlayer.play();
             if (playPromise !== undefined) {
                 playPromise.then(() => {
@@ -13460,14 +13517,16 @@ function checkAndShowHolidayBanner(viewId) {
                 }).catch(err => {
                     console.warn("audioPlayer.play() waiting/rejected:", err);
                     isTransitioningTrack = false;
-                    if (!userManuallyStopped && !document.hidden) {
+                    if (!userManuallyStopped) {
                         const onReady = () => {
                             if (!userManuallyStopped && audioPlayer.paused) {
                                 audioPlayer.play().then(() => {
                                     consecutiveErrors = 0;
                                     isLoadingTrack = false;
                                     isPlaying = true;
+                                    isTransitioningTrack = false;
                                     updatePlayPauseBtn();
+                                    updateMediaSession(track);
                                 }).catch(() => {});
                             }
                         };
@@ -13563,6 +13622,7 @@ function checkAndShowHolidayBanner(viewId) {
             if (!audioPlayer.paused) {
                 userManuallyStopped = true;
                 audioPlayer.pause();
+                stopAudioKeepAlive();
                 if (playerVid && playerVid.style.display !== 'none') playerVid.pause();
                 if (fsVid && fsVid.style.display !== 'none') fsVid.pause();
                 if (bgVideoPlayer) bgVideoPlayer.pause();
@@ -13571,6 +13631,7 @@ function checkAndShowHolidayBanner(viewId) {
                 }
             } else { 
                 userManuallyStopped = false;
+                startAudioKeepAlive();
                 audioPlayer.play().catch(e => console.warn(e)); 
                 if (playerVid && playerVid.style.display !== 'none') playerVid.play();
                 if (fsVid && fsVid.style.display !== 'none') fsVid.play();
