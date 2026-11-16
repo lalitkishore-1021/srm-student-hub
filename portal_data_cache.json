@@ -9,15 +9,15 @@
         "faculty": "",
         "slot": "",
         "room": "",
-        "conducted": 82,
-        "absent": 10,
+        "conducted": 85,
+        "absent": 13,
         "present": 72,
-        "attended": 87.8,
+        "attended": 84.71,
         "credit": 4.0,
         "credits": 4.0,
-        "bunk_margin": 14,
+        "bunk_margin": 11,
         "classes_needed": 0,
-        "status_badge": "safe",
+        "status_badge": "danger",
         "classes_per_cycle": 1
       },
       {
@@ -27,13 +27,13 @@
         "faculty": "",
         "slot": "",
         "room": "",
-        "conducted": 73,
+        "conducted": 75,
         "absent": 5,
-        "present": 68,
-        "attended": 93.15,
+        "present": 70,
+        "attended": 93.33,
         "credit": 4.0,
         "credits": 4.0,
-        "bunk_margin": 17,
+        "bunk_margin": 18,
         "classes_needed": 0,
         "status_badge": "safe",
         "classes_per_cycle": 1
@@ -45,13 +45,13 @@
         "faculty": "",
         "slot": "",
         "room": "",
-        "conducted": 56,
+        "conducted": 57,
         "absent": 3,
-        "present": 53,
-        "attended": 94.64,
+        "present": 54,
+        "attended": 94.74,
         "credit": 4.0,
         "credits": 4.0,
-        "bunk_margin": 14,
+        "bunk_margin": 15,
         "classes_needed": 0,
         "status_badge": "safe",
         "classes_per_cycle": 1
@@ -63,15 +63,15 @@
         "faculty": "",
         "slot": "",
         "room": "",
-        "conducted": 59,
-        "absent": 8,
+        "conducted": 61,
+        "absent": 10,
         "present": 51,
-        "attended": 86.44,
+        "attended": 83.61,
         "credit": 4.0,
         "credits": 4.0,
-        "bunk_margin": 9,
+        "bunk_margin": 7,
         "classes_needed": 0,
-        "status_badge": "safe",
+        "status_badge": "danger",
         "classes_per_cycle": 1
       },
       {
@@ -117,10 +117,10 @@
         "faculty": "",
         "slot": "",
         "room": "",
-        "conducted": 60,
-        "absent": 7,
-        "present": 53,
-        "attended": 88.33,
+        "conducted": 62,
+        "absent": 8,
+        "present": 54,
+        "attended": 87.1,
         "credit": 4.0,
         "credits": 4.0,
         "bunk_margin": 10,
@@ -181,13 +181,18 @@
         "courseTitle": "DATA STRUCTURES AND ALGORITHMS",
         "courseCode": "21CSC201J",
         "courseType": "Theory",
-        "performance": "FJ-I/15.00 | 4.70   LLJ-I/7.00 | 3.50",
-        "Test Performance": "FJ-I/15.00 | 4.70   LLJ-I/7.00 | 3.50",
+        "performance": "FJ-I/15.00 | 4.70   FJ-II/15.00 | 8.50   LLJ-I/7.00 | 3.50",
+        "Test Performance": "FJ-I/15.00 | 4.70   FJ-II/15.00 | 8.50   LLJ-I/7.00 | 3.50",
         "tests": [
           {
             "test_name": "FJ-I",
             "max": 15.0,
             "obtained": 4.7
+          },
+          {
+            "test_name": "FJ-II",
+            "max": 15.0,
+            "obtained": 8.5
           },
           {
             "test_name": "LLJ-I",
@@ -202,13 +207,18 @@
         "courseTitle": "OPERATING SYSTEMS",
         "courseCode": "21CSC202J",
         "courseType": "Theory",
-        "performance": "FJ-I/15.00 | 14.00   LLJ-I/7.00 | 6.00",
-        "Test Performance": "FJ-I/15.00 | 14.00   LLJ-I/7.00 | 6.00",
+        "performance": "FJ-I/15.00 | 14.00   FJ-II/15.00 | 7.50   LLJ-I/7.00 | 6.00",
+        "Test Performance": "FJ-I/15.00 | 14.00   FJ-II/15.00 | 7.50   LLJ-I/7.00 | 6.00",
         "tests": [
           {
             "test_name": "FJ-I",
             "max": 15.0,
             "obtained": 14.0
+          },
+          {
+            "test_name": "FJ-II",
+            "max": 15.0,
+            "obtained": 7.5
           },
           {
             "test_name": "LLJ-I",
@@ -293,6 +303,6 @@
       "mobile": "8247555458",
       "email": "bl9209@srmist.edu.in"
     },
-    "source": "srm_portal"
+    "source": "srm_portal_live"
   }
 }
