@@ -972,6 +972,7 @@ def portal_sync():
 
         courses = client_courses or _STUDENT_COURSES_CACHE.get(net_id) or []
         if courses:
+            _STUDENT_COURSES_CACHE[net_id] = courses
             course_by_code = {}
             for c in courses:
                 code_key = (c.get('code') or c.get('courseCode') or c.get('course_code') or '').strip().upper()

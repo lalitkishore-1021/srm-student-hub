@@ -78,9 +78,13 @@ def fetch_academia_fast(email: str, password: str, batch_override: Optional[Any]
     }
 
     try:
-        r = session.post(login_url, data=payload, headers=headers, timeout=20)
-    except Exception as e:
-        return {'success': False, 'error': f'Network error contacting Academia: {str(e)}'}
+        r = session.post(login_url, data=payload, headers=headers, timeout=22)
+    except Exception:
+        try:
+            time.sleep(0.8)
+            r = session.post(login_url, data=payload, headers=headers, timeout=25)
+        except Exception as e2:
+            return {'success': False, 'error': f'Network error contacting Academia: {str(e2)}'}
 
     try:
         resp_json = r.json()
@@ -133,9 +137,13 @@ def fetch_academia_fast(email: str, password: str, batch_override: Optional[Any]
     tables = soup_p.find_all('table')
 
     clean_net_id = clean_user.split('@')[0].upper()
+    clean_net_id_lower = clean_user.split('@')[0].lower()
+    clean_email = clean_user if '@' in clean_user else f"{clean_user}@srmist.edu.in"
     profile = {
         'name': '',
         'reg_no': clean_net_id,
+        'net_id': clean_net_id_lower,
+        'email': clean_email,
         'program': '',
         'department': '',
         'semester': '',

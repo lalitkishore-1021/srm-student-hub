@@ -194,7 +194,13 @@ class SRMPortalSession:
         self.load_ms = None
 
     def load_captcha(self) -> bool:
-        r = self.session.get(LOGIN_URL, timeout=12)
+        try:
+            r = self.session.get(LOGIN_URL, timeout=22)
+        except Exception:
+            try:
+                r = self.session.get(LOGIN_URL, timeout=22)
+            except Exception:
+                return False
         text = r.text
         m = re.search(r"window\.SECURE_CONFIG\s*=\s*\{[^}]*?nonce\s*:\s*'([^']+)'", text)
         if not m:
@@ -222,19 +228,22 @@ class SRMPortalSession:
         seg = m_cap.group(0)
         captcha_url = BASE_URL + "/" + seg if not seg.startswith("/") else "https://sp.srmist.edu.in" + seg
         proof = base64.b64encode(f"{self.nonce}:sp.srmist.edu.in".encode()).decode()
-        cr = self.session.get(
-            captcha_url,
-            headers={
-                "X-Domain-Proof": proof,
-                "Accept": "image/png, image/jpeg, image/svg+xml, image/*",
-                "Referer": LOGIN_URL,
-            },
-            timeout=12,
-        )
-        if cr.status_code == 200 and cr.content:
-            self.captcha_bytes = cr.content
-            self.load_ms = int(time.time() * 1000)
-            return True
+        try:
+            cr = self.session.get(
+                captcha_url,
+                headers={
+                    "X-Domain-Proof": proof,
+                    "Accept": "image/png, image/jpeg, image/svg+xml, image/*",
+                    "Referer": LOGIN_URL,
+                },
+                timeout=22,
+            )
+            if cr.status_code == 200 and cr.content:
+                self.captcha_bytes = cr.content
+                self.load_ms = int(time.time() * 1000)
+                return True
+        except Exception:
+            pass
         return False
 
     def login_attempt(self, netid: str, password: str, captcha_code: str) -> Dict[str, Any]:
@@ -260,7 +269,7 @@ class SRMPortalSession:
         fp_body[self.domain_field_name] = dtoken
         fp_body[self.captcha_field_name] = cptoken
 
-        resp = self.session.post(LOGIN_SERVLET, data=fp_body, timeout=12)
+        resp = self.session.post(LOGIN_SERVLET, data=fp_body, timeout=22)
         body = resp.text or ""
         self.last_status = resp.status_code
         self.last_url = str(resp.url)
@@ -298,7 +307,7 @@ class SRMPortalSession:
 
     def get_attendance_html(self) -> Optional[str]:
         try:
-            r = self.session.get(ATT_URL, timeout=15)
+            r = self.session.get(ATT_URL, timeout=25)
             url_l = str(r.url).lower()
             txt_l = r.text.lower()
             if (
@@ -316,7 +325,7 @@ class SRMPortalSession:
 
     def get_marks_html(self) -> Optional[str]:
         try:
-            r = self.session.get(MARKS_URL, timeout=15)
+            r = self.session.get(MARKS_URL, timeout=25)
             if r.status_code == 200 and "table" in r.text.lower():
                 return r.text
         except Exception:
@@ -326,7 +335,7 @@ class SRMPortalSession:
     def get_inner_marks_html(self, subject_id: str, status: str = "2") -> Optional[str]:
         try:
             payload = {"iden": "1", "hdnSubjectId": subject_id, "status": status}
-            r = self.session.post(INNER_MARKS_URL, data=payload, timeout=12)
+            r = self.session.post(INNER_MARKS_URL, data=payload, timeout=20)
             if r.status_code == 200:
                 return r.text
         except Exception:
@@ -341,7 +350,7 @@ class SRMPortalSession:
                 "hdnFormDetails": "1",
                 "csrfPreventionSalt": "",
             }
-            r = self.session.post(TIMETABLE_URL, data=payload, timeout=10)
+            r = self.session.post(TIMETABLE_URL, data=payload, timeout=20)
             if r.status_code == 200 and "table" in r.text.lower() and "day 1" in r.text.lower():
                 return r.text
         except Exception:
@@ -871,7 +880,7 @@ def fetch_portal_data(username: str, password: str) -> Dict[str, Any]:
             except Exception:
                 return None
         pfuts = [pre_ex.submit(_load_one, i) for i in range(2)]
-        for pft in concurrent.futures.as_completed(pfuts, timeout=15):
+        for pft in concurrent.futures.as_completed(pfuts, timeout=28):
             try:
                 pp = pft.result()
                 if pp:
