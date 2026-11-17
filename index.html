@@ -7710,9 +7710,7 @@
                     localStorage.removeItem('squadProfile');
                 }
 
-                const savedNetId = (localStorage.getItem('syncPortalNetId') || localStorage.getItem('syncRegNo') || '').split('@')[0].trim().toLowerCase();
-                const savedPortalPwd = (currentNetId && savedNetId === currentNetId) ? (localStorage.getItem('syncPortalPwd') || '') : '';
-                const portalPwdToSend = enteredPortalPwd || savedPortalPwd;
+                const portalPwdToSend = enteredPortalPwd;
 
                 const initRes = await fetch(`${BACKEND_URL}/api/start_session`, {
                     method: "POST",
@@ -8505,47 +8503,12 @@
             let html = '';
 
 
-            let workingAttData = attendanceData;
+            let workingAttData = attendanceData || [];
             if (workingAttData.length === 0) {
                 try {
-                    let marksFallback = JSON.parse(localStorage.getItem('squadMarks') || '[]');
-                    if (marksFallback && marksFallback.length > 0) {
-                        workingAttData = marksFallback.map(m => ({
-                            courseTitle: m.courseTitle || m.name || "na",
-                            courseCode: m.courseCode || m.code || "na",
-                            conducted: 0,
-                            attended: 0,
-                            absent: 0
-                        }));
-                    }
-                } catch(e) {}
-            }
-            if (workingAttData.length === 0) {
-                try {
-                    let coursesFallback = JSON.parse(localStorage.getItem('squadCourses') || '[]');
-                    if (coursesFallback && coursesFallback.length > 0) {
-                        workingAttData = coursesFallback.map(c => {
-                            let cleanCode = (c.code || c.courseCode || c.course_code || '').trim();
-                            let cleanTitle = (c.title || c.courseTitle || c.name || 'Course').trim();
-                            let cred = parseFloat(c.credit || c.credits || 3.0);
-                            return {
-                                courseTitle: cleanTitle,
-                                courseCode: cleanCode,
-                                category: c.category || c.type || 'Theory',
-                                faculty: c.faculty || c.faculty_name || '',
-                                slot: c.slot || '',
-                                room: c.room || '',
-                                conducted: 0,
-                                absent: 0,
-                                present: 0,
-                                attended: 0,
-                                credit: cred,
-                                bunk_margin: 0,
-                                classes_needed: 0,
-                                status_badge: 'safe',
-                                classes_per_cycle: 1
-                            };
-                        });
+                    const savedAtt = JSON.parse(localStorage.getItem('squadAttendance') || '[]');
+                    if (savedAtt && savedAtt.length > 0) {
+                        workingAttData = savedAtt;
                     }
                 } catch(e) {}
             }

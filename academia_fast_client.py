@@ -461,6 +461,8 @@ def fetch_academia_fast(email: str, password: str, batch_override: Optional[Any]
             from academia_direct_scraper import parse_attendance_and_marks
             att_soup = BeautifulSoup(att_html, 'html.parser')
             attendance_data, marks_data = parse_attendance_and_marks(att_soup, registered_courses)
+            if not attendance_data:
+                attendance_data, marks_data = _parse_ratio_attendance_and_marks(att_html, registered_courses)
             print(f"[{clean_user}] Scraped from Academia: {len(attendance_data)} attendance courses, {len(marks_data)} marks subjects in {time.time()-t0:.2f}s!", flush=True)
         except Exception as ae:
             print(f"[{clean_user}] Academia attendance/marks parse error: {ae}", flush=True)
@@ -479,3 +481,110 @@ def fetch_academia_fast(email: str, password: str, batch_override: Optional[Any]
         'day_order': 1,
         'elapsed': time.time() - t0
     }
+
+def _parse_ratio_attendance_and_marks(att_html: str, registered_courses: List[Dict[str, Any]]):
+    from academia_direct_scraper import calculate_bunk_margin_and_needed, get_course_credit
+    soup = BeautifulSoup(att_html, 'html.parser')
+    att_list = []
+    marks_list = []
+
+    for row in soup.find_all('tr'):
+        cols = row.find_all('td')
+        if len(cols) >= 9:
+            code_text = cols[0].get_text(strip=True)
+            m = re.match(r"^([A-Z0-9]{6,12})", code_text)
+            if m and not any(w in code_text.lower() for w in ['course', 'code', 'total']):
+                raw_code = m.group(1)
+                clean_code = re.sub(r'(Regular|Theory|Practical|Lab)$', '', raw_code, flags=re.I).strip()
+                title = cols[1].get_text(strip=True)
+                category = cols[2].get_text(strip=True)
+                slot = cols[4].get_text(strip=True) if len(cols) > 4 else ""
+                faculty = cols[3].get_text(strip=True) if len(cols) > 3 else ""
+                room = cols[5].get_text(strip=True) if len(cols) > 5 else ""
+
+                try:
+                    cond_m = re.search(r'\d+', cols[6].get_text(strip=True))
+                    abs_m = re.search(r'\d+', cols[7].get_text(strip=True))
+                    conducted = int(cond_m.group(0)) if cond_m else 0
+                    absent = int(abs_m.group(0)) if abs_m else 0
+                    present = max(0, conducted - absent)
+                    
+                    pct_m = re.search(r'[\d.]+', cols[8].get_text(strip=True))
+                    percent = float(pct_m.group(0)) if pct_m else (round((present / conducted) * 100.0, 2) if conducted > 0 else 100.0)
+                except Exception:
+                    continue
+
+                if conducted > 0 or absent > 0:
+                    credit = get_course_credit(clean_code, title, registered_courses)
+                    margin, needed, badge = calculate_bunk_margin_and_needed(percent, conducted, absent)
+                    att_list.append({
+                        "courseTitle": title,
+                        "courseCode": clean_code,
+                        "category": category or "Theory",
+                        "faculty": faculty,
+                        "slot": slot,
+                        "room": room,
+                        "conducted": conducted,
+                        "absent": absent,
+                        "present": present,
+                        "attended": percent,
+                        "credit": credit,
+                        "credits": credit,
+                        "bunk_margin": margin,
+                        "classes_needed": needed,
+                        "status_badge": badge,
+                        "classes_per_cycle": 1
+                    })
+
+    for row in soup.find_all('tr'):
+        cols = row.find_all('td')
+        if len(cols) >= 3:
+            code_text = cols[0].get_text(strip=True)
+            m = re.match(r"^([A-Z0-9]{6,12})", code_text)
+            if not m or any(w in code_text.lower() for w in ['course', 'code', 'total']):
+                continue
+            c_code = re.sub(r'(Regular|Theory|Practical|Lab)$', '', m.group(1), flags=re.I).strip()
+            c_type = cols[1].get_text(strip=True)
+            perf_cell = cols[2]
+
+            tests = []
+            perf_strings = []
+            nested_table = perf_cell.find('table')
+            if nested_table:
+                for td in nested_table.find_all('td'):
+                    parts = [s.strip() for s in td.get_text(separator='\n', strip=True).split('\n') if s.strip()]
+                    if len(parts) >= 2 and '/' in parts[0]:
+                        h_parts = parts[0].split('/', 1)
+                        t_name = h_parts[0].strip()
+                        try:
+                            max_v = float(h_parts[1].strip())
+                            got_v = float(parts[1].strip())
+                            tests.append({
+                                "test_name": t_name,
+                                "max": max_v,
+                                "obtained": got_v
+                            })
+                            perf_strings.append(f"{t_name}/{max_v:.2f} | {got_v:.2f}")
+                        except ValueError:
+                            pass
+
+            if tests:
+                title = c_code
+                for rc in registered_courses:
+                    if (rc.get('code') or '').upper() == c_code.upper():
+                        title = rc.get('title') or rc.get('name') or c_code
+                        break
+                credit = get_course_credit(c_code, title, registered_courses)
+                perf_formatted = "   ".join(perf_strings)
+                marks_list.append({
+                    "courseTitle": title,
+                    "courseCode": c_code,
+                    "courseType": c_type or "Theory",
+                    "performance": perf_formatted,
+                    "Test Performance": perf_formatted,
+                    "tests": tests,
+                    "credit": credit,
+                    "credits": credit
+                })
+
+    return att_list, marks_list

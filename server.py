@@ -656,54 +656,15 @@ def get_portal_data_with_fallback(net_id, portal_pwd):
             'source': 'srm_portal_verified'
         }
 
-    # 4. Fallback: If live scrape was unavailable on cloud server, return registered courses with zero attendance placeholder
-    student_courses = _STUDENT_COURSES_CACHE.get(clean_id) or []
-    if student_courses:
-        print(f"[{clean_id}] Showing {len(student_courses)} registered courses (live portal attendance pending sync)...")
-        real_att = []
-        for c in student_courses:
-            code = (c.get('code') or c.get('courseCode') or c.get('course_code') or '').strip().upper()
-            title = (c.get('title') or c.get('courseTitle') or c.get('name') or 'Course').strip()
-            if not code or 'code' in code.lower():
-                continue
-            cred = float(c.get('credit') or c.get('credits') or 3.0)
-            real_att.append({
-                'courseTitle': title,
-                'courseCode': code,
-                'category': c.get('category') or c.get('type') or 'Theory',
-                'faculty': c.get('faculty') or c.get('faculty_name') or '',
-                'slot': c.get('slot') or '',
-                'room': c.get('room') or '',
-                'conducted': 0,
-                'absent': 0,
-                'present': 0,
-                'attended': 0.0,
-                'credit': cred,
-                'credits': cred,
-                'bunk_margin': 0,
-                'classes_needed': 0,
-                'status_badge': 'safe',
-                'classes_per_cycle': 1
-            })
-
-        prof = get_cached_student_profile(clean_id) or {'name': clean_id.upper(), 'reg_no': clean_id.upper(), 'net_id': clean_id}
-        return {
-            'success': True,
-            'data': real_att,
-            'marks': [],
-            'profile': prof,
-            'source': 'registered_courses_only'
-        }
-
     err = (p_res or {}).get('error', 'SRM Portal authentication failed.')
-    reason = (p_res or {}).get('reason')
+    reason = (p_res or {}).get('reason', 'invalid_credentials')
     if reason == 'account_locked' or 'locked' in err.lower():
         err = 'Your SRM Student Portal account is temporarily locked due to previous failed attempts. Please unlock or reset it at https://ssp.srmist.edu.in/resetpassword/'
     elif reason == 'invalid_netid':
         err = (p_res or {}).get('error')
     elif any(w in err.lower() for w in ['invalid', 'password', 'credential', 'user id']):
         err = 'Invalid NetID or Student Portal password. You can reset your password at https://ssp.srmist.edu.in/resetpassword/'
-    return {'success': False, 'error': err, 'reason': (p_res or {}).get('reason')}
+    return {'success': False, 'error': err, 'reason': reason}
 
 def scrape_academia_worker(reg_no, pwd, batch, out_queue):
     import academia_fast_client
@@ -813,9 +774,11 @@ def start_session():
                 p_err = (portal_res or {}).get('error', '')
                 ac_err = (ac_res or {}).get('error', '')
                 if not portal_pwd_in:
-                    final_err = "Wrong NetID or Password. Please check your Academia password."
+                    final_err = ac_err or "Wrong NetID or Password. Please check your Academia password."
+                elif not acad_pwd_in:
+                    final_err = p_err or "Wrong NetID or Password. Please check your Student Portal password."
                 else:
-                    final_err = "Wrong NetID or Password. Please check your Academia & SRM Portal passwords."
+                    final_err = ac_err or p_err or "Wrong NetID or Password. Please check your credentials."
                 if any(w in p_err.lower() or w in ac_err.lower() for w in ['password', 'credential', 'invalid', 'wrong']):
                     pass
                 elif 'network' in p_err.lower() or 'network' in ac_err.lower() or 'timeout' in p_err.lower() or 'timeout' in ac_err.lower():
