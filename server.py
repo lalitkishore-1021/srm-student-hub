@@ -656,82 +656,44 @@ def get_portal_data_with_fallback(net_id, portal_pwd):
             'source': 'srm_portal_verified'
         }
 
-    # 4. Fallback: If live scrape was unavailable on cloud server, enrich from student registered courses
+    # 4. Fallback: If live scrape was unavailable on cloud server, return registered courses with zero attendance placeholder
     student_courses = _STUDENT_COURSES_CACHE.get(clean_id) or []
     if student_courses:
-        from academia_direct_scraper import calculate_bunk_margin_and_needed
-        print(f"[{clean_id}] Enriching attendance & marks from {len(student_courses)} registered courses...")
-        synth_att = []
-        synth_marks = []
+        print(f"[{clean_id}] Showing {len(student_courses)} registered courses (live portal attendance pending sync)...")
+        real_att = []
         for c in student_courses:
             code = (c.get('code') or c.get('courseCode') or c.get('course_code') or '').strip().upper()
             title = (c.get('title') or c.get('courseTitle') or c.get('name') or 'Course').strip()
             if not code or 'code' in code.lower():
                 continue
-            cred = float(c.get('credit') or c.get('credits') or 4.0)
-            cond = 62 if cred >= 4.0 else (46 if cred >= 3.0 else 30)
-            absent = 7 if cred >= 4.0 else 5
-            present = cond - absent
-            pct = round((present / cond) * 100.0, 2)
-            margin, needed, badge = calculate_bunk_margin_and_needed(pct, cond, absent)
-            synth_att.append({
+            cred = float(c.get('credit') or c.get('credits') or 3.0)
+            real_att.append({
                 'courseTitle': title,
                 'courseCode': code,
                 'category': c.get('category') or c.get('type') or 'Theory',
                 'faculty': c.get('faculty') or c.get('faculty_name') or '',
                 'slot': c.get('slot') or '',
                 'room': c.get('room') or '',
-                'conducted': cond,
-                'absent': absent,
-                'present': present,
-                'attended': pct,
+                'conducted': 0,
+                'absent': 0,
+                'present': 0,
+                'attended': 0.0,
                 'credit': cred,
                 'credits': cred,
-                'bunk_margin': margin,
-                'classes_needed': needed,
-                'status_badge': badge,
+                'bunk_margin': 0,
+                'classes_needed': 0,
+                'status_badge': 'safe',
                 'classes_per_cycle': 1
-            })
-            synth_marks.append({
-                'courseTitle': title,
-                'courseCode': code,
-                'courseType': c.get('type') or 'Theory',
-                'performance': 'FJ-I/15.00 | 12.00   FJ-II/15.00 | 11.50   LLJ-I/7.00 | 5.50',
-                'Test Performance': 'FJ-I/15.00 | 12.00   FJ-II/15.00 | 11.50   LLJ-I/7.00 | 5.50',
-                'tests': [
-                    {'test_name': 'FJ-I', 'max': 15.0, 'obtained': 12.0},
-                    {'test_name': 'FJ-II', 'max': 15.0, 'obtained': 11.5},
-                    {'test_name': 'LLJ-I', 'max': 7.0, 'obtained': 5.5}
-                ],
-                'credit': cred,
-                'credits': cred
             })
 
         prof = get_cached_student_profile(clean_id) or {'name': clean_id.upper(), 'reg_no': clean_id.upper(), 'net_id': clean_id}
-        synth_res = {
+        return {
             'success': True,
-            'data': synth_att,
-            'marks': synth_marks,
+            'data': real_att,
+            'marks': [],
             'profile': prof,
-            'source': 'srm_portal_verified'
+            'source': 'registered_courses_only'
         }
-        try:
-            c_dict = {}
-            if os.path.exists(cache_file):
-                with open(cache_file, 'r', encoding='utf-8') as f:
-                    c_dict = json.load(f)
-            c_dict[clean_id] = {
-                'portal_password': portal_pwd,
-                'data': synth_att,
-                'marks': synth_marks,
-                'profile': prof,
-                'source': 'srm_portal_verified'
-            }
-            with open(cache_file, 'w', encoding='utf-8') as f:
-                json.dump(c_dict, f, indent=2)
-        except Exception:
-            pass
-        return synth_res
 
     err = (p_res or {}).get('error', 'SRM Portal authentication failed.')
     reason = (p_res or {}).get('reason')
@@ -3301,8 +3263,11 @@ def admin_stats():
 @app.route('/')
 def serve_index():
     response = send_from_directory('.', 'index.html')
-    response.headers['Cache-Control'] = 'no-cache, must-revalidate'
+    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate, max-age=0'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
     return response
+
 @app.route('/<path:path>')
 def serve_static(path):
     safe_paths = ['index.html', 'manifest.json', 'sw.js', 'robots.txt', 'sitemap.xml', 'srmhubindexnow2026.txt']
@@ -3312,11 +3277,16 @@ def serve_static(path):
         return "Access Denied", 403
         
     response = send_from_directory('.', path)
-    # Aggressively cache static assets to save bandwidth
-    if path.startswith('images/') or path.startswith('audio/') or path.endswith('.js') or path.endswith('.css') or path.endswith('.wav') or path.endswith('.mp3'):
-        response.headers['Cache-Control'] = 'public, max-age=31536000, immutable'
-    elif path == 'index.html':
-        response.headers['Cache-Control'] = 'no-cache, must-revalidate' # always revalidate HTML
+    clean_p = path.lower().strip()
+    # sw.js, manifest.json, and HTML files must NEVER be cached by browser or service worker
+    if clean_p in ('sw.js', 'manifest.json', 'index.html') or clean_p.endswith(('/sw.js', '/manifest.json', '.html')):
+        response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate, max-age=0'
+        response.headers['Pragma'] = 'no-cache'
+        response.headers['Expires'] = '0'
+    elif path.startswith('images/') or path.startswith('audio/') or path.endswith(('.css', '.png', '.jpg', '.jpeg', '.gif', '.svg', '.woff', '.woff2', '.wav', '.mp3', '.mp4')):
+        response.headers['Cache-Control'] = 'public, max-age=86400'
+    elif path.endswith('.js') and clean_p != 'sw.js':
+        response.headers['Cache-Control'] = 'public, max-age=86400'
     return response
 
 if __name__ == '__main__':

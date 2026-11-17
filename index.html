@@ -6720,10 +6720,20 @@
         loadSavedData();
 
         if ('serviceWorker' in navigator) {
+            let refreshing = false;
+            navigator.serviceWorker.addEventListener('controllerchange', () => {
+                if (!refreshing) {
+                    refreshing = true;
+                    window.location.reload();
+                }
+            });
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('sw.js').then((reg) => {
                     if (reg) {
                         try { reg.update(); } catch(e) {}
+                        setInterval(() => {
+                            try { reg.update(); } catch(e) {}
+                        }, 60000);
                     }
                 }).catch(err => console.log('SW Failed:', err));
             });
@@ -8517,11 +8527,7 @@
                         workingAttData = coursesFallback.map(c => {
                             let cleanCode = (c.code || c.courseCode || c.course_code || '').trim();
                             let cleanTitle = (c.title || c.courseTitle || c.name || 'Course').trim();
-                            let cred = parseFloat(c.credit || c.credits || 4.0);
-                            let cond = cred >= 4.0 ? 60 : (cred >= 3.0 ? 46 : 30);
-                            let abs = Math.round(cond * 0.12);
-                            let pres = cond - abs;
-                            let pct = cond > 0 ? parseFloat(((pres / cond) * 100).toFixed(2)) : 88.0;
+                            let cred = parseFloat(c.credit || c.credits || 3.0);
                             return {
                                 courseTitle: cleanTitle,
                                 courseCode: cleanCode,
@@ -8529,14 +8535,14 @@
                                 faculty: c.faculty || c.faculty_name || '',
                                 slot: c.slot || '',
                                 room: c.room || '',
-                                conducted: cond,
-                                absent: abs,
-                                present: pres,
-                                attended: pct,
+                                conducted: 0,
+                                absent: 0,
+                                present: 0,
+                                attended: 0,
                                 credit: cred,
-                                bunk_margin: Math.max(0, Math.floor((pres - 0.75 * cond) / 0.75)),
+                                bunk_margin: 0,
                                 classes_needed: 0,
-                                status_badge: pct >= 75 ? 'safe' : 'danger',
+                                status_badge: 'safe',
                                 classes_per_cycle: 1
                             };
                         });
@@ -8737,26 +8743,6 @@
     if (!list || !noData) return;
 
     let workingMarks = (marksData && marksData.length > 0) ? marksData : [];
-    if (workingMarks.length === 0) {
-        try {
-            const savedCourses = JSON.parse(localStorage.getItem('squadCourses') || '[]');
-            if (savedCourses && savedCourses.length > 0) {
-                workingMarks = savedCourses.map(c => ({
-                    courseTitle: (c.title || c.courseTitle || c.name || 'Course').trim(),
-                    courseCode: (c.code || c.courseCode || c.course_code || '').trim(),
-                    courseType: c.type || c.category || 'Theory',
-                    credit: parseFloat(c.credit || c.credits || 4.0),
-                    credits: parseFloat(c.credit || c.credits || 4.0),
-                    tests: [
-                        { test_name: 'FJ-I', max: 15.0, obtained: 12.0 },
-                        { test_name: 'FJ-II', max: 15.0, obtained: 11.0 },
-                        { test_name: 'LLJ-I', max: 7.0, obtained: 5.5 }
-                    ]
-                }));
-            }
-        } catch(e) {}
-    }
-
     if (workingMarks.length === 0) {
         noData.style.display = 'block';
         list.style.display = 'none';

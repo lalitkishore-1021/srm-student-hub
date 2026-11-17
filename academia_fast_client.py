@@ -39,12 +39,15 @@ def clean_text(text: Any) -> str:
 def smart_extract_zoho(raw_html: str) -> Optional[str]:
     if not raw_html:
         return None
-    m = re.search(r"pageSanitizer\.sanitize\('(.+?)'\)", raw_html)
+    m = re.search(r"sanitize\(['\"](.+?)['\"]\)", raw_html, re.DOTALL)
     if m:
+        content = m.group(1)
+        content = re.sub(r'\\x([0-9a-fA-F]{2})', lambda match: chr(int(match.group(1), 16)), content)
         try:
-            return m.group(1).encode('utf-8').decode('unicode_escape').replace(r'\-', '-').replace(r'\/', '/')
+            content = content.encode('utf-8').decode('unicode_escape')
         except Exception:
             pass
+        return content.replace(r'\/', '/').replace(r'\-', '-').replace(r"\'", "'").replace(r'\"', '"').replace(r'\\', '\\')
     soup = BeautifulSoup(raw_html, 'html.parser')
     hidden = soup.find('div', class_='zc-pb-embed-placeholder-content')
     if hidden and hidden.has_attr('zmlvalue'):
@@ -111,29 +114,55 @@ def fetch_academia_fast(email: str, password: str, batch_override: Optional[Any]
 
     print(f"[{clean_user}] Logged into Academia in {time.time()-t0:.2f}s!", flush=True)
 
-    # 1. Fetch My_Time_Table page (Student Profile, Registered Courses, Advisors)
-    tt_url = 'https://academia.srmist.edu.in/srm_university/academia-academic-services/page/My_Time_Table_2023_24'
+    # 1. Fetch My_Time_Table and My_Attendance pages concurrently
+    import concurrent.futures
+
+    def fetch_page_candidate(page_name: str) -> Optional[str]:
+        u = f'https://academia.srmist.edu.in/srm_university/academia-academic-services/page/{page_name}'
+        try:
+            r = session.get(u, headers=headers, timeout=20)
+            if r.status_code == 200 and len(r.text) > 100:
+                ext = smart_extract_zoho(r.text)
+                if ext and len(ext) > 100:
+                    return ext
+        except Exception:
+            pass
+        return None
+
+    def fetch_first_valid(candidates: List[str], required_keywords: List[str]) -> Optional[str]:
+        for c_name in candidates:
+            h = fetch_page_candidate(c_name)
+            if h and any(k.lower() in h.lower() for k in required_keywords):
+                return h
+        return None
+
     prof_html = None
-    try:
-        r_prof = session.get(tt_url, headers=headers, timeout=25)
-        prof_html = smart_extract_zoho(r_prof.text)
-    except Exception as e:
-        print(f"[{clean_user}] Profile fetch error: {e}", flush=True)
+    att_html = None
 
-    if not prof_html:
-        for alt in ['My_Time_Table_2024_25', 'My_Time_Table_2025_26', 'My_Time_Table']:
-            try:
-                r_alt = session.get(f'https://academia.srmist.edu.in/srm_university/academia-academic-services/page/{alt}', headers=headers, timeout=10)
-                prof_html = smart_extract_zoho(r_alt.text)
-                if prof_html:
-                    break
-            except Exception:
-                pass
+    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+        f_tt = executor.submit(
+            fetch_first_valid,
+            ['My_Time_Table_2023_24', 'My_Time_Table_2024_25', 'My_Time_Table_2025_26', 'My_Time_Table'],
+            ['Course Code', 'Faculty Advisor', 'Academic Advisor', 'Student Name', 'Registration Number']
+        )
+        f_att = executor.submit(
+            fetch_first_valid,
+            ['My_Attendance', 'My_Attendance_2024_25', 'My_Attendance_2025_26', 'My_Attendance_2023_24', 'Attendance'],
+            ['Hours Conducted', 'Attn %', 'Attendance %', 'Course Code', 'Test Performance']
+        )
+        try:
+            prof_html = f_tt.result(timeout=25)
+        except Exception as e:
+            print(f"[{clean_user}] Timetable page fetch error: {e}", flush=True)
+        try:
+            att_html = f_att.result(timeout=25)
+        except Exception as e:
+            print(f"[{clean_user}] Attendance page fetch error: {e}", flush=True)
 
-    if not prof_html:
-        return {'success': False, 'error': 'Could not extract timetable data from Academia.'}
+    if not prof_html and not att_html:
+        return {'success': False, 'error': 'Could not extract academic data from Academia.'}
 
-    soup_p = BeautifulSoup(prof_html, 'html.parser')
+    soup_p = BeautifulSoup(prof_html or att_html, 'html.parser')
     tables = soup_p.find_all('table')
 
     clean_net_id = clean_user.split('@')[0].upper()
@@ -425,6 +454,17 @@ def fetch_academia_fast(email: str, password: str, batch_override: Optional[Any]
                     else:
                         final_tt[day_num].append(entry)
 
+    attendance_data = []
+    marks_data = []
+    if att_html:
+        try:
+            from academia_direct_scraper import parse_attendance_and_marks
+            att_soup = BeautifulSoup(att_html, 'html.parser')
+            attendance_data, marks_data = parse_attendance_and_marks(att_soup, registered_courses)
+            print(f"[{clean_user}] Scraped from Academia: {len(attendance_data)} attendance courses, {len(marks_data)} marks subjects in {time.time()-t0:.2f}s!", flush=True)
+        except Exception as ae:
+            print(f"[{clean_user}] Academia attendance/marks parse error: {ae}", flush=True)
+
     total_classes = sum(len(v) for v in final_tt.values() if isinstance(v, list))
     final_tt["batch"] = str(batch_num)
     print(f"[{clean_user}] Timetable extracted: {total_classes} classes across 5 days in {time.time()-t0:.2f}s!", flush=True)
@@ -434,6 +474,8 @@ def fetch_academia_fast(email: str, password: str, batch_override: Optional[Any]
         'profile': profile,
         'timetable': final_tt,
         'courses': registered_courses,
+        'data': attendance_data,
+        'marks': marks_data,
         'day_order': 1,
         'elapsed': time.time() - t0
     }
