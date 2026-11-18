@@ -7449,7 +7449,7 @@
                 statusBox.style.background = 'rgba(255, 170, 0, 0.12)';
                 statusBox.style.border = '1px solid rgba(255, 170, 0, 0.35)';
                 statusBox.style.color = '#ffaa00';
-                statusBox.innerHTML = '<span class="css-loader" style="display:inline-block; width:14px; height:14px; margin-right:8px; vertical-align:middle; border-width:2px;"></span> Solving CAPTCHA &amp; fetching attendance...';
+                statusBox.innerHTML = '<span class="css-loader" style="display:inline-block; width:14px; height:14px; margin-right:8px; vertical-align:middle; border-width:2px;"></span> Fetching Student Portal attendance &amp; marks...';
             }
             
             try {
@@ -7462,6 +7462,7 @@
                     body: JSON.stringify({
                         regNo: netId,
                         portalPwd: portalPwd,
+                        acadPwd: localStorage.getItem('syncPwd') || '',
                         courses: JSON.parse(localStorage.getItem('squadCourses') || '[]'),
                         batch: typeof currentBatch !== 'undefined' ? currentBatch : 1
                     })
@@ -7942,7 +7943,7 @@
                         const pRes = await fetch(`${BACKEND_URL}/api/portal_sync`, {
                             method: "POST",
                             headers: { "Content-Type": "application/json", "X-App-Key": "srm-hub-protected-x9f2" },
-                            body: JSON.stringify({ regNo: cleanNetId, portalPwd: portalPwd, batch: batch })
+                            body: JSON.stringify({ regNo: cleanNetId, portalPwd: portalPwd, acadPwd: pwd || localStorage.getItem('syncPwd') || '', batch: batch })
                         });
                         const pData = await pRes.json();
                         if (pData.success) {

@@ -536,9 +536,10 @@ def save_cached_timetable_for_student(net_id, tt):
     except Exception as e:
         print(f"[RECOVERY] Timetable cache save error: {e}")
 
-def get_portal_data_with_fallback(net_id, portal_pwd):
+def get_portal_data_with_fallback(net_id, portal_pwd, acad_pwd=None):
     clean_id = (net_id or "").split('@')[0].strip().lower()
     portal_pwd = (portal_pwd or "").strip()
+    acad_pwd = (acad_pwd or "").strip()
     if not clean_id or not portal_pwd:
         return {'success': False, 'error': 'Missing Student Portal credentials'}
 
@@ -571,36 +572,42 @@ def get_portal_data_with_fallback(net_id, portal_pwd):
                 'reason': 'invalid_netid'
             }
 
-    # 1. Primary: Direct sp.srmist.edu.in scraper (fast, fresh live university data)
+    # 1. Primary: CampusWeb API (ultra-fast sub-4s live attendance & marks without CAPTCHA failure risks)
     p_res = None
     try:
-        import srm_portal_scraper
-        print(f"[{clean_id}] Initiating live Student Portal sync via sp.srmist.edu.in...")
-        p_res = srm_portal_scraper.fetch_portal_data(clean_id, portal_pwd)
-        if p_res and p_res.get('success'):
-            print(f"[{clean_id}] [PORTAL] Direct Student Portal sync succeeded!")
-    except Exception as se:
-        print(f"[{clean_id}] Direct portal scrape exception: {se}")
+        import cw_scraper
+        print(f"[{clean_id}] Initiating live Student Portal sync via CampusWeb API...")
+        cw_res = cw_scraper.scrape_campusweb(clean_id, portal_pwd, acad_pwd=acad_pwd)
+        if cw_res and cw_res.get('success'):
+            print(f"[{clean_id}] [CAMPUSWEB] CampusWeb API succeeded with live attendance & marks!")
+            p_res = {
+                'success': True,
+                'data': cw_res.get('attendance') or cw_res.get('data') or [],
+                'marks': cw_res.get('marks', []),
+                'profile': cw_res.get('profile', {}),
+                'source': 'campusweb_api'
+            }
+        elif cw_res and cw_res.get('reason') == 'invalid_credentials':
+            print(f"[{clean_id}] [CAMPUSWEB] Auth rejected: {cw_res.get('error')}")
+            p_res = cw_res
+        else:
+            print(f"[{clean_id}] CampusWeb attempt returned: {(cw_res or {}).get('error')}")
+    except Exception as cwe:
+        print(f"[{clean_id}] CampusWeb exception: {cwe}")
 
-    # 2. Secondary fallback: CampusWeb API if direct portal was unavailable
-    if not (p_res and p_res.get('success')):
+    # 2. Secondary fallback: Direct sp.srmist.edu.in scraper (if CampusWeb had a network issue)
+    if not (p_res and p_res.get('success')) and (not p_res or p_res.get('reason') != 'invalid_credentials'):
         try:
-            import cw_scraper
-            print(f"[{clean_id}] Trying CampusWeb API fallback...")
-            cw_res = cw_scraper.scrape_campusweb(clean_id, portal_pwd)
-            if cw_res and cw_res.get('success'):
-                print(f"[{clean_id}] [CAMPUSWEB] CampusWeb API succeeded!")
-                p_res = {
-                    'success': True,
-                    'data': cw_res.get('attendance', []),
-                    'marks': cw_res.get('marks', []),
-                    'profile': cw_res.get('profile', {}),
-                    'source': 'campusweb_api'
-                }
-            else:
-                print(f"[{clean_id}] CampusWeb attempt returned: {(cw_res or {}).get('error')}")
-        except Exception as cwe:
-            print(f"[{clean_id}] CampusWeb fallback exception: {cwe}")
+            import srm_portal_scraper
+            print(f"[{clean_id}] Trying direct sp.srmist.edu.in scraper fallback...")
+            sp_res = srm_portal_scraper.fetch_portal_data(clean_id, portal_pwd)
+            if sp_res and sp_res.get('success'):
+                print(f"[{clean_id}] [PORTAL] Direct Student Portal sync succeeded!")
+                p_res = sp_res
+            elif sp_res:
+                p_res = sp_res
+        except Exception as se:
+            print(f"[{clean_id}] Direct portal scrape exception: {se}")
 
     cache_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'portal_data_cache.json')
 
@@ -701,7 +708,7 @@ def start_session():
                 if not portal_pwd_in:
                     return {'success': False, 'error': 'No SRM Portal password provided'}
                 try:
-                    p_res = get_portal_data_with_fallback(net_id, portal_pwd_in)
+                    p_res = get_portal_data_with_fallback(net_id, portal_pwd_in, acad_pwd=acad_pwd_in)
                     if p_res and p_res.get('success'):
                         print(f"[{net_id}] SRM Student Portal resolved successfully!")
                         return p_res
@@ -941,6 +948,7 @@ def portal_sync():
     raw_reg = data.get('regNo') or data.get('username') or ''
     net_id = raw_reg.split('@')[0].strip().lower()
     portal_pwd = (data.get('portalPwd') or data.get('portal_pwd') or data.get('password') or '').strip()
+    acad_pwd = (data.get('acadPwd') or data.get('pwd') or '').strip()
     client_courses = data.get('courses') or []
     if client_courses and net_id:
         _STUDENT_COURSES_CACHE[net_id] = client_courses
@@ -949,7 +957,7 @@ def portal_sync():
         return jsonify({'success': False, 'error': 'Please enter your SRM Student Portal Password.'}), 400
 
     try:
-        p_res = get_portal_data_with_fallback(net_id, portal_pwd)
+        p_res = get_portal_data_with_fallback(net_id, portal_pwd, acad_pwd=acad_pwd)
         if not p_res or not p_res.get('success'):
             err = (p_res or {}).get('error', 'SRM Portal authentication failed.')
             return jsonify({'success': False, 'error': err})

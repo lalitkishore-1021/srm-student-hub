@@ -1,5 +1,5 @@
 // Change this version number every time you want to force phones to update!
-const CACHE_NAME = 'srm-hub-v68-clean-sync';
+const CACHE_NAME = 'srm-hub-v70-live-sync';
 
 const ASSETS_TO_CACHE = [
     '/',
