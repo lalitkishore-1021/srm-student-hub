@@ -696,7 +696,7 @@ def start_session():
     acad_pwd = (data.get('pwd') or '').strip()
     portal_pwd = (data.get('portalPwd') or data.get('portal_pwd') or '').strip()
 
-    def worker_wrapper(reg_no, acad_pwd_in, portal_pwd_in, batch, sid):
+    def worker_wrapper(reg_no, acad_pwd_in, portal_pwd_in, batch, sid, is_manual_portal=False):
         import concurrent.futures
         try:
             import srm_portal_scraper
@@ -769,6 +769,18 @@ def start_session():
 
             ac_ok = bool(ac_res and ac_res.get('success'))
             portal_ok = bool(portal_res and portal_res.get('success'))
+
+            if acad_pwd_in and not ac_ok:
+                ac_err = (ac_res or {}).get('error', '')
+                if any(w in ac_err.lower() for w in ['invalid', 'wrong', 'password', 'user', 'credential']):
+                    sync_jobs[sid] = {'status': 'failed', 'result': {'success': False, 'error': ac_err or "Wrong NetID or Password. Please check your Academia password."}, 'timestamp': time.time()}
+                    return
+
+            if portal_pwd_in and not portal_ok and is_manual_portal:
+                p_err = (portal_res or {}).get('error', '')
+                if any(w in p_err.lower() for w in ['invalid', 'wrong', 'password', 'credential', 'locked', 'attempts remaining']):
+                    sync_jobs[sid] = {'status': 'failed', 'result': {'success': False, 'error': p_err or "Invalid NetID or Student Portal password."}, 'timestamp': time.time()}
+                    return
 
             if not ac_ok and not portal_ok:
                 p_err = (portal_res or {}).get('error', '')
@@ -919,7 +931,8 @@ def start_session():
         except Exception as e:
             sync_jobs[sid] = {'status': 'failed', 'result': {'success': False, 'error': f'Background task exception: {str(e)}'}, 'timestamp': time.time()}
 
-    t = threading.Thread(target=worker_wrapper, args=(data.get('regNo'), acad_pwd, portal_pwd, data.get('batch', 1), sync_id))
+    is_manual_portal = bool(data.get('isManualPortal', False))
+    t = threading.Thread(target=worker_wrapper, args=(data.get('regNo'), acad_pwd, portal_pwd, data.get('batch', 1), sync_id, is_manual_portal))
     t.start()
     return jsonify({'success': True, 'sync_id': sync_id})
 

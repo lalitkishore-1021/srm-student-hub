@@ -7710,12 +7710,21 @@
                     localStorage.removeItem('squadProfile');
                 }
 
-                const portalPwdToSend = enteredPortalPwd;
+                const savedNetId = (localStorage.getItem('syncPortalNetId') || localStorage.getItem('syncRegNo') || '').split('@')[0].trim().toLowerCase();
+                const savedPortalPwd = (currentNetId && savedNetId === currentNetId) ? (localStorage.getItem('syncPortalPwd') || '') : '';
+                const portalPwdToSend = enteredPortalPwd || savedPortalPwd;
+                const isManualPortal = Boolean(enteredPortalPwd);
 
                 const initRes = await fetch(`${BACKEND_URL}/api/start_session`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json", "X-App-Key": "srm-hub-protected-x9f2" },
-                    body: JSON.stringify({ regNo: regNo, pwd: pwd, portalPwd: portalPwdToSend, batch: currentBatch })
+                    body: JSON.stringify({ 
+                        regNo: regNo, 
+                        pwd: pwd, 
+                        portalPwd: portalPwdToSend, 
+                        isManualPortal: isManualPortal,
+                        batch: currentBatch 
+                    })
                 });
 
                 const initData = await initRes.json();

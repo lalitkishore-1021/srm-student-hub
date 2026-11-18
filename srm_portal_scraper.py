@@ -217,9 +217,20 @@ class SRMPortalSession:
         m_delim = re.search(r"randomDelimiter\s*=\s*'([^']+)'", text)
         self.random_delimiter = m_delim.group(1) if m_delim else "0000"
 
+        self.captcha_page = text
         fields = {}
-        for inp in re.finditer(r"<input[^>]*name=['\"]([^'\"]+)['\"][^>]*>", text):
-            fields[inp.group(1)] = ""
+        soup = BeautifulSoup(text, "html.parser")
+        form = soup.find("form")
+        if form:
+            for inp in form.find_all("input"):
+                n = inp.get("name")
+                if n:
+                    fields[n] = inp.get("value") or ""
+        else:
+            for inp in re.finditer(r"<input[^>]*name=['\"]([^'\"]+)['\"][^>]*>", text):
+                tag_str = inp.group(0)
+                m_val = re.search(r"value=['\"]([^'\"]*)['\"]", tag_str)
+                fields[inp.group(1)] = m_val.group(1) if m_val else ""
         self.login_form_fields = fields
 
         m_cap = re.search(r"SCaptchaServlet[^'\" ]*", text)
