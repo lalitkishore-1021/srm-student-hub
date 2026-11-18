@@ -287,13 +287,14 @@ class SRMPortalSession:
         self.last_body = body
         url_lower = str(resp.url).lower()
 
-        if "logout.jsp" in url_lower or "attendance" in url_lower or "hrdsystem" in url_lower:
+        if "logout.jsp" in url_lower or "attendance" in url_lower or "hrdsystem" in url_lower or "logout" in body.lower():
             att_html = self.get_attendance_html()
-            if att_html:
-                return {"ok": True, "att_html": att_html}
+            if not att_html or "table" not in att_html.lower():
+                att_html = body
+            return {"ok": True, "att_html": att_html}
         else:
             att_html = self.get_attendance_html()
-            if att_html:
+            if att_html and "table" in att_html.lower():
                 return {"ok": True, "att_html": att_html}
 
         return self._classify_failure(body)
@@ -314,7 +315,7 @@ class SRMPortalSession:
             if any(k in blob for k in ["invalid", "attempts remaining", "unsuccessful", "user id or password", "password", "credential"]):
                 return {"ok": False, "reason": "invalid_credentials", "message": alert_text}
             return {"ok": False, "reason": "login_failed", "message": alert_text}
-        return {"ok": False, "reason": "login_failed", "message": "Student Portal login failed"}
+        return {"ok": False, "reason": "wrong_captcha", "message": "Student Portal verification failed"}
 
     def get_attendance_html(self) -> Optional[str]:
         try:
@@ -879,79 +880,52 @@ def fetch_portal_data(username: str, password: str) -> Dict[str, Any]:
 
     att_html = None
     active_portal = None
+    last_reason = "login_failed"
+    last_msg = "Could not authenticate with SRM Student Portal"
 
-    # Pre-load 2 portals in parallel so retry attempt has captcha ready instantly (Ratio-D fast path)
-    portals_ready = []
-    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pre_ex:
-        def _load_one(_unused):
-            p = SRMPortalSession()
-            try:
-                ok = p.load_captcha()
-                return p if (ok and p.captcha_bytes) else None
-            except Exception:
-                return None
-        pfuts = [pre_ex.submit(_load_one, i) for i in range(2)]
-        for pft in concurrent.futures.as_completed(pfuts, timeout=28):
-            try:
-                pp = pft.result()
-                if pp:
-                    portals_ready.append(pp)
-            except Exception:
-                pass
-
-    # Fallback if parallel pre-load returned no ready sessions
-    if not portals_ready:
+    # Up to 4 OCR attempts (matching Ratio-D architecture)
+    for attempt in range(1, 5):
         try:
-            fb_p = SRMPortalSession()
-            if fb_p.load_captcha() and fb_p.captcha_bytes:
-                portals_ready.append(fb_p)
-        except Exception as e:
-            print(f"[{netid}] Fallback portal session error: {e}")
-
-    for attempt, portal in enumerate(portals_ready, 1):
-        try:
+            portal = SRMPortalSession()
+            if not portal.load_captcha() or not portal.captcha_bytes:
+                continue
             solved = solve_captcha_bytes(portal.captcha_bytes)
             if not solved:
                 continue
-            print(f"[{netid}] [PORTAL-OCR] Attempt {attempt}/{len(portals_ready)} predicted captcha: '{solved}'")
+            print(f"[{netid}] [PORTAL-OCR] Attempt {attempt}/4 predicted captcha: '{solved}'")
             res = portal.login_attempt(netid, password, solved)
             if res.get("ok"):
                 att_html = res.get("att_html")
                 active_portal = portal
                 print(f"[{netid}] [PORTAL] Login succeeded on attempt {attempt} in {time.time() - start_ts:.2f}s!")
                 break
+            
             reason = res.get("reason", "")
+            msg = res.get("message", "Invalid Student Portal credentials")
+            last_reason = reason
+            last_msg = msg
+            
+            # Halting retries immediately on genuine credential error or locked account
             if reason in ("invalid_credentials", "account_locked"):
-                msg = res.get("message", "Invalid Student Portal credentials")
                 print(f"[{netid}] [PORTAL] Auth stopped ({reason}): {msg}")
                 return {"success": False, "error": msg, "reason": reason}
+            elif reason == "wrong_captcha":
+                print(f"[{netid}] [PORTAL] Captcha incorrect on attempt {attempt}/4, trying next...")
+                continue
+            else:
+                continue
         except Exception as e:
             print(f"[{netid}] [PORTAL] Attempt {attempt} error: {e}")
             continue
 
-    # If first attempts failed with wrong captcha, try one fresh attempt
-    if not active_portal:
-        try:
-            fresh_p = SRMPortalSession()
-            if fresh_p.load_captcha() and fresh_p.captcha_bytes:
-                fresh_solved = solve_captcha_bytes(fresh_p.captcha_bytes)
-                if fresh_solved:
-                    print(f"[{netid}] [PORTAL-OCR] Final fresh retry predicted: '{fresh_solved}'")
-                    res = fresh_p.login_attempt(netid, password, fresh_solved)
-                    if res.get("ok"):
-                        att_html = res.get("att_html")
-                        active_portal = fresh_p
-                        print(f"[{netid}] [PORTAL] Login succeeded on fresh retry!")
-                    else:
-                        reason = res.get("reason", "")
-                        if reason in ("invalid_credentials", "account_locked"):
-                            msg = res.get("message", "Invalid Student Portal credentials")
-                            return {"success": False, "error": msg, "reason": reason}
-        except Exception as fe:
-            print(f"[{netid}] Final fresh retry error: {fe}")
-
     if not active_portal or not att_html:
-        return {"success": False, "error": "Could not authenticate with SRM Student Portal"}
+        if last_reason == "wrong_captcha":
+            return {
+                "success": False, 
+                "error": "Student Portal security verification (CAPTCHA) timed out. Please click Sync again.", 
+                "reason": "wrong_captcha"
+            }
+        return {"success": False, "error": last_msg, "reason": last_reason}
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=3) as ex:
         f_marks = ex.submit(active_portal.get_marks_html)
