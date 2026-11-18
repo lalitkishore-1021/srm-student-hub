@@ -291,6 +291,10 @@ class SRMPortalSession:
                 att_html = body
             return {"ok": True, "att_html": att_html}
         else:
+            try:
+                self.session.get(HRD_URL, timeout=12)
+            except Exception:
+                pass
             att_html = self.get_attendance_html()
             if att_html and "table" in att_html.lower():
                 return {"ok": True, "att_html": att_html}
@@ -882,16 +886,22 @@ def fetch_portal_data(username: str, password: str) -> Dict[str, Any]:
     active_portal = None
     last_reason = "login_failed"
     last_msg = "Could not authenticate with SRM Student Portal"
+    login_attempts_made = 0
 
     # Up to 4 OCR attempts (matching Ratio-D architecture)
     for attempt in range(1, 5):
         try:
             portal = SRMPortalSession()
             if not portal.load_captcha() or not portal.captcha_bytes:
+                last_reason = "captcha_load_failed"
+                time.sleep(0.4)
                 continue
             solved = solve_captcha_bytes(portal.captcha_bytes)
             if not solved:
+                last_reason = "captcha_solve_failed"
+                time.sleep(0.3)
                 continue
+            login_attempts_made += 1
             print(f"[{netid}] [PORTAL-OCR] Attempt {attempt}/4 predicted captcha: '{solved}'")
             res = portal.login_attempt(netid, password, solved)
             if res.get("ok"):
@@ -923,6 +933,12 @@ def fetch_portal_data(username: str, password: str) -> Dict[str, Any]:
             continue
 
     if not active_portal or not att_html:
+        if login_attempts_made == 0:
+            return {
+                "success": False,
+                "error": "Could not reach SRM Student Portal security server. Please try again in a few moments.",
+                "reason": "network_or_captcha_load_failed"
+            }
         if last_reason == "wrong_captcha":
             return {
                 "success": False, 
