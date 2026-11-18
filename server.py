@@ -752,11 +752,20 @@ def start_session():
                 elif not acad_pwd_in:
                     final_err = p_err or "Wrong NetID or Password. Please check your Student Portal password."
                 else:
-                    final_err = ac_err or p_err or "Wrong NetID or Password. Please check your credentials."
-                if any(w in p_err.lower() or w in ac_err.lower() for w in ['password', 'credential', 'invalid', 'wrong']):
-                    pass
-                elif 'network' in p_err.lower() or 'network' in ac_err.lower() or 'timeout' in p_err.lower() or 'timeout' in ac_err.lower():
-                    final_err = "University servers took too long to respond. Please try again."
+                    ac_is_cred = any(w in ac_err.lower() for w in ['wrong', 'password', 'credential', 'invalid'])
+                    p_is_cred = any(w in p_err.lower() for w in ['wrong', 'password', 'credential', 'invalid'])
+                    if ac_is_cred and p_is_cred:
+                        final_err = "Invalid NetID or Password. Please check your Academia and Student Portal passwords."
+                    elif ac_is_cred:
+                        final_err = ac_err
+                    elif p_is_cred:
+                        final_err = p_err
+                    else:
+                        final_err = ac_err or p_err or "Wrong NetID or Password. Please check your credentials."
+
+                if 'network' in (p_err + ac_err).lower() or 'timeout' in (p_err + ac_err).lower():
+                    if not any(w in final_err.lower() for w in ['password', 'credential', 'invalid', 'wrong']):
+                        final_err = "University servers took too long to respond. Please try again."
                 sync_jobs[sid] = {'status': 'failed', 'result': {'success': False, 'error': final_err}, 'timestamp': time.time()}
                 return
 

@@ -152,7 +152,7 @@ def solve_captcha_bytes(image_bytes: bytes) -> Optional[str]:
 
 def _telemetry_payload() -> Dict[str, Any]:
     now = int(time.time() * 1000)
-    start = now - random.randint(3000, 8000)
+    start = now - random.randint(4000, 9000)
     return {
         "startTime": start,
         "currentDomain": "sp.srmist.edu.in",
@@ -168,10 +168,10 @@ def _telemetry_payload() -> Dict[str, Any]:
         "deviceMemory": 8,
         "touchSupport": False,
         "webdriver": False,
-        "mouseClicks": random.randint(2, 6),
-        "mouseMovements": random.randint(5, 20),
-        "keystrokeCount": 0,
-        "typingSpeedMs": 0,
+        "mouseClicks": random.randint(3, 7),
+        "mouseMovements": random.randint(12, 28),
+        "keystrokeCount": random.randint(24, 38),
+        "typingSpeedMs": random.randint(2600, 5200),
         "canvasHash": format(random.randint(0, 0x7FFFFFFF), "06x"),
         "submitTime": now,
         "timeOnPageMs": now - start,
@@ -262,19 +262,17 @@ class SRMPortalSession:
         calc_elapsed = max(0, int((now_ms - (self.load_ms or now_ms)) / 1000))
         elapsed_sec = max(random.randint(3, 5), calc_elapsed)
         dtoken = base64.b64encode("sp.srmist.edu.in"[::-1].encode()).decode()
-        trap_payload = str(elapsed_sec) + (self.random_delimiter or "0000") + "3"
+        trap_payload = str(elapsed_sec) + (self.random_delimiter or "0000") + str(random.randint(4, 12))
         cptoken = base64.b64encode(trap_payload.encode()).decode()
-        fp_payload = base64.b64encode(json.dumps({"fp": "", "nonce": self.nonce, "ts": now_ms}).encode()).decode()
         payload = base64.b64encode(json.dumps(_telemetry_payload()).encode()).decode()
 
         fp_body = dict(self.login_form_fields)
         fp_body.update({
-            "username": netid,
+            "username": netid.strip(),
             "password": password,
-            "captcha": captcha_code,
-            "fpPayload": fp_payload,
+            "captcha": captcha_code.strip(),
+            "fpPayload": "",
             "fpToken": "",
-            "recaptchaToken": "",
             "telemetryPayload": payload,
         })
         fp_body[self.domain_field_name] = dtoken
@@ -308,13 +306,15 @@ class SRMPortalSession:
             if alert_text.lower().startswith("alert"):
                 alert_text = alert_text[5:].strip()
             blob = alert_text.lower()
-            if any(k in blob for k in ["captcha", "code", "verification", "security"]):
-                return {"ok": False, "reason": "wrong_captcha", "message": alert_text}
             if "locked" in blob:
                 return {"ok": False, "reason": "account_locked", "message": alert_text}
-            if any(k in blob for k in ["invalid", "attempts remaining", "unsuccessful", "user id or password", "password", "credential"]):
-                return {"ok": False, "reason": "invalid_credentials", "message": alert_text}
-            return {"ok": False, "reason": "login_failed", "message": alert_text}
+            if any(k in blob for k in ["attempts remaining", "attempt remaining", "login attempts"]):
+                return {"ok": False, "reason": "invalid_credentials_fatal", "message": alert_text}
+            if any(k in blob for k in ["captcha", "code", "verification", "security"]):
+                return {"ok": False, "reason": "wrong_captcha", "message": alert_text}
+            # sp.srmist.edu.in emits 'AlertInvalid credentials' for BOTH bad captcha predictions and bad passwords.
+            # Mark it retryable so TinyOCR attempts 2, 3, and 4 can run.
+            return {"ok": False, "reason": "credential_or_captcha_mismatch", "message": alert_text}
         return {"ok": False, "reason": "wrong_captcha", "message": "Student Portal verification failed"}
 
     def get_attendance_html(self) -> Optional[str]:
@@ -905,17 +905,21 @@ def fetch_portal_data(username: str, password: str) -> Dict[str, Any]:
             last_reason = reason
             last_msg = msg
             
-            # Halting retries immediately on genuine credential error or locked account
-            if reason in ("invalid_credentials", "account_locked"):
+            # Halting retries immediately ONLY on genuine locked account or explicit attempt countdown
+            if reason in ("account_locked", "invalid_credentials_fatal"):
                 print(f"[{netid}] [PORTAL] Auth stopped ({reason}): {msg}")
-                return {"success": False, "error": msg, "reason": reason}
+                return {"success": False, "error": msg, "reason": "invalid_credentials" if reason == "invalid_credentials_fatal" else reason}
             elif reason == "wrong_captcha":
                 print(f"[{netid}] [PORTAL] Captcha incorrect on attempt {attempt}/4, trying next...")
+                time.sleep(0.3)
                 continue
             else:
+                print(f"[{netid}] [PORTAL] Attempt {attempt}/4 rejected ({reason}: {msg}), trying next OCR attempt...")
+                time.sleep(0.3)
                 continue
         except Exception as e:
             print(f"[{netid}] [PORTAL] Attempt {attempt} error: {e}")
+            time.sleep(0.3)
             continue
 
     if not active_portal or not att_html:
@@ -925,7 +929,11 @@ def fetch_portal_data(username: str, password: str) -> Dict[str, Any]:
                 "error": "Student Portal security verification (CAPTCHA) timed out. Please click Sync again.", 
                 "reason": "wrong_captcha"
             }
-        return {"success": False, "error": last_msg, "reason": last_reason}
+        return {
+            "success": False, 
+            "error": "Invalid NetID or Student Portal password. You can reset your password at https://ssp.srmist.edu.in/resetpassword/", 
+            "reason": "invalid_credentials"
+        }
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=3) as ex:
         f_marks = ex.submit(active_portal.get_marks_html)

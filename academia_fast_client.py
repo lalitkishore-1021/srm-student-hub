@@ -130,10 +130,23 @@ def fetch_academia_fast(email: str, password: str, batch_override: Optional[Any]
         return None
 
     def fetch_first_valid(candidates: List[str], required_keywords: List[str]) -> Optional[str]:
-        for c_name in candidates:
-            h = fetch_page_candidate(c_name)
-            if h and any(k.lower() in h.lower() for k in required_keywords):
-                return h
+        if not candidates:
+            return None
+        # Fast path: check current primary candidate first
+        h0 = fetch_page_candidate(candidates[0])
+        if h0 and any(k.lower() in h0.lower() for k in required_keywords):
+            return h0
+        # Concurrent fallback across remaining candidates
+        if len(candidates) > 1:
+            with concurrent.futures.ThreadPoolExecutor(max_workers=min(4, len(candidates) - 1)) as pool:
+                fut_to_cand = {pool.submit(fetch_page_candidate, c): c for c in candidates[1:]}
+                for fut in concurrent.futures.as_completed(fut_to_cand):
+                    try:
+                        h = fut.result()
+                        if h and any(k.lower() in h.lower() for k in required_keywords):
+                            return h
+                    except Exception:
+                        pass
         return None
 
     prof_html = None
@@ -151,11 +164,11 @@ def fetch_academia_fast(email: str, password: str, batch_override: Optional[Any]
             ['Hours Conducted', 'Attn %', 'Attendance %', 'Course Code', 'Test Performance']
         )
         try:
-            prof_html = f_tt.result(timeout=18)
+            prof_html = f_tt.result(timeout=45)
         except Exception as e:
             print(f"[{clean_user}] Timetable page fetch error: {e}", flush=True)
         try:
-            att_html = f_att.result(timeout=18)
+            att_html = f_att.result(timeout=45)
         except Exception as e:
             print(f"[{clean_user}] Attendance page fetch error: {e}", flush=True)
 

@@ -2399,10 +2399,10 @@
         }
         .orb-1, .orb-2, .orb-3 { position: fixed; border-radius: 50%; pointer-events: none; z-index: 0; filter: blur(65px); }
         .orb-1 { width: 440px; height: 440px; background: radial-gradient(circle, rgba(245,158,11,0.14), transparent 70%); top: 10%; left: 5%; animation: floatOrbAmber 12s ease-in-out infinite; }
-        .orb-2 { width: 520px; height: 520px; background: radial-gradient(circle, rgba(138,43,226,0.28), transparent 70%); bottom: 4%; right: 4%; animation: floatOrbViolet 15s ease-in-out infinite reverse; }
-        .orb-3 { width: 380px; height: 380px; background: radial-gradient(circle, rgba(138,43,226,0.22), transparent 70%); bottom: 1%; right: 1%; animation: floatOrbViolet 18s ease-in-out infinite alternate; }
+        .orb-2 { width: 440px; height: 440px; background: radial-gradient(circle, rgba(138,43,226,0.28), transparent 70%); bottom: -100px; right: -80px; animation: floatOrbViolet 15s ease-in-out infinite reverse; }
+        .orb-3 { width: 320px; height: 320px; background: radial-gradient(circle, rgba(138,43,226,0.22), transparent 70%); bottom: -60px; right: -50px; animation: floatOrbViolet 18s ease-in-out infinite alternate; }
         @keyframes floatOrbAmber { 0%, 100% { transform: translate(0,0) scale(1); } 50% { transform: translate(40px, -40px) scale(1.1); } }
-        @keyframes floatOrbViolet { 0%, 100% { transform: translate(0,0) scale(1); } 50% { transform: translate(-30px, -30px) scale(1.08); } }
+        @keyframes floatOrbViolet { 0%, 100% { transform: translate(0,0) scale(1); } 50% { transform: translate(-20px, 20px) scale(1.05); } }
         
         
         @keyframes loginCardEnter {
@@ -6359,6 +6359,7 @@
             <div id="fs-cover-container" class="fs-cover-container">
                 <img id="fs-cover" class="fs-cover" src="" alt="Cover">
                 <video id="fs-video" class="fs-cover" loop muted playsinline style="display: none; box-shadow: 0 20px 45px rgba(0,0,0,0.55);"></video>
+                <div id="fs-video-tint" style="position: absolute; inset: 0; border-radius: 22px; background: rgba(0,0,0,0.04); pointer-events: none; z-index: 5; display: none;"></div>
             </div>
 
             <div class="fs-glass-panel">
@@ -13915,33 +13916,58 @@ function checkAndShowHolidayBanner(viewId) {
         window.currentLyricIndex = -1;
         
         function updateLyricsHighlight(forceScroll = false) {
-            if (!audioPlayer || !window.syncedLyricsData || window.syncedLyricsData.length === 0) return;
+            if (!audioPlayer) return;
             const ct = audioPlayer.currentTime || 0;
-            let activeIndex = -1;
-            for (let i = 0; i < window.syncedLyricsData.length; i++) {
-                if (ct >= window.syncedLyricsData[i].time - 0.2) {
-                    activeIndex = i;
-                } else {
-                    break;
-                }
-            }
-            if (activeIndex !== -1 && (activeIndex !== window.currentLyricIndex || forceScroll)) {
-                if (window.currentLyricIndex !== -1 && window.currentLyricIndex !== activeIndex) {
-                    const prev = document.getElementById(`lyric-line-${window.currentLyricIndex}`);
-                    if (prev) {
-                        prev.classList.remove('active-lyric', 'active');
+            const dur = audioPlayer.duration || 0;
+
+            if (window.syncedLyricsData && window.syncedLyricsData.length > 0) {
+                let activeIndex = -1;
+                for (let i = 0; i < window.syncedLyricsData.length; i++) {
+                    if (ct >= window.syncedLyricsData[i].time - 0.25) {
+                        activeIndex = i;
+                    } else {
+                        break;
                     }
                 }
-                const current = document.getElementById(`lyric-line-${activeIndex}`);
-                if (current) {
-                    current.classList.add('active-lyric', 'active');
-                    const contentArea = document.getElementById('fs-lyrics-content');
-                    if (contentArea) {
-                        const target = current.offsetTop - (contentArea.clientHeight / 2) + (current.clientHeight / 2);
-                        contentArea.scrollTo({ top: Math.max(0, target), behavior: 'smooth' });
+                if (activeIndex !== -1 && (activeIndex !== window.currentLyricIndex || forceScroll)) {
+                    if (window.currentLyricIndex !== -1 && window.currentLyricIndex !== activeIndex) {
+                        const prev = document.getElementById(`lyric-line-${window.currentLyricIndex}`);
+                        if (prev) {
+                            prev.classList.remove('active-lyric', 'active');
+                        }
+                    }
+                    const current = document.getElementById(`lyric-line-${activeIndex}`);
+                    if (current) {
+                        current.classList.add('active-lyric', 'active');
+                        const contentArea = document.getElementById('fs-lyrics-content');
+                        if (contentArea) {
+                            const target = current.offsetTop - (contentArea.clientHeight / 2) + (current.clientHeight / 2);
+                            contentArea.scrollTo({ top: Math.max(0, target), behavior: 'smooth' });
+                        }
+                    }
+                    window.currentLyricIndex = activeIndex;
+                }
+            } else {
+                // Progressive highlighting for unsynced plain lyrics
+                const plainLines = document.querySelectorAll('#fs-lyrics-content .apple-lyric-line');
+                if (plainLines && plainLines.length > 0 && dur > 0) {
+                    const activeIndex = Math.min(plainLines.length - 1, Math.floor((ct / dur) * plainLines.length));
+                    if (activeIndex !== window.currentLyricIndex || forceScroll) {
+                        plainLines.forEach((el, idx) => {
+                            if (idx === activeIndex) {
+                                el.classList.add('active-lyric', 'active');
+                                const contentArea = document.getElementById('fs-lyrics-content');
+                                if (contentArea && (idx !== window.currentLyricIndex || forceScroll)) {
+                                    const target = el.offsetTop - (contentArea.clientHeight / 2) + (el.clientHeight / 2);
+                                    contentArea.scrollTo({ top: Math.max(0, target), behavior: 'smooth' });
+                                }
+                            } else {
+                                el.classList.remove('active-lyric', 'active');
+                            }
+                        });
+                        window.currentLyricIndex = activeIndex;
                     }
                 }
-                window.currentLyricIndex = activeIndex;
             }
         }
 
@@ -13991,9 +14017,14 @@ function checkAndShowHolidayBanner(viewId) {
                     html += `<div class="apple-lyric-line synced-line" id="lyric-line-${idx}" onclick="seekToLyric(${idx})">${escapeHtml(item.text)}</div>`;
                 });
             } else {
+                let plainIdx = 0;
                 for (const line of lines) {
-                    if (line.trim() === '') html += '<br>';
-                    else html += `<div class="apple-lyric-line">${escapeHtml(line)}</div>`;
+                    if (line.trim() === '') {
+                        html += '<br>';
+                    } else {
+                        html += `<div class="apple-lyric-line" id="lyric-line-${plainIdx}" onclick="seekToUnsyncedLyric(${plainIdx})">${escapeHtml(line)}</div>`;
+                        plainIdx++;
+                    }
                 }
             }
             container.innerHTML = html;
@@ -14003,6 +14034,17 @@ function checkAndShowHolidayBanner(viewId) {
         window.seekToLyric = function(idx) {
             if (window.syncedLyricsData && window.syncedLyricsData[idx] && audioPlayer) {
                 audioPlayer.currentTime = window.syncedLyricsData[idx].time;
+                if (audioPlayer.paused) toggleMusicPlay();
+                if (typeof updateMusicProgress === 'function') updateMusicProgress();
+                updateLyricsHighlight(true);
+            }
+        };
+
+        window.seekToUnsyncedLyric = function(idx) {
+            const plainLines = document.querySelectorAll('#fs-lyrics-content .apple-lyric-line');
+            if (plainLines && plainLines.length > 0 && audioPlayer && audioPlayer.duration) {
+                const targetTime = (idx / plainLines.length) * audioPlayer.duration;
+                audioPlayer.currentTime = targetTime;
                 if (audioPlayer.paused) toggleMusicPlay();
                 if (typeof updateMusicProgress === 'function') updateMusicProgress();
                 updateLyricsHighlight(true);
