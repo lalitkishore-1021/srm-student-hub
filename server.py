@@ -33,7 +33,6 @@ def is_rate_limited(ip):
 from functools import lru_cache
 import base64
 from flask_cors import CORS
-from playwright.sync_api import sync_playwright
 
 app = Flask(__name__, static_folder='.')
 CORS(app)

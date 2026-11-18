@@ -95,7 +95,7 @@ def scrape_campusweb(netid: str, portal_pwd: str, acad_pwd: str = None):
         sp_res = session.post(
             'https://api.campusweb.in/api/student-portal/login',
             json={'net_id': clean_id, 'password': portal_pwd},
-            timeout=15,
+            timeout=22,
         )
         if sp_res.status_code != 200:
             err_msg = 'Invalid NetID or Student Portal password'
@@ -103,17 +103,31 @@ def scrape_campusweb(netid: str, portal_pwd: str, acad_pwd: str = None):
                 err_msg = sp_res.json().get('message', err_msg)
             except Exception:
                 pass
+            if sp_res.status_code == 429 or 'too many attempts' in err_msg.lower():
+                return {
+                    'success': False,
+                    'error': 'SRM Student Portal security rate limit reached. Please wait a few minutes before trying again.',
+                    'reason': 'rate_limited'
+                }
             return {'success': False, 'error': err_msg, 'reason': 'invalid_credentials'}
 
         sp_data = sp_res.json()
         if sp_data.get('status') != 'success':
             err_msg = sp_data.get('message', 'Student Portal login rejected')
+            if 'too many attempts' in err_msg.lower():
+                return {
+                    'success': False,
+                    'error': 'SRM Student Portal security rate limit reached. Please wait a few minutes before trying again.',
+                    'reason': 'rate_limited'
+                }
             return {'success': False, 'error': err_msg, 'reason': 'invalid_credentials'}
 
         sp_token = sp_data.get('session_token')
         if sp_token:
             session.headers.update({'X-Session-Token': sp_token})
 
+    except requests.exceptions.Timeout:
+        return {'success': False, 'error': 'CampusWeb timed out waiting for Student Portal. Please try again.', 'reason': 'timeout'}
     except Exception as e:
         return {'success': False, 'error': f'CampusWeb connection error: {e}', 'reason': 'network_error'}
 
@@ -127,7 +141,7 @@ def scrape_campusweb(netid: str, portal_pwd: str, acad_pwd: str = None):
             r = session.post(
                 'https://api.campusweb.in/api/student-portal/attendance',
                 json={'net_id': clean_id, 'password': portal_pwd},
-                timeout=12,
+                timeout=18,
             )
             if r.status_code == 200:
                 return r.json()
@@ -140,7 +154,7 @@ def scrape_campusweb(netid: str, portal_pwd: str, acad_pwd: str = None):
             r = session.post(
                 'https://api.campusweb.in/api/student-portal/marks',
                 json={'net_id': clean_id, 'password': portal_pwd},
-                timeout=12,
+                timeout=18,
             )
             if r.status_code == 200:
                 return r.json()
@@ -153,7 +167,7 @@ def scrape_campusweb(netid: str, portal_pwd: str, acad_pwd: str = None):
             r = session.post(
                 'https://api.campusweb.in/api/student-portal/profile',
                 json={'net_id': clean_id, 'password': portal_pwd},
-                timeout=12,
+                timeout=18,
             )
             if r.status_code == 200:
                 return r.json()
