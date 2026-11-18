@@ -120,7 +120,7 @@ def fetch_academia_fast(email: str, password: str, batch_override: Optional[Any]
     def fetch_page_candidate(page_name: str) -> Optional[str]:
         u = f'https://academia.srmist.edu.in/srm_university/academia-academic-services/page/{page_name}'
         try:
-            r = session.get(u, headers=headers, timeout=20)
+            r = session.get(u, headers=headers, timeout=10)
             if r.status_code == 200 and len(r.text) > 100:
                 ext = smart_extract_zoho(r.text)
                 if ext and len(ext) > 100:
@@ -142,20 +142,20 @@ def fetch_academia_fast(email: str, password: str, batch_override: Optional[Any]
     with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
         f_tt = executor.submit(
             fetch_first_valid,
-            ['My_Time_Table_2023_24', 'My_Time_Table_2024_25', 'My_Time_Table_2025_26', 'My_Time_Table'],
+            ['My_Time_Table_2024_25', 'My_Time_Table_2025_26', 'My_Time_Table_2023_24', 'My_Time_Table'],
             ['Course Code', 'Faculty Advisor', 'Academic Advisor', 'Student Name', 'Registration Number']
         )
         f_att = executor.submit(
             fetch_first_valid,
-            ['My_Attendance', 'My_Attendance_2024_25', 'My_Attendance_2025_26', 'My_Attendance_2023_24', 'Attendance'],
+            ['My_Attendance_2024_25', 'My_Attendance', 'My_Attendance_2025_26', 'My_Attendance_2023_24', 'Attendance'],
             ['Hours Conducted', 'Attn %', 'Attendance %', 'Course Code', 'Test Performance']
         )
         try:
-            prof_html = f_tt.result(timeout=25)
+            prof_html = f_tt.result(timeout=18)
         except Exception as e:
             print(f"[{clean_user}] Timetable page fetch error: {e}", flush=True)
         try:
-            att_html = f_att.result(timeout=25)
+            att_html = f_att.result(timeout=18)
         except Exception as e:
             print(f"[{clean_user}] Attendance page fetch error: {e}", flush=True)
 
@@ -359,7 +359,7 @@ def fetch_academia_fast(email: str, password: str, batch_override: Optional[Any]
     grid_url = f"https://academia.srmist.edu.in/srm_university/academia-academic-services/page/Unified_Time_Table_2025_Batch_{batch_num}"
     grid_html = None
     try:
-        r_grid = session.get(grid_url, headers=headers, timeout=25)
+        r_grid = session.get(grid_url, headers=headers, timeout=12)
         grid_html = smart_extract_zoho(r_grid.text)
     except Exception:
         pass
@@ -367,7 +367,7 @@ def fetch_academia_fast(email: str, password: str, batch_override: Optional[Any]
     if not grid_html:
         try:
             grid_url = f"https://academia.srmist.edu.in/srm_university/academia-academic-services/page/Unified_Time_Table_2025_batch_{batch_num}"
-            r_grid = session.get(grid_url, headers=headers, timeout=15)
+            r_grid = session.get(grid_url, headers=headers, timeout=8)
             grid_html = smart_extract_zoho(r_grid.text)
         except Exception:
             pass

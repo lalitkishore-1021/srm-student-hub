@@ -734,7 +734,7 @@ def start_session():
                         pass  # Let Academia complete in background without blocking user
             elif future_ac:
                 try:
-                    ac_res = future_ac.result(timeout=35)
+                    ac_res = future_ac.result(timeout=80)
                 except Exception as e:
                     print(f"[{reg_no}] Academia wait: {e}")
 
@@ -743,18 +743,7 @@ def start_session():
             ac_ok = bool(ac_res and ac_res.get('success'))
             portal_ok = bool(portal_res and portal_res.get('success'))
 
-            if acad_pwd_in and not ac_ok:
-                ac_err = (ac_res or {}).get('error', '')
-                if any(w in ac_err.lower() for w in ['invalid', 'wrong', 'password', 'user', 'credential']):
-                    sync_jobs[sid] = {'status': 'failed', 'result': {'success': False, 'error': ac_err or "Wrong NetID or Password. Please check your Academia password."}, 'timestamp': time.time()}
-                    return
-
-            if portal_pwd_in and not portal_ok and is_manual_portal:
-                p_err = (portal_res or {}).get('error', '')
-                if any(w in p_err.lower() for w in ['invalid', 'wrong', 'password', 'credential', 'locked', 'attempts remaining']):
-                    sync_jobs[sid] = {'status': 'failed', 'result': {'success': False, 'error': p_err or "Invalid NetID or Student Portal password."}, 'timestamp': time.time()}
-                    return
-
+            # If both failed (or the only provided auth failed)
             if not ac_ok and not portal_ok:
                 p_err = (portal_res or {}).get('error', '')
                 ac_err = (ac_res or {}).get('error', '')
@@ -864,7 +853,13 @@ def start_session():
                 'courses': merged_courses,
                 'profile': merged_profile,
                 'is_mock_attendance': False,
+                'portal_ok': portal_ok,
+                'acad_ok': ac_ok,
             }
+            if portal_pwd_in and not portal_ok:
+                result['portal_error'] = (portal_res or {}).get('error') or "Invalid NetID or Student Portal password."
+            if acad_pwd_in and not ac_ok:
+                result['acad_error'] = (ac_res or {}).get('error') or "Wrong NetID or Password. Please check your Academia password."
 
             # Profile resolution
             cached_prof = get_cached_student_profile(net_id)

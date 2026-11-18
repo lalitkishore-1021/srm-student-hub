@@ -2602,6 +2602,7 @@
           filter: blur(0) !important;
           transform: scale(1.03) translateX(6px);
           text-shadow: 0 4px 24px rgba(255, 255, 255, 0.45);
+          background: rgba(255, 255, 255, 0.08) !important;
         }
         .apple-lyric-line.active-lyric::before, .lyrics-line.active::before {
           content: '';
@@ -6330,11 +6331,7 @@
             </div>
             <div class="bg-video-overlay" onclick="event.stopPropagation(); toggleMusicPlay();"></div>
         </div>
-        <div class="fs-bg-orbs-container">
-            <div class="fs-orb fs-orb-1"></div>
-            <div class="fs-orb fs-orb-2"></div>
-            <div class="fs-orb fs-orb-3"></div>
-        </div>
+
         <img id="fs-bg-blur" class="fs-bg-blur" src="">
         <div class="fs-bg-overlay"></div>
         
@@ -7795,8 +7792,18 @@
                 localStorage.setItem("lastSyncSuccessTime", Date.now().toString());
                 localStorage.setItem("lastAcademiaSyncTime", Date.now().toString());
                 if (portalPwdToSend) {
-                    localStorage.setItem("syncPortalPwd", portalPwdToSend);
-                    localStorage.setItem("syncPortalNetId", currentNetId);
+                    if (result.portal_ok !== false) {
+                        localStorage.setItem("syncPortalPwd", portalPwdToSend);
+                        localStorage.setItem("syncPortalNetId", currentNetId);
+                    } else {
+                        localStorage.removeItem("syncPortalPwd");
+                        localStorage.removeItem("syncPortalNetId");
+                    }
+                }
+                if (result.portal_error && result.portal_ok === false) {
+                    setTimeout(() => {
+                        showNotification("Academia connected! Note: Student Portal password was incorrect, so internal marks are pending. You can update it in the Marks tab.");
+                    }, 1200);
                 }
 
                 updateHomeState();
@@ -13907,39 +13914,90 @@ function checkAndShowHolidayBanner(viewId) {
         window.syncedLyricsData = [];
         window.currentLyricIndex = -1;
         
+        function updateLyricsHighlight(forceScroll = false) {
+            if (!audioPlayer || !window.syncedLyricsData || window.syncedLyricsData.length === 0) return;
+            const ct = audioPlayer.currentTime || 0;
+            let activeIndex = -1;
+            for (let i = 0; i < window.syncedLyricsData.length; i++) {
+                if (ct >= window.syncedLyricsData[i].time - 0.2) {
+                    activeIndex = i;
+                } else {
+                    break;
+                }
+            }
+            if (activeIndex !== -1 && (activeIndex !== window.currentLyricIndex || forceScroll)) {
+                if (window.currentLyricIndex !== -1 && window.currentLyricIndex !== activeIndex) {
+                    const prev = document.getElementById(`lyric-line-${window.currentLyricIndex}`);
+                    if (prev) {
+                        prev.classList.remove('active-lyric', 'active');
+                    }
+                }
+                const current = document.getElementById(`lyric-line-${activeIndex}`);
+                if (current) {
+                    current.classList.add('active-lyric', 'active');
+                    const contentArea = document.getElementById('fs-lyrics-content');
+                    if (contentArea) {
+                        const target = current.offsetTop - (contentArea.clientHeight / 2) + (current.clientHeight / 2);
+                        contentArea.scrollTo({ top: Math.max(0, target), behavior: 'smooth' });
+                    }
+                }
+                window.currentLyricIndex = activeIndex;
+            }
+        }
+
         function renderLyrics(data, container) {
             window.syncedLyricsData = [];
             window.currentLyricIndex = -1;
-            const lines = data.lyrics.split('\n');
+            if (!data || !data.lyrics) {
+                container.innerHTML = '<div style="opacity:0.5; font-size:1.1rem; color:white;">No lyrics available.</div>';
+                return;
+            }
+            const rawLyrics = String(data.lyrics);
+            const lines = rawLyrics.split('\n');
+            const hasLrcTags = /\[\d{1,2}:\d{2}/.test(rawLyrics);
+            const isSynced = Boolean(data.isSynced || hasLrcTags);
             let html = '';
             
-            if (data.isSynced) {
-                const timeRegex = /\[(\d{2}):(\d{2})\.(\d{2,3})\]/;
-                for (const line of lines) {
-                    const match = timeRegex.exec(line);
-                    if (match) {
-                        const mins = parseInt(match[1]);
-                        const secs = parseInt(match[2]);
-                        const ms = parseInt(match[3]);
-                        const totalSeconds = (mins * 60) + secs + (ms / (match[3].length === 3 ? 1000 : 100));
-                        
-                        const text = line.replace(timeRegex, '').trim();
-                        if (text) {
-                            window.syncedLyricsData.push({ time: totalSeconds, text: text });
-                            const idx = window.syncedLyricsData.length - 1;
-                            html += `<div class="apple-lyric-line synced-line" id="lyric-line-${idx}" onclick="seekToLyric(${idx})">${text}</div>`;
+            if (isSynced) {
+                const tagRegex = /\[(\d{1,2}):(\d{2})(?:[.:](\d{1,3}))?\]/g;
+                const parsedItems = [];
+                for (const rawLine of lines) {
+                    const line = rawLine.trim();
+                    if (!line) continue;
+                    const matches = [...line.matchAll(tagRegex)];
+                    if (matches.length > 0) {
+                        const cleanText = line.replace(tagRegex, '').trim();
+                        if (cleanText) {
+                            for (const m of matches) {
+                                const mins = parseInt(m[1], 10);
+                                const secs = parseInt(m[2], 10);
+                                let ms = 0;
+                                if (m[3]) {
+                                    ms = parseInt(m[3], 10);
+                                    if (m[3].length === 1) ms *= 100;
+                                    else if (m[3].length === 2) ms *= 10;
+                                }
+                                const totalSec = mins * 60 + secs + (ms / 1000);
+                                parsedItems.push({ time: totalSec, text: cleanText });
+                            }
                         }
-                    } else if (line.trim() !== '') {
-                         html += `<div class="apple-lyric-line">${line.trim()}</div>`;
+                    } else if (line) {
+                        parsedItems.push({ time: 999999, text: line });
                     }
                 }
+                parsedItems.sort((a, b) => a.time - b.time);
+                parsedItems.forEach((item, idx) => {
+                    window.syncedLyricsData.push(item);
+                    html += `<div class="apple-lyric-line synced-line" id="lyric-line-${idx}" onclick="seekToLyric(${idx})">${escapeHtml(item.text)}</div>`;
+                });
             } else {
                 for (const line of lines) {
                     if (line.trim() === '') html += '<br>';
-                    else html += `<div class="apple-lyric-line">${line}</div>`;
+                    else html += `<div class="apple-lyric-line">${escapeHtml(line)}</div>`;
                 }
             }
             container.innerHTML = html;
+            setTimeout(() => { updateLyricsHighlight(true); }, 60);
         }
 
         window.seekToLyric = function(idx) {
@@ -13947,6 +14005,7 @@ function checkAndShowHolidayBanner(viewId) {
                 audioPlayer.currentTime = window.syncedLyricsData[idx].time;
                 if (audioPlayer.paused) toggleMusicPlay();
                 if (typeof updateMusicProgress === 'function') updateMusicProgress();
+                updateLyricsHighlight(true);
             }
         };
 
@@ -14088,38 +14147,7 @@ function checkAndShowHolidayBanner(viewId) {
                     updateMediaSessionPositionState();
                 }
                 
-                if (window.syncedLyricsData && window.syncedLyricsData.length > 0) {
-                    const ct = audioPlayer.currentTime;
-                    let activeIndex = -1;
-                    
-                    for (let i = 0; i < window.syncedLyricsData.length; i++) {
-                        if (ct >= window.syncedLyricsData[i].time) {
-                            activeIndex = i;
-                        } else {
-                            break;
-                        }
-                    }
-                    
-                    if (activeIndex !== -1 && activeIndex !== window.currentLyricIndex) {
-                        const prev = document.getElementById(`lyric-line-${window.currentLyricIndex}`);
-                        if (prev) {
-                            prev.classList.remove('active-lyric');
-                            prev.classList.remove('active');
-                        }
-                        
-                        const current = document.getElementById(`lyric-line-${activeIndex}`);
-                        if (current) {
-                            current.classList.add('active-lyric');
-                            current.classList.add('active');
-                            const container = document.getElementById('fs-lyrics-container');
-                            const contentArea = document.getElementById('fs-lyrics-content');
-                            if (container && (container.classList.contains('active') || container.style.display === 'flex') && contentArea) {
-                                current.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                            }
-                        }
-                        window.currentLyricIndex = activeIndex;
-                    }
-                }
+                updateLyricsHighlight();
                 
                 const curStr = formatTime(audioPlayer.currentTime);
                 const totStr = formatTime(audioPlayer.duration);
@@ -14435,17 +14463,7 @@ function checkAndShowHolidayBanner(viewId) {
                     x += barWidth + 2;
                 }
                 
-                // Audio visualizer for Fullscreen Orbs (Bass frequency)
-                let bassSum = 0;
-                for(let i = 0; i < 15; i++) bassSum += dataArray[i];
-                const bassAvg = bassSum / 15;
-                const scale = 1 + (bassAvg / 255) * 1.5; // Pulses between 1x and 2.5x
-                
-                const orbs = document.querySelectorAll('.fs-orb');
-                orbs.forEach(orb => {
-                    orb.style.transform = `scale(${scale})`;
-                    orb.style.background = 'var(--music-orb-color, rgba(29, 185, 84, 0.6))';
-                });
+
             }
             draw();
         }
