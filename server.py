@@ -539,8 +539,8 @@ def get_portal_data_with_fallback(net_id, portal_pwd, acad_pwd=None):
     clean_id = (net_id or "").split('@')[0].strip().lower()
     portal_pwd = (portal_pwd or "").strip()
     acad_pwd = (acad_pwd or "").strip()
-    if not clean_id or not portal_pwd:
-        return {'success': False, 'error': 'Missing Student Portal credentials'}
+    if not clean_id or (not portal_pwd and not acad_pwd):
+        return {'success': False, 'error': 'Missing credentials'}
 
     # Catch accidental Register Number entered instead of NetID and try auto-resolving
     if clean_id.startswith('ra') and len(clean_id) > 8 and any(c.isdigit() for c in clean_id[2:]):
@@ -586,16 +586,18 @@ def get_portal_data_with_fallback(net_id, portal_pwd, acad_pwd=None):
                 'profile': cw_res.get('profile', {}),
                 'source': 'campusweb_api'
             }
-        elif cw_res and cw_res.get('reason') == 'invalid_credentials':
+        elif cw_res and cw_res.get('reason') in ('invalid_credentials', 'rate_limited'):
             print(f"[{clean_id}] [CAMPUSWEB] Auth rejected: {cw_res.get('error')}")
             p_res = cw_res
         else:
             print(f"[{clean_id}] CampusWeb attempt returned: {(cw_res or {}).get('error')}")
+            p_res = cw_res
     except Exception as cwe:
         print(f"[{clean_id}] CampusWeb exception: {cwe}")
 
-    # 2. Secondary fallback: Direct sp.srmist.edu.in scraper (if CampusWeb had a network issue)
-    if not (p_res and p_res.get('success')) and (not p_res or p_res.get('reason') != 'invalid_credentials'):
+    # 2. Secondary fallback: Direct sp.srmist.edu.in scraper (only if CampusWeb crashed and portal_pwd was provided)
+    is_cred_or_limit = cw_res and cw_res.get('reason') in ('invalid_credentials', 'rate_limited')
+    if not (p_res and p_res.get('success')) and not is_cred_or_limit and portal_pwd:
         try:
             import srm_portal_scraper
             print(f"[{clean_id}] Trying direct sp.srmist.edu.in scraper fallback...")
@@ -704,12 +706,12 @@ def start_session():
                     return {'success': False, 'error': str(e)}
 
             def run_portal():
-                if not portal_pwd_in:
-                    return {'success': False, 'error': 'No SRM Portal password provided'}
+                if not portal_pwd_in and not acad_pwd_in:
+                    return {'success': False, 'error': 'No credentials provided'}
                 try:
                     p_res = get_portal_data_with_fallback(net_id, portal_pwd_in, acad_pwd=acad_pwd_in)
                     if p_res and p_res.get('success'):
-                        print(f"[{net_id}] SRM Student Portal resolved successfully!")
+                        print(f"[{net_id}] SRM Student Portal resolved successfully via CampusWeb!")
                         return p_res
                     err_msg = (p_res or {}).get('error', 'SRM Portal auth failed')
                     print(f"[{net_id}] SRM Portal returned: {err_msg}")
@@ -718,8 +720,8 @@ def start_session():
                     print(f"[{net_id}] SRM Portal scraper exception: {pe}")
                     return {'success': False, 'error': str(pe)}
             
-            # Run Portal only if portal password provided; run Academia if acad password provided
-            future_portal = executor.submit(run_portal) if portal_pwd_in else None
+            # Run Portal if either portal password or academia password provided
+            future_portal = executor.submit(run_portal) if (portal_pwd_in or acad_pwd_in) else None
             future_ac = executor.submit(run_academia) if acad_pwd_in else None
             
             portal_res = None
@@ -952,8 +954,11 @@ def portal_sync():
     if client_courses and net_id:
         _STUDENT_COURSES_CACHE[net_id] = client_courses
 
-    if not net_id or not portal_pwd:
-        return jsonify({'success': False, 'error': 'Please enter your SRM Student Portal Password.'}), 400
+    if not portal_pwd and acad_pwd:
+        portal_pwd = acad_pwd
+
+    if not net_id or (not portal_pwd and not acad_pwd):
+        return jsonify({'success': False, 'error': 'Please enter your SRM Student Portal Password or Academia Password.'}), 400
 
     try:
         p_res = get_portal_data_with_fallback(net_id, portal_pwd, acad_pwd=acad_pwd)

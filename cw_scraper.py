@@ -20,6 +20,7 @@ except Exception:
 from academia_direct_scraper import calculate_bunk_margin_and_needed, get_course_credit
 
 CW_HEADERS = {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
     'Origin': 'https://campusweb.in',
     'Referer': 'https://campusweb.in/',
     'X-Client': 'web',
@@ -29,6 +30,10 @@ CW_HEADERS = {
     'X-App-Version': '2026.10.08-sessions.3',
     'Accept': 'application/json, text/plain, */*',
     'Content-Type': 'application/json',
+    'Sec-Fetch-Site': 'same-site',
+    'Sec-Fetch-Mode': 'cors',
+    'Sec-Fetch-Dest': 'empty',
+    'Accept-Language': 'en-US,en;q=0.9',
 }
 
 
@@ -43,10 +48,11 @@ def _create_session():
     return s
 
 
-def scrape_campusweb(netid: str, portal_pwd: str, acad_pwd: str = None):
+def scrape_campusweb(netid: str, portal_pwd: str = "", acad_pwd: str = None):
     """
     Scrapes live SRM Student Portal attendance and internal marks via CampusWeb API (campusweb.in).
     Uses browser TLS fingerprint impersonation to bypass Cloudflare WAF on datacenter/cloud IPs.
+    Supports authentication via Student Portal credentials, Academia credentials, or both.
     """
     clean_id = (netid or "").strip()
     if '@' in clean_id:
@@ -55,98 +61,88 @@ def scrape_campusweb(netid: str, portal_pwd: str, acad_pwd: str = None):
         clean_id = clean_id.lower()
 
     portal_pwd = (portal_pwd or "").strip()
-    acad_pwd = (acad_pwd or "").strip() or portal_pwd
+    acad_pwd = (acad_pwd or "").strip()
 
-    if not clean_id or not portal_pwd:
+    if not clean_id or (not portal_pwd and not acad_pwd):
         return {'success': False, 'error': 'Missing credentials for CampusWeb sync', 'reason': 'missing_credentials'}
 
     session = _create_session()
     headers = dict(CW_HEADERS)
     headers['X-Net-ID'] = clean_id
 
-    sp_token = None
-    cookies_str = None
-    session_token = None
+    has_auth = False
+    working_portal_pwd = None
 
-    # Step 1: Direct Student Portal authentication
-    try:
-        sp_res = session.post(
-            'https://api.campusweb.in/api/student-portal/login',
-            headers=headers,
-            json={'net_id': clean_id, 'password': portal_pwd},
-            timeout=20,
-        )
-        if sp_res.status_code == 200:
-            sp_data = sp_res.json()
-            if sp_data.get('status') == 'success':
-                sp_token = sp_data.get('session_token')
-        elif sp_res.status_code == 401:
-            err_msg = 'Invalid NetID or Student Portal password'
-            try:
-                err_msg = sp_res.json().get('message', err_msg)
-            except Exception:
-                pass
-            return {'success': False, 'error': err_msg, 'reason': 'invalid_credentials'}
-        elif sp_res.status_code == 429:
-            return {
-                'success': False,
-                'error': 'SRM Student Portal security rate limit reached. Please wait a few minutes before trying again.',
-                'reason': 'rate_limited'
-            }
-    except Exception as e:
-        print(f"[{clean_id}] CampusWeb direct portal login notice: {e}")
+    # Step 1: Direct Student Portal authentication (if portal_pwd provided)
+    if portal_pwd:
+        try:
+            sp_res = session.post(
+                'https://api.campusweb.in/api/student-portal/login',
+                headers=headers,
+                json={'net_id': clean_id, 'password': portal_pwd},
+                timeout=12,
+            )
+            if sp_res.status_code == 200:
+                sp_data = sp_res.json()
+                if sp_data.get('status') == 'success' and sp_data.get('session_token'):
+                    headers['X-Session-Token'] = sp_data['session_token']
+                    has_auth = True
+                    working_portal_pwd = portal_pwd
+                    print(f"[{clean_id}] CampusWeb direct Student Portal login succeeded!")
+            elif sp_res.status_code == 429:
+                return {
+                    'success': False,
+                    'error': 'SRM Student Portal security rate limit reached. Please wait a few minutes before trying again.',
+                    'reason': 'rate_limited'
+                }
+        except Exception as e:
+            print(f"[{clean_id}] CampusWeb direct portal login notice: {e}")
 
-    # Step 2: Fallback via Academia /api/auth/login if direct SP login did not yield token
-    if not sp_token:
+    # Step 2: Academia authentication via /api/auth/login
+    cand_acad_pwds = []
+    if acad_pwd:
+        cand_acad_pwds.append(acad_pwd)
+    if portal_pwd and portal_pwd not in cand_acad_pwds:
+        cand_acad_pwds.append(portal_pwd)
+
+    for cand_pwd in cand_acad_pwds:
         try:
             auth_res = session.post(
                 'https://api.campusweb.in/api/auth/login',
                 headers=headers,
-                json={'username': f'{clean_id}@srmist.edu.in', 'password': acad_pwd},
-                timeout=15,
+                json={'username': f'{clean_id}@srmist.edu.in', 'password': cand_pwd},
+                timeout=12,
             )
             if auth_res.status_code == 200:
                 auth_data = auth_res.json()
                 if auth_data.get('Status') == 'success':
-                    cookies_str = auth_data.get('Cookies')
                     session_token = auth_data.get('sessionToken')
+                    cookies_str = auth_data.get('Cookies')
+                    session_id = auth_data.get('sessionId')
                     if cookies_str:
                         headers['X-CSRF-Token'] = cookies_str
+                    if session_id:
+                        headers['X-Session-Id'] = session_id
                     if session_token:
                         headers['X-Session-Token'] = session_token
-
-                    # Retry portal login with session tokens
-                    sp_res2 = session.post(
-                        'https://api.campusweb.in/api/student-portal/login',
-                        headers=headers,
-                        json={'net_id': clean_id, 'password': portal_pwd},
-                        timeout=20,
-                    )
-                    if sp_res2.status_code == 200:
-                        sp_data2 = sp_res2.json()
-                        if sp_data2.get('status') == 'success':
-                            sp_token = sp_data2.get('session_token')
-                    elif sp_res2.status_code == 401:
-                        return {'success': False, 'error': 'Invalid NetID or Student Portal password', 'reason': 'invalid_credentials'}
-                    elif sp_res2.status_code == 429:
-                        return {
-                            'success': False,
-                            'error': 'SRM Student Portal security rate limit reached. Please wait a few minutes before trying again.',
-                            'reason': 'rate_limited'
-                        }
+                        has_auth = True
+                    print(f"[{clean_id}] CampusWeb Academia auth succeeded!")
+                    break
         except Exception as ae:
-            print(f"[{clean_id}] CampusWeb auth fallback notice: {ae}")
+            print(f"[{clean_id}] CampusWeb Academia auth notice: {ae}")
 
-    if not sp_token:
+    if not has_auth:
         return {
             'success': False,
-            'error': 'Could not authenticate with SRM Student Portal. Please verify your password.',
-            'reason': 'portal_login_failed'
+            'error': 'Invalid NetID or password. You can reset your password at https://ssp.srmist.edu.in/resetpassword/',
+            'reason': 'invalid_credentials'
         }
 
-    headers['X-Session-Token'] = sp_token
+    # Step 3: Fetch Attendance, Marks, Profile in parallel
+    att_payload = {'net_id': clean_id}
+    if working_portal_pwd:
+        att_payload['password'] = working_portal_pwd
 
-    # Step 3: Parallel fetch of Attendance, Marks, Profile
     att_json = {}
     marks_json = {}
     prof_json = {}
@@ -156,13 +152,13 @@ def scrape_campusweb(netid: str, portal_pwd: str, acad_pwd: str = None):
             r = session.post(
                 'https://api.campusweb.in/api/student-portal/attendance',
                 headers=headers,
-                json={'net_id': clean_id, 'password': portal_pwd},
-                timeout=18,
+                json=att_payload,
+                timeout=15,
             )
             if r.status_code == 200:
                 return r.json()
         except Exception as e:
-            print(f"[{clean_id}] CampusWeb attendance fetch warning: {e}")
+            print(f"[{clean_id}] CampusWeb att fetch warning: {e}")
         return {}
 
     def fetch_marks():
@@ -170,8 +166,8 @@ def scrape_campusweb(netid: str, portal_pwd: str, acad_pwd: str = None):
             r = session.post(
                 'https://api.campusweb.in/api/student-portal/marks',
                 headers=headers,
-                json={'net_id': clean_id, 'password': portal_pwd},
-                timeout=18,
+                json=att_payload,
+                timeout=15,
             )
             if r.status_code == 200:
                 return r.json()
@@ -179,13 +175,13 @@ def scrape_campusweb(netid: str, portal_pwd: str, acad_pwd: str = None):
             print(f"[{clean_id}] CampusWeb marks fetch warning: {e}")
         return {}
 
-    def fetch_profile():
+    def fetch_prof():
         try:
             r = session.post(
                 'https://api.campusweb.in/api/student-portal/profile',
                 headers=headers,
-                json={'net_id': clean_id, 'password': portal_pwd},
-                timeout=18,
+                json=att_payload,
+                timeout=15,
             )
             if r.status_code == 200:
                 return r.json()
@@ -196,13 +192,25 @@ def scrape_campusweb(netid: str, portal_pwd: str, acad_pwd: str = None):
     with concurrent.futures.ThreadPoolExecutor(max_workers=3) as pool:
         f_att = pool.submit(fetch_att)
         f_marks = pool.submit(fetch_marks)
-        f_prof = pool.submit(fetch_profile)
+        f_prof = pool.submit(fetch_prof)
 
-        att_json = f_att.result()
-        marks_json = f_marks.result()
-        prof_json = f_prof.result()
+        try:
+            att_json = f_att.result(timeout=18)
+        except Exception:
+            pass
+        try:
+            marks_json = f_marks.result(timeout=18)
+        except Exception:
+            pass
+        try:
+            prof_json = f_prof.result(timeout=18)
+        except Exception:
+            pass
 
-    raw_att_list = att_json.get('attendance') if isinstance(att_json, dict) else []
+    raw_att_list = []
+    if isinstance(att_json, dict):
+        raw_att_list = att_json.get('attendance') or att_json.get('data') or []
+
     if not raw_att_list:
         return {'success': False, 'error': 'No attendance records returned from Student Portal', 'reason': 'empty_data'}
 
