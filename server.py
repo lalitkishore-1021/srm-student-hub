@@ -67,7 +67,7 @@ def campusweb_sync():
         return jsonify({"success": False, "error": "Missing credentials"}), 400
         
     client_ip = request.headers.get('X-Forwarded-For', request.remote_addr)
-    if is_rate_limited(client_ip, net_id):
+    if is_rate_limited(client_ip):
         return jsonify({"success": False, "error": "Too many sync attempts. Please wait a minute."}), 429
         
     try:
