@@ -1,5 +1,5 @@
 // Change this version number every time you want to force phones to update!
-const CACHE_NAME = 'srm-hub-v81-fast-login-portal-ondemand';
+const CACHE_NAME = 'srm-hub-v82-grade-predictor-cgpa-calculator';
 
 const ASSETS_TO_CACHE = [
     '/',
