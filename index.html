@@ -4790,7 +4790,7 @@
             
             <h2 style="font-family: 'Montserrat', sans-serif; font-size: 1.15rem; font-weight: 800; color: #fff; margin: 0 0 4px 0; letter-spacing: 0.3px;">Student Portal</h2>
             <p style="font-size: 0.78rem; color: var(--text-sub); margin: 0 0 20px 0;">
-                Connect to sync live attendance &amp; marks
+                Enter your Student Portal or Academia password to sync live attendance &amp; marks
             </p>
             
             <div style="display: flex; flex-direction: column; gap: 12px; text-align: left;">
@@ -4801,7 +4801,7 @@
                 
                 <div class="login-input-wrapper" style="margin: 0; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; position: relative;">
                     <span class="login-input-icon"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
-                    <input type="password" id="portal-modal-pwd" placeholder="Portal Password" class="login-input" style="font-size: 0.92rem;" onkeydown="if(event.key==='Enter') submitPortalSync();">
+                    <input type="password" id="portal-modal-pwd" placeholder="Portal or Academia Password" class="login-input" style="font-size: 0.92rem;" onkeydown="if(event.key==='Enter') submitPortalSync();">
                     <span class="login-pwd-toggle" onclick="togglePortalModalPwd()" style="cursor: pointer;">
                         <svg id="portal-modal-eye-icon" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
                     </span>
@@ -7347,9 +7347,12 @@
                 netIdInput.value = cleanNetId;
             }
             
-            // Auto populate saved portal password ONLY IF it belongs to this specific netid
+            // Auto populate saved portal password: first check syncPortalPwd, else fallback to syncPwd (Academia pwd)
             const savedNetId = (localStorage.getItem('syncPortalNetId') || cleanNetId || '').split('@')[0].trim().toLowerCase();
-            const savedPortalPwd = (cleanNetId && savedNetId === cleanNetId) ? (localStorage.getItem('syncPortalPwd') || '') : '';
+            let savedPortalPwd = (cleanNetId && savedNetId === cleanNetId) ? (localStorage.getItem('syncPortalPwd') || '') : '';
+            if (!savedPortalPwd) {
+                savedPortalPwd = localStorage.getItem('syncPwd') || '';
+            }
             const pwdInput = document.getElementById('portal-modal-pwd');
             if (pwdInput) {
                 pwdInput.value = savedPortalPwd;
@@ -7429,13 +7432,28 @@
                 return;
             }
             
-            if (!netId || !portalPwd) {
+            if (!netId) {
                 if (statusBox) {
                     statusBox.style.display = 'block';
                     statusBox.style.background = 'rgba(255, 71, 87, 0.15)';
                     statusBox.style.border = '1px solid rgba(255, 71, 87, 0.4)';
                     statusBox.style.color = '#ff6b81';
-                    statusBox.innerText = 'Please enter both NetID and Student Portal password.';
+                    statusBox.innerText = 'Please enter your SRM NetID.';
+                }
+                return;
+            }
+            
+            if (!portalPwd) {
+                portalPwd = localStorage.getItem('syncPwd') || '';
+            }
+            
+            if (!portalPwd) {
+                if (statusBox) {
+                    statusBox.style.display = 'block';
+                    statusBox.style.background = 'rgba(255, 71, 87, 0.15)';
+                    statusBox.style.border = '1px solid rgba(255, 71, 87, 0.4)';
+                    statusBox.style.color = '#ff6b81';
+                    statusBox.innerText = 'Please enter your Portal Password or Academia Password.';
                 }
                 return;
             }

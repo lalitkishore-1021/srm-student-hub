@@ -595,9 +595,8 @@ def get_portal_data_with_fallback(net_id, portal_pwd, acad_pwd=None):
     except Exception as cwe:
         print(f"[{clean_id}] CampusWeb exception: {cwe}")
 
-    # 2. Secondary fallback: Direct sp.srmist.edu.in scraper (only if CampusWeb crashed and portal_pwd was provided)
-    is_cred_or_limit = cw_res and cw_res.get('reason') in ('invalid_credentials', 'rate_limited')
-    if not (p_res and p_res.get('success')) and not is_cred_or_limit and portal_pwd:
+    # 2. Secondary fallback: Direct sp.srmist.edu.in scraper ONLY if cw_scraper completely crashed with an exception (p_res is None)
+    if p_res is None and portal_pwd:
         try:
             import srm_portal_scraper
             print(f"[{clean_id}] Trying direct sp.srmist.edu.in scraper fallback...")
