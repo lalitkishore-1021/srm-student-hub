@@ -1,5 +1,5 @@
 // Change this version number every time you want to force phones to update!
-const CACHE_NAME = 'srm-hub-v75-cw-robust';
+const CACHE_NAME = 'srm-hub-v76-restore-starting';
 
 const ASSETS_TO_CACHE = [
     '/',

@@ -571,43 +571,61 @@ def get_portal_data_with_fallback(net_id, portal_pwd, acad_pwd=None):
                 'reason': 'invalid_netid'
             }
 
-    # 1. Primary: CampusWeb API (ultra-fast sub-4s live attendance & marks without CAPTCHA failure risks)
     p_res = None
-    try:
-        import cw_scraper
-        print(f"[{clean_id}] Initiating live Student Portal sync via CampusWeb API...")
-        cw_res = cw_scraper.scrape_campusweb(clean_id, portal_pwd, acad_pwd=acad_pwd)
-        if cw_res and cw_res.get('success'):
-            print(f"[{clean_id}] [CAMPUSWEB] CampusWeb API succeeded with live attendance & marks!")
-            p_res = {
-                'success': True,
-                'data': cw_res.get('attendance') or cw_res.get('data') or [],
-                'marks': cw_res.get('marks', []),
-                'profile': cw_res.get('profile', {}),
-                'source': 'campusweb_api'
-            }
-        elif cw_res and cw_res.get('reason') in ('invalid_credentials', 'rate_limited'):
-            print(f"[{clean_id}] [CAMPUSWEB] Auth rejected: {cw_res.get('error')}")
-            p_res = cw_res
-        else:
-            print(f"[{clean_id}] CampusWeb attempt returned: {(cw_res or {}).get('error')}")
-            p_res = cw_res
-    except Exception as cwe:
-        print(f"[{clean_id}] CampusWeb exception: {cwe}")
 
-    # 2. Secondary fallback: Direct sp.srmist.edu.in scraper ONLY if cw_scraper completely crashed with an exception (p_res is None)
-    if p_res is None and portal_pwd:
+    # 1. Primary: Direct sp.srmist.edu.in scraper (fast, authentic live university data with Ratio-D TinyCRNN CAPTCHA solver)
+    if portal_pwd:
         try:
             import srm_portal_scraper
-            print(f"[{clean_id}] Trying direct sp.srmist.edu.in scraper fallback...")
+            print(f"[{clean_id}] Initiating live Student Portal sync via sp.srmist.edu.in...")
             sp_res = srm_portal_scraper.fetch_portal_data(clean_id, portal_pwd)
             if sp_res and sp_res.get('success'):
                 print(f"[{clean_id}] [PORTAL] Direct Student Portal sync succeeded!")
                 p_res = sp_res
             elif sp_res:
+                print(f"[{clean_id}] Direct portal sync attempt returned: {sp_res.get('error')}")
                 p_res = sp_res
         except Exception as se:
             print(f"[{clean_id}] Direct portal scrape exception: {se}")
+
+    # 2. Secondary: CampusWeb API sync (used when direct portal failed, rate-limited, or student only provided Academia password)
+    if not (p_res and p_res.get('success')):
+        try:
+            import cw_scraper
+            print(f"[{clean_id}] Trying CampusWeb API sync...")
+            cw_res = cw_scraper.scrape_campusweb(clean_id, portal_pwd, acad_pwd=acad_pwd)
+            if cw_res and cw_res.get('success'):
+                print(f"[{clean_id}] [CAMPUSWEB] CampusWeb sync succeeded with live attendance & marks!")
+                p_res = {
+                    'success': True,
+                    'data': cw_res.get('attendance') or cw_res.get('data') or [],
+                    'marks': cw_res.get('marks', []),
+                    'profile': cw_res.get('profile', {}),
+                    'source': 'campusweb_api'
+                }
+            elif cw_res and not (p_res and p_res.get('success')):
+                print(f"[{clean_id}] CampusWeb attempt returned: {(cw_res or {}).get('error')}")
+                p_res = cw_res
+        except Exception as cwe:
+            print(f"[{clean_id}] CampusWeb exception: {cwe}")
+
+    # 3. Augmentation: if one source returned data with 0 attendance or 0 marks, augment from the other
+    if p_res and p_res.get('success'):
+        curr_att = p_res.get('data') or []
+        curr_marks = p_res.get('marks') or []
+        if len(curr_att) == 0 or len(curr_marks) == 0:
+            try:
+                import cw_scraper
+                cw_res = cw_scraper.scrape_campusweb(clean_id, portal_pwd, acad_pwd=acad_pwd)
+                if cw_res and cw_res.get('success'):
+                    if len(curr_att) == 0 and cw_res.get('data'):
+                        p_res['data'] = cw_res.get('data')
+                        print(f"[{clean_id}] Augmented missing attendance from CampusWeb: {len(p_res['data'])} courses")
+                    if len(curr_marks) == 0 and cw_res.get('marks'):
+                        p_res['marks'] = cw_res.get('marks')
+                        print(f"[{clean_id}] Augmented missing marks from CampusWeb: {len(p_res['marks'])} courses")
+            except Exception as aug_e:
+                print(f"[{clean_id}] Augmentation notice: {aug_e}")
 
     cache_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'portal_data_cache.json')
 
