@@ -46,6 +46,22 @@ HEADERS = {
     "Accept-Language": "en-US,en;q=0.9",
 }
 
+LOGIN_HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
+    "Referer": LOGIN_URL,
+    "Origin": "https://sp.srmist.edu.in",
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
+    "Accept-Language": "en-US,en;q=0.9",
+    "Sec-Ch-Ua": '"Not/A)Brand";v="8", "Chromium";v="126", "Google Chrome";v="126"',
+    "Sec-Ch-Ua-Mobile": "?0",
+    "Sec-Ch-Ua-Platform": '"Windows"',
+    "Sec-Fetch-Dest": "document",
+    "Sec-Fetch-Mode": "navigate",
+    "Sec-Fetch-Site": "same-origin",
+    "Sec-Fetch-User": "?1",
+    "Upgrade-Insecure-Requests": "1",
+}
+
 VOCAB = "0123456789abcdefghijklmnopqrstuvwxyz"
 _WEIGHTS_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "captcha_crnn.npz")
 _CRNN_WEIGHTS = None
@@ -280,7 +296,7 @@ class SRMPortalSession:
         fp_body[self.domain_field_name] = dtoken
         fp_body[self.captcha_field_name] = cptoken
 
-        resp = self.session.post(LOGIN_SERVLET, data=fp_body, timeout=15)
+        resp = self.session.post(LOGIN_SERVLET, data=fp_body, headers=LOGIN_HEADERS, timeout=12)
         body = resp.text or ""
         self.last_status = resp.status_code
         self.last_url = str(resp.url)
@@ -895,8 +911,8 @@ def fetch_portal_data(username: str, password: str) -> Dict[str, Any]:
     last_msg = "Could not authenticate with SRM Student Portal"
     login_attempts_made = 0
 
-    # Up to 5 OCR attempts with strict 6-character validation
-    for attempt in range(1, 6):
+    # Up to 4 OCR attempts with strict 6-character validation
+    for attempt in range(1, 5):
         try:
             portal = SRMPortalSession()
             if not portal.load_captcha() or not portal.captcha_bytes:
@@ -914,11 +930,11 @@ def fetch_portal_data(username: str, password: str) -> Dict[str, Any]:
             
             if not solved or len(solved) != 6:
                 last_reason = "captcha_solve_failed"
-                time.sleep(0.2)
+                time.sleep(0.3)
                 continue
 
             login_attempts_made += 1
-            print(f"[{netid}] [PORTAL-OCR] Attempt {attempt}/5 predicted captcha: '{solved}'")
+            print(f"[{netid}] [PORTAL-OCR] Attempt {attempt}/4 predicted captcha: '{solved}'")
             res = portal.login_attempt(netid, password, solved)
             if res.get("ok"):
                 att_html = res.get("att_html")
@@ -936,16 +952,16 @@ def fetch_portal_data(username: str, password: str) -> Dict[str, Any]:
                 print(f"[{netid}] [PORTAL] Auth stopped ({reason}): {msg}")
                 return {"success": False, "error": msg, "reason": "invalid_credentials" if reason == "invalid_credentials_fatal" else reason}
             elif reason == "wrong_captcha":
-                print(f"[{netid}] [PORTAL] Captcha incorrect on attempt {attempt}/5, trying next...")
-                time.sleep(0.3)
+                print(f"[{netid}] [PORTAL] Captcha incorrect on attempt {attempt}/4, trying next...")
+                time.sleep(0.4)
                 continue
             else:
-                print(f"[{netid}] [PORTAL] Attempt {attempt}/5 rejected ({reason}: {msg}), trying next OCR attempt...")
-                time.sleep(0.3)
+                print(f"[{netid}] [PORTAL] Attempt {attempt}/4 rejected ({reason}: {msg}), trying next OCR attempt...")
+                time.sleep(0.4)
                 continue
         except Exception as e:
             print(f"[{netid}] [PORTAL] Attempt {attempt} error: {e}")
-            time.sleep(0.3)
+            time.sleep(0.4)
             continue
 
     if not active_portal or not att_html:

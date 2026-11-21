@@ -659,7 +659,7 @@ def get_portal_data_with_fallback(net_id, portal_pwd, acad_pwd=None):
                 entry = c_dict.get(clean_id)
                 if entry and (entry.get('data') or entry.get('marks')):
                     exp_pwd = (entry.get('portal_password') or "").strip()
-                    if exp_pwd and exp_pwd == portal_pwd:
+                    if exp_pwd and exp_pwd.strip().lower() == portal_pwd.strip().lower():
                         print(f"[{clean_id}] [CACHE] Serving verified cached Student Portal data")
                         return {
                             'success': True,
