@@ -7957,7 +7957,14 @@
                 // 1. Direct SRM Portal Sync if portal password exists
                 if (portalPwd) {
                     try {
-                        const cleanNetId = regNo.split('@')[0].trim().toLowerCase();
+                        let cleanNetId = (localStorage.getItem('syncPortalNetId') || regNo || '').split('@')[0].trim().toLowerCase();
+                        if (/^ra\d{6,}/i.test(cleanNetId)) {
+                            try {
+                                const p = JSON.parse(localStorage.getItem('squadProfile') || '{}');
+                                if (p.net_id) cleanNetId = p.net_id.toLowerCase();
+                                else if (p.email) cleanNetId = p.email.split('@')[0].toLowerCase();
+                            } catch(e) {}
+                        }
                         const pRes = await fetch(`${BACKEND_URL}/api/portal_sync`, {
                             method: "POST",
                             headers: { "Content-Type": "application/json", "X-App-Key": "srm-hub-protected-x9f2" },

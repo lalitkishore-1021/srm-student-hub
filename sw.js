@@ -1,5 +1,5 @@
 // Change this version number every time you want to force phones to update!
-const CACHE_NAME = 'srm-hub-v78-direct-portal-starting';
+const CACHE_NAME = 'srm-hub-v79-fast-auto-sync';
 
 const ASSETS_TO_CACHE = [
     '/',

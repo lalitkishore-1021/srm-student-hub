@@ -21,6 +21,8 @@ from typing import Dict, Any, List, Optional, Tuple
 
 import numpy as np
 import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 from bs4 import BeautifulSoup
 from PIL import Image
 
@@ -181,6 +183,9 @@ def _telemetry_payload() -> Dict[str, Any]:
 class SRMPortalSession:
     def __init__(self):
         self.session = requests.Session()
+        adapter = HTTPAdapter(max_retries=Retry(total=2, connect=2, read=2, backoff_factor=0.2))
+        self.session.mount("https://", adapter)
+        self.session.mount("http://", adapter)
         self.session.headers.update(HEADERS)
         proxy = os.environ.get("PORTAL_PROXY") or os.environ.get("HTTPS_PROXY") or os.environ.get("HTTP_PROXY")
         if proxy:
@@ -195,12 +200,9 @@ class SRMPortalSession:
 
     def load_captcha(self) -> bool:
         try:
-            r = self.session.get(LOGIN_URL, timeout=22)
+            r = self.session.get(LOGIN_URL, timeout=10)
         except Exception:
-            try:
-                r = self.session.get(LOGIN_URL, timeout=22)
-            except Exception:
-                return False
+            return False
         text = r.text
         m = re.search(r"window\.SECURE_CONFIG\s*=\s*\{[^}]*?nonce\s*:\s*'([^']+)'", text)
         if not m:
@@ -247,7 +249,7 @@ class SRMPortalSession:
                     "Accept": "image/png, image/jpeg, image/svg+xml, image/*",
                     "Referer": LOGIN_URL,
                 },
-                timeout=22,
+                timeout=10,
             )
             if cr.status_code == 200 and cr.content:
                 self.captcha_bytes = cr.content
@@ -278,7 +280,7 @@ class SRMPortalSession:
         fp_body[self.domain_field_name] = dtoken
         fp_body[self.captcha_field_name] = cptoken
 
-        resp = self.session.post(LOGIN_SERVLET, data=fp_body, timeout=22)
+        resp = self.session.post(LOGIN_SERVLET, data=fp_body, timeout=15)
         body = resp.text or ""
         self.last_status = resp.status_code
         self.last_url = str(resp.url)
@@ -291,8 +293,13 @@ class SRMPortalSession:
                 att_html = body
             return {"ok": True, "att_html": att_html}
         else:
+            # Fast check: If body has an explicit failure alert, classify and return immediately without doomed HTTP calls!
+            failure = self._classify_failure(body)
+            if "alert" in body.lower() or failure.get("reason") in ("account_locked", "invalid_credentials_fatal", "credential_or_captcha_mismatch"):
+                return failure
+
             try:
-                self.session.get(HRD_URL, timeout=12)
+                self.session.get(HRD_URL, headers={"Referer": LOGIN_URL}, timeout=6)
             except Exception:
                 pass
             att_html = self.get_attendance_html()
@@ -323,7 +330,7 @@ class SRMPortalSession:
 
     def get_attendance_html(self) -> Optional[str]:
         try:
-            r = self.session.get(ATT_URL, timeout=25)
+            r = self.session.get(ATT_URL, headers={"Referer": HRD_URL}, timeout=15)
             url_l = str(r.url).lower()
             txt_l = r.text.lower()
             if (
@@ -341,7 +348,7 @@ class SRMPortalSession:
 
     def get_marks_html(self) -> Optional[str]:
         try:
-            r = self.session.get(MARKS_URL, timeout=25)
+            r = self.session.get(MARKS_URL, headers={"Referer": HRD_URL}, timeout=15)
             if r.status_code == 200 and "table" in r.text.lower():
                 return r.text
         except Exception:
@@ -351,7 +358,7 @@ class SRMPortalSession:
     def get_inner_marks_html(self, subject_id: str, status: str = "2") -> Optional[str]:
         try:
             payload = {"iden": "1", "hdnSubjectId": subject_id, "status": status}
-            r = self.session.post(INNER_MARKS_URL, data=payload, timeout=20)
+            r = self.session.post(INNER_MARKS_URL, data=payload, headers={"Referer": MARKS_URL}, timeout=12)
             if r.status_code == 200:
                 return r.text
         except Exception:
