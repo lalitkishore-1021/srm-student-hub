@@ -1064,15 +1064,71 @@ def debug_sync():
         import requests
         ip = requests.get('https://api.ipify.org', timeout=5).text
         
-        # Test 1: cw_scraper
-        cw_out = cw_scraper.scrape_campusweb(reg, p_pwd, acad_pwd=a_pwd)
+        diag = {
+            'has_curl_cffi': getattr(cw_scraper, 'HAS_CURL_CFFI', False),
+            'has_cloudscraper': getattr(cw_scraper, 'HAS_CLOUDSCRAPER', False),
+            'ip': ip,
+            'cw_steps': [],
+            'sp_steps': []
+        }
         
-        # Test 2: srm_portal_scraper
+        # 1. Step-by-step CampusWeb diagnosis
+        try:
+            # Test direct portal login via CampusWeb
+            cw_h = dict(cw_scraper.CW_HEADERS)
+            cw_h['X-Net-ID'] = reg
+            
+            # Session test
+            import curl_cffi.requests as c_req
+            s_cffi = c_req.Session(impersonate='chrome120')
+            r_sp_cffi = s_cffi.post('https://api.campusweb.in/api/student-portal/login', json={'net_id': reg, 'password': p_pwd}, headers=cw_h, timeout=10)
+            diag['cw_steps'].append({'step': 'cffi_sp_login', 'status': r_sp_cffi.status_code, 'text': r_sp_cffi.text[:150]})
+            
+            # Academia auth via CampusWeb
+            r_acad_cffi = s_cffi.post('https://api.campusweb.in/api/auth/login', json={'username': f'{reg}@srmist.edu.in', 'password': a_pwd}, headers=cw_h, timeout=10)
+            diag['cw_steps'].append({'step': 'cffi_acad_login', 'status': r_acad_cffi.status_code, 'text': r_acad_cffi.text[:150]})
+            
+            # Attendance test with cffi
+            if r_acad_cffi.status_code == 200:
+                acad_j = r_acad_cffi.json()
+                h_att = dict(cw_h)
+                if acad_j.get('Cookies'):
+                    h_att['X-CSRF-Token'] = acad_j['Cookies']
+                if acad_j.get('sessionToken'):
+                    h_att['X-Session-Token'] = acad_j['sessionToken']
+                r_att_cffi = s_cffi.post('https://api.campusweb.in/api/student-portal/attendance', json={'net_id': reg}, headers=h_att, timeout=10)
+                diag['cw_steps'].append({'step': 'cffi_attendance', 'status': r_att_cffi.status_code, 'text': r_att_cffi.text[:150]})
+        except Exception as cwe:
+            diag['cw_steps'].append({'step': 'cw_error', 'err': str(cwe)})
+
+        # 2. Step-by-step Direct Student Portal diagnosis
+        try:
+            portal = srm_portal_scraper.SRMPortalSession()
+            loaded = portal.load_captcha()
+            diag['sp_steps'].append({'step': 'load_captcha', 'loaded': loaded, 'bytes_len': len(portal.captcha_bytes or b''), 'nonce': portal.nonce})
+            if loaded and portal.captcha_bytes:
+                solved = srm_portal_scraper.solve_captcha_bytes(portal.captcha_bytes)
+                diag['sp_steps'].append({'step': 'ocr_solve', 'solved': solved})
+                attempt_res = portal.login_attempt(reg, p_pwd, solved)
+                diag['sp_steps'].append({
+                    'step': 'login_attempt',
+                    'ok': attempt_res.get('ok'),
+                    'reason': attempt_res.get('reason'),
+                    'message': attempt_res.get('message'),
+                    'status': getattr(portal, 'last_status', None),
+                    'url': getattr(portal, 'last_url', None)
+                })
+        except Exception as spe:
+            diag['sp_steps'].append({'step': 'sp_error', 'err': str(spe)})
+
+        # Full scrapers
+        cw_out = cw_scraper.scrape_campusweb(reg, p_pwd, acad_pwd=a_pwd)
         sp_out = srm_portal_scraper.fetch_portal_data(reg, p_pwd)
         
         return jsonify({
             'ok': True,
             'ip': ip,
+            'diag': diag,
             'cw_out': {
                 'success': cw_out.get('success'),
                 'error': cw_out.get('error'),
