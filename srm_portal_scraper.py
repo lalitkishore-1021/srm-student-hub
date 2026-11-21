@@ -16,6 +16,7 @@ import math
 import os
 import random
 import re
+import socket
 import time
 from typing import Dict, Any, List, Optional, Tuple
 
@@ -23,8 +24,15 @@ import numpy as np
 import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
+import urllib3.util.connection as urllib3_cn
 from bs4 import BeautifulSoup
 from PIL import Image
+
+# Force IPv4 socket resolution to prevent Cloudflare / campus IPv6 handshake timeouts
+try:
+    urllib3_cn.allowed_gai_family = lambda: socket.AF_INET
+except Exception:
+    pass
 
 from academia_direct_scraper import calculate_bunk_margin_and_needed, get_course_credit, SRM_PERIOD_TIMES
 
@@ -199,7 +207,11 @@ def _telemetry_payload() -> Dict[str, Any]:
 class SRMPortalSession:
     def __init__(self):
         self.session = requests.Session()
-        adapter = HTTPAdapter(max_retries=Retry(total=2, connect=2, read=2, backoff_factor=0.2))
+        adapter = HTTPAdapter(
+            pool_connections=25,
+            pool_maxsize=25,
+            max_retries=Retry(total=1, connect=1, read=0, backoff_factor=0.1)
+        )
         self.session.mount("https://", adapter)
         self.session.mount("http://", adapter)
         self.session.headers.update(HEADERS)
@@ -216,7 +228,7 @@ class SRMPortalSession:
 
     def load_captcha(self) -> bool:
         try:
-            r = self.session.get(LOGIN_URL, timeout=10)
+            r = self.session.get(LOGIN_URL, timeout=5)
         except Exception:
             return False
         text = r.text
@@ -265,7 +277,7 @@ class SRMPortalSession:
                     "Accept": "image/png, image/jpeg, image/svg+xml, image/*",
                     "Referer": LOGIN_URL,
                 },
-                timeout=10,
+                timeout=5,
             )
             if cr.status_code == 200 and cr.content:
                 self.captcha_bytes = cr.content
@@ -296,14 +308,20 @@ class SRMPortalSession:
         fp_body[self.domain_field_name] = dtoken
         fp_body[self.captcha_field_name] = cptoken
 
-        resp = self.session.post(LOGIN_SERVLET, data=fp_body, headers=LOGIN_HEADERS, timeout=12)
+        resp = self.session.post(LOGIN_SERVLET, data=fp_body, headers=LOGIN_HEADERS, timeout=8, allow_redirects=False)
         body = resp.text or ""
         self.last_status = resp.status_code
         self.last_url = str(resp.url)
         self.last_body = body
+        loc = str(resp.headers.get("Location", "")).lower()
         url_lower = str(resp.url).lower()
 
-        if "logout.jsp" in url_lower or "attendance" in url_lower or "hrdsystem" in url_lower or "logout" in body.lower():
+        if resp.status_code in (302, 303) or "hrdsystem" in loc or "attendance" in loc or "logout" in loc:
+            att_html = self.get_attendance_html()
+            if not att_html or "table" not in att_html.lower():
+                att_html = body
+            return {"ok": True, "att_html": att_html}
+        elif "logout.jsp" in url_lower or "attendance" in url_lower or "hrdsystem" in url_lower or "logout" in body.lower():
             att_html = self.get_attendance_html()
             if not att_html or "table" not in att_html.lower():
                 att_html = body
@@ -315,7 +333,7 @@ class SRMPortalSession:
                 return failure
 
             try:
-                self.session.get(HRD_URL, headers={"Referer": LOGIN_URL}, timeout=6)
+                self.session.get(HRD_URL, headers={"Referer": LOGIN_URL}, timeout=5)
             except Exception:
                 pass
             att_html = self.get_attendance_html()
@@ -340,13 +358,13 @@ class SRMPortalSession:
             if any(k in blob for k in ["captcha", "code", "verification", "security"]):
                 return {"ok": False, "reason": "wrong_captcha", "message": alert_text}
             # sp.srmist.edu.in emits 'AlertInvalid credentials' for BOTH bad captcha predictions and bad passwords.
-            # Mark it retryable so TinyOCR attempts 2, 3, and 4 can run.
+            # Mark it retryable so TinyOCR attempts 2 and 3 can run.
             return {"ok": False, "reason": "credential_or_captcha_mismatch", "message": alert_text}
         return {"ok": False, "reason": "wrong_captcha", "message": "Student Portal verification failed"}
 
     def get_attendance_html(self) -> Optional[str]:
         try:
-            r = self.session.get(ATT_URL, headers={"Referer": HRD_URL}, timeout=15)
+            r = self.session.get(ATT_URL, headers={"Referer": HRD_URL}, timeout=8)
             url_l = str(r.url).lower()
             txt_l = r.text.lower()
             if (
@@ -364,7 +382,7 @@ class SRMPortalSession:
 
     def get_marks_html(self) -> Optional[str]:
         try:
-            r = self.session.get(MARKS_URL, headers={"Referer": HRD_URL}, timeout=15)
+            r = self.session.get(MARKS_URL, headers={"Referer": HRD_URL}, timeout=8)
             if r.status_code == 200 and "table" in r.text.lower():
                 return r.text
         except Exception:
@@ -374,7 +392,7 @@ class SRMPortalSession:
     def get_inner_marks_html(self, subject_id: str, status: str = "2") -> Optional[str]:
         try:
             payload = {"iden": "1", "hdnSubjectId": subject_id, "status": status}
-            r = self.session.post(INNER_MARKS_URL, data=payload, headers={"Referer": MARKS_URL}, timeout=12)
+            r = self.session.post(INNER_MARKS_URL, data=payload, headers={"Referer": MARKS_URL}, timeout=5)
             if r.status_code == 200:
                 return r.text
         except Exception:
@@ -819,7 +837,8 @@ def _parse_portal_marks(portal: SRMPortalSession, marks_html: Optional[str], cou
                         pass
         return tests
 
-    with concurrent.futures.ThreadPoolExecutor(max_workers=6) as ex:
+    worker_count = min(12, max(len(raw_subjects), 1))
+    with concurrent.futures.ThreadPoolExecutor(max_workers=worker_count) as ex:
         futures = {ex.submit(fetch_inner, s): s for s in raw_subjects}
         for fut in concurrent.futures.as_completed(futures):
             s = futures[fut]
@@ -894,10 +913,10 @@ def _parse_portal_marks(portal: SRMPortalSession, marks_html: Optional[str], cou
     return marks_list
 
 
-def fetch_portal_data(username: str, password: str) -> Dict[str, Any]:
+def fetch_portal_data(username: str, password: str, courses_list: Optional[List[Dict[str, Any]]] = None) -> Dict[str, Any]:
     """
     Logs into sp.srmist.edu.in using Ratio-D's TinyOCR CAPTCHA solver and fetches
-    Attendance, Component-wise Internal Marks, Timetable, Courses, and Profile.
+    Attendance, Component-wise Internal Marks, and Profile in parallel.
     """
     start_ts = time.time()
     netid = (username or "").strip().split("@")[0].strip()
@@ -910,31 +929,29 @@ def fetch_portal_data(username: str, password: str) -> Dict[str, Any]:
     last_reason = "login_failed"
     last_msg = "Could not authenticate with SRM Student Portal"
     login_attempts_made = 0
+    courses_list = courses_list or []
 
-    # Up to 4 OCR attempts with strict 6-character validation
-    for attempt in range(1, 5):
+    # Up to 3 OCR attempts with strict 6-character validation
+    for attempt in range(1, 4):
         try:
             portal = SRMPortalSession()
             if not portal.load_captcha() or not portal.captcha_bytes:
                 last_reason = "captcha_load_failed"
-                time.sleep(0.3)
+                time.sleep(0.05)
                 continue
             solved = solve_captcha_bytes(portal.captcha_bytes)
             
-            # If predicted captcha is not strictly 6 alphanumeric characters, re-fetch up to 3 times
-            captcha_refetch = 0
-            while (not solved or len(solved) != 6) and captcha_refetch < 3:
-                captcha_refetch += 1
-                if portal.load_captcha() and portal.captcha_bytes:
-                    solved = solve_captcha_bytes(portal.captcha_bytes)
+            # If predicted captcha is not strictly 6 alphanumeric characters, re-fetch once
+            if (not solved or len(solved) != 6) and portal.load_captcha() and portal.captcha_bytes:
+                solved = solve_captcha_bytes(portal.captcha_bytes)
             
             if not solved or len(solved) != 6:
                 last_reason = "captcha_solve_failed"
-                time.sleep(0.3)
+                time.sleep(0.05)
                 continue
 
             login_attempts_made += 1
-            print(f"[{netid}] [PORTAL-OCR] Attempt {attempt}/4 predicted captcha: '{solved}'")
+            print(f"[{netid}] [PORTAL-OCR] Attempt {attempt}/3 predicted captcha: '{solved}'")
             res = portal.login_attempt(netid, password, solved)
             if res.get("ok"):
                 att_html = res.get("att_html")
@@ -952,19 +969,19 @@ def fetch_portal_data(username: str, password: str) -> Dict[str, Any]:
                 print(f"[{netid}] [PORTAL] Auth stopped ({reason}): {msg}")
                 return {"success": False, "error": msg, "reason": "invalid_credentials" if reason == "invalid_credentials_fatal" else reason}
             elif reason == "wrong_captcha":
-                print(f"[{netid}] [PORTAL] Captcha incorrect on attempt {attempt}/4, trying next...")
-                time.sleep(0.4)
+                print(f"[{netid}] [PORTAL] Captcha incorrect on attempt {attempt}/3, trying next...")
+                time.sleep(0.05)
                 continue
             else:
-                print(f"[{netid}] [PORTAL] Attempt {attempt}/4 rejected ({reason}: {msg}), trying next OCR attempt...")
-                time.sleep(0.4)
+                print(f"[{netid}] [PORTAL] Attempt {attempt}/3 rejected ({reason}: {msg}), trying next OCR attempt...")
+                time.sleep(0.05)
                 continue
         except Exception as e:
             print(f"[{netid}] [PORTAL] Attempt {attempt} error: {e}")
-            time.sleep(0.4)
+            time.sleep(0.05)
             continue
 
-    if not active_portal or not att_html:
+    if not active_portal:
         if login_attempts_made == 0:
             return {
                 "success": False,
@@ -983,16 +1000,17 @@ def fetch_portal_data(username: str, password: str) -> Dict[str, Any]:
             "reason": "invalid_credentials"
         }
 
+    # Parallel fetch of Attendance (if not already fetched in fallback), Marks, and Profile
     with concurrent.futures.ThreadPoolExecutor(max_workers=3) as ex:
+        f_att = ex.submit(active_portal.get_attendance_html) if not att_html else None
         f_marks = ex.submit(active_portal.get_marks_html)
-        f_tt = ex.submit(active_portal.get_timetable_html)
         f_prof = ex.submit(active_portal.get_profile_html)
 
+        if f_att:
+            att_html = f_att.result()
         marks_html = f_marks.result()
-        tt_html = f_tt.result()
         prof_html = f_prof.result()
 
-    timetable, courses_list = _parse_portal_timetable_and_courses(tt_html)
     att_list = _parse_portal_attendance(att_html, courses_list)
     marks_list = _parse_portal_marks(active_portal, marks_html, courses_list, att_list=att_list)
     profile = _parse_portal_profile(prof_html, netid)
@@ -1005,7 +1023,7 @@ def fetch_portal_data(username: str, password: str) -> Dict[str, Any]:
         "success": True,
         "data": att_list,
         "marks": marks_list,
-        "timetable": timetable,
+        "timetable": {},
         "courses": courses_list,
         "profile": profile,
         "is_mock_attendance": False,

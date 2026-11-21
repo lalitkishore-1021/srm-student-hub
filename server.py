@@ -535,7 +535,7 @@ def save_cached_timetable_for_student(net_id, tt):
     except Exception as e:
         print(f"[RECOVERY] Timetable cache save error: {e}")
 
-def get_portal_data_with_fallback(net_id, portal_pwd, acad_pwd=None):
+def get_portal_data_with_fallback(net_id, portal_pwd, acad_pwd=None, courses=None):
     clean_id = (net_id or "").split('@')[0].strip().lower()
     portal_pwd = (portal_pwd or "").strip()
     acad_pwd = (acad_pwd or "").strip()
@@ -579,7 +579,7 @@ def get_portal_data_with_fallback(net_id, portal_pwd, acad_pwd=None):
         try:
             import srm_portal_scraper
             print(f"[{clean_id}] Initiating live Student Portal sync via sp.srmist.edu.in...")
-            sp_res = srm_portal_scraper.fetch_portal_data(clean_id, portal_pwd)
+            sp_res = srm_portal_scraper.fetch_portal_data(clean_id, portal_pwd, courses_list=courses)
             if sp_res and sp_res.get('success'):
                 print(f"[{clean_id}] [PORTAL] Direct Student Portal sync succeeded!")
                 p_res = sp_res
@@ -1004,7 +1004,8 @@ def portal_sync():
         return jsonify({'success': False, 'error': 'Please enter your SRM Student Portal Password or Academia Password.'}), 400
 
     try:
-        p_res = get_portal_data_with_fallback(net_id, portal_pwd, acad_pwd=acad_pwd)
+        courses = client_courses or _STUDENT_COURSES_CACHE.get(net_id) or []
+        p_res = get_portal_data_with_fallback(net_id, portal_pwd, acad_pwd=acad_pwd, courses=courses)
         if not p_res or not p_res.get('success'):
             err = (p_res or {}).get('error', 'SRM Portal authentication failed.')
             return jsonify({'success': False, 'error': err})
@@ -1012,7 +1013,6 @@ def portal_sync():
         att = p_res.get('data', [])
         marks = p_res.get('marks', [])
 
-        courses = client_courses or _STUDENT_COURSES_CACHE.get(net_id) or []
         if courses:
             _STUDENT_COURSES_CACHE[net_id] = courses
             course_by_code = {}
@@ -2380,72 +2380,336 @@ def search_online_music():
         print(f"Music search error: {e}")
         return jsonify({'success': False, 'error': str(e), 'results': []})
 
+_country_music_cache = {}
+
 @app.route('/api/music/trending', methods=['GET'])
 def get_trending_music():
-    global _trending_music_cache
+    global _trending_music_cache, _country_music_cache
+    country = request.args.get('country', 'US').upper().strip()
+    category = request.args.get('category', 'top').lower().strip()
+    cache_key = f"{country}_{category}"
     now = time.time()
-    if _trending_music_cache['data'] and (now - _trending_music_cache['timestamp'] < 3600): # 1 hour cache
-        return jsonify({'success': True, 'results': _trending_music_cache['data']})
-        
-    # Top 50 Superhits Playlist (JioSaavn Official Curated Chart)
+    
+    if cache_key in _country_music_cache:
+        cached = _country_music_cache[cache_key]
+        if now - cached['timestamp'] < 1800: # 30 min cache
+            return jsonify({'success': True, 'results': cached['data']})
+            
+    # Search query tailored to country and category
+    if category == 'picked':
+        query = "South Indian Hit Songs Top Telugu Tamil Indie"
+    elif category == 'charts':
+        query = f"Top 50 Hits Chart {country} 2026"
+    elif country == 'US':
+        query = "Billboard Hot 100 Top English Hits Snoh Aalegra Mariah Carey Shakira Ella Langley"
+    elif country == 'GB' or country == 'UK':
+        query = "UK Top 40 Singles Chart Hits"
+    elif country == 'IN':
+        query = "Top 50 Bollywood Hits 2026 Trending"
+    else:
+        query = f"Top Viral Songs 2026 {country}"
+
+    url = f"https://www.jiosaavn.com/api.php?__call=search.getResults&_format=json&_marker=0&cc=in&p=1&n=35&q={urllib.parse.quote(query)}"
+    try:
+        r = requests.get(url, headers={'User-Agent': 'Mozilla/5.0'}, timeout=8)
+        data = r.json()
+        results = []
+        for item in data.get('results', []):
+            enc = item.get('encrypted_media_url')
+            media_url = decrypt_saavn_url(enc) if enc else item.get('media_preview_url')
+            img = (item.get('image') or '').replace('150x150.jpg', '500x500.jpg').replace('http://', 'https://')
+            results.append({
+                'id': str(item.get('id')),
+                'title': clean_saavn_text(item.get('song') or item.get('title')),
+                'artist': clean_saavn_text(item.get('singers') or item.get('primary_artists') or item.get('music')),
+                'album': clean_saavn_text(item.get('album')),
+                'year': item.get('year', ''),
+                'duration': int(item.get('duration') or 0),
+                'cover_url': img,
+                'audio_url': media_url,
+                'has_video': False,
+                'is_online': True
+            })
+        if results:
+            _country_music_cache[cache_key] = {'timestamp': now, 'data': results}
+            return jsonify({'success': True, 'results': results})
+    except Exception as e:
+        print(f"Country trending fetch error: {e}")
+
+    # Fallback to playlist 1134548194
     url = 'https://www.jiosaavn.com/api.php?__call=playlist.getDetails&_format=json&_marker=0&cc=in&listid=1134548194'
     try:
-        req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'})
-        with urllib.request.urlopen(req, timeout=8) as res:
-            data = json.loads(res.read().decode('utf-8'))
-            songs = data.get('songs', [])
-            results = []
-            for item in songs:
-                enc = item.get('encrypted_media_url')
-                media_url = decrypt_saavn_url(enc) if enc else None
-                if not media_url:
-                    media_url = item.get('media_preview_url')
-                img = (item.get('image') or '').replace('150x150.jpg', '500x500.jpg').replace('http://', 'https://')
-                results.append({
-                    'id': str(item.get('id')),
-                    'title': clean_saavn_text(item.get('song') or item.get('title')),
-                    'artist': clean_saavn_text(item.get('singers') or item.get('primary_artists') or item.get('music')),
-                    'album': clean_saavn_text(item.get('album')),
-                    'year': item.get('year', ''),
-                    'duration': int(item.get('duration') or 0),
-                    'cover_url': img,
-                    'audio_url': media_url,
-                    'has_video': False,
-                    'is_online': True
-                })
-            if results:
-                _trending_music_cache = {'timestamp': now, 'data': results}
-                return jsonify({'success': True, 'results': results})
-    except Exception as e:
-        print(f"Trending fetch error: {e}")
-        
-    # Fallback to search query if playlist is temporarily unreachable
-    try:
-        fallback_url = "https://www.jiosaavn.com/api.php?__call=search.getResults&_format=json&_marker=0&cc=in&p=1&n=30&q=Top%20Trending%20Songs"
-        req = urllib.request.Request(fallback_url, headers={'User-Agent': 'Mozilla/5.0'})
-        with urllib.request.urlopen(req, timeout=6) as res:
-            data = json.loads(res.read().decode('utf-8'))
-            results = []
-            for item in data.get('results', []):
-                enc = item.get('encrypted_media_url')
-                media_url = decrypt_saavn_url(enc) if enc else None
-                img = (item.get('image') or '').replace('150x150.jpg', '500x500.jpg').replace('http://', 'https://')
-                results.append({
-                    'id': str(item.get('id')),
-                    'title': clean_saavn_text(item.get('song') or item.get('title')),
-                    'artist': clean_saavn_text(item.get('singers') or item.get('primary_artists')),
-                    'album': clean_saavn_text(item.get('album')),
-                    'year': item.get('year', ''),
-                    'duration': int(item.get('duration') or 0),
-                    'cover_url': img,
-                    'audio_url': media_url,
-                    'has_video': False,
-                    'is_online': True
-                })
-            _trending_music_cache = {'timestamp': now, 'data': results}
+        r = requests.get(url, headers={'User-Agent': 'Mozilla/5.0'}, timeout=8)
+        data = r.json()
+        songs = data.get('songs', [])
+        results = []
+        for item in songs:
+            enc = item.get('encrypted_media_url')
+            media_url = decrypt_saavn_url(enc) if enc else None
+            if not media_url:
+                media_url = item.get('media_preview_url')
+            img = (item.get('image') or '').replace('150x150.jpg', '500x500.jpg').replace('http://', 'https://')
+            results.append({
+                'id': str(item.get('id')),
+                'title': clean_saavn_text(item.get('song') or item.get('title')),
+                'artist': clean_saavn_text(item.get('singers') or item.get('primary_artists') or item.get('music')),
+                'album': clean_saavn_text(item.get('album')),
+                'year': item.get('year', ''),
+                'duration': int(item.get('duration') or 0),
+                'cover_url': img,
+                'audio_url': media_url,
+                'has_video': False,
+                'is_online': True
+            })
+        if results:
+            _country_music_cache[cache_key] = {'timestamp': now, 'data': results}
             return jsonify({'success': True, 'results': results})
-    except Exception as e2:
-        return jsonify({'success': False, 'error': str(e2), 'results': []})
+    except Exception as e:
+        print(f"Trending playlist error: {e}")
+        return jsonify({'success': False, 'error': str(e), 'results': []})
+
+def import_spotify_playlist(url_or_id):
+    match = re.search(r'playlist[/:]([a-zA-Z0-9]+)', url_or_id)
+    pl_id = match.group(1) if match else url_or_id.strip()
+    
+    embed_url = f"https://open.spotify.com/embed/playlist/{pl_id}"
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+    }
+    r = requests.get(embed_url, headers=headers, timeout=12)
+    if r.status_code != 200:
+        raise Exception(f"Failed to fetch Spotify playlist (status {r.status_code})")
+        
+    next_match = re.search(r'<script id="__NEXT_DATA__" type="application/json">({.*?})</script>', r.text)
+    if not next_match:
+        raise Exception("Could not parse Spotify playlist data")
+        
+    data = json.loads(next_match.group(1))
+    entity = data.get('props', {}).get('pageProps', {}).get('state', {}).get('data', {}).get('entity', {})
+    title = entity.get('name') or 'Spotify Playlist'
+    raw_tracks = entity.get('trackList', [])
+    
+    tracks = []
+    for t in raw_tracks:
+        track_title = t.get('title', '').strip()
+        track_artist = t.get('subtitle', '').strip()
+        duration_ms = t.get('duration', 0)
+        dur_sec = duration_ms // 1000 if duration_ms else 0
+        if track_title:
+            tracks.append({
+                'id': f"sp_{pl_id}_{len(tracks)+1}",
+                'title': track_title,
+                'artist': track_artist,
+                'duration': dur_sec,
+                'cover_url': '',
+                'is_online': True
+            })
+    return {
+        'id': f"pl_sp_{int(time.time())}",
+        'name': title,
+        'source': 'spotify',
+        'created_at': int(time.time() * 1000),
+        'tracks': tracks
+    }
+
+def import_youtube_playlist(url_or_id):
+    match = re.search(r'[?&]list=([a-zA-Z0-9_-]+)', url_or_id)
+    pl_id = match.group(1) if match else url_or_id.strip()
+    
+    yt_url = f"https://www.youtube.com/playlist?list={pl_id}"
+    html_text = ""
+    try:
+        from curl_cffi import requests as c_requests
+        r = c_requests.get(yt_url, impersonate="chrome120", timeout=12)
+        html_text = r.text
+    except Exception:
+        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'}
+        r = requests.get(yt_url, headers=headers, timeout=12)
+        html_text = r.text
+        
+    match = re.search(r'var ytInitialData = ({.*?});</script>', html_text)
+    if not match:
+        raise Exception("Could not parse YouTube playlist data")
+        
+    data = json.loads(match.group(1))
+    meta = data.get('metadata', {}).get('playlistMetadataRenderer', {})
+    title = meta.get('title') or 'YouTube Playlist'
+    
+    def find_all(obj, key):
+        if isinstance(obj, dict):
+            for k, v in obj.items():
+                if k == key:
+                    yield v
+                elif isinstance(v, (dict, list)):
+                    yield from find_all(v, key)
+        elif isinstance(obj, list):
+            for item in obj:
+                yield from find_all(item, key)
+                
+    locks = list(find_all(data.get('contents', {}), 'lockupViewModel'))
+    tracks = []
+    if locks:
+        for l in locks:
+            v_title = l.get('metadata', {}).get('lockupMetadataViewModel', {}).get('title', {}).get('content')
+            rows = l.get('metadata', {}).get('lockupMetadataViewModel', {}).get('metadata', {}).get('contentMetadataViewModel', {}).get('metadataRows', [])
+            byline = ""
+            for row in rows:
+                parts = row.get('metadataParts', [])
+                for p in parts:
+                    text = p.get('text', {}).get('content', '')
+                    if text and 'views' not in text.lower() and 'ago' not in text.lower() and 'updated' not in text.lower():
+                        byline = text
+                        break
+                if byline: break
+            thumb_url = ''
+            thumbs = list(find_all(l.get('contentImage', {}), 'sources'))
+            if thumbs and len(thumbs[0]) > 0:
+                thumb_url = thumbs[0][-1].get('url', '')
+                
+            if v_title:
+                clean_title = v_title
+                clean_artist = byline or 'YouTube'
+                if ' - ' in clean_title:
+                    parts = clean_title.split(' - ', 1)
+                    clean_artist = parts[0].strip()
+                    clean_title = parts[1].strip()
+                tracks.append({
+                    'id': f"yt_{pl_id}_{len(tracks)+1}",
+                    'title': clean_title,
+                    'artist': clean_artist,
+                    'cover_url': thumb_url,
+                    'is_online': True
+                })
+    else:
+        p_vids = list(find_all(data.get('contents', {}), 'playlistVideoRenderer'))
+        for v in p_vids:
+            v_title = v.get('title', {}).get('runs', [{}])[0].get('text', '')
+            v_artist = v.get('shortBylineText', {}).get('runs', [{}])[0].get('text', '')
+            thumb_url = ''
+            t_list = v.get('thumbnail', {}).get('thumbnails', [])
+            if t_list: thumb_url = t_list[-1].get('url', '')
+            if v_title:
+                tracks.append({
+                    'id': f"yt_{pl_id}_{len(tracks)+1}",
+                    'title': v_title,
+                    'artist': v_artist or 'YouTube',
+                    'cover_url': thumb_url,
+                    'is_online': True
+                })
+    return {
+        'id': f"pl_yt_{int(time.time())}",
+        'name': title,
+        'source': 'youtube',
+        'created_at': int(time.time() * 1000),
+        'tracks': tracks
+    }
+
+def import_csv_playlist(csv_text, name="Imported CSV Playlist"):
+    tracks = []
+    lines = csv_text.strip().splitlines()
+    for line in lines:
+        line = line.strip()
+        if not line or line.lower().startswith("title") or line.lower().startswith("track"):
+            continue
+        parts = [p.strip().strip('"').strip("'") for p in line.split(',') if p.strip()]
+        if len(parts) >= 2:
+            title = parts[0]
+            artist = parts[1]
+        elif len(parts) == 1:
+            title = parts[0]
+            artist = "Unknown Artist"
+        else:
+            continue
+        tracks.append({
+            'id': f"csv_{len(tracks)+1}_{int(time.time())}",
+            'title': title,
+            'artist': artist,
+            'cover_url': '',
+            'is_online': True
+        })
+    return {
+        'id': f"pl_csv_{int(time.time())}",
+        'name': name or "Imported CSV Playlist",
+        'source': 'csv',
+        'created_at': int(time.time() * 1000),
+        'tracks': tracks
+    }
+
+@app.route('/api/music/import', methods=['POST'])
+def import_playlist_endpoint():
+    data = request.json or {}
+    source = data.get('source', '').lower().strip()
+    url = data.get('url', '').strip()
+    text = data.get('text', '').strip()
+    name = data.get('name', '').strip()
+    net_id = clean_net_id(data.get('net_id', ''))
+    
+    if not source:
+        if 'spotify.com' in url:
+            source = 'spotify'
+        elif 'youtube.com' in url or 'youtu.be' in url:
+            source = 'youtube'
+        else:
+            source = 'spotify'
+
+    try:
+        if source == 'spotify':
+            if not url:
+                return jsonify({'success': False, 'error': 'Spotify playlist URL or ID is required'}), 400
+            playlist = import_spotify_playlist(url)
+        elif source == 'youtube':
+            if not url:
+                return jsonify({'success': False, 'error': 'YouTube playlist URL or ID is required'}), 400
+            playlist = import_youtube_playlist(url)
+        elif source == 'csv':
+            if not text:
+                return jsonify({'success': False, 'error': 'CSV text content is required'}), 400
+            playlist = import_csv_playlist(text, name)
+        else:
+            return jsonify({'success': False, 'error': f'Unsupported import source: {source}'}), 400
+
+        if name:
+            playlist['name'] = name
+
+        return jsonify({'success': True, 'playlist': playlist})
+    except Exception as e:
+        print(f"Playlist import error: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/music/resolve', methods=['GET'])
+def resolve_music_track():
+    title = request.args.get('title', '').strip()
+    artist = request.args.get('artist', '').strip()
+    query = f"{title} {artist}".strip()
+    if not query:
+        return jsonify({'success': False, 'error': 'Title or query required'}), 400
+        
+    url = f"https://www.jiosaavn.com/api.php?__call=search.getResults&_format=json&_marker=0&cc=in&p=1&n=5&q={urllib.parse.quote(query)}"
+    try:
+        r = requests.get(url, headers={'User-Agent': 'Mozilla/5.0'}, timeout=8)
+        data = r.json()
+        results = data.get('results', [])
+        if results:
+            item = results[0]
+            enc = item.get('encrypted_media_url')
+            media_url = decrypt_saavn_url(enc) if enc else item.get('media_preview_url')
+            img = (item.get('image') or '').replace('150x150.jpg', '500x500.jpg').replace('http://', 'https://')
+            return jsonify({
+                'success': True,
+                'track': {
+                    'id': str(item.get('id')),
+                    'title': clean_saavn_text(item.get('song') or item.get('title') or title),
+                    'artist': clean_saavn_text(item.get('singers') or item.get('primary_artists') or artist),
+                    'album': clean_saavn_text(item.get('album')),
+                    'duration': int(item.get('duration') or 0),
+                    'cover_url': img,
+                    'audio_url': media_url,
+                    'is_online': True
+                }
+            })
+        return jsonify({'success': False, 'error': 'No match found'})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/music/library', methods=['GET', 'POST'])
 def handle_user_music_library():
