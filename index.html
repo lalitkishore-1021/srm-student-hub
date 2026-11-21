@@ -16594,13 +16594,13 @@ function setHelperGpaTab(tab) {
     if (currentHelperGpaTab === 'grade') {
         if (gradeView) gradeView.style.display = 'block';
         if (gpaView) gpaView.style.display = 'none';
-        if (heroTitle) heroTitle.innerHTML = 'A clearer path to<br><span style="color: #a78bfa;">your next grade.</span>';
+        if (heroTitle) heroTitle.innerHTML = 'A clearer path to<br><span style="color: #a78bfa; -webkit-text-fill-color: #a78bfa;">your next grade.</span>';
         if (heroSub) heroSub.innerText = 'Work out the final exam score you need for your target grade.';
         renderHelperGradePredictor();
     } else {
         if (gradeView) gradeView.style.display = 'none';
         if (gpaView) gpaView.style.display = 'block';
-        if (heroTitle) heroTitle.innerHTML = 'Calculate your<br><span style="color: #a78bfa;">Cumulative CGPA.</span>';
+        if (heroTitle) heroTitle.innerHTML = 'Calculate your<br><span style="color: #a78bfa; -webkit-text-fill-color: #a78bfa;">Cumulative CGPA.</span>';
         if (heroSub) heroSub.innerText = 'Enter your credits and expected grades to calculate your CGPA.';
         renderHelperGpaCalculator();
     }
@@ -17150,11 +17150,11 @@ function predictDateRangeUI() {
 <!-- ================= HELPER GPA+ & GRADE PREDICTOR MODAL ================= -->
     <style>
     #hgpa-hero-title {
-        color: #111827 !important;
+        color: #FFFFFF !important;
         text-transform: none !important;
-        -webkit-text-fill-color: initial !important;
+        -webkit-text-fill-color: #FFFFFF !important;
         background: none !important;
-        font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+        font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
         font-weight: 900 !important;
         letter-spacing: -0.8px !important;
         line-height: 1.18 !important;
