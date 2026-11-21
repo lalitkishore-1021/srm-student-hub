@@ -4,6 +4,7 @@ import threading
 import queue
 import os
 import re
+import random
 import sqlite3
 import json
 import requests
@@ -2385,27 +2386,40 @@ _country_music_cache = {}
 @app.route('/api/music/trending', methods=['GET'])
 def get_trending_music():
     global _trending_music_cache, _country_music_cache
-    country = request.args.get('country', 'US').upper().strip()
+    country = request.args.get('country', 'IN').upper().strip()
     category = request.args.get('category', 'top').lower().strip()
+    force_refresh = request.args.get('refresh') == '1' or 't' in request.args
     cache_key = f"{country}_{category}"
     now = time.time()
     
-    if cache_key in _country_music_cache:
+    if not force_refresh and cache_key in _country_music_cache:
         cached = _country_music_cache[cache_key]
-        if now - cached['timestamp'] < 1800: # 30 min cache
+        if now - cached['timestamp'] < 90: # 90s freshness
             return jsonify({'success': True, 'results': cached['data']})
             
-    # Search query tailored to country and category
+    # Search query tailored to Indian trending and category
     if category == 'picked':
-        query = "South Indian Hit Songs Top Telugu Tamil Indie"
+        picked_queries = [
+            "South Indian Top Hits Telugu Tamil 2026",
+            "Trending Telugu Tamil Songs 2026",
+            "Top Tamil Telugu Hits Anirudh Thaman 2026",
+            "Top Indie Hindi Telugu Hits 2026"
+        ]
+        query = random.choice(picked_queries)
     elif category == 'charts':
-        query = f"Top 50 Hits Chart {country} 2026"
+        query = "Top 50 Bollywood Hindi Hits Chart 2026"
+    elif country == 'IN' or country == 'INDIA':
+        indian_trending_queries = [
+            "Top 50 Bollywood Hits 2026 Trending",
+            "Latest Hindi Trending Songs 2026",
+            "Top Bollywood Songs 2026 Arijit Shreya",
+            "New Hindi Punjabi Trending Hits 2026"
+        ]
+        query = random.choice(indian_trending_queries)
     elif country == 'US':
         query = "Billboard Hot 100 Top English Hits Snoh Aalegra Mariah Carey Shakira Ella Langley"
     elif country == 'GB' or country == 'UK':
         query = "UK Top 40 Singles Chart Hits"
-    elif country == 'IN':
-        query = "Top 50 Bollywood Hits 2026 Trending"
     else:
         query = f"Top Viral Songs 2026 {country}"
 
