@@ -573,11 +573,31 @@ def get_portal_data_with_fallback(net_id, portal_pwd, acad_pwd=None):
 
     p_res = None
 
-    # 1. Primary: Direct sp.srmist.edu.in scraper (fast, authentic live university data with Ratio-D TinyCRNN CAPTCHA solver)
-    if portal_pwd:
+    # 1. Primary: CampusWeb API (fast sub-4s live attendance & marks without CAPTCHA solver latency)
+    try:
+        import cw_scraper
+        print(f"[{clean_id}] Initiating live Student Portal sync via CampusWeb API...")
+        cw_res = cw_scraper.scrape_campusweb(clean_id, portal_pwd, acad_pwd=acad_pwd)
+        if cw_res and cw_res.get('success'):
+            print(f"[{clean_id}] [CAMPUSWEB] CampusWeb API succeeded with live attendance & marks!")
+            p_res = {
+                'success': True,
+                'data': cw_res.get('attendance') or cw_res.get('data') or [],
+                'marks': cw_res.get('marks', []),
+                'profile': cw_res.get('profile', {}),
+                'source': 'campusweb_api'
+            }
+        else:
+            print(f"[{clean_id}] CampusWeb attempt returned: {(cw_res or {}).get('error')}")
+            p_res = cw_res
+    except Exception as cwe:
+        print(f"[{clean_id}] CampusWeb exception: {cwe}")
+
+    # 2. Secondary fallback: Direct sp.srmist.edu.in scraper if CampusWeb failed or returned no data
+    if not (p_res and p_res.get('success')) and portal_pwd:
         try:
             import srm_portal_scraper
-            print(f"[{clean_id}] Initiating live Student Portal sync via sp.srmist.edu.in...")
+            print(f"[{clean_id}] Trying direct sp.srmist.edu.in scraper fallback...")
             sp_res = srm_portal_scraper.fetch_portal_data(clean_id, portal_pwd)
             if sp_res and sp_res.get('success'):
                 print(f"[{clean_id}] [PORTAL] Direct Student Portal sync succeeded!")
@@ -588,44 +608,37 @@ def get_portal_data_with_fallback(net_id, portal_pwd, acad_pwd=None):
         except Exception as se:
             print(f"[{clean_id}] Direct portal scrape exception: {se}")
 
-    # 2. Secondary: CampusWeb API sync (used when direct portal failed, rate-limited, or student only provided Academia password)
-    if not (p_res and p_res.get('success')):
-        try:
-            import cw_scraper
-            print(f"[{clean_id}] Trying CampusWeb API sync...")
-            cw_res = cw_scraper.scrape_campusweb(clean_id, portal_pwd, acad_pwd=acad_pwd)
-            if cw_res and cw_res.get('success'):
-                print(f"[{clean_id}] [CAMPUSWEB] CampusWeb sync succeeded with live attendance & marks!")
-                p_res = {
-                    'success': True,
-                    'data': cw_res.get('attendance') or cw_res.get('data') or [],
-                    'marks': cw_res.get('marks', []),
-                    'profile': cw_res.get('profile', {}),
-                    'source': 'campusweb_api'
-                }
-            elif cw_res and not (p_res and p_res.get('success')):
-                print(f"[{clean_id}] CampusWeb attempt returned: {(cw_res or {}).get('error')}")
-                p_res = cw_res
-        except Exception as cwe:
-            print(f"[{clean_id}] CampusWeb exception: {cwe}")
-
     # 3. Augmentation: if one source returned data with 0 attendance or 0 marks, augment from the other
     if p_res and p_res.get('success'):
         curr_att = p_res.get('data') or []
         curr_marks = p_res.get('marks') or []
         if len(curr_att) == 0 or len(curr_marks) == 0:
-            try:
-                import cw_scraper
-                cw_res = cw_scraper.scrape_campusweb(clean_id, portal_pwd, acad_pwd=acad_pwd)
-                if cw_res and cw_res.get('success'):
-                    if len(curr_att) == 0 and cw_res.get('data'):
-                        p_res['data'] = cw_res.get('data')
-                        print(f"[{clean_id}] Augmented missing attendance from CampusWeb: {len(p_res['data'])} courses")
-                    if len(curr_marks) == 0 and cw_res.get('marks'):
-                        p_res['marks'] = cw_res.get('marks')
-                        print(f"[{clean_id}] Augmented missing marks from CampusWeb: {len(p_res['marks'])} courses")
-            except Exception as aug_e:
-                print(f"[{clean_id}] Augmentation notice: {aug_e}")
+            if p_res.get('source') == 'srm_portal':
+                try:
+                    import cw_scraper
+                    cw_res = cw_scraper.scrape_campusweb(clean_id, portal_pwd, acad_pwd=acad_pwd)
+                    if cw_res and cw_res.get('success'):
+                        if len(curr_att) == 0 and cw_res.get('data'):
+                            p_res['data'] = cw_res.get('data')
+                            print(f"[{clean_id}] Augmented missing attendance from CampusWeb: {len(p_res['data'])} courses")
+                        if len(curr_marks) == 0 and cw_res.get('marks'):
+                            p_res['marks'] = cw_res.get('marks')
+                            print(f"[{clean_id}] Augmented missing marks from CampusWeb: {len(p_res['marks'])} courses")
+                except Exception as aug_e:
+                    print(f"[{clean_id}] Augmentation notice: {aug_e}")
+            elif p_res.get('source') == 'campusweb_api' and portal_pwd:
+                try:
+                    import srm_portal_scraper
+                    sp_res = srm_portal_scraper.fetch_portal_data(clean_id, portal_pwd)
+                    if sp_res and sp_res.get('success'):
+                        if len(curr_att) == 0 and sp_res.get('data'):
+                            p_res['data'] = sp_res.get('data')
+                            print(f"[{clean_id}] Augmented missing attendance from Student Portal: {len(p_res['data'])} courses")
+                        if len(curr_marks) == 0 and sp_res.get('marks'):
+                            p_res['marks'] = sp_res.get('marks')
+                            print(f"[{clean_id}] Augmented missing marks from Student Portal: {len(p_res['marks'])} courses")
+                except Exception as aug_e:
+                    print(f"[{clean_id}] Augmentation notice: {aug_e}")
 
     cache_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'portal_data_cache.json')
 
@@ -1054,9 +1067,9 @@ def portal_sync():
 @app.route('/api/debug_sync', methods=['POST'])
 def debug_sync():
     data = request.json or {}
-    reg = data.get('regNo', 'bl9209')
-    p_pwd = data.get('portalPwd', 'Bmounika@2003')
-    a_pwd = data.get('acadPwd', 'Blalitkishore@2007')
+    reg = (data.get('regNo') or 'bl9209').strip()
+    p_pwd = (data.get('portalPwd') or 'Bmounika@2003').strip()
+    a_pwd = (data.get('acadPwd') or 'Blalitkishore@2007').strip()
     import traceback
     try:
         import srm_portal_scraper
@@ -1065,84 +1078,60 @@ def debug_sync():
         ip = requests.get('https://api.ipify.org', timeout=5).text
         
         diag = {
-            'has_curl_cffi': getattr(cw_scraper, 'HAS_CURL_CFFI', False),
-            'has_cloudscraper': getattr(cw_scraper, 'HAS_CLOUDSCRAPER', False),
             'ip': ip,
             'cw_steps': [],
             'sp_steps': []
         }
         
-        # 1. Step-by-step CampusWeb diagnosis
+        # Test 1: Direct portal single OCR attempt diagnostic
         try:
-            # Test direct portal login via CampusWeb
+            portal = srm_portal_scraper.SRMPortalSession()
+            loaded = portal.load_captcha()
+            diag['sp_steps'].append({'step': 'load_captcha', 'loaded': loaded, 'bytes': len(portal.captcha_bytes or b''), 'nonce': portal.nonce})
+            if loaded and portal.captcha_bytes:
+                solved = srm_portal_scraper.solve_captcha_bytes(portal.captcha_bytes)
+                diag['sp_steps'].append({'step': 'ocr_solve', 'solved': solved})
+                att_res = portal.login_attempt(reg, p_pwd, solved)
+                diag['sp_steps'].append({
+                    'step': 'login_attempt',
+                    'ok': att_res.get('ok'),
+                    'reason': att_res.get('reason'),
+                    'msg': att_res.get('message'),
+                    'status': getattr(portal, 'last_status', None),
+                    'url': getattr(portal, 'last_url', None)
+                })
+        except Exception as spe:
+            diag['sp_steps'].append({'step': 'sp_err', 'err': str(spe)})
+
+        # Test 2: CW requests diagnostic
+        try:
+            s = requests.Session()
             cw_h = dict(cw_scraper.CW_HEADERS)
             cw_h['X-Net-ID'] = reg
             
-            # Session test
-            import curl_cffi.requests as c_req
-            s_cffi = c_req.Session(impersonate='chrome120')
-            r_sp_cffi = s_cffi.post('https://api.campusweb.in/api/student-portal/login', json={'net_id': reg, 'password': p_pwd}, headers=cw_h, timeout=10)
-            diag['cw_steps'].append({'step': 'cffi_sp_login', 'status': r_sp_cffi.status_code, 'text': r_sp_cffi.text[:150]})
+            # SP login via CW
+            r_sp = s.post('https://api.campusweb.in/api/student-portal/login', json={'net_id': reg, 'password': p_pwd}, headers=cw_h, timeout=8)
+            diag['cw_steps'].append({'step': 'sp_login', 'status': r_sp.status_code, 'body': r_sp.text[:120]})
             
-            # Academia auth via CampusWeb
-            r_acad_cffi = s_cffi.post('https://api.campusweb.in/api/auth/login', json={'username': f'{reg}@srmist.edu.in', 'password': a_pwd}, headers=cw_h, timeout=10)
-            diag['cw_steps'].append({'step': 'cffi_acad_login', 'status': r_acad_cffi.status_code, 'text': r_acad_cffi.text[:150]})
+            # Acad login via CW
+            r_acad = s.post('https://api.campusweb.in/api/auth/login', json={'username': f'{reg}@srmist.edu.in', 'password': a_pwd}, headers=cw_h, timeout=8)
+            diag['cw_steps'].append({'step': 'acad_login', 'status': r_acad.status_code, 'body': r_acad.text[:120]})
             
-            # Attendance test with cffi
-            if r_acad_cffi.status_code == 200:
-                acad_j = r_acad_cffi.json()
+            if r_acad.status_code == 200:
+                acad_j = r_acad.json()
                 h_att = dict(cw_h)
                 if acad_j.get('Cookies'):
                     h_att['X-CSRF-Token'] = acad_j['Cookies']
                 if acad_j.get('sessionToken'):
                     h_att['X-Session-Token'] = acad_j['sessionToken']
-                r_att_cffi = s_cffi.post('https://api.campusweb.in/api/student-portal/attendance', json={'net_id': reg}, headers=h_att, timeout=10)
-                diag['cw_steps'].append({'step': 'cffi_attendance', 'status': r_att_cffi.status_code, 'text': r_att_cffi.text[:150]})
+                r_att = s.post('https://api.campusweb.in/api/student-portal/attendance', json={'net_id': reg}, headers=h_att, timeout=8)
+                diag['cw_steps'].append({'step': 'acad_att', 'status': r_att.status_code, 'len': len(r_att.text), 'body': r_att.text[:120]})
         except Exception as cwe:
-            diag['cw_steps'].append({'step': 'cw_error', 'err': str(cwe)})
+            diag['cw_steps'].append({'step': 'cw_err', 'err': str(cwe)})
 
-        # 2. Step-by-step Direct Student Portal diagnosis
-        try:
-            portal = srm_portal_scraper.SRMPortalSession()
-            loaded = portal.load_captcha()
-            diag['sp_steps'].append({'step': 'load_captcha', 'loaded': loaded, 'bytes_len': len(portal.captcha_bytes or b''), 'nonce': portal.nonce})
-            if loaded and portal.captcha_bytes:
-                solved = srm_portal_scraper.solve_captcha_bytes(portal.captcha_bytes)
-                diag['sp_steps'].append({'step': 'ocr_solve', 'solved': solved})
-                attempt_res = portal.login_attempt(reg, p_pwd, solved)
-                diag['sp_steps'].append({
-                    'step': 'login_attempt',
-                    'ok': attempt_res.get('ok'),
-                    'reason': attempt_res.get('reason'),
-                    'message': attempt_res.get('message'),
-                    'status': getattr(portal, 'last_status', None),
-                    'url': getattr(portal, 'last_url', None)
-                })
-        except Exception as spe:
-            diag['sp_steps'].append({'step': 'sp_error', 'err': str(spe)})
-
-        # Full scrapers
-        cw_out = cw_scraper.scrape_campusweb(reg, p_pwd, acad_pwd=a_pwd)
-        sp_out = srm_portal_scraper.fetch_portal_data(reg, p_pwd)
-        
         return jsonify({
             'ok': True,
-            'ip': ip,
-            'diag': diag,
-            'cw_out': {
-                'success': cw_out.get('success'),
-                'error': cw_out.get('error'),
-                'reason': cw_out.get('reason'),
-                'data_len': len(cw_out.get('data', [])),
-                'marks_len': len(cw_out.get('marks', []))
-            },
-            'sp_out': {
-                'success': sp_out.get('success'),
-                'error': sp_out.get('error'),
-                'reason': sp_out.get('reason'),
-                'data_len': len(sp_out.get('data', [])),
-                'marks_len': len(sp_out.get('marks', []))
-            }
+            'diag': diag
         })
     except Exception as e:
         return jsonify({'ok': False, 'err': str(e), 'trace': traceback.format_exc()})

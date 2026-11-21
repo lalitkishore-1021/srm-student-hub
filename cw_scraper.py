@@ -1,5 +1,6 @@
 import concurrent.futures
 import json
+import os
 import re
 import socket
 import urllib3.util.connection as urllib3_cn
@@ -10,18 +11,7 @@ try:
 except Exception:
     pass
 
-try:
-    import cloudscraper
-    HAS_CLOUDSCRAPER = True
-except Exception:
-    HAS_CLOUDSCRAPER = False
-
-try:
-    from curl_cffi import requests as c_requests
-    HAS_CURL_CFFI = True
-except Exception:
-    HAS_CURL_CFFI = False
-    import requests as c_requests
+import requests
 
 from academia_direct_scraper import calculate_bunk_margin_and_needed, get_course_credit
 
@@ -43,55 +33,18 @@ CW_HEADERS = {
 }
 
 
-def _create_session(preferred='cloudscraper'):
+def _create_session():
     """
-    Creates an HTTP session configured to bypass Cloudflare WAF on datacenter/cloud IPs.
-    Primary: cloudscraper (pure Python SSL/TLS engine, highly resilient on Linux/Render).
-    Secondary: curl_cffi (browser TLS fingerprint impersonation).
-    Fallback: requests.Session with browser headers.
+    Creates a resilient HTTP session with browser headers and IPv4 enforcement.
     """
-    if preferred == 'cloudscraper' and HAS_CLOUDSCRAPER:
-        try:
-            return cloudscraper.create_scraper(browser={'browser': 'chrome', 'platform': 'windows', 'mobile': False})
-        except Exception:
-            pass
-    if HAS_CURL_CFFI:
-        try:
-            return c_requests.Session(impersonate='chrome120')
-        except Exception:
-            pass
-    if HAS_CLOUDSCRAPER:
-        try:
-            return cloudscraper.create_scraper(browser={'browser': 'chrome', 'platform': 'windows', 'mobile': False})
-        except Exception:
-            pass
-    import requests
     s = requests.Session()
     s.headers.update(CW_HEADERS)
     return s
 
 
-def _post_with_fallback(session, alt_session, url, headers, json_payload, timeout=15):
-    """
-    Executes a POST request with automatic engine fallback if 403 unsupported_client is encountered.
-    """
-    try:
-        r = session.post(url, headers=headers, json=json_payload, timeout=timeout)
-        if r.status_code == 403 and alt_session and 'unsupported_client' in r.text:
-            print(f"[CAMPUSWEB] Primary session got 403 unsupported_client, trying secondary engine on {url}...")
-            return alt_session.post(url, headers=headers, json=json_payload, timeout=timeout)
-        return r
-    except Exception as e:
-        if alt_session:
-            print(f"[CAMPUSWEB] Primary session notice ({e}), trying secondary engine on {url}...")
-            return alt_session.post(url, headers=headers, json=json_payload, timeout=timeout)
-        raise
-
-
 def scrape_campusweb(netid: str, portal_pwd: str = "", acad_pwd: str = None):
     """
     Scrapes live SRM Student Portal attendance and internal marks via CampusWeb API (campusweb.in).
-    Uses browser TLS fingerprint impersonation to bypass Cloudflare WAF on datacenter/cloud IPs.
     Supports authentication via Student Portal credentials, Academia credentials, or both.
     """
     clean_id = (netid or "").strip()
@@ -106,10 +59,9 @@ def scrape_campusweb(netid: str, portal_pwd: str = "", acad_pwd: str = None):
     if not clean_id or (not portal_pwd and not acad_pwd):
         return {'success': False, 'error': 'Missing credentials for CampusWeb sync', 'reason': 'missing_credentials'}
 
-    session = _create_session('cloudscraper')
-    alt_session = _create_session('curl_cffi')
+    session = _create_session()
     headers = dict(CW_HEADERS)
-    headers['X-Net-ID'] = clean_id
+    headers['X-Net-ID'] = clean_id.upper()
 
     has_auth = False
     working_portal_pwd = None
@@ -123,11 +75,10 @@ def scrape_campusweb(netid: str, portal_pwd: str = "", acad_pwd: str = None):
 
     for cand_pwd in cand_portal_pwds:
         try:
-            sp_res = _post_with_fallback(
-                session, alt_session,
+            sp_res = session.post(
                 'https://api.campusweb.in/api/student-portal/login',
                 headers=headers,
-                json_payload={'net_id': clean_id, 'password': cand_pwd},
+                json={'net_id': clean_id, 'password': cand_pwd},
                 timeout=12,
             )
             print(f"[{clean_id}] CampusWeb direct Student Portal login attempt: status={sp_res.status_code}")
@@ -135,6 +86,7 @@ def scrape_campusweb(netid: str, portal_pwd: str = "", acad_pwd: str = None):
                 sp_data = sp_res.json()
                 if sp_data.get('status') == 'success' and sp_data.get('session_token'):
                     headers['X-Session-Token'] = sp_data['session_token']
+                    headers['X-CSRF-Token'] = 'sp_session=http_only'
                     has_auth = True
                     working_portal_pwd = cand_pwd
                     print(f"[{clean_id}] CampusWeb direct Student Portal login succeeded!")
@@ -151,31 +103,30 @@ def scrape_campusweb(netid: str, portal_pwd: str = "", acad_pwd: str = None):
     if portal_pwd and portal_pwd not in cand_acad_pwds:
         cand_acad_pwds.append(portal_pwd)
 
-    for cand_pwd in cand_acad_pwds:
-        try:
-            auth_res = _post_with_fallback(
-                session, alt_session,
-                'https://api.campusweb.in/api/auth/login',
-                headers=headers,
-                json_payload={'username': f'{clean_id}@srmist.edu.in', 'password': cand_pwd},
-                timeout=12,
-            )
-            print(f"[{clean_id}] CampusWeb Academia auth attempt: status={auth_res.status_code}")
-            if auth_res.status_code == 200:
-                auth_data = auth_res.json()
-                if auth_data.get('Status') == 'success':
-                    session_token = auth_data.get('sessionToken')
-                    cookies_str = auth_data.get('Cookies')
-                    if cookies_str:
-                        headers['X-CSRF-Token'] = cookies_str
-                    if session_token:
-                        if not headers.get('X-Session-Token'):
+    if not has_auth or not working_portal_pwd:
+        for cand_pwd in cand_acad_pwds:
+            try:
+                auth_res = session.post(
+                    'https://api.campusweb.in/api/auth/login',
+                    headers=headers,
+                    json={'username': f'{clean_id}@srmist.edu.in', 'password': cand_pwd},
+                    timeout=12,
+                )
+                print(f"[{clean_id}] CampusWeb Academia auth attempt: status={auth_res.status_code}")
+                if auth_res.status_code == 200:
+                    auth_data = auth_res.json()
+                    if auth_data.get('Status') == 'success':
+                        session_token = auth_data.get('sessionToken')
+                        cookies_str = auth_data.get('Cookies')
+                        if cookies_str:
+                            headers['X-CSRF-Token'] = cookies_str
+                        if session_token:
                             headers['X-Session-Token'] = session_token
                         has_auth = True
-                    print(f"[{clean_id}] CampusWeb Academia auth succeeded!")
-                    break
-        except Exception as ae:
-            print(f"[{clean_id}] CampusWeb Academia auth notice: {ae}")
+                        print(f"[{clean_id}] CampusWeb Academia auth succeeded!")
+                        break
+            except Exception as ae:
+                print(f"[{clean_id}] CampusWeb Academia auth notice: {ae}")
 
     if not has_auth:
         return {
@@ -188,20 +139,20 @@ def scrape_campusweb(netid: str, portal_pwd: str = "", acad_pwd: str = None):
     payload_with_pwd = {'net_id': clean_id, 'password': working_portal_pwd or portal_pwd or acad_pwd}
     payload_no_pwd = {'net_id': clean_id}
 
-    att_payloads = [payload_no_pwd]
+    att_payloads = []
     if working_portal_pwd:
-        att_payloads.insert(0, payload_with_pwd)
-    elif portal_pwd:
+        att_payloads.append(payload_with_pwd)
+    att_payloads.append(payload_no_pwd)
+    if portal_pwd and payload_with_pwd not in att_payloads:
         att_payloads.append(payload_with_pwd)
 
     att_json = {}
     for p in att_payloads:
         try:
-            r = _post_with_fallback(
-                session, alt_session,
+            r = session.post(
                 'https://api.campusweb.in/api/student-portal/attendance',
                 headers=headers,
-                json_payload=p,
+                json=p,
                 timeout=15,
             )
             print(f"[{clean_id}] [CAMPUSWEB] Attendance attempt with {list(p.keys())}: status={r.status_code}, len={len(r.text)}")
@@ -213,20 +164,20 @@ def scrape_campusweb(netid: str, portal_pwd: str = "", acad_pwd: str = None):
         except Exception as e:
             print(f"[{clean_id}] CampusWeb att fetch notice: {e}")
 
-    marks_payloads = [payload_no_pwd]
+    marks_payloads = []
     if working_portal_pwd:
-        marks_payloads.insert(0, payload_with_pwd)
-    elif portal_pwd:
+        marks_payloads.append(payload_with_pwd)
+    marks_payloads.append(payload_no_pwd)
+    if portal_pwd and payload_with_pwd not in marks_payloads:
         marks_payloads.append(payload_with_pwd)
 
     marks_json = {}
     for p in marks_payloads:
         try:
-            r = _post_with_fallback(
-                session, alt_session,
+            r = session.post(
                 'https://api.campusweb.in/api/student-portal/marks',
                 headers=headers,
-                json_payload=p,
+                json=p,
                 timeout=15,
             )
             print(f"[{clean_id}] [CAMPUSWEB] Marks attempt with {list(p.keys())}: status={r.status_code}, len={len(r.text)}")
