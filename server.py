@@ -572,8 +572,9 @@ def get_portal_data_with_fallback(net_id, portal_pwd, acad_pwd=None):
             }
 
     p_res = None
+    cache_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'portal_data_cache.json')
 
-    # 1. Primary: Direct sp.srmist.edu.in scraper (fast, authentic live university data with Ratio-D TinyCRNN CAPTCHA solver)
+    # 1. Primary: Direct sp.srmist.edu.in scraper for Student Portal passwords (clean, original flow)
     if portal_pwd:
         try:
             import srm_portal_scraper
@@ -587,13 +588,18 @@ def get_portal_data_with_fallback(net_id, portal_pwd, acad_pwd=None):
                 p_res = sp_res
         except Exception as se:
             print(f"[{clean_id}] Direct portal scrape exception: {se}")
+            p_res = {
+                'success': False,
+                'error': 'Could not connect to SRM Student Portal. Please try again.',
+                'reason': 'portal_exception'
+            }
 
-    # 2. Secondary: CampusWeb API sync (used when direct portal failed, rate-limited, or student only provided Academia password)
-    if not (p_res and p_res.get('success')):
+    # 2. CampusWeb API sync: ONLY when student did not provide a Student Portal password and provided an Academia password
+    elif acad_pwd:
         try:
             import cw_scraper
-            print(f"[{clean_id}] Trying CampusWeb API sync...")
-            cw_res = cw_scraper.scrape_campusweb(clean_id, portal_pwd, acad_pwd=acad_pwd)
+            print(f"[{clean_id}] Trying CampusWeb API sync with Academia credentials...")
+            cw_res = cw_scraper.scrape_campusweb(clean_id, None, acad_pwd=acad_pwd)
             if cw_res and cw_res.get('success'):
                 print(f"[{clean_id}] [CAMPUSWEB] CampusWeb sync succeeded with live attendance & marks!")
                 p_res = {
@@ -603,51 +609,27 @@ def get_portal_data_with_fallback(net_id, portal_pwd, acad_pwd=None):
                     'profile': cw_res.get('profile', {}),
                     'source': 'campusweb_api'
                 }
-            elif cw_res and not (p_res and p_res.get('success')):
-                print(f"[{clean_id}] CampusWeb attempt returned: {(cw_res or {}).get('error')}")
-                # Only set p_res if direct portal was not attempted or returned generic error
-                if not p_res:
-                    p_res = cw_res
-                elif cw_res.get('reason') in ('invalid_credentials', 'rate_limited') and p_res.get('reason') not in ('invalid_credentials', 'account_locked'):
-                    p_res = cw_res
+            elif cw_res:
+                p_res = {
+                    'success': False,
+                    'error': 'Could not sync attendance and marks with Academia credentials. Please enter your Student Portal password.',
+                    'reason': cw_res.get('reason', 'academia_sync_failed')
+                }
         except Exception as cwe:
             print(f"[{clean_id}] CampusWeb exception: {cwe}")
+            p_res = {
+                'success': False,
+                'error': 'Could not connect to sync service. Please enter your Student Portal password.',
+                'reason': 'campusweb_exception'
+            }
+    else:
+        return {
+            'success': False,
+            'error': 'Please enter your SRM Student Portal password.',
+            'reason': 'missing_credentials'
+        }
 
-    # 3. Augmentation: if one source returned data with 0 attendance or 0 marks, augment from the other
-    if p_res and p_res.get('success'):
-        curr_att = p_res.get('data') or []
-        curr_marks = p_res.get('marks') or []
-        if len(curr_att) == 0 or len(curr_marks) == 0:
-            if p_res.get('source') == 'srm_portal':
-                try:
-                    import cw_scraper
-                    cw_res = cw_scraper.scrape_campusweb(clean_id, portal_pwd, acad_pwd=acad_pwd)
-                    if cw_res and cw_res.get('success'):
-                        if len(curr_att) == 0 and cw_res.get('data'):
-                            p_res['data'] = cw_res.get('data')
-                            print(f"[{clean_id}] Augmented missing attendance from CampusWeb: {len(p_res['data'])} courses")
-                        if len(curr_marks) == 0 and cw_res.get('marks'):
-                            p_res['marks'] = cw_res.get('marks')
-                            print(f"[{clean_id}] Augmented missing marks from CampusWeb: {len(p_res['marks'])} courses")
-                except Exception as aug_e:
-                    print(f"[{clean_id}] Augmentation notice: {aug_e}")
-            elif p_res.get('source') == 'campusweb_api' and portal_pwd:
-                try:
-                    import srm_portal_scraper
-                    sp_res = srm_portal_scraper.fetch_portal_data(clean_id, portal_pwd)
-                    if sp_res and sp_res.get('success'):
-                        if len(curr_att) == 0 and sp_res.get('data'):
-                            p_res['data'] = sp_res.get('data')
-                            print(f"[{clean_id}] Augmented missing attendance from Student Portal: {len(p_res['data'])} courses")
-                        if len(curr_marks) == 0 and sp_res.get('marks'):
-                            p_res['marks'] = sp_res.get('marks')
-                            print(f"[{clean_id}] Augmented missing marks from Student Portal: {len(p_res['marks'])} courses")
-                except Exception as aug_e:
-                    print(f"[{clean_id}] Augmentation notice: {aug_e}")
-
-    cache_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'portal_data_cache.json')
-
-    # If live scrape succeeded from either source, cache the fresh data
+    # If live scrape succeeded, cache the fresh data
     if p_res and p_res.get('success'):
         try:
             c_dict = {}
@@ -668,16 +650,39 @@ def get_portal_data_with_fallback(net_id, portal_pwd, acad_pwd=None):
             print(f"[{clean_id}] Cache write warning: {se}")
         return p_res
 
+    # Fallback to verified cached data if password matches and live portal had a temporary network/captcha glitch
+    if portal_pwd:
+        try:
+            if os.path.exists(cache_file):
+                with open(cache_file, 'r', encoding='utf-8') as f:
+                    c_dict = json.load(f)
+                entry = c_dict.get(clean_id)
+                if entry and (entry.get('data') or entry.get('marks')):
+                    exp_pwd = (entry.get('portal_password') or "").strip()
+                    if exp_pwd and exp_pwd == portal_pwd:
+                        print(f"[{clean_id}] [CACHE] Serving verified cached Student Portal data")
+                        return {
+                            'success': True,
+                            'data': entry.get('data', []),
+                            'marks': entry.get('marks', []),
+                            'profile': entry.get('profile', {}),
+                            'source': 'srm_portal_verified_cache'
+                        }
+        except Exception as ce:
+            print(f"[{clean_id}] Cache fallback warning: {ce}")
+
     err = (p_res or {}).get('error', 'SRM Portal authentication failed.')
     reason = (p_res or {}).get('reason', 'portal_error')
     if reason == 'account_locked' or 'locked' in err.lower():
         err = 'Your SRM Student Portal account is temporarily locked due to previous failed attempts. Please unlock or reset it at https://ssp.srmist.edu.in/resetpassword/'
+        reason = 'account_locked'
     elif reason == 'invalid_netid':
         err = (p_res or {}).get('error')
     elif reason == 'wrong_captcha':
-        err = 'Student Portal security verification (CAPTCHA) timed out. Please click Sync again.'
+        err = 'Student Portal security verification (CAPTCHA) timed out. Please click TRY AGAIN.'
     elif reason == 'invalid_credentials' or any(w in err.lower() for w in ['invalid login credentials', 'user id or password', 'attempts remaining']):
         err = 'Invalid NetID or Student Portal password. You can reset your password at https://ssp.srmist.edu.in/resetpassword/'
+        reason = 'invalid_credentials'
     else:
         err = (p_res or {}).get('error', 'Could not connect to SRM Student Portal. Please try again.')
     return {'success': False, 'error': err, 'reason': reason}

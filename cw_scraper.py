@@ -274,7 +274,7 @@ def scrape_campusweb(netid: str, portal_pwd: str = "", acad_pwd: str = None):
             })
 
     if not att_data and not marks_data:
-        return {'success': False, 'error': 'No academic records returned from Student Portal', 'reason': 'empty_data'}
+        return {'success': False, 'error': 'No academic records found for this account', 'reason': 'empty_data'}
 
     print(f"[{clean_id}] [CAMPUSWEB] Scraped: {len(att_data)} attendance, {len(marks_data)} marks")
     return {
