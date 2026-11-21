@@ -732,7 +732,7 @@ def start_session():
                 out_queue = queue.Queue()
                 scrape_academia_worker(reg_no, acad_pwd_in, batch, out_queue)
                 try:
-                    res = out_queue.get(timeout=70)
+                    res = out_queue.get(timeout=20)
                     if res and res.get('success') and res.get('timetable'):
                         tt = res['timetable']
                         has_classes = any(isinstance(v, list) and len(v) > 0 for v in tt.values())
@@ -746,12 +746,12 @@ def start_session():
                     return {'success': False, 'error': str(e)}
 
             def run_portal():
-                if not portal_pwd_in and not acad_pwd_in:
-                    return {'success': False, 'error': 'No credentials provided'}
+                if not portal_pwd_in:
+                    return {'success': False, 'error': 'No Student Portal credentials provided'}
                 try:
-                    p_res = get_portal_data_with_fallback(net_id, portal_pwd_in, acad_pwd=acad_pwd_in)
+                    p_res = get_portal_data_with_fallback(net_id, portal_pwd_in, acad_pwd=None)
                     if p_res and p_res.get('success'):
-                        print(f"[{net_id}] SRM Student Portal resolved successfully via CampusWeb!")
+                        print(f"[{net_id}] SRM Student Portal resolved successfully!")
                         return p_res
                     err_msg = (p_res or {}).get('error', 'SRM Portal auth failed')
                     print(f"[{net_id}] SRM Portal returned: {err_msg}")
@@ -760,31 +760,34 @@ def start_session():
                     print(f"[{net_id}] SRM Portal scraper exception: {pe}")
                     return {'success': False, 'error': str(pe)}
             
-            # Run Portal if either portal password or academia password provided
-            future_portal = executor.submit(run_portal) if (portal_pwd_in or acad_pwd_in) else None
+            # Run Portal ONLY if portal password is provided!
+            future_portal = executor.submit(run_portal) if portal_pwd_in else None
             future_ac = executor.submit(run_academia) if acad_pwd_in else None
             
             portal_res = None
             ac_res = None
 
-            if future_portal:
+            if future_portal and not future_ac:
                 try:
-                    portal_res = future_portal.result(timeout=35)
+                    portal_res = future_portal.result(timeout=25)
                 except Exception as e:
                     print(f"[{reg_no}] SRM Portal wait: {e}")
-
-            # Fast Path (Ratio-D sub-5s speed): If portal sync succeeded, allow Academia to finish cleanly
-            if portal_res and portal_res.get('success'):
-                if future_ac:
-                    try:
-                        ac_res = future_ac.result(timeout=6)
-                    except Exception:
-                        pass  # Let Academia complete in background without blocking user
-            elif future_ac:
+            elif future_ac and not future_portal:
                 try:
-                    ac_res = future_ac.result(timeout=80)
+                    ac_res = future_ac.result(timeout=20)
                 except Exception as e:
                     print(f"[{reg_no}] Academia wait: {e}")
+            elif future_portal and future_ac:
+                # Concurrent wait when both credentials are provided
+                done, _ = concurrent.futures.wait([future_portal, future_ac], timeout=20)
+                try:
+                    portal_res = future_portal.result(timeout=0.1) if future_portal in done else None
+                except Exception:
+                    pass
+                try:
+                    ac_res = future_ac.result(timeout=0.1) if future_ac in done else None
+                except Exception:
+                    pass
 
             executor.shutdown(wait=False)
 

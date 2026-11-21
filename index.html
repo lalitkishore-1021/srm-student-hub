@@ -4713,12 +4713,6 @@
                     <span class="login-pwd-toggle" onclick="const pwd=document.getElementById('srm-pwd'); if(pwd.type==='password'){pwd.type='text'; this.innerHTML='<svg viewBox=\'0 0 24 24\' width=\'18\' height=\'18\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'2.5\' stroke-linecap=\'round\' stroke-linejoin=\'round\'><path d=\'M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24\'></path><line x1=\'1\' y1=\'1\' x2=\'23\' y2=\'23\'></line></svg>';}else{pwd.type='password'; this.innerHTML='<svg viewBox=\'0 0 24 24\' width=\'18\' height=\'18\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'2.5\' stroke-linecap=\'round\' stroke-linejoin=\'round\'><path d=\'M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z\'></path><circle cx=\'12\' cy=\'12\' r=\'3\'></circle></svg>';}"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg></span>
                 </div>
                 
-                <div class="login-input-wrapper" style="margin-top: 10px;">
-                    <span class="login-input-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#ffaa00" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></span>
-                    <input type="password" id="srm-portal-pwd" placeholder="Portal Password (Optional - syncs Marks & Attendance)" class="login-input" onkeydown="if(event.key==='Enter') startLiveSync();">
-                    <span class="login-pwd-toggle" onclick="const pp=document.getElementById('srm-portal-pwd'); if(pp.type==='password'){pp.type='text'; this.innerHTML='<svg viewBox=\'0 0 24 24\' width=\'18\' height=\'18\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'2.5\' stroke-linecap=\'round\' stroke-linejoin=\'round\'><path d=\'M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24\'></path><line x1=\'1\' y1=\'1\' x2=\'23\' y2=\'23\'></line></svg>';}else{pp.type='password'; this.innerHTML='<svg viewBox=\'0 0 24 24\' width=\'18\' height=\'18\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'2.5\' stroke-linecap=\'round\' stroke-linejoin=\'round\'><path d=\'M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z\'></path><circle cx=\'12\' cy=\'12\' r=\'3\'></circle></svg>';}"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg></span>
-                </div>
-                
                 <button class="login-auth-btn" id="login-auth-btn" onclick="startLiveSync()" style="margin-top: 10px;">LOG IN &amp; VIEW DASHBOARD</button>
             </div>
 
@@ -4790,7 +4784,7 @@
             
             <h2 style="font-family: 'Montserrat', sans-serif; font-size: 1.15rem; font-weight: 800; color: #fff; margin: 0 0 4px 0; letter-spacing: 0.3px;">Student Portal</h2>
             <p style="font-size: 0.78rem; color: var(--text-sub); margin: 0 0 20px 0;">
-                Enter your Student Portal or Academia password to sync live attendance &amp; marks
+                Enter your SRM Student Portal password to sync live attendance &amp; marks
             </p>
             
             <div style="display: flex; flex-direction: column; gap: 12px; text-align: left;">
@@ -4801,7 +4795,7 @@
                 
                 <div class="login-input-wrapper" style="margin: 0; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; position: relative;">
                     <span class="login-input-icon"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
-                    <input type="password" id="portal-modal-pwd" placeholder="Portal or Academia Password" class="login-input" style="font-size: 0.92rem;" onkeydown="if(event.key==='Enter') submitPortalSync();">
+                    <input type="password" id="portal-modal-pwd" placeholder="Student Portal Password" class="login-input" style="font-size: 0.92rem;" onkeydown="if(event.key==='Enter') submitPortalSync();">
                     <span class="login-pwd-toggle" onclick="togglePortalModalPwd()" style="cursor: pointer;">
                         <svg id="portal-modal-eye-icon" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
                     </span>
@@ -6825,14 +6819,14 @@
             
             switchView(viewId);
             
-            // On-demand prompt for SRM Student Portal credentials if not connected yet
+            // On-demand prompt for SRM Student Portal credentials when navigating to Attendance or Marks
             if (viewId === 'attendance-view' || viewId === 'marks-view') {
                 try {
                     const hasPortal = localStorage.getItem('syncPortalPwd');
                     const attData = JSON.parse(localStorage.getItem('squadAttendance') || '[]');
                     const marksData = JSON.parse(localStorage.getItem('squadMarks') || '[]');
-                    if (!hasPortal && (attData.length === 0 || marksData.length === 0)) {
-                        setTimeout(() => openPortalSyncModal(), 300);
+                    if (!hasPortal || (viewId === 'attendance-view' && attData.length === 0) || (viewId === 'marks-view' && marksData.length === 0)) {
+                        setTimeout(() => openPortalSyncModal(), 350);
                     }
                 } catch(e) {}
             }
@@ -7727,19 +7721,14 @@
                     localStorage.removeItem('squadProfile');
                 }
 
-                const savedNetId = (localStorage.getItem('syncPortalNetId') || localStorage.getItem('syncRegNo') || '').split('@')[0].trim().toLowerCase();
-                const savedPortalPwd = (currentNetId && savedNetId === currentNetId) ? (localStorage.getItem('syncPortalPwd') || '') : '';
-                const portalPwdToSend = enteredPortalPwd || savedPortalPwd;
-                const isManualPortal = Boolean(enteredPortalPwd);
-
                 const initRes = await fetch(`${BACKEND_URL}/api/start_session`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json", "X-App-Key": "srm-hub-protected-x9f2" },
                     body: JSON.stringify({ 
                         regNo: regNo, 
                         pwd: pwd, 
-                        portalPwd: portalPwdToSend, 
-                        isManualPortal: isManualPortal,
+                        portalPwd: '', 
+                        isManualPortal: false,
                         batch: currentBatch 
                     })
                 });
