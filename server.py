@@ -2483,24 +2483,40 @@ def get_trending_music():
         return jsonify({'success': False, 'error': str(e), 'results': []})
 
 def import_spotify_playlist(url_or_id):
-    match = re.search(r'playlist[/:]([a-zA-Z0-9]+)', url_or_id)
-    pl_id = match.group(1) if match else url_or_id.strip()
+    if not url_or_id:
+        raise Exception("Spotify URL or ID is required")
+    url = url_or_id.strip()
     
-    embed_url = f"https://open.spotify.com/embed/playlist/{pl_id}"
+    # Follow redirects for shortlinks like spotify.link or spoti.fi
+    if 'spotify.link' in url or 'spoti.fi' in url:
+        try:
+            head = requests.head(url, allow_redirects=True, timeout=8)
+            url = head.url
+        except Exception:
+            pass
+
+    match = re.search(r'(?:playlist|album)[/:]([a-zA-Z0-9]+)', url)
+    pl_id = match.group(1) if match else re.sub(r'[^a-zA-Z0-9]', '', url)
+    is_album = 'album' in url
+    embed_type = 'album' if is_album else 'playlist'
+    
+    embed_url = f"https://open.spotify.com/embed/{embed_type}/{pl_id}"
     headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.9'
     }
     r = requests.get(embed_url, headers=headers, timeout=12)
     if r.status_code != 200:
-        raise Exception(f"Failed to fetch Spotify playlist (status {r.status_code})")
+        raise Exception(f"Failed to fetch Spotify playlist (status {r.status_code}). Check that playlist is public.")
         
     next_match = re.search(r'<script id="__NEXT_DATA__" type="application/json">({.*?})</script>', r.text)
     if not next_match:
-        raise Exception("Could not parse Spotify playlist data")
+        raise Exception("Could not parse Spotify playlist data. Make sure it is public.")
         
     data = json.loads(next_match.group(1))
     entity = data.get('props', {}).get('pageProps', {}).get('state', {}).get('data', {}).get('entity', {})
-    title = entity.get('name') or 'Spotify Playlist'
+    title = entity.get('name') or entity.get('title') or ('Spotify Album' if is_album else 'Spotify Playlist')
     raw_tracks = entity.get('trackList', [])
     
     tracks = []
@@ -2513,11 +2529,15 @@ def import_spotify_playlist(url_or_id):
             tracks.append({
                 'id': f"sp_{pl_id}_{len(tracks)+1}",
                 'title': track_title,
-                'artist': track_artist,
+                'artist': track_artist or 'Spotify Artist',
                 'duration': dur_sec,
                 'cover_url': '',
                 'is_online': True
             })
+            
+    if not tracks:
+        raise Exception("No playable songs found in this Spotify playlist or album.")
+
     return {
         'id': f"pl_sp_{int(time.time())}",
         'name': title,
@@ -2526,90 +2546,168 @@ def import_spotify_playlist(url_or_id):
         'tracks': tracks
     }
 
+def extract_yt_playlist_id(url_or_id):
+    if not url_or_id: return None
+    url = url_or_id.strip()
+    if 'youtu.be' in url or 'redirect' in url:
+        try:
+            head = requests.head(url, allow_redirects=True, timeout=6)
+            url = head.url
+        except Exception:
+            pass
+    m = re.search(r'[?&]list=([a-zA-Z0-9_-]+)', url)
+    if m:
+        return m.group(1)
+    clean = re.sub(r'[^a-zA-Z0-9_-]', '', url)
+    if clean.startswith(('PL', 'RD', 'UU', 'LL', 'FL', 'OLAK5uy_')):
+        return clean
+    return clean if len(clean) >= 10 else None
+
 def import_youtube_playlist(url_or_id):
-    match = re.search(r'[?&]list=([a-zA-Z0-9_-]+)', url_or_id)
-    pl_id = match.group(1) if match else url_or_id.strip()
+    pl_id = extract_yt_playlist_id(url_or_id)
+    if not pl_id:
+        raise Exception("Could not find a valid YouTube playlist ID in link.")
     
-    yt_url = f"https://www.youtube.com/playlist?list={pl_id}"
-    html_text = ""
-    try:
-        from curl_cffi import requests as c_requests
-        r = c_requests.get(yt_url, impersonate="chrome120", timeout=12)
-        html_text = r.text
-    except Exception:
-        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'}
-        r = requests.get(yt_url, headers=headers, timeout=12)
-        html_text = r.text
-        
-    match = re.search(r'var ytInitialData = ({.*?});</script>', html_text)
-    if not match:
-        raise Exception("Could not parse YouTube playlist data")
-        
-    data = json.loads(match.group(1))
-    meta = data.get('metadata', {}).get('playlistMetadataRenderer', {})
-    title = meta.get('title') or 'YouTube Playlist'
+    tracks = []
+    title = "YouTube Playlist"
     
     def find_all(obj, key):
         if isinstance(obj, dict):
             for k, v in obj.items():
-                if k == key:
-                    yield v
-                elif isinstance(v, (dict, list)):
-                    yield from find_all(v, key)
+                if k == key: yield v
+                elif isinstance(v, (dict, list)): yield from find_all(v, key)
         elif isinstance(obj, list):
-            for item in obj:
-                yield from find_all(item, key)
+            for item in obj: yield from find_all(item, key)
+
+    innertube_urls = [
+        ("https://music.youtube.com/youtubei/v1/browse", "WEB_REMIX", "1.20240101.01.00", "https://music.youtube.com"),
+        ("https://www.youtube.com/youtubei/v1/browse", "WEB", "2.20240101.00.00", "https://www.youtube.com")
+    ]
+    
+    for api_url, client_name, client_ver, origin in innertube_urls:
+        try:
+            headers = {
+                "Content-Type": "application/json",
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+                "Origin": origin
+            }
+            payload = {
+                "context": {
+                    "client": {
+                        "clientName": client_name,
+                        "clientVersion": client_ver,
+                        "hl": "en",
+                        "gl": "IN"
+                    }
+                },
+                "browseId": f"VL{pl_id}" if not pl_id.startswith("VL") else pl_id
+            }
+            r = requests.post(api_url, headers=headers, json=payload, timeout=10)
+            if r.status_code == 200:
+                data = r.json()
                 
-    locks = list(find_all(data.get('contents', {}), 'lockupViewModel'))
-    tracks = []
-    if locks:
-        for l in locks:
-            v_title = l.get('metadata', {}).get('lockupMetadataViewModel', {}).get('title', {}).get('content')
-            rows = l.get('metadata', {}).get('lockupMetadataViewModel', {}).get('metadata', {}).get('contentMetadataViewModel', {}).get('metadataRows', [])
-            byline = ""
-            for row in rows:
-                parts = row.get('metadataParts', [])
-                for p in parts:
-                    text = p.get('text', {}).get('content', '')
-                    if text and 'views' not in text.lower() and 'ago' not in text.lower() and 'updated' not in text.lower():
-                        byline = text
+                # Check title from header
+                header = data.get('header', {})
+                h_titles = list(find_all(header, 'title'))
+                for ht in h_titles:
+                    if isinstance(ht, dict):
+                        ct = ht.get('dynamicTextViewModel', {}).get('text', {}).get('content') or ht.get('simpleText') or (ht.get('runs', [{}])[0].get('text') if isinstance(ht.get('runs'), list) else '')
+                        if ct and ct not in ['Play all', 'Shuffle', 'Description']:
+                            title = ct
+                            break
+                    elif isinstance(ht, str) and ht not in ['Play all', 'Shuffle', 'Description']:
+                        title = ht
                         break
-                if byline: break
-            thumb_url = ''
-            thumbs = list(find_all(l.get('contentImage', {}), 'sources'))
-            if thumbs and len(thumbs[0]) > 0:
-                thumb_url = thumbs[0][-1].get('url', '')
-                
-            if v_title:
-                clean_title = v_title
-                clean_artist = byline or 'YouTube'
-                if ' - ' in clean_title:
-                    parts = clean_title.split(' - ', 1)
-                    clean_artist = parts[0].strip()
-                    clean_title = parts[1].strip()
-                tracks.append({
-                    'id': f"yt_{pl_id}_{len(tracks)+1}",
-                    'title': clean_title,
-                    'artist': clean_artist,
-                    'cover_url': thumb_url,
-                    'is_online': True
-                })
-    else:
-        p_vids = list(find_all(data.get('contents', {}), 'playlistVideoRenderer'))
-        for v in p_vids:
-            v_title = v.get('title', {}).get('runs', [{}])[0].get('text', '')
-            v_artist = v.get('shortBylineText', {}).get('runs', [{}])[0].get('text', '')
-            thumb_url = ''
-            t_list = v.get('thumbnail', {}).get('thumbnails', [])
-            if t_list: thumb_url = t_list[-1].get('url', '')
-            if v_title:
-                tracks.append({
-                    'id': f"yt_{pl_id}_{len(tracks)+1}",
-                    'title': v_title,
-                    'artist': v_artist or 'YouTube',
-                    'cover_url': thumb_url,
-                    'is_online': True
-                })
+
+                # 1. Check musicResponsiveListItemRenderer (from YT Music)
+                m_items = list(find_all(data, 'musicResponsiveListItemRenderer'))
+                if m_items:
+                    for item in m_items:
+                        cols = item.get('flexColumns', [])
+                        t = ''
+                        a = ''
+                        if len(cols) > 0:
+                            t = cols[0].get('musicResponsiveListItemFlexColumnRenderer', {}).get('text', {}).get('runs', [{}])[0].get('text', '').strip()
+                        if len(cols) > 1:
+                            runs = cols[1].get('musicResponsiveListItemFlexColumnRenderer', {}).get('text', {}).get('runs', [])
+                            a_parts = [r.get('text', '') for r in runs if r.get('text', '') not in [' • ', ' · ', 'Song', 'Video']]
+                            a = ', '.join([p for p in a_parts if p and not p.isdigit()])
+                        thumb = ''
+                        thumbs = list(find_all(item.get('thumbnail', {}), 'url'))
+                        if thumbs: thumb = thumbs[-1]
+                        if t:
+                            tracks.append({
+                                'id': f"yt_{pl_id}_{len(tracks)+1}",
+                                'title': t,
+                                'artist': a or 'YouTube Artist',
+                                'cover_url': thumb,
+                                'is_online': True
+                            })
+                    if tracks: break
+
+                # 2. Check lockupViewModel (modern YouTube desktop)
+                locks = list(find_all(data, 'lockupViewModel'))
+                if locks:
+                    for l in locks:
+                        v_title = l.get('metadata', {}).get('lockupMetadataViewModel', {}).get('title', {}).get('content')
+                        if not v_title:
+                            label = l.get('rendererContext', {}).get('accessibilityContext', {}).get('label', '')
+                            if label:
+                                v_title = label.split(' minutes')[0].rsplit(' ', 1)[0]
+                        byline = ''
+                        rows = l.get('metadata', {}).get('lockupMetadataViewModel', {}).get('metadata', {}).get('contentMetadataViewModel', {}).get('metadataRows', [])
+                        for row in rows:
+                            for p in row.get('metadataParts', []):
+                                txt = p.get('text', {}).get('content', '')
+                                if txt and 'views' not in txt.lower() and 'ago' not in txt.lower():
+                                    byline = txt
+                                    break
+                            if byline: break
+                        thumb = ''
+                        thumbs = list(find_all(l.get('contentImage', {}), 'sources'))
+                        if thumbs and len(thumbs[0]) > 0:
+                            thumb = thumbs[0][-1].get('url', '')
+                        if v_title:
+                            clean_t = v_title
+                            clean_a = byline or 'YouTube'
+                            if ' - ' in clean_t:
+                                parts = clean_t.split(' - ', 1)
+                                clean_a = parts[0].strip()
+                                clean_t = parts[1].strip()
+                            tracks.append({
+                                'id': f"yt_{pl_id}_{len(tracks)+1}",
+                                'title': clean_t,
+                                'artist': clean_a,
+                                'cover_url': thumb,
+                                'is_online': True
+                            })
+                    if tracks: break
+
+                # 3. Check legacy playlistVideoRenderer
+                p_vids = list(find_all(data, 'playlistVideoRenderer'))
+                if p_vids:
+                    for v in p_vids:
+                        v_title = v.get('title', {}).get('runs', [{}])[0].get('text', '')
+                        v_artist = v.get('shortBylineText', {}).get('runs', [{}])[0].get('text', '')
+                        thumb = ''
+                        t_list = v.get('thumbnail', {}).get('thumbnails', [])
+                        if t_list: thumb = t_list[-1].get('url', '')
+                        if v_title:
+                            tracks.append({
+                                'id': f"yt_{pl_id}_{len(tracks)+1}",
+                                'title': v_title,
+                                'artist': v_artist or 'YouTube',
+                                'cover_url': thumb,
+                                'is_online': True
+                            })
+                    if tracks: break
+        except Exception as err:
+            print(f"Innertube try error for {api_url}: {err}")
+            continue
+
+    if not tracks:
+        raise Exception("Could not find songs in playlist. Please make sure the playlist is Public or Unlisted.")
+        
     return {
         'id': f"pl_yt_{int(time.time())}",
         'name': title,
@@ -2654,12 +2752,12 @@ def import_playlist_endpoint():
     data = request.json or {}
     source = data.get('source', '').lower().strip()
     url = data.get('url', '').strip()
-    text = data.get('text', '').strip()
+    text = (data.get('text') or data.get('csv') or '').strip()
     name = data.get('name', '').strip()
     net_id = clean_net_id(data.get('net_id', ''))
     
     if not source:
-        if 'spotify.com' in url:
+        if 'spotify.com' in url or 'spotify.link' in url or 'spoti.fi' in url:
             source = 'spotify'
         elif 'youtube.com' in url or 'youtu.be' in url:
             source = 'youtube'
@@ -2685,7 +2783,15 @@ def import_playlist_endpoint():
         if name:
             playlist['name'] = name
 
-        return jsonify({'success': True, 'playlist': playlist})
+        return jsonify({
+            'success': True,
+            'playlist': playlist,
+            'tracks': playlist.get('tracks', []),
+            'name': playlist.get('name', 'Imported Playlist')
+        })
+    except Exception as e:
+        print(f"Playlist import error: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
     except Exception as e:
         print(f"Playlist import error: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500

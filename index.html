@@ -3479,8 +3479,25 @@
         .music-play-btn { background: #FFFFFF; color: #08090D; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: none; cursor: pointer; transition: all 0.2s; flex-shrink: 0; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35); }
 
         /* Levyra Authentic Floating Bottom Dock - Exact UI matching image selection animations */
-        body.in-music-lounge .app-nav {
+        body.in-music-lounge .app-nav,
+        body.in-music-lounge #main-hub-brand-header,
+        body.in-music-lounge #navButtons {
             display: none !important;
+        }
+        body.in-music-lounge #main-content {
+            padding-top: 0 !important;
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+            text-align: left !important;
+            width: 100% !important;
+            max-width: 100% !important;
+        }
+        #music-view {
+            text-align: left !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            padding: 0 !important;
+            margin: 0 !important;
         }
         .levyra-bottom-dock {
             position: fixed !important;
@@ -3571,31 +3588,47 @@
             position: sticky;
             top: 0;
             z-index: 100;
-            padding: 16px 18px 10px 18px;
-            background: rgba(0, 0, 0, 0.85);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
+            padding: 16px 18px 12px 18px;
+            background: rgba(0, 0, 0, 0.88);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
             display: flex;
             justify-content: space-between;
             align-items: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            text-align: left !important;
         }
         .music-screen-header-left {
             display: flex;
             flex-direction: column;
             gap: 2px;
+            text-align: left !important;
         }
-        .music-screen-title {
-            margin: 0;
-            font-size: 1.85rem;
-            font-weight: 800;
-            color: #FFFFFF;
-            letter-spacing: -0.5px;
-            line-height: 1.15;
+        .music-screen-title, #music-screen-title {
+            margin: 0 !important;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+            font-size: 28px !important;
+            font-weight: 800 !important;
+            color: #FFFFFF !important;
+            -webkit-text-fill-color: #FFFFFF !important;
+            background: none !important;
+            text-transform: capitalize !important;
+            letter-spacing: -0.6px !important;
+            line-height: 1.15 !important;
+            animation: none !important;
+            text-align: left !important;
         }
-        .music-screen-subtitle {
-            font-size: 0.85rem;
-            color: rgba(255, 255, 255, 0.6);
-            font-weight: 500;
+        .music-screen-subtitle, #levyra-time-greeting {
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+            font-size: 13px !important;
+            color: rgba(255, 255, 255, 0.6) !important;
+            -webkit-text-fill-color: rgba(255, 255, 255, 0.6) !important;
+            background: none !important;
+            text-transform: none !important;
+            animation: none !important;
+            font-weight: 500 !important;
+            text-align: left !important;
+            margin-top: 3px !important;
         }
         .music-screen-header-right {
             display: flex;
@@ -3708,14 +3741,20 @@
             padding: 16px 16px 8px 16px;
         }
         .music-section-title {
-            font-size: 1.15rem;
-            font-weight: 800;
-            color: #FFFFFF;
-            letter-spacing: -0.3px;
-            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif !important;
+            font-size: 16.5px !important;
+            font-weight: 800 !important;
+            color: #FFFFFF !important;
+            -webkit-text-fill-color: #FFFFFF !important;
+            background: none !important;
+            text-transform: none !important;
+            animation: none !important;
+            letter-spacing: -0.3px !important;
+            margin: 0 !important;
             display: flex;
             align-items: center;
             gap: 8px;
+            text-align: left !important;
         }
         .music-section-see-all {
             background: none;
@@ -3782,23 +3821,37 @@
             flex: 1;
             min-width: 0;
             overflow: hidden;
+            text-align: left;
         }
         .music-song-title {
-            color: #FFFFFF;
-            font-size: 0.95rem;
-            font-weight: 600;
+            color: #FFFFFF !important;
+            -webkit-text-fill-color: #FFFFFF !important;
+            background: none !important;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif !important;
+            font-size: 14.5px !important;
+            font-weight: 700 !important;
+            text-transform: none !important;
+            animation: none !important;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+            line-height: 1.25;
             margin-bottom: 2px;
+            text-align: left;
         }
         .music-song-artist {
-            color: rgba(255, 255, 255, 0.6);
-            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.55) !important;
+            -webkit-text-fill-color: rgba(255, 255, 255, 0.55) !important;
+            background: none !important;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif !important;
+            font-size: 12.5px !important;
+            font-weight: 500 !important;
+            text-transform: none !important;
+            animation: none !important;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            font-weight: 500;
+            text-align: left;
         }
         .music-song-now-playing {
             color: #10b981;
@@ -3837,38 +3890,108 @@
         }
         .music-hcarousel::-webkit-scrollbar { display: none; }
         .music-playlist-dive-card {
-            width: 142px;
+            width: 148px;
             flex-shrink: 0;
             cursor: pointer;
-            transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+            transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+            user-select: none;
+            -webkit-user-select: none;
         }
         .music-playlist-dive-card:hover {
-            transform: translateY(-3px);
+            transform: translateY(-4px);
         }
-        .music-playlist-dive-art {
-            width: 142px;
-            height: 142px;
-            border-radius: 14px;
+        .music-playlist-dive-card:active {
+            transform: scale(0.96);
+        }
+        .music-playlist-dive-cover {
+            width: 148px;
+            height: 148px;
+            border-radius: 16px;
+            position: relative;
+            overflow: hidden;
+            margin-bottom: 9px;
+            background: #18181f;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.55);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .music-playlist-dive-img {
+            width: 100%;
+            height: 100%;
             object-fit: cover;
-            background: rgba(255, 255, 255, 0.05);
-            margin-bottom: 8px;
-            box-shadow: 0 8px 22px rgba(0, 0, 0, 0.45);
+            display: block;
+            transition: transform 0.35s ease;
+        }
+        .music-playlist-dive-card:hover .music-playlist-dive-img {
+            transform: scale(1.06);
+        }
+        .music-playlist-dive-overlay {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.05) 50%, rgba(0,0,0,0.45) 100%);
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .music-playlist-dive-tag {
+            font-size: 9px;
+            font-weight: 900;
+            letter-spacing: 0.8px;
+            background: rgba(0, 0, 0, 0.65);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            padding: 3px 7px;
+            border-radius: 6px;
+            color: #FFFFFF;
+            align-self: flex-start;
+            text-transform: uppercase;
+        }
+        .music-playlist-dive-play {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #FFFFFF;
+            color: #000000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            align-self: flex-end;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+            transition: transform 0.2s;
+        }
+        .music-playlist-dive-card:hover .music-playlist-dive-play {
+            transform: scale(1.1);
         }
         .music-playlist-dive-title {
-            font-size: 0.88rem;
-            font-weight: 700;
-            color: #FFFFFF;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif !important;
+            font-size: 13.5px !important;
+            font-weight: 700 !important;
+            color: #FFFFFF !important;
+            -webkit-text-fill-color: #FFFFFF !important;
+            background: none !important;
+            text-transform: none !important;
+            animation: none !important;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+            line-height: 1.25;
+            text-align: left;
         }
         .music-playlist-dive-sub {
-            font-size: 0.75rem;
-            color: rgba(255, 255, 255, 0.5);
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif !important;
+            font-size: 11.5px !important;
+            font-weight: 500 !important;
+            color: rgba(255, 255, 255, 0.55) !important;
+            -webkit-text-fill-color: rgba(255, 255, 255, 0.55) !important;
+            background: none !important;
+            text-transform: none !important;
+            animation: none !important;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
             margin-top: 2px;
+            text-align: left;
         }
 
         /* Charts Tab Elements */
@@ -5478,7 +5601,7 @@
     </div>
 
     <div id="main-content">
-        <div style="display: flex; align-items: center; gap: 12px; cursor: pointer; user-select: none; margin-bottom: 20px;" onclick="document.querySelector('.nav-item').click();">
+        <div id="main-hub-brand-header" style="display: flex; align-items: center; gap: 12px; cursor: pointer; user-select: none; margin-bottom: 20px;" onclick="document.querySelector('.nav-item').click();">
             <img src="images/app-icon.svg" style="width: 38px; height: 38px; border-radius: 10px; box-shadow: 0 4px 12px rgba(255,170,0,0.25);">
             <h1 style="font-family: 'Montserrat', sans-serif; font-size: 1.35rem; font-weight: 900; margin: 0; background: linear-gradient(90deg, #ffffff, #aaaaaa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; letter-spacing: 0.5px;">SRM <span style="color: #ffaa00; -webkit-text-fill-color: initial;">HUB</span></h1>
         </div>
@@ -11914,7 +12037,10 @@ function checkAndShowHolidayBanner(viewId) {
                 studentName = 'Lalit Kishore';
             }
 
-            el.innerText = studentName ? `${greeting}, ${studentName}` : greeting;
+            // Clean numbers and convert ALL-CAPS into clean Title Case
+            const cleanName = (studentName || 'Lalit Kishore').replace(/[0-9]/g, '').trim();
+            const titleCased = cleanName.toLowerCase().split(' ').filter(Boolean).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+            el.innerText = `${greeting}, ${titleCased || 'Lalit Kishore'}`;
         }
 
         // --- AUTHENTIC LEVYRA DOCK & PAGE SWITCHING ---
@@ -12145,11 +12271,48 @@ function checkAndShowHolidayBanner(viewId) {
         }
 
         const DIVE_PLAYLISTS = [
-            { title: "Hits of 2026 (So Far)", sub: "Top Chartbusters", query: "top hits 2026", bg: "linear-gradient(135deg, #1e3a8a, #0f172a)", tag: "HITS OF 2026" },
-            { title: "Uncut Bollywood", sub: "Arijit Singh", query: "arijit singh bollywood hits", bg: "linear-gradient(135deg, #7c2d12, #451a03)", tag: "BOLLYWOOD" },
-            { title: "Bollywood Hitlist", sub: "Shashwat Sachdev", query: "bollywood hitlist new songs", bg: "linear-gradient(135deg, #0e7490, #164e63)", tag: "HITLIST" },
-            { title: "Today's Top Hits", sub: "Global Superstars", query: "billboard hot 100", bg: "linear-gradient(135deg, #831843, #500724)", tag: "TOP HITS" },
-            { title: "RapCaviar", sub: "Hip-Hop Heavyweights", query: "hip hop rap hits", bg: "linear-gradient(135deg, #14532d, #052e16)", tag: "RAP" }
+            {
+                title: "Hits of 2026 (So Far)",
+                sub: "Top Chartbusters",
+                query: "top hits 2026",
+                image: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=500&auto=format&fit=crop&q=80",
+                tag: "HITS OF 2026"
+            },
+            {
+                title: "Uncut Bollywood",
+                sub: "Arijit Singh",
+                query: "arijit singh bollywood hits",
+                image: "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=500&auto=format&fit=crop&q=80",
+                tag: "BOLLYWOOD"
+            },
+            {
+                title: "Bollywood Hitlist",
+                sub: "Shashwat Sachdev",
+                query: "bollywood hitlist new songs",
+                image: "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=500&auto=format&fit=crop&q=80",
+                tag: "HITLIST"
+            },
+            {
+                title: "Punjabi 101",
+                sub: "Karan Aujla, Diljit Dosanjh",
+                query: "punjabi top hits karan aujla diljit dosanjh",
+                image: "https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=500&auto=format&fit=crop&q=80",
+                tag: "PUNJABI"
+            },
+            {
+                title: "South Sensations",
+                sub: "Anirudh, Thaman S",
+                query: "top tamil telugu songs anirudh thaman",
+                image: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=500&auto=format&fit=crop&q=80",
+                tag: "SOUTH HITS"
+            },
+            {
+                title: "Today's Top Hits",
+                sub: "Global Superstars",
+                query: "billboard hot 100",
+                image: "https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=500&auto=format&fit=crop&q=80",
+                tag: "TOP HITS"
+            }
         ];
 
         function renderPlaylistsToDiveInto(container) {
@@ -12158,10 +12321,13 @@ function checkAndShowHolidayBanner(viewId) {
             DIVE_PLAYLISTS.forEach((d) => {
                 html += `
                     <div class="music-playlist-dive-card" onclick="playDivePlaylist('${d.query.replace(/'/g, "\\'")}', '${d.title.replace(/'/g, "\\'")}')">
-                        <div class="music-playlist-dive-cover" style="background:${d.bg};">
-                            <span style="font-size:10px; font-weight:900; letter-spacing:1px; background:rgba(0,0,0,0.5); padding:4px 8px; border-radius:6px; color:#fff;">${d.tag}</span>
-                            <div style="width:36px; height:36px; border-radius:50%; background:#fff; color:#000; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 12px rgba(0,0,0,0.4);">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="#000"><polygon points="6 4 20 12 6 20 6 4"/></svg>
+                        <div class="music-playlist-dive-cover">
+                            <img class="music-playlist-dive-img" src="${d.image}" alt="${escapeHtml(d.title)}" loading="lazy" onerror="this.src='images/app-icon.svg'">
+                            <div class="music-playlist-dive-overlay">
+                                <span class="music-playlist-dive-tag">${d.tag}</span>
+                                <div class="music-playlist-dive-play">
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="#000"><polygon points="6 4 20 12 6 20 6 4"/></svg>
+                                </div>
                             </div>
                         </div>
                         <div class="music-playlist-dive-title">${escapeHtml(d.title)}</div>
@@ -12202,18 +12368,77 @@ function checkAndShowHolidayBanner(viewId) {
         }
 
         const CHARTS_COLLECTIONS = [
-            { title: "Top 100 Live Performances - United States", sub: "Chart", query: "live performances us billboard", bg: "linear-gradient(135deg, #7f1d1d, #1c1917)", header: "WEEKLY TOP 100 LIVE PERFORMANCES" },
-            { title: "Trending 20 United States", sub: "Chart", query: "trending top 20 us hits", bg: "linear-gradient(135deg, #b91c1c, #450a0a)", header: "TRENDING 20" },
-            { title: "Daily Top Music Videos - United States", sub: "Chart", query: "daily top music videos trending", bg: "linear-gradient(135deg, #991b1b, #18181b)", header: "DAILY TOP 100 VIDEOS" },
-            { title: "Top 50 Global", sub: "Chart", query: "global top 50 viral hits", bg: "linear-gradient(135deg, #4c1d95, #1e1b4b)", header: "TOP 50 GLOBAL" }
+            {
+                title: "Top 100 Live Performances - United States",
+                sub: "Chart",
+                query: "live performances us billboard",
+                image: "https://images.unsplash.com/photo-1429962714451-bb934ecdc4ec?w=500&auto=format&fit=crop&q=80",
+                header: "WEEKLY TOP 100 LIVE PERFORMANCES"
+            },
+            {
+                title: "Trending 20 United States",
+                sub: "Chart",
+                query: "trending top 20 us hits",
+                image: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500&auto=format&fit=crop&q=80",
+                header: "TRENDING 20"
+            },
+            {
+                title: "Daily Top Music Videos - United States",
+                sub: "Chart",
+                query: "daily top music videos trending",
+                image: "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=500&auto=format&fit=crop&q=80",
+                header: "DAILY TOP 100 VIDEOS"
+            },
+            {
+                title: "Top 50 Global",
+                sub: "Chart",
+                query: "global top 50 viral hits",
+                image: "https://images.unsplash.com/photo-1465847899084-d164df4dedc6?w=500&auto=format&fit=crop&q=80",
+                header: "TOP 50 GLOBAL"
+            }
         ];
 
         const GENRES_COLLECTIONS = [
-            { title: "Top 50 Latin", sub: "Chart", query: "top 50 latin hits", bg: "#7C3AED", text: "TOP 50 LATIN" },
-            { title: "Top 50 Hard Rock & Metal", sub: "Chart", query: "top 50 rock metal songs", bg: "#374151", text: "TOP 50 METAL" },
-            { title: "Top 50 Pop", sub: "Chart", query: "top 50 pop music videos", bg: "#EC4899", text: "TOP 50 POP" },
-            { title: "Top 50 Hip-Hop & Rap", sub: "Chart", query: "top 50 rap hip hop", bg: "#059669", text: "TOP 50 HIP-HOP" },
-            { title: "Top 50 Bollywood & Desi", sub: "Chart", query: "top 50 bollywood desi hits", bg: "#D97706", text: "TOP 50 DESI" }
+            {
+                title: "Top 50 Latin",
+                sub: "Chart",
+                query: "top 50 latin hits",
+                image: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=500&auto=format&fit=crop&q=80",
+                tint: "rgba(124, 58, 237, 0.75)",
+                text: "TOP 50 LATIN"
+            },
+            {
+                title: "Top 50 Hard Rock & Metal",
+                sub: "Chart",
+                query: "top 50 rock metal songs",
+                image: "https://images.unsplash.com/photo-1498038432885-c6f3f1b912ee?w=500&auto=format&fit=crop&q=80",
+                tint: "rgba(30, 41, 59, 0.8)",
+                text: "TOP 50 METAL"
+            },
+            {
+                title: "Top 50 Pop",
+                sub: "Chart",
+                query: "top 50 pop music videos",
+                image: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=500&auto=format&fit=crop&q=80",
+                tint: "rgba(236, 72, 153, 0.75)",
+                text: "TOP 50 POP"
+            },
+            {
+                title: "Top 50 Hip-Hop & Rap",
+                sub: "Chart",
+                query: "top 50 rap hip hop",
+                image: "https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=500&auto=format&fit=crop&q=80",
+                tint: "rgba(5, 150, 105, 0.75)",
+                text: "TOP 50 HIP-HOP"
+            },
+            {
+                title: "Top 50 Bollywood & Desi",
+                sub: "Chart",
+                query: "top 50 bollywood desi hits",
+                image: "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=500&auto=format&fit=crop&q=80",
+                tint: "rgba(217, 119, 6, 0.8)",
+                text: "TOP 50 DESI"
+            }
         ];
 
         const TOP_ARTISTS = [
@@ -12236,9 +12461,12 @@ function checkAndShowHolidayBanner(viewId) {
             if (chartsCarousel) {
                 chartsCarousel.innerHTML = CHARTS_COLLECTIONS.map(c => `
                     <div class="charts-card" onclick="playDivePlaylist('${c.query.replace(/'/g, "\\'")}', '${c.title.replace(/'/g, "\\'")}')">
-                        <div class="charts-card-cover" style="background:${c.bg};">
-                            <div style="font-size:11px; font-weight:900; letter-spacing:0.5px; line-height:1.2; text-transform:uppercase; color:#fff;">${c.header}</div>
-                            <div style="margin-top:auto; font-size:9px; color:rgba(255,255,255,0.7); text-transform:uppercase; font-weight:700;">${currentMusicCountryName}</div>
+                        <div class="charts-card-cover" style="position:relative; overflow:hidden; border-radius:14px; border:1px solid rgba(255,255,255,0.08); box-shadow:0 8px 24px rgba(0,0,0,0.5);">
+                            <img src="${c.image}" style="width:100%; height:100%; object-fit:cover; position:absolute; inset:0;" alt="${escapeHtml(c.title)}" onerror="this.src='images/app-icon.svg'">
+                            <div style="position:absolute; inset:0; background:linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(185,28,28,0.25) 60%, rgba(0,0,0,0.5) 100%); padding:12px; display:flex; flex-direction:column; justify-content:space-between;">
+                                <div style="font-size:11px; font-weight:900; letter-spacing:0.5px; line-height:1.2; text-transform:uppercase; color:#fff;">${c.header}</div>
+                                <div style="margin-top:auto; font-size:9px; color:rgba(255,255,255,0.7); text-transform:uppercase; font-weight:700;">${currentMusicCountryName}</div>
+                            </div>
                         </div>
                         <div class="charts-card-title">${escapeHtml(c.title)}</div>
                         <div class="charts-card-sub">${escapeHtml(c.sub)}</div>
@@ -12249,9 +12477,12 @@ function checkAndShowHolidayBanner(viewId) {
             if (genresCarousel) {
                 genresCarousel.innerHTML = GENRES_COLLECTIONS.map(g => `
                     <div class="charts-card" onclick="playDivePlaylist('${g.query.replace(/'/g, "\\'")}', '${g.title.replace(/'/g, "\\'")}')">
-                        <div class="charts-card-cover" style="background:${g.bg}; display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center; padding:10px;">
-                            <div style="font-size:14px; font-weight:900; letter-spacing:0.5px; color:#fff;">${g.text}</div>
-                            <div style="font-size:9px; color:rgba(255,255,255,0.8); margin-top:6px; font-weight:600;">${currentMusicCountryName.toUpperCase()}</div>
+                        <div class="charts-card-cover" style="position:relative; overflow:hidden; border-radius:14px; border:1px solid rgba(255,255,255,0.08); box-shadow:0 8px 24px rgba(0,0,0,0.5); display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center;">
+                            <img src="${g.image}" style="width:100%; height:100%; object-fit:cover; position:absolute; inset:0;" alt="${escapeHtml(g.title)}" onerror="this.src='images/app-icon.svg'">
+                            <div style="position:absolute; inset:0; background:${g.tint}; padding:10px; display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center;">
+                                <div style="font-size:14px; font-weight:900; letter-spacing:0.5px; color:#fff;">${g.text}</div>
+                                <div style="font-size:9px; color:rgba(255,255,255,0.85); margin-top:6px; font-weight:700;">${currentMusicCountryName.toUpperCase()}</div>
+                            </div>
                         </div>
                         <div class="charts-card-title">${escapeHtml(g.title)}</div>
                         <div class="charts-card-sub">${escapeHtml(g.sub)}</div>
@@ -13336,19 +13567,21 @@ function checkAndShowHolidayBanner(viewId) {
                     body: JSON.stringify(bodyData)
                 });
                 const data = await res.json();
-                if (data.success && data.tracks && data.tracks.length > 0) {
+                const importedTracks = (data.tracks && data.tracks.length > 0) ? data.tracks : (data.playlist && data.playlist.tracks ? data.playlist.tracks : []);
+                const importedName = data.name || (data.playlist && data.playlist.name) || (currentImportSource.charAt(0).toUpperCase() + currentImportSource.slice(1) + ' Playlist');
+                if (data.success && importedTracks.length > 0) {
                     const newId = 'pl_' + Date.now();
                     if (!userMusicLibrary.playlists) userMusicLibrary.playlists = [];
                     const newPlaylist = {
                         id: newId,
-                        name: data.name || (currentImportSource.charAt(0).toUpperCase() + currentImportSource.slice(1) + ' Playlist'),
+                        name: importedName,
                         created_at: Date.now(),
-                        tracks: data.tracks
+                        tracks: importedTracks
                     };
                     userMusicLibrary.playlists.push(newPlaylist);
                     saveUserMusicLibrary(true);
                     closeImportModal();
-                    showNotification(`✓ Imported ${data.tracks.length} songs into "${newPlaylist.name}"`);
+                    showNotification(`✓ Imported ${importedTracks.length} songs into "${newPlaylist.name}"`);
                     renderPlaylistsOverview();
                     openPlaylistDetail(newId);
                 } else {
