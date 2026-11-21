@@ -228,7 +228,7 @@ class SRMPortalSession:
 
     def load_captcha(self) -> bool:
         try:
-            r = self.session.get(LOGIN_URL, timeout=5)
+            r = self.session.get(LOGIN_URL, timeout=3.5)
         except Exception:
             return False
         text = r.text
@@ -249,18 +249,18 @@ class SRMPortalSession:
 
         self.captcha_page = text
         fields = {}
-        soup = BeautifulSoup(text, "html.parser")
-        form = soup.find("form")
-        if form:
-            for inp in form.find_all("input"):
-                n = inp.get("name")
-                if n:
-                    fields[n] = inp.get("value") or ""
-        else:
-            for inp in re.finditer(r"<input[^>]*name=['\"]([^'\"]+)['\"][^>]*>", text):
-                tag_str = inp.group(0)
-                m_val = re.search(r"value=['\"]([^'\"]*)['\"]", tag_str)
-                fields[inp.group(1)] = m_val.group(1) if m_val else ""
+        for inp in re.finditer(r"<input[^>]*name=['\"]([^'\"]+)['\"][^>]*>", text, re.IGNORECASE):
+            tag_str = inp.group(0)
+            m_val = re.search(r"value=['\"]([^'\"]*)['\"]", tag_str, re.IGNORECASE)
+            fields[inp.group(1)] = m_val.group(1) if m_val else ""
+        if not fields:
+            soup = BeautifulSoup(text, "html.parser")
+            form = soup.find("form")
+            if form:
+                for inp in form.find_all("input"):
+                    n = inp.get("name")
+                    if n:
+                        fields[n] = inp.get("value") or ""
         self.login_form_fields = fields
 
         m_cap = re.search(r"SCaptchaServlet[^'\" ]*", text)
@@ -277,7 +277,7 @@ class SRMPortalSession:
                     "Accept": "image/png, image/jpeg, image/svg+xml, image/*",
                     "Referer": LOGIN_URL,
                 },
-                timeout=5,
+                timeout=3.5,
             )
             if cr.status_code == 200 and cr.content:
                 self.captcha_bytes = cr.content
@@ -308,7 +308,7 @@ class SRMPortalSession:
         fp_body[self.domain_field_name] = dtoken
         fp_body[self.captcha_field_name] = cptoken
 
-        resp = self.session.post(LOGIN_SERVLET, data=fp_body, headers=LOGIN_HEADERS, timeout=8, allow_redirects=False)
+        resp = self.session.post(LOGIN_SERVLET, data=fp_body, headers=LOGIN_HEADERS, timeout=5, allow_redirects=False)
         body = resp.text or ""
         self.last_status = resp.status_code
         self.last_url = str(resp.url)
@@ -364,7 +364,7 @@ class SRMPortalSession:
 
     def get_attendance_html(self) -> Optional[str]:
         try:
-            r = self.session.get(ATT_URL, headers={"Referer": HRD_URL}, timeout=8)
+            r = self.session.get(ATT_URL, headers={"Referer": HRD_URL}, timeout=5)
             url_l = str(r.url).lower()
             txt_l = r.text.lower()
             if (
@@ -382,7 +382,7 @@ class SRMPortalSession:
 
     def get_marks_html(self) -> Optional[str]:
         try:
-            r = self.session.get(MARKS_URL, headers={"Referer": HRD_URL}, timeout=8)
+            r = self.session.get(MARKS_URL, headers={"Referer": HRD_URL}, timeout=5)
             if r.status_code == 200 and "table" in r.text.lower():
                 return r.text
         except Exception:
@@ -392,7 +392,7 @@ class SRMPortalSession:
     def get_inner_marks_html(self, subject_id: str, status: str = "2") -> Optional[str]:
         try:
             payload = {"iden": "1", "hdnSubjectId": subject_id, "status": status}
-            r = self.session.post(INNER_MARKS_URL, data=payload, headers={"Referer": MARKS_URL}, timeout=5)
+            r = self.session.post(INNER_MARKS_URL, data=payload, headers={"Referer": MARKS_URL}, timeout=4)
             if r.status_code == 200:
                 return r.text
         except Exception:
@@ -931,8 +931,8 @@ def fetch_portal_data(username: str, password: str, courses_list: Optional[List[
     login_attempts_made = 0
     courses_list = courses_list or []
 
-    # Up to 3 OCR attempts with strict 6-character validation
-    for attempt in range(1, 4):
+    # Up to 4 OCR attempts with strict 6-character validation
+    for attempt in range(1, 5):
         try:
             portal = SRMPortalSession()
             if not portal.load_captcha() or not portal.captcha_bytes:
@@ -941,17 +941,13 @@ def fetch_portal_data(username: str, password: str, courses_list: Optional[List[
                 continue
             solved = solve_captcha_bytes(portal.captcha_bytes)
             
-            # If predicted captcha is not strictly 6 alphanumeric characters, re-fetch once
-            if (not solved or len(solved) != 6) and portal.load_captcha() and portal.captcha_bytes:
-                solved = solve_captcha_bytes(portal.captcha_bytes)
-            
             if not solved or len(solved) != 6:
                 last_reason = "captcha_solve_failed"
                 time.sleep(0.05)
                 continue
 
             login_attempts_made += 1
-            print(f"[{netid}] [PORTAL-OCR] Attempt {attempt}/3 predicted captcha: '{solved}'")
+            print(f"[{netid}] [PORTAL-OCR] Attempt {attempt}/4 predicted captcha: '{solved}'")
             res = portal.login_attempt(netid, password, solved)
             if res.get("ok"):
                 att_html = res.get("att_html")
@@ -969,11 +965,11 @@ def fetch_portal_data(username: str, password: str, courses_list: Optional[List[
                 print(f"[{netid}] [PORTAL] Auth stopped ({reason}): {msg}")
                 return {"success": False, "error": msg, "reason": "invalid_credentials" if reason == "invalid_credentials_fatal" else reason}
             elif reason == "wrong_captcha":
-                print(f"[{netid}] [PORTAL] Captcha incorrect on attempt {attempt}/3, trying next...")
+                print(f"[{netid}] [PORTAL] Captcha incorrect on attempt {attempt}/4, trying next...")
                 time.sleep(0.05)
                 continue
             else:
-                print(f"[{netid}] [PORTAL] Attempt {attempt}/3 rejected ({reason}: {msg}), trying next OCR attempt...")
+                print(f"[{netid}] [PORTAL] Attempt {attempt}/4 rejected ({reason}: {msg}), trying next OCR attempt...")
                 time.sleep(0.05)
                 continue
         except Exception as e:
@@ -1000,20 +996,14 @@ def fetch_portal_data(username: str, password: str, courses_list: Optional[List[
             "reason": "invalid_credentials"
         }
 
-    # Parallel fetch of Attendance (if not already fetched in fallback), Marks, and Profile
-    with concurrent.futures.ThreadPoolExecutor(max_workers=3) as ex:
-        f_att = ex.submit(active_portal.get_attendance_html) if not att_html else None
-        f_marks = ex.submit(active_portal.get_marks_html)
-        f_prof = ex.submit(active_portal.get_profile_html)
-
-        if f_att:
-            att_html = f_att.result()
-        marks_html = f_marks.result()
-        prof_html = f_prof.result()
+    # Streamlined fetch: att_html is already extracted upon login; marks is a fast single GET
+    if not att_html:
+        att_html = active_portal.get_attendance_html()
+    marks_html = active_portal.get_marks_html()
 
     att_list = _parse_portal_attendance(att_html, courses_list)
     marks_list = _parse_portal_marks(active_portal, marks_html, courses_list, att_list=att_list)
-    profile = _parse_portal_profile(prof_html, netid)
+    profile = _parse_portal_profile(None, netid)
 
     print(
         f"[{netid}] [PORTAL] Completed in {time.time() - start_ts:.2f}s "

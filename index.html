@@ -8505,7 +8505,13 @@
                         const pRes = await fetch(`${BACKEND_URL}/api/portal_sync`, {
                             method: "POST",
                             headers: { "Content-Type": "application/json", "X-App-Key": "srm-hub-protected-x9f2" },
-                            body: JSON.stringify({ regNo: cleanNetId, portalPwd: portalPwd, acadPwd: pwd || localStorage.getItem('syncPwd') || '', batch: batch })
+                            body: JSON.stringify({ 
+                                regNo: cleanNetId, 
+                                portalPwd: portalPwd, 
+                                acadPwd: pwd || localStorage.getItem('syncPwd') || '', 
+                                batch: batch,
+                                courses: JSON.parse(localStorage.getItem('squadCourses') || '[]')
+                            })
                         });
                         const pData = await pRes.json();
                         if (pData.success) {
