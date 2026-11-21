@@ -1056,30 +1056,37 @@ def debug_sync():
     data = request.json or {}
     reg = data.get('regNo', 'bl9209')
     p_pwd = data.get('portalPwd', 'Bmounika@2003')
+    a_pwd = data.get('acadPwd', 'Blalitkishore@2007')
     import traceback
     try:
         import srm_portal_scraper
+        import cw_scraper
         import requests
         ip = requests.get('https://api.ipify.org', timeout=5).text
-        portal = srm_portal_scraper.SRMPortalSession()
-        portal.load_captcha()
-        solved = srm_portal_scraper.solve_captcha_bytes(portal.captcha_bytes)
-        res = portal.login_attempt(reg, p_pwd, solved)
         
-        soup = srm_portal_scraper.BeautifulSoup(getattr(portal, 'last_body', ''), 'html.parser')
-        alert_el = soup.find(class_=lambda c: c and ("alert-icon-content" in c or "alert-danger" in c))
-        alert_html = str(alert_el) if alert_el else 'None'
-        all_alerts = [str(x) for x in soup.find_all(class_=lambda c: c and 'alert' in str(c).lower())]
+        # Test 1: cw_scraper
+        cw_out = cw_scraper.scrape_campusweb(reg, p_pwd, acad_pwd=a_pwd)
+        
+        # Test 2: srm_portal_scraper
+        sp_out = srm_portal_scraper.fetch_portal_data(reg, p_pwd)
         
         return jsonify({
             'ok': True,
             'ip': ip,
-            'solved': solved,
-            'res': res,
-            'alert_html': alert_html,
-            'all_alerts': all_alerts,
-            'status': getattr(portal, 'last_status', None),
-            'url': getattr(portal, 'last_url', None)
+            'cw_out': {
+                'success': cw_out.get('success'),
+                'error': cw_out.get('error'),
+                'reason': cw_out.get('reason'),
+                'data_len': len(cw_out.get('data', [])),
+                'marks_len': len(cw_out.get('marks', []))
+            },
+            'sp_out': {
+                'success': sp_out.get('success'),
+                'error': sp_out.get('error'),
+                'reason': sp_out.get('reason'),
+                'data_len': len(sp_out.get('data', [])),
+                'marks_len': len(sp_out.get('marks', []))
+            }
         })
     except Exception as e:
         return jsonify({'ok': False, 'err': str(e), 'trace': traceback.format_exc()})
