@@ -888,21 +888,30 @@ def fetch_portal_data(username: str, password: str) -> Dict[str, Any]:
     last_msg = "Could not authenticate with SRM Student Portal"
     login_attempts_made = 0
 
-    # Up to 4 OCR attempts (matching Ratio-D architecture)
-    for attempt in range(1, 5):
+    # Up to 5 OCR attempts with strict 6-character validation
+    for attempt in range(1, 6):
         try:
             portal = SRMPortalSession()
             if not portal.load_captcha() or not portal.captcha_bytes:
                 last_reason = "captcha_load_failed"
-                time.sleep(0.4)
-                continue
-            solved = solve_captcha_bytes(portal.captcha_bytes)
-            if not solved:
-                last_reason = "captcha_solve_failed"
                 time.sleep(0.3)
                 continue
+            solved = solve_captcha_bytes(portal.captcha_bytes)
+            
+            # If predicted captcha is not strictly 6 alphanumeric characters, re-fetch up to 3 times
+            captcha_refetch = 0
+            while (not solved or len(solved) != 6) and captcha_refetch < 3:
+                captcha_refetch += 1
+                if portal.load_captcha() and portal.captcha_bytes:
+                    solved = solve_captcha_bytes(portal.captcha_bytes)
+            
+            if not solved or len(solved) != 6:
+                last_reason = "captcha_solve_failed"
+                time.sleep(0.2)
+                continue
+
             login_attempts_made += 1
-            print(f"[{netid}] [PORTAL-OCR] Attempt {attempt}/4 predicted captcha: '{solved}'")
+            print(f"[{netid}] [PORTAL-OCR] Attempt {attempt}/5 predicted captcha: '{solved}'")
             res = portal.login_attempt(netid, password, solved)
             if res.get("ok"):
                 att_html = res.get("att_html")
@@ -920,11 +929,11 @@ def fetch_portal_data(username: str, password: str) -> Dict[str, Any]:
                 print(f"[{netid}] [PORTAL] Auth stopped ({reason}): {msg}")
                 return {"success": False, "error": msg, "reason": "invalid_credentials" if reason == "invalid_credentials_fatal" else reason}
             elif reason == "wrong_captcha":
-                print(f"[{netid}] [PORTAL] Captcha incorrect on attempt {attempt}/4, trying next...")
+                print(f"[{netid}] [PORTAL] Captcha incorrect on attempt {attempt}/5, trying next...")
                 time.sleep(0.3)
                 continue
             else:
-                print(f"[{netid}] [PORTAL] Attempt {attempt}/4 rejected ({reason}: {msg}), trying next OCR attempt...")
+                print(f"[{netid}] [PORTAL] Attempt {attempt}/5 rejected ({reason}: {msg}), trying next OCR attempt...")
                 time.sleep(0.3)
                 continue
         except Exception as e:

@@ -573,31 +573,11 @@ def get_portal_data_with_fallback(net_id, portal_pwd, acad_pwd=None):
 
     p_res = None
 
-    # 1. Primary: CampusWeb API (fast sub-4s live attendance & marks without CAPTCHA solver latency)
-    try:
-        import cw_scraper
-        print(f"[{clean_id}] Initiating live Student Portal sync via CampusWeb API...")
-        cw_res = cw_scraper.scrape_campusweb(clean_id, portal_pwd, acad_pwd=acad_pwd)
-        if cw_res and cw_res.get('success'):
-            print(f"[{clean_id}] [CAMPUSWEB] CampusWeb API succeeded with live attendance & marks!")
-            p_res = {
-                'success': True,
-                'data': cw_res.get('attendance') or cw_res.get('data') or [],
-                'marks': cw_res.get('marks', []),
-                'profile': cw_res.get('profile', {}),
-                'source': 'campusweb_api'
-            }
-        else:
-            print(f"[{clean_id}] CampusWeb attempt returned: {(cw_res or {}).get('error')}")
-            p_res = cw_res
-    except Exception as cwe:
-        print(f"[{clean_id}] CampusWeb exception: {cwe}")
-
-    # 2. Secondary fallback: Direct sp.srmist.edu.in scraper if CampusWeb failed or returned no data
-    if not (p_res and p_res.get('success')) and portal_pwd:
+    # 1. Primary: Direct sp.srmist.edu.in scraper (fast, authentic live university data with Ratio-D TinyCRNN CAPTCHA solver)
+    if portal_pwd:
         try:
             import srm_portal_scraper
-            print(f"[{clean_id}] Trying direct sp.srmist.edu.in scraper fallback...")
+            print(f"[{clean_id}] Initiating live Student Portal sync via sp.srmist.edu.in...")
             sp_res = srm_portal_scraper.fetch_portal_data(clean_id, portal_pwd)
             if sp_res and sp_res.get('success'):
                 print(f"[{clean_id}] [PORTAL] Direct Student Portal sync succeeded!")
@@ -607,6 +587,31 @@ def get_portal_data_with_fallback(net_id, portal_pwd, acad_pwd=None):
                 p_res = sp_res
         except Exception as se:
             print(f"[{clean_id}] Direct portal scrape exception: {se}")
+
+    # 2. Secondary: CampusWeb API sync (used when direct portal failed, rate-limited, or student only provided Academia password)
+    if not (p_res and p_res.get('success')):
+        try:
+            import cw_scraper
+            print(f"[{clean_id}] Trying CampusWeb API sync...")
+            cw_res = cw_scraper.scrape_campusweb(clean_id, portal_pwd, acad_pwd=acad_pwd)
+            if cw_res and cw_res.get('success'):
+                print(f"[{clean_id}] [CAMPUSWEB] CampusWeb sync succeeded with live attendance & marks!")
+                p_res = {
+                    'success': True,
+                    'data': cw_res.get('attendance') or cw_res.get('data') or [],
+                    'marks': cw_res.get('marks', []),
+                    'profile': cw_res.get('profile', {}),
+                    'source': 'campusweb_api'
+                }
+            elif cw_res and not (p_res and p_res.get('success')):
+                print(f"[{clean_id}] CampusWeb attempt returned: {(cw_res or {}).get('error')}")
+                # Only set p_res if direct portal was not attempted or returned generic error
+                if not p_res:
+                    p_res = cw_res
+                elif cw_res.get('reason') in ('invalid_credentials', 'rate_limited') and p_res.get('reason') not in ('invalid_credentials', 'account_locked'):
+                    p_res = cw_res
+        except Exception as cwe:
+            print(f"[{clean_id}] CampusWeb exception: {cwe}")
 
     # 3. Augmentation: if one source returned data with 0 attendance or 0 marks, augment from the other
     if p_res and p_res.get('success'):
