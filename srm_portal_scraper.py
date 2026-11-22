@@ -342,16 +342,18 @@ class SRMPortalSession:
                 return {"ok": False, "reason": "account_locked", "message": alert_text}
             if any(k in blob for k in ["captcha", "verification code", "security code"]):
                 return {"ok": False, "reason": "wrong_captcha", "message": alert_text}
-            if any(k in blob for k in ["credential", "password", "user id", "userid", "attempts remaining", "attempt remaining", "login attempt", "invalid login", "unsuccessful"]):
-                return {"ok": False, "reason": "invalid_credentials_fatal", "message": alert_text}
-            return {"ok": False, "reason": "invalid_credentials_fatal", "message": alert_text}
+            if any(k in blob for k in ["attempts remaining", "attempt remaining", "0 out of 3"]):
+                return {"ok": False, "reason": "invalid_credentials", "message": alert_text}
+            # sp.srmist.edu.in emits 'Invalid credentials' for both off-by-one OCR captcha predictions and wrong passwords.
+            # Mark it retryable so Prewarmed Attempt 2 and Attempt 3 can succeed.
+            return {"ok": False, "reason": "credential_or_captcha_mismatch", "message": alert_text}
 
         body_lower = (body or "").lower()
         if "invalid captcha" in body_lower or "captcha" in body_lower:
             return {"ok": False, "reason": "wrong_captcha", "message": "Invalid captcha."}
-        if any(k in body_lower for k in ["invalid credential", "invalid login", "attempts remaining", "user id or password entered is invalid"]):
-            return {"ok": False, "reason": "invalid_credentials_fatal", "message": "Invalid NetID or Student Portal password."}
-        return {"ok": False, "reason": "wrong_captcha", "message": "Student Portal verification failed"}
+        if "locked" in body_lower:
+            return {"ok": False, "reason": "account_locked", "message": "Account temporarily locked."}
+        return {"ok": False, "reason": "credential_or_captcha_mismatch", "message": "Invalid credentials or verification code."}
 
     def get_attendance_html(self) -> Optional[str]:
         try:
@@ -953,13 +955,16 @@ def fetch_portal_data(username: str, password: str, courses_list: Optional[List[
         msg = res.get("message", "Invalid Student Portal credentials")
         last_reason = reason
         last_msg = msg
-        if reason in ("account_locked", "invalid_credentials_fatal"):
+        if reason == "account_locked":
             print(f"[{netid}] [PORTAL] Auth stopped ({reason}): {msg}")
-            return {"success": False, "error": msg, "reason": "invalid_credentials" if reason == "invalid_credentials_fatal" else reason}
+            return {"success": False, "error": msg, "reason": "account_locked"}
 
-    # Phase 2: If prewarmed attempts failed only on captcha, do 1 quick fresh retry
-    if not active_portal and last_reason not in ("account_locked", "invalid_credentials_fatal"):
-        for attempt in [3]:
+    # Phase 2: If prewarmed attempts did not succeed, do quick fresh retry
+    if not active_portal and last_reason != "account_locked":
+        fresh_attempts = [3] if login_attempts_made >= 2 else [login_attempts_made + 1, login_attempts_made + 2]
+        for attempt in fresh_attempts:
+            if active_portal:
+                break
             try:
                 portal = SRMPortalSession()
                 if not portal.load_captcha() or not portal.captcha_bytes:
@@ -971,7 +976,7 @@ def fetch_portal_data(username: str, password: str, courses_list: Optional[List[
                     continue
 
                 login_attempts_made += 1
-                print(f"[{netid}] [PORTAL-OCR] Fresh Attempt {attempt}/3 predicted captcha: '{solved}'")
+                print(f"[{netid}] [PORTAL-OCR] Fresh Attempt {attempt} predicted captcha: '{solved}'")
                 res = portal.login_attempt(netid, password, solved)
                 if res.get("ok"):
                     att_html = res.get("att_html")
@@ -983,9 +988,9 @@ def fetch_portal_data(username: str, password: str, courses_list: Optional[List[
                 msg = res.get("message", "Invalid Student Portal credentials")
                 last_reason = reason
                 last_msg = msg
-                if reason in ("account_locked", "invalid_credentials_fatal"):
+                if reason == "account_locked":
                     print(f"[{netid}] [PORTAL] Auth stopped ({reason}): {msg}")
-                    return {"success": False, "error": msg, "reason": "invalid_credentials" if reason == "invalid_credentials_fatal" else reason}
+                    return {"success": False, "error": msg, "reason": "account_locked"}
             except Exception as e:
                 print(f"[{netid}] [PORTAL] Attempt {attempt} error: {e}")
                 continue

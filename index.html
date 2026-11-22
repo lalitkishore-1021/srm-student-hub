@@ -5511,9 +5511,12 @@
             </div>
             
             <h2 style="font-family: 'Montserrat', sans-serif; font-size: 1.15rem; font-weight: 800; color: #fff; margin: 0 0 4px 0; letter-spacing: 0.3px;">Sync Attendance &amp; Marks</h2>
-            <p style="font-size: 0.78rem; color: var(--text-sub); margin: 0 0 20px 0;">
+            <p style="font-size: 0.78rem; color: var(--text-sub); margin: 0 0 12px 0;">
                 Enter your Student Portal or Academia password to sync live attendance &amp; marks
             </p>
+            <div style="font-size: 0.74rem; color: #ffaa00; margin: 0 0 16px 0; line-height: 1.45; background: rgba(255,170,0,0.08); padding: 8px 12px; border-radius: 10px; border: 1px solid rgba(255,170,0,0.22); text-align: left;">
+                <strong>Notice:</strong> Dual-server sync is active. Both Student Portal and Academia passwords now authenticate and sync your records seamlessly.
+            </div>
             
             <div style="display: flex; flex-direction: column; gap: 12px; text-align: left;">
                 <div class="login-input-wrapper" style="margin: 0; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px;">
@@ -5634,6 +5637,20 @@
                 </div>
 
                 <div id="auth-dashboard" style="display: none;">
+                    <div id="admin-apology-banner" style="display:none; margin: 0 0 16px 0; padding: 14px 16px; background: linear-gradient(135deg, rgba(255, 170, 0, 0.12), rgba(255, 107, 0, 0.08)); border: 1px solid rgba(255, 170, 0, 0.35); border-radius: 16px; justify-content: space-between; align-items: flex-start; gap: 12px; box-shadow: 0 4px 18px rgba(0,0,0,0.25);">
+                        <div style="display:flex; align-items:flex-start; gap:12px;">
+                            <div style="width:36px; height:36px; border-radius:10px; background:rgba(255, 170, 0, 0.2); display:flex; align-items:center; justify-content:center; color:#ffaa00; flex-shrink:0; margin-top:2px;">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                            </div>
+                            <div>
+                                <div style="font-weight:800; font-size:13px; color:#ffaa00; text-transform:uppercase; letter-spacing:0.5px;">Announcement from Lalit (Admin)</div>
+                                <div style="font-size:12px; color:var(--text-main); line-height:1.45; margin-top:4px;">
+                                    We sincerely apologize for the attendance and marks sync disruption during peak hours. The synchronization engine has been upgraded with multi-attempt verification and instant server failover. You can now use your Student Portal password or Academia password to sync your live records.
+                                </div>
+                            </div>
+                        </div>
+                        <button type="button" onclick="dismissAdminApology()" style="background:transparent; color:var(--text-sub); border:none; padding:2px 6px; cursor:pointer; font-size:18px; line-height:1; flex-shrink:0;">&times;</button>
+                    </div>
                     <div id="notif-permission-banner" style="display:none; margin: 0 0 16px 0; padding: 13px 15px; background: linear-gradient(135deg, rgba(56,189,248,0.12), rgba(30,58,138,0.22)); border: 1px solid rgba(56,189,248,0.3); border-radius: 16px; justify-content: space-between; align-items: center; gap: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.3);">
                         <div style="display:flex; align-items:center; gap:12px;">
                             <div style="width:36px; height:36px; border-radius:10px; background:rgba(56,189,248,0.2); display:flex; align-items:center; justify-content:center; color:#38bdf8; flex-shrink:0;">
@@ -7661,6 +7678,7 @@
                 document.getElementById('advisors-section').style.display = 'block';
                 if (footerEl) footerEl.style.display = 'block';
                 if (aiFabEl) aiFabEl.classList.remove('hidden-fab');
+                checkAdminApology();
             } else {
                 document.getElementById('unauth-hero').style.display = 'block';
                 document.getElementById('auth-dashboard').style.display = 'none';
@@ -8075,7 +8093,8 @@
             
             // Auto populate clean NetID without @srmist.edu.in
             const savedProf = JSON.parse(localStorage.getItem('squadProfile') || '{}');
-            let rawId = savedProf.net_id || savedProf.netId || localStorage.getItem('syncPortalNetId') || localStorage.getItem('syncRegNo') || (document.getElementById('srm-reg') ? document.getElementById('srm-reg').value : '') || '';
+            let currentNet = (typeof getCurrentNetId === 'function' ? getCurrentNetId() : '') || (localStorage.getItem('syncRegNo') || '').split('@')[0].trim().toLowerCase();
+            let rawId = currentNet || savedProf.net_id || savedProf.netId || localStorage.getItem('syncPortalNetId') || (document.getElementById('srm-reg') ? document.getElementById('srm-reg').value : '') || '';
             let cleanNetId = rawId.split('@')[0].trim().toLowerCase();
             
             // Auto resolve if rawId is RA... number
@@ -19713,6 +19732,22 @@ function predictDateRangeUI() {
             });
         };
 
+        window.dismissAdminApology = function() {
+            const banner = document.getElementById('admin-apology-banner');
+            if (banner) banner.style.display = 'none';
+            localStorage.setItem('admin_apology_dismissed_v1', 'true');
+        };
+
+        function checkAdminApology() {
+            const banner = document.getElementById('admin-apology-banner');
+            if (!banner) return;
+            if (localStorage.getItem('admin_apology_dismissed_v1') !== 'true') {
+                banner.style.display = 'flex';
+            } else {
+                banner.style.display = 'none';
+            }
+        }
+
         window.dismissNotifBanner = function() {
             const banner = document.getElementById('notif-permission-banner');
             if (banner) banner.style.display = 'none';
@@ -19732,6 +19767,7 @@ function predictDateRangeUI() {
 
         // Initialize Background Service & auto prompt notifications on load
         window.addEventListener('load', () => {
+            setTimeout(checkAdminApology, 100);
             setTimeout(checkAndShowNotificationBanner, 2000);
             setTimeout(initBackgroundPushService, 3500);
         });

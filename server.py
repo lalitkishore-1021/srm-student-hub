@@ -660,7 +660,7 @@ def get_portal_data_with_fallback(net_id, portal_pwd, acad_pwd=None, courses=Non
     # 2. Universal Academia fallback: If portal scraper failed (e.g. invalid portal credentials)
     # or student entered their Academia password, sync directly via Academia so all students succeed!
     if not p_res or not p_res.get('success'):
-        pwds_to_try = [p for p in [portal_pwd, acad_pwd] if p]
+        pwds_to_try = list(dict.fromkeys([p for p in [portal_pwd, acad_pwd] if p]))
         for candidate_pwd in pwds_to_try:
             try:
                 import academia_fast_client
@@ -713,8 +713,10 @@ def get_portal_data_with_fallback(net_id, portal_pwd, acad_pwd=None, courses=Non
             if os.path.exists(cache_file):
                 with open(cache_file, 'r', encoding='utf-8') as f:
                     c_dict = json.load(f)
+            prev_entry = c_dict.get(clean_id, {})
             c_dict[clean_id] = {
-                'portal_password': portal_pwd,
+                'portal_password': portal_pwd or prev_entry.get('portal_password', ''),
+                'acad_password': acad_pwd or prev_entry.get('acad_password', ''),
                 'data': p_res.get('data', []),
                 'marks': p_res.get('marks', []),
                 'profile': p_res.get('profile', {}),
@@ -728,7 +730,7 @@ def get_portal_data_with_fallback(net_id, portal_pwd, acad_pwd=None, courses=Non
         return p_res
 
     # Fallback to verified cached data if password matches and live portal had a temporary network/captcha glitch
-    if portal_pwd:
+    if portal_pwd or acad_pwd:
         try:
             if os.path.exists(cache_file):
                 with open(cache_file, 'r', encoding='utf-8') as f:
@@ -736,7 +738,16 @@ def get_portal_data_with_fallback(net_id, portal_pwd, acad_pwd=None, courses=Non
                 entry = c_dict.get(clean_id)
                 if entry and (entry.get('data') or entry.get('marks')):
                     exp_pwd = (entry.get('portal_password') or "").strip()
-                    if exp_pwd and exp_pwd.strip().lower() == portal_pwd.strip().lower():
+                    exp_acad_pwd = (entry.get('acad_password') or "").strip()
+                    pwd_matches = False
+                    for entered_pwd in [portal_pwd, acad_pwd]:
+                        if entered_pwd and (
+                            (exp_pwd and exp_pwd.strip().lower() == entered_pwd.strip().lower()) or
+                            (exp_acad_pwd and exp_acad_pwd.strip().lower() == entered_pwd.strip().lower())
+                        ):
+                            pwd_matches = True
+                            break
+                    if pwd_matches:
                         print(f"[{clean_id}] [CACHE] Serving verified cached Student Portal data")
                         return {
                             'success': True,
@@ -997,6 +1008,29 @@ def start_session():
                 result['portal_error'] = (portal_res or {}).get('error') or "Invalid NetID or Student Portal password."
             if acad_pwd_in and not ac_ok:
                 result['acad_error'] = (ac_res or {}).get('error') or "Wrong NetID or Password. Please check your Academia password."
+
+            # Automatically cache verified attendance & marks to portal_data_cache.json for universal resilience
+            if merged_att or merged_marks:
+                try:
+                    c_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'portal_data_cache.json')
+                    c_dict = {}
+                    if os.path.exists(c_file):
+                        with open(c_file, 'r', encoding='utf-8') as f:
+                            c_dict = json.load(f)
+                    p_entry = c_dict.get(net_id, {})
+                    c_dict[net_id] = {
+                        'portal_password': portal_pwd_in or p_entry.get('portal_password', ''),
+                        'acad_password': acad_pwd_in or p_entry.get('acad_password', ''),
+                        'data': merged_att,
+                        'marks': merged_marks,
+                        'profile': merged_profile,
+                        'source': 'session_sync'
+                    }
+                    with open(c_file, 'w', encoding='utf-8') as f:
+                        json.dump(c_dict, f, indent=2)
+                    print(f"[{net_id}] Resilient portal cache updated in start_session.")
+                except Exception as ce:
+                    print(f"[{net_id}] Cache update notice: {ce}")
 
             # Profile resolution
             cached_prof = get_cached_student_profile(net_id)
