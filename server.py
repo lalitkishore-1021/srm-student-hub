@@ -672,9 +672,12 @@ def get_portal_data_with_fallback(net_id, portal_pwd, acad_pwd=None, courses=Non
                 with open(cache_file, 'r', encoding='utf-8') as f:
                     c_dict = json.load(f)
             prev_entry = c_dict.get(clean_id, {})
+            import hashlib
+            p_hash = hashlib.sha256(portal_pwd.strip().encode('utf-8')).hexdigest() if portal_pwd else prev_entry.get('portal_pwd_hash', '')
+            a_hash = hashlib.sha256(acad_pwd.strip().encode('utf-8')).hexdigest() if acad_pwd else prev_entry.get('acad_pwd_hash', '')
             c_dict[clean_id] = {
-                'portal_password': portal_pwd or prev_entry.get('portal_password', ''),
-                'acad_password': acad_pwd or prev_entry.get('acad_password', ''),
+                'portal_pwd_hash': p_hash,
+                'acad_pwd_hash': a_hash,
                 'data': p_res.get('data', []),
                 'marks': p_res.get('marks', []),
                 'profile': p_res.get('profile', {}),
@@ -695,14 +698,16 @@ def get_portal_data_with_fallback(net_id, portal_pwd, acad_pwd=None, courses=Non
                     c_dict = json.load(f)
                 entry = c_dict.get(clean_id)
                 if entry and (entry.get('data') or entry.get('marks')):
-                    exp_pwd = (entry.get('portal_password') or "").strip()
-                    exp_acad_pwd = (entry.get('acad_password') or "").strip()
+                    import hashlib
+                    exp_hashes = {entry.get('portal_pwd_hash'), entry.get('acad_pwd_hash')} - {None, ''}
+                    # Also check legacy plain passwords if present
+                    legacy_pwds = {entry.get('portal_password'), entry.get('acad_password')} - {None, ''}
                     pwd_matches = False
                     for entered_pwd in [portal_pwd, acad_pwd]:
-                        if entered_pwd and (
-                            (exp_pwd and exp_pwd.strip().lower() == entered_pwd.strip().lower()) or
-                            (exp_acad_pwd and exp_acad_pwd.strip().lower() == entered_pwd.strip().lower())
-                        ):
+                        if not entered_pwd:
+                            continue
+                        e_hash = hashlib.sha256(entered_pwd.strip().encode('utf-8')).hexdigest()
+                        if e_hash in exp_hashes or any(lp.strip().lower() == entered_pwd.strip().lower() for lp in legacy_pwds):
                             pwd_matches = True
                             break
                     if pwd_matches:
@@ -976,9 +981,12 @@ def start_session():
                         with open(c_file, 'r', encoding='utf-8') as f:
                             c_dict = json.load(f)
                     p_entry = c_dict.get(net_id, {})
+                    import hashlib
+                    p_h = hashlib.sha256(portal_pwd_in.strip().encode('utf-8')).hexdigest() if portal_pwd_in else p_entry.get('portal_pwd_hash', '')
+                    a_h = hashlib.sha256(acad_pwd_in.strip().encode('utf-8')).hexdigest() if acad_pwd_in else p_entry.get('acad_pwd_hash', '')
                     c_dict[net_id] = {
-                        'portal_password': portal_pwd_in or p_entry.get('portal_password', ''),
-                        'acad_password': acad_pwd_in or p_entry.get('acad_password', ''),
+                        'portal_pwd_hash': p_h,
+                        'acad_pwd_hash': a_h,
                         'data': merged_att,
                         'marks': merged_marks,
                         'profile': merged_profile,

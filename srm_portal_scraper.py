@@ -176,11 +176,11 @@ def solve_captcha_bytes(image_bytes: bytes) -> Optional[str]:
         return None
 
 
-def _telemetry_payload() -> Dict[str, Any]:
-    now = int(time.time() * 1000)
-    start = now - random.randint(4000, 9000)
+def _telemetry_payload(start_ms: int, now_ms: int) -> Dict[str, Any]:
+    time_on_page = max(2000, now_ms - start_ms)
+    typing_speed = min(time_on_page - 500, random.randint(1800, 3200))
     return {
-        "startTime": start,
+        "startTime": start_ms,
         "currentDomain": "sp.srmist.edu.in",
         "timezoneOffset": -330,
         "screenWidth": 1366,
@@ -188,19 +188,19 @@ def _telemetry_payload() -> Dict[str, Any]:
         "colorDepth": 24,
         "devicePixelRatio": 1,
         "platform": "Win32",
-        "userAgent": HEADERS["User-Agent"],
+        "userAgent": LOGIN_HEADERS["User-Agent"],
         "language": "en-US",
         "hardwareConcurrency": 8,
         "deviceMemory": 8,
         "touchSupport": False,
         "webdriver": False,
-        "mouseClicks": random.randint(3, 7),
-        "mouseMovements": random.randint(12, 28),
-        "keystrokeCount": random.randint(24, 38),
-        "typingSpeedMs": random.randint(2600, 5200),
+        "mouseClicks": random.randint(3, 6),
+        "mouseMovements": random.randint(12, 25),
+        "keystrokeCount": random.randint(22, 34),
+        "typingSpeedMs": typing_speed,
         "canvasHash": format(random.randint(0, 0x7FFFFFFF), "06x"),
-        "submitTime": now,
-        "timeOnPageMs": now - start,
+        "submitTime": now_ms,
+        "timeOnPageMs": time_on_page,
     }
 
 
@@ -225,6 +225,7 @@ class SRMPortalSession:
         self.random_delimiter = "0000"
         self.captcha_bytes = None
         self.load_ms = None
+        self.server_ts = None
 
     def load_captcha(self) -> bool:
         try:
@@ -248,13 +249,15 @@ class SRMPortalSession:
         self.random_delimiter = m_delim.group(1) if m_delim else "0000"
 
         self.captcha_page = text
+        # Strip HTML comments before extracting form input fields
+        clean_text = re.sub(r"<!--.*?-->", "", text, flags=re.DOTALL)
         fields = {}
-        for inp in re.finditer(r"<input[^>]*name=['\"]([^'\"]+)['\"][^>]*>", text, re.IGNORECASE):
+        for inp in re.finditer(r"<input[^>]*name=['\"]([^'\"]+)['\"][^>]*>", clean_text, re.IGNORECASE):
             tag_str = inp.group(0)
             m_val = re.search(r"value=['\"]([^'\"]*)['\"]", tag_str, re.IGNORECASE)
             fields[inp.group(1)] = m_val.group(1) if m_val else ""
         if not fields:
-            soup = BeautifulSoup(text, "html.parser")
+            soup = BeautifulSoup(clean_text, "html.parser")
             form = soup.find("form")
             if form:
                 for inp in form.find_all("input"):
@@ -262,6 +265,18 @@ class SRMPortalSession:
                     if n:
                         fields[n] = inp.get("value") or ""
         self.login_form_fields = fields
+
+        # Extract server timestamp from secureToken for perfect synchronization
+        self.server_ts = None
+        sec_token = fields.get("secureToken", "")
+        if sec_token:
+            try:
+                decoded = base64.b64decode(sec_token).decode("utf-8", errors="ignore")
+                parts = decoded.split("|")
+                if len(parts) >= 3 and parts[2].isdigit():
+                    self.server_ts = int(parts[2])
+            except Exception:
+                pass
 
         m_cap = re.search(r"SCaptchaServlet[^'\" ]*", text)
         if not m_cap:
@@ -288,20 +303,30 @@ class SRMPortalSession:
         return False
 
     def login_attempt(self, netid: str, password: str, captcha_code: str) -> Dict[str, Any]:
-        now_ms = int(time.time() * 1000)
-        calc_elapsed = max(0, int((now_ms - (self.load_ms or now_ms)) / 1000))
-        elapsed_sec = max(random.randint(3, 5), calc_elapsed)
+        # Synchronize timestamps with the SRM server clock to prevent clock drift rejections
+        if self.server_ts:
+            client_elapsed = max(0, int((time.time() * 1000) - (self.load_ms or (time.time() * 1000))))
+            now_ms = self.server_ts + max(2500, client_elapsed + random.randint(1000, 2500))
+            start_ms = self.server_ts + random.randint(150, 450)
+        else:
+            now_ms = int(time.time() * 1000)
+            start_ms = now_ms - random.randint(4000, 7000)
+
+        time_on_page = max(2000, now_ms - start_ms)
+        elapsed_sec = max(3, int(time_on_page / 1000))
         dtoken = base64.b64encode("sp.srmist.edu.in"[::-1].encode()).decode()
         trap_payload = str(elapsed_sec) + (self.random_delimiter or "0000") + str(random.randint(4, 12))
         cptoken = base64.b64encode(trap_payload.encode()).decode()
-        payload = base64.b64encode(json.dumps(_telemetry_payload()).encode()).decode()
+        fp_payload = base64.b64encode(json.dumps({"fp": "", "nonce": self.nonce or "", "ts": now_ms}).encode()).decode()
+        tel_data = _telemetry_payload(start_ms, now_ms)
+        payload = base64.b64encode(json.dumps(tel_data).encode()).decode()
 
         fp_body = dict(self.login_form_fields)
         fp_body.update({
             "username": netid.strip(),
             "password": password,
             "captcha": captcha_code.strip(),
-            "fpPayload": "",
+            "fpPayload": fp_payload,
             "fpToken": "",
             "telemetryPayload": payload,
         })
@@ -348,8 +373,8 @@ class SRMPortalSession:
                 return {"ok": False, "reason": "wrong_captcha", "message": alert_text}
             if any(k in blob for k in ["attempts remaining", "attempt remaining", "0 out of 3", "login attempt was unsuccessful"]):
                 return {"ok": False, "reason": "invalid_credentials", "message": alert_text}
-            # sp.srmist.edu.in emits 'Invalid credentials' for both off-by-one OCR captcha predictions and wrong passwords.
-            # Mark it retryable so Prewarmed Attempt 2 and fresh attempts can succeed.
+            if "invalid login credentials" in blob or "invalid credentials" in blob or "invalid credential" in blob:
+                return {"ok": False, "reason": "invalid_credentials", "message": "Invalid NetID or Student Portal password."}
             return {"ok": False, "reason": "credential_or_captcha_mismatch", "message": alert_text}
 
         body_lower = (body or "").lower()
@@ -357,7 +382,7 @@ class SRMPortalSession:
             return {"ok": False, "reason": "wrong_captcha", "message": "Invalid captcha."}
         if "locked" in body_lower:
             return {"ok": False, "reason": "account_locked", "message": "Account temporarily locked."}
-        if any(k in body_lower for k in ["attempts remaining", "attempt remaining", "0 out of 3", "login attempt was unsuccessful"]):
+        if any(k in body_lower for k in ["attempts remaining", "attempt remaining", "0 out of 3", "login attempt was unsuccessful", "invalid login credentials", "invalid credentials", "invalid credential"]):
             return {"ok": False, "reason": "invalid_credentials", "message": "Invalid NetID or Student Portal password."}
         return {"ok": False, "reason": "credential_or_captcha_mismatch", "message": "Invalid credentials or verification code."}
 
@@ -978,15 +1003,16 @@ def fetch_portal_data(username: str, password: str, courses_list: Optional[List[
                 "error": "Could not reach SRM Student Portal security server. Please try again in a few moments.",
                 "reason": "network_or_captcha_load_failed"
             }
-        if last_reason in ("wrong_captcha", "credential_or_captcha_mismatch", "captcha_solve_failed", "captcha_load_failed"):
+        if last_reason in ("wrong_captcha", "captcha_solve_failed", "captcha_load_failed"):
             return {
                 "success": False, 
-                "error": "Student Portal security verification (CAPTCHA) timed out. Please click Sync again.", 
+                "error": "Student Portal security verification (CAPTCHA) timed out. Please click TRY AGAIN.", 
                 "reason": "wrong_captcha"
             }
+        error_msg = last_msg if last_msg and "invalid" in last_msg.lower() else "Invalid NetID or Student Portal password. Note: This requires your SRM Student Portal password (from sp.srmist.edu.in), not your Academia password. You can reset your password at https://ssp.srmist.edu.in/resetpassword/"
         return {
             "success": False, 
-            "error": "Invalid NetID or Student Portal password. Note: This requires your SRM Student Portal password (from sp.srmist.edu.in), not your Academia password. You can reset your password at https://ssp.srmist.edu.in/resetpassword/", 
+            "error": error_msg, 
             "reason": "invalid_credentials"
         }
 
