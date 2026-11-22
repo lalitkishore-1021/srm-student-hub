@@ -1170,6 +1170,7 @@ def debug_sync():
     a_pwd = (data.get('acadPwd') or '').strip()
     import traceback
     try:
+        from bs4 import BeautifulSoup
         import srm_portal_scraper
         import cw_scraper
         import requests
@@ -1197,7 +1198,8 @@ def debug_sync():
                     'msg': att_res.get('message'),
                     'status': getattr(portal, 'last_status', None),
                     'url': getattr(portal, 'last_url', None),
-                    'alert': [t.get_text() for t in BeautifulSoup(getattr(portal, 'last_body', '') or '', 'html.parser').find_all(class_=lambda c: c and ('alert' in c or 'error' in c))]
+                    'alert': [t.get_text() for t in BeautifulSoup(getattr(portal, 'last_body', '') or '', 'html.parser').find_all(class_=lambda c: c and ('alert' in c or 'error' in c))],
+                    'body_snippet': (getattr(portal, 'last_body', '') or '')[:600]
                 })
         except Exception as spe:
             diag['sp_steps'].append({'step': 'sp_err', 'err': str(spe)})
