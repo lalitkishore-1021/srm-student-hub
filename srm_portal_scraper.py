@@ -296,6 +296,7 @@ class SRMPortalSession:
             "captcha": captcha_code.strip(),
             "fpPayload": fp_payload,
             "fpToken": "",
+            "recaptchaToken": "",
             "telemetryPayload": payload,
         })
         fp_body[self.domain_field_name] = dtoken
@@ -352,7 +353,7 @@ class SRMPortalSession:
 
     def get_attendance_html(self) -> Optional[str]:
         try:
-            r = self.session.get(ATT_URL, headers={"Referer": HRD_URL}, timeout=4)
+            r = self.session.get(ATT_URL, headers={"Referer": HRD_URL}, timeout=10.0)
             url_l = str(r.url).lower()
             txt_l = r.text.lower()
             if (
@@ -370,7 +371,7 @@ class SRMPortalSession:
 
     def get_marks_html(self) -> Optional[str]:
         try:
-            r = self.session.get(MARKS_URL, headers={"Referer": HRD_URL}, timeout=5)
+            r = self.session.get(MARKS_URL, headers={"Referer": HRD_URL}, timeout=10.0)
             if r.status_code == 200 and "table" in r.text.lower():
                 return r.text
         except Exception:
@@ -380,7 +381,7 @@ class SRMPortalSession:
     def get_inner_marks_html(self, subject_id: str, status: str = "2") -> Optional[str]:
         try:
             payload = {"iden": "1", "hdnSubjectId": subject_id, "status": status}
-            r = self.session.post(INNER_MARKS_URL, data=payload, headers={"Referer": MARKS_URL}, timeout=2.5)
+            r = self.session.post(INNER_MARKS_URL, data=payload, headers={"Referer": MARKS_URL}, timeout=6.0)
             if r.status_code == 200:
                 return r.text
         except Exception:
@@ -967,7 +968,7 @@ def fetch_portal_data(username: str, password: str, courses_list: Optional[List[
                 "error": "Could not reach SRM Student Portal security server. Please try again in a few moments.",
                 "reason": "network_or_captcha_load_failed"
             }
-        if last_reason in ("wrong_captcha", "captcha_solve_failed", "captcha_load_failed"):
+        if last_reason in ("wrong_captcha", "credential_or_captcha_mismatch", "captcha_solve_failed", "captcha_load_failed"):
             return {
                 "success": False, 
                 "error": "Student Portal security verification (CAPTCHA) timed out. Please click TRY AGAIN.", 
