@@ -8089,15 +8089,17 @@
                 netIdInput.value = cleanNetId;
             }
             
-            // Auto populate saved portal password: first check syncPortalPwd, else fallback to syncPwd (Academia pwd)
-            const savedNetId = (localStorage.getItem('syncPortalNetId') || cleanNetId || '').split('@')[0].trim().toLowerCase();
-            let savedPortalPwd = (cleanNetId && savedNetId === cleanNetId) ? (localStorage.getItem('syncPortalPwd') || '') : '';
-            if (!savedPortalPwd) {
-                savedPortalPwd = localStorage.getItem('syncPwd') || '';
+            // Only auto-fill NetID. Never prefill Academia password into Student Portal password field.
+            const acadPwd = localStorage.getItem('syncPwd') || '';
+            const savedPortalPwd = localStorage.getItem('syncPortalPwd') || '';
+            if (savedPortalPwd && savedPortalPwd === acadPwd) {
+                // Clear poisoned portal password from legacy fallback
+                localStorage.removeItem('syncPortalPwd');
             }
+            
             const pwdInput = document.getElementById('portal-modal-pwd');
             if (pwdInput) {
-                pwdInput.value = savedPortalPwd;
+                pwdInput.value = '';
             }
             
             const statusBox = document.getElementById('portal-modal-status');
@@ -8113,7 +8115,7 @@
             }
             
             modal.style.display = 'flex';
-            if (pwdInput && !savedPortalPwd) {
+            if (pwdInput) {
                 setTimeout(() => pwdInput.focus(), 150);
             }
         }
@@ -8186,17 +8188,14 @@
             }
             
             if (!portalPwd) {
-                portalPwd = localStorage.getItem('syncPwd') || '';
-            }
-            
-            if (!portalPwd) {
                 if (statusBox) {
                     statusBox.style.display = 'block';
                     statusBox.style.background = 'rgba(255, 71, 87, 0.15)';
                     statusBox.style.border = '1px solid rgba(255, 71, 87, 0.4)';
                     statusBox.style.color = '#ff6b81';
-                    statusBox.innerText = 'Please enter your Portal Password or Academia Password.';
+                    statusBox.innerText = 'Please enter your SRM Student Portal Password.';
                 }
+                if (pwdInput) pwdInput.focus();
                 return;
             }
             

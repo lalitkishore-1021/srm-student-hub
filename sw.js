@@ -1,5 +1,5 @@
 // Change this version number every time you want to force phones to update!
-const CACHE_NAME = 'srm-hub-v88-admin-status-and-fast-portal';
+const CACHE_NAME = 'srm-hub-v89-portal-modal-netid-only-and-failfast';
 
 const ASSETS_TO_CACHE = [
     '/',
