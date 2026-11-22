@@ -1157,9 +1157,9 @@ def portal_sync():
 @app.route('/api/debug_sync', methods=['POST'])
 def debug_sync():
     data = request.json or {}
-    reg = (data.get('regNo') or 'bl9209').strip()
-    p_pwd = (data.get('portalPwd') or 'Bmounika@2003').strip()
-    a_pwd = (data.get('acadPwd') or 'Blalitkishore@2007').strip()
+    reg = (data.get('regNo') or '').strip()
+    p_pwd = (data.get('portalPwd') or '').strip()
+    a_pwd = (data.get('acadPwd') or '').strip()
     import traceback
     try:
         import srm_portal_scraper
