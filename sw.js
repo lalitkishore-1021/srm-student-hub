@@ -1,5 +1,5 @@
 // Change this version number every time you want to force phones to update!
-const CACHE_NAME = 'srm-hub-v92-fix-main-content-black-screen';
+const CACHE_NAME = 'srm-hub-v93-student-portal-credentials-only';
 
 const ASSETS_TO_CACHE = [
     '/',

@@ -1010,7 +1010,7 @@ def fetch_portal_data(username: str, password: str, courses_list: Optional[List[
             }
         return {
             "success": False, 
-            "error": "Invalid NetID or Student Portal password. You can reset your password at https://ssp.srmist.edu.in/resetpassword/", 
+            "error": "Invalid NetID or Student Portal password. Note: This requires your SRM Student Portal password (from sp.srmist.edu.in), not your Academia password. You can reset your password at https://ssp.srmist.edu.in/resetpassword/", 
             "reason": "invalid_credentials"
         }
 

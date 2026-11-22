@@ -769,7 +769,7 @@ def get_portal_data_with_fallback(net_id, portal_pwd, acad_pwd=None, courses=Non
     elif reason == 'wrong_captcha':
         err = 'Student Portal security verification (CAPTCHA) timed out. Please click TRY AGAIN.'
     elif reason == 'invalid_credentials' or any(w in err.lower() for w in ['invalid login credentials', 'user id or password', 'attempts remaining']):
-        err = 'Invalid NetID or Student Portal password. You can reset your password at https://ssp.srmist.edu.in/resetpassword/'
+        err = 'Invalid NetID or Student Portal password. Note: This requires your SRM Student Portal password (from sp.srmist.edu.in), not your Academia password. You can reset your password at https://ssp.srmist.edu.in/resetpassword/'
         reason = 'invalid_credentials'
     else:
         err = (p_res or {}).get('error', 'Could not connect to SRM Student Portal. Please try again.')
