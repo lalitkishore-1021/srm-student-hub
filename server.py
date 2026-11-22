@@ -637,73 +637,31 @@ def get_portal_data_with_fallback(net_id, portal_pwd, acad_pwd=None, courses=Non
     p_res = None
     cache_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'portal_data_cache.json')
 
-    # 1. Primary: Direct sp.srmist.edu.in scraper for Student Portal passwords
-    if portal_pwd:
-        try:
-            import srm_portal_scraper
-            print(f"[{clean_id}] Initiating live Student Portal sync via sp.srmist.edu.in...")
-            sp_res = srm_portal_scraper.fetch_portal_data(clean_id, portal_pwd, courses_list=courses)
-            if sp_res and sp_res.get('success'):
-                print(f"[{clean_id}] [PORTAL] Direct Student Portal sync succeeded!")
-                p_res = sp_res
-            elif sp_res:
-                print(f"[{clean_id}] Direct portal sync attempt returned: {sp_res.get('error')}")
-                p_res = sp_res
-        except Exception as se:
-            print(f"[{clean_id}] Direct portal scrape exception: {se}")
-            p_res = {
-                'success': False,
-                'error': 'Could not connect to SRM Student Portal. Please try again.',
-                'reason': 'portal_exception'
-            }
-
-    # 2. Universal Academia fallback: If portal scraper failed (e.g. invalid portal credentials)
-    # or student entered their Academia password, sync directly via Academia so all students succeed!
-    if not p_res or not p_res.get('success'):
-        pwds_to_try = list(dict.fromkeys([p for p in [portal_pwd, acad_pwd] if p]))
-        for candidate_pwd in pwds_to_try:
-            try:
-                import academia_fast_client
-                print(f"[{clean_id}] Trying Academia fast scraper fallback...")
-                ac_res = academia_fast_client.fetch_academia_fast(clean_id, candidate_pwd)
-                if ac_res and ac_res.get('success') and (ac_res.get('data') or ac_res.get('marks')):
-                    print(f"[{clean_id}] [ACADEMIA] Direct Academia sync succeeded with live attendance & marks!")
-                    p_res = {
-                        'success': True,
-                        'data': ac_res.get('data', []),
-                        'marks': ac_res.get('marks', []),
-                        'profile': ac_res.get('profile', {}),
-                        'courses': ac_res.get('courses', []),
-                        'source': 'academia_direct_sync'
-                    }
-                    break
-            except Exception as ace:
-                print(f"[{clean_id}] Academia fallback notice: {ace}")
-
-    # 3. Legacy CampusWeb API fallback if direct scrapers are unreachable
-    if (not p_res or not p_res.get('success')) and (acad_pwd or portal_pwd):
-        try:
-            import cw_scraper
-            print(f"[{clean_id}] Trying CampusWeb API fallback...")
-            cw_pwd = acad_pwd or portal_pwd
-            cw_res = cw_scraper.scrape_campusweb(clean_id, None, acad_pwd=cw_pwd)
-            if cw_res and cw_res.get('success'):
-                print(f"[{clean_id}] [CAMPUSWEB] CampusWeb sync succeeded with live attendance & marks!")
-                p_res = {
-                    'success': True,
-                    'data': cw_res.get('attendance') or cw_res.get('data') or [],
-                    'marks': cw_res.get('marks', []),
-                    'profile': cw_res.get('profile', {}),
-                    'source': 'campusweb_api'
-                }
-        except Exception as cwe:
-            print(f"[{clean_id}] CampusWeb exception: {cwe}")
-
-    if not portal_pwd and not acad_pwd:
+    pwd_to_use = portal_pwd or acad_pwd
+    if not pwd_to_use:
         return {
             'success': False,
-            'error': 'Please enter your SRM Student Portal or Academia password.',
+            'error': 'Please enter your SRM Student Portal password.',
             'reason': 'missing_credentials'
+        }
+
+    # 1. Primary: Direct sp.srmist.edu.in scraper for Student Portal passwords
+    try:
+        import srm_portal_scraper
+        print(f"[{clean_id}] Initiating live Student Portal sync via sp.srmist.edu.in...")
+        sp_res = srm_portal_scraper.fetch_portal_data(clean_id, pwd_to_use, courses_list=courses)
+        if sp_res and sp_res.get('success'):
+            print(f"[{clean_id}] [PORTAL] Direct Student Portal sync succeeded!")
+            p_res = sp_res
+        elif sp_res:
+            print(f"[{clean_id}] Direct portal sync attempt returned: {sp_res.get('error')}")
+            p_res = sp_res
+    except Exception as se:
+        print(f"[{clean_id}] Direct portal scrape exception: {se}")
+        p_res = {
+            'success': False,
+            'error': 'Could not connect to SRM Student Portal. Please try again.',
+            'reason': 'portal_exception'
         }
 
     # If live scrape succeeded, cache the fresh data

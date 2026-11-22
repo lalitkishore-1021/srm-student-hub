@@ -1,5 +1,5 @@
 // Change this version number every time you want to force phones to update!
-const CACHE_NAME = 'srm-hub-v93-student-portal-credentials-only';
+const CACHE_NAME = 'srm-hub-v94-fast-portal-sync-no-hang';
 
 const ASSETS_TO_CACHE = [
     '/',
