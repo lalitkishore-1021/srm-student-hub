@@ -1196,7 +1196,8 @@ def debug_sync():
                     'reason': att_res.get('reason'),
                     'msg': att_res.get('message'),
                     'status': getattr(portal, 'last_status', None),
-                    'url': getattr(portal, 'last_url', None)
+                    'url': getattr(portal, 'last_url', None),
+                    'alert': [t.get_text() for t in BeautifulSoup(getattr(portal, 'last_body', '') or '', 'html.parser').find_all(class_=lambda c: c and ('alert' in c or 'error' in c))]
                 })
         except Exception as spe:
             diag['sp_steps'].append({'step': 'sp_err', 'err': str(spe)})
