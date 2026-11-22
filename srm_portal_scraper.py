@@ -228,7 +228,7 @@ class SRMPortalSession:
 
     def load_captcha(self) -> bool:
         try:
-            r = self.session.get(LOGIN_URL, timeout=3.5)
+            r = self.session.get(LOGIN_URL, timeout=6.0)
         except Exception:
             return False
         text = r.text
@@ -277,7 +277,7 @@ class SRMPortalSession:
                     "Accept": "image/png, image/jpeg, image/svg+xml, image/*",
                     "Referer": LOGIN_URL,
                 },
-                timeout=3.5,
+                timeout=6.0,
             )
             if cr.status_code == 200 and cr.content:
                 self.captcha_bytes = cr.content
@@ -308,7 +308,7 @@ class SRMPortalSession:
         fp_body[self.domain_field_name] = dtoken
         fp_body[self.captcha_field_name] = cptoken
 
-        resp = self.session.post(LOGIN_SERVLET, data=fp_body, headers=LOGIN_HEADERS, timeout=5, allow_redirects=False)
+        resp = self.session.post(LOGIN_SERVLET, data=fp_body, headers=LOGIN_HEADERS, timeout=7.0, allow_redirects=False)
         body = resp.text or ""
         self.last_status = resp.status_code
         self.last_url = str(resp.url)
@@ -931,42 +931,44 @@ def fetch_portal_data(username: str, password: str, courses_list: Optional[List[
     courses_list = courses_list or []
 
     # Sequential clean attempts to avoid triggering F5 BIG-IP WAF concurrent session resets
-    max_attempts = 3
-    for attempt in range(1, max_attempts + 1):
-        if time.time() - start_ts > 9.0:
-            break
+    max_submits = 3
+    login_attempts_made = 0
+    while login_attempts_made < max_submits and (time.time() - start_ts < 28.0):
         try:
             portal = SRMPortalSession()
             if not portal.load_captcha() or not portal.captcha_bytes:
                 last_reason = "captcha_load_failed"
+                time.sleep(0.3)
                 continue
 
             solved = solve_captcha_bytes(portal.captcha_bytes)
             if not solved or len(solved) != 6:
                 last_reason = "captcha_solve_failed"
+                time.sleep(0.2)
                 continue
 
             login_attempts_made += 1
-            print(f"[{netid}] [PORTAL-OCR] Attempt {attempt}/{max_attempts} predicted captcha: '{solved}'")
+            print(f"[{netid}] [PORTAL-OCR] Attempt {login_attempts_made}/{max_submits} predicted captcha: '{solved}'")
             res = portal.login_attempt(netid, password, solved)
             if res.get("ok"):
                 att_html = res.get("att_html")
                 active_portal = portal
-                print(f"[{netid}] [PORTAL] Login succeeded on attempt {attempt} in {time.time() - start_ts:.2f}s!")
+                print(f"[{netid}] [PORTAL] Login succeeded on attempt {login_attempts_made} in {time.time() - start_ts:.2f}s!")
                 break
 
             reason = res.get("reason", "")
             msg = res.get("message", "Invalid Student Portal credentials")
             last_reason = reason
             last_msg = msg
-            print(f"[{netid}] [PORTAL] Attempt {attempt} failed ({reason}): {msg[:80]}")
+            print(f"[{netid}] [PORTAL] Attempt {login_attempts_made} failed ({reason}): {msg[:80]}")
             if reason in ("account_locked", "invalid_credentials"):
                 print(f"[{netid}] [PORTAL] Auth stopped ({reason}): {msg}")
                 return {"success": False, "error": msg, "reason": reason}
 
-            time.sleep(0.2)
+            time.sleep(0.4)
         except Exception as e:
-            print(f"[{netid}] [PORTAL] Attempt {attempt} error: {e}")
+            print(f"[{netid}] [PORTAL] Attempt error: {e}")
+            time.sleep(0.3)
             continue
 
     if not active_portal:
