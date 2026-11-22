@@ -22,17 +22,8 @@ from typing import Dict, Any, List, Optional, Tuple
 
 import numpy as np
 import requests
-from requests.adapters import HTTPAdapter
-from urllib3.util.retry import Retry
-import urllib3.util.connection as urllib3_cn
 from bs4 import BeautifulSoup
 from PIL import Image
-
-# Force IPv4 socket resolution to prevent Cloudflare / campus IPv6 handshake timeouts
-try:
-    urllib3_cn.allowed_gai_family = lambda: socket.AF_INET
-except Exception:
-    pass
 
 from academia_direct_scraper import calculate_bunk_margin_and_needed, get_course_credit, SRM_PERIOD_TIMES
 
@@ -52,22 +43,6 @@ HEADERS = {
     "Origin": "https://sp.srmist.edu.in",
     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
     "Accept-Language": "en-US,en;q=0.9",
-}
-
-LOGIN_HEADERS = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
-    "Referer": LOGIN_URL,
-    "Origin": "https://sp.srmist.edu.in",
-    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
-    "Accept-Language": "en-US,en;q=0.9",
-    "Sec-Ch-Ua": '"Not/A)Brand";v="8", "Chromium";v="126", "Google Chrome";v="126"',
-    "Sec-Ch-Ua-Mobile": "?0",
-    "Sec-Ch-Ua-Platform": '"Windows"',
-    "Sec-Fetch-Dest": "document",
-    "Sec-Fetch-Mode": "navigate",
-    "Sec-Fetch-Site": "same-origin",
-    "Sec-Fetch-User": "?1",
-    "Upgrade-Insecure-Requests": "1",
 }
 
 VOCAB = "0123456789abcdefghijklmnopqrstuvwxyz"
@@ -188,7 +163,7 @@ def _telemetry_payload(start_ms: int, now_ms: int) -> Dict[str, Any]:
         "colorDepth": 24,
         "devicePixelRatio": 1,
         "platform": "Win32",
-        "userAgent": LOGIN_HEADERS["User-Agent"],
+        "userAgent": HEADERS["User-Agent"],
         "language": "en-US",
         "hardwareConcurrency": 8,
         "deviceMemory": 8,
@@ -207,13 +182,6 @@ def _telemetry_payload(start_ms: int, now_ms: int) -> Dict[str, Any]:
 class SRMPortalSession:
     def __init__(self):
         self.session = requests.Session()
-        adapter = HTTPAdapter(
-            pool_connections=25,
-            pool_maxsize=25,
-            max_retries=Retry(total=1, connect=1, read=0, backoff_factor=0.1)
-        )
-        self.session.mount("https://", adapter)
-        self.session.mount("http://", adapter)
         self.session.headers.update(HEADERS)
         proxy = os.environ.get("PORTAL_PROXY") or os.environ.get("HTTPS_PROXY") or os.environ.get("HTTP_PROXY")
         if proxy:
@@ -229,7 +197,7 @@ class SRMPortalSession:
 
     def load_captcha(self) -> bool:
         try:
-            r = self.session.get(LOGIN_URL, timeout=6.0)
+            r = self.session.get(LOGIN_URL, timeout=10.0)
         except Exception:
             return False
         text = r.text
@@ -292,7 +260,7 @@ class SRMPortalSession:
                     "Accept": "image/png, image/jpeg, image/svg+xml, image/*",
                     "Referer": LOGIN_URL,
                 },
-                timeout=6.0,
+                timeout=10.0,
             )
             if cr.status_code == 200 and cr.content:
                 self.captcha_bytes = cr.content
@@ -333,30 +301,28 @@ class SRMPortalSession:
         fp_body[self.domain_field_name] = dtoken
         fp_body[self.captcha_field_name] = cptoken
 
-        resp = self.session.post(LOGIN_SERVLET, data=fp_body, headers=LOGIN_HEADERS, timeout=7.0, allow_redirects=False)
+        resp = self.session.post(LOGIN_SERVLET, data=fp_body, timeout=12.0)
         body = resp.text or ""
         self.last_status = resp.status_code
         self.last_url = str(resp.url)
         self.last_body = body
-        loc = str(resp.headers.get("Location", "")).lower()
         url_lower = str(resp.url).lower()
 
-        if resp.status_code in (302, 303) or "hrdsystem" in loc or "attendance" in loc or "logout" in loc:
+        if "logout.jsp" in url_lower or "attendance" in url_lower or "hrdsystem" in url_lower:
             try:
-                self.session.get(HRD_URL, headers={"Referer": LOGIN_URL}, timeout=5)
+                self.session.get(HRD_URL, headers={"Referer": LOGIN_URL}, timeout=6)
             except Exception:
                 pass
             att_html = self.get_attendance_html()
+            if att_html and len(att_html) > 500:
+                return {"ok": True, "att_html": att_html}
+
+        # Fallback check: test if session is authenticated
+        att_html = self.get_attendance_html()
+        if att_html and len(att_html) > 1000 and "table" in att_html.lower() and "attendance" in att_html.lower():
             return {"ok": True, "att_html": att_html}
-        elif "logout.jsp" in url_lower or "attendance" in url_lower or "hrdsystem" in url_lower or "logout" in body.lower():
-            try:
-                self.session.get(HRD_URL, headers={"Referer": LOGIN_URL}, timeout=5)
-            except Exception:
-                pass
-            att_html = self.get_attendance_html()
-            return {"ok": True, "att_html": att_html}
-        else:
-            return self._classify_failure(body)
+
+        return self._classify_failure(body)
 
     @staticmethod
     def _classify_failure(body: str) -> Dict[str, Any]:
@@ -371,10 +337,8 @@ class SRMPortalSession:
                 return {"ok": False, "reason": "account_locked", "message": alert_text}
             if any(k in blob for k in ["captcha", "verification code", "security code"]):
                 return {"ok": False, "reason": "wrong_captcha", "message": alert_text}
-            if any(k in blob for k in ["attempts remaining", "attempt remaining", "0 out of 3", "login attempt was unsuccessful"]):
+            if any(k in blob for k in ["attempts remaining", "attempt remaining", "0 out of 3", "login attempt was unsuccessful", "user id or password"]):
                 return {"ok": False, "reason": "invalid_credentials", "message": alert_text}
-            if "invalid login credentials" in blob or "invalid credentials" in blob or "invalid credential" in blob:
-                return {"ok": False, "reason": "invalid_credentials", "message": "Invalid NetID or Student Portal password."}
             return {"ok": False, "reason": "credential_or_captcha_mismatch", "message": alert_text}
 
         body_lower = (body or "").lower()
@@ -382,8 +346,8 @@ class SRMPortalSession:
             return {"ok": False, "reason": "wrong_captcha", "message": "Invalid captcha."}
         if "locked" in body_lower:
             return {"ok": False, "reason": "account_locked", "message": "Account temporarily locked."}
-        if any(k in body_lower for k in ["attempts remaining", "attempt remaining", "0 out of 3", "login attempt was unsuccessful", "invalid login credentials", "invalid credentials", "invalid credential"]):
-            return {"ok": False, "reason": "invalid_credentials", "message": "Invalid NetID or Student Portal password."}
+        if any(k in body_lower for k in ["attempts remaining", "attempt remaining", "0 out of 3", "login attempt was unsuccessful", "user id or password"]):
+            return {"ok": False, "reason": "invalid_credentials", "message": "Invalid login credentials."}
         return {"ok": False, "reason": "credential_or_captcha_mismatch", "message": "Invalid credentials or verification code."}
 
     def get_attendance_html(self) -> Optional[str]:
