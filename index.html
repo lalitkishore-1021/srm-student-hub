@@ -464,8 +464,8 @@
         #main-content {
             padding: calc(20px + env(safe-area-inset-top)) 20px calc(140px + env(safe-area-inset-bottom));
             text-align: center;
-            opacity: 0;
-            transform: scale(0.95);
+            opacity: 1;
+            transform: scale(1);
             transition: all 1.2s cubic-bezier(0.16, 1, 0.3, 1);
             width: 100%;
             max-width: 1200px;
@@ -5603,7 +5603,7 @@
         <div class="orb-3"></div>
     </div>
 
-    <div id="main-content">
+    <div id="main-content" class="content-visible">
         <div id="main-hub-brand-header" style="display: flex; align-items: center; gap: 12px; cursor: pointer; user-select: none; margin-bottom: 20px;" onclick="document.querySelector('.nav-item').click();">
             <img src="images/app-icon.svg" style="width: 38px; height: 38px; border-radius: 10px; box-shadow: 0 4px 12px rgba(255,170,0,0.25);">
             <h1 style="font-family: 'Montserrat', sans-serif; font-size: 1.35rem; font-weight: 900; margin: 0; background: linear-gradient(90deg, #ffffff, #aaaaaa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; letter-spacing: 0.5px;">SRM <span style="color: #ffaa00; -webkit-text-fill-color: initial;">HUB</span></h1>
@@ -7662,6 +7662,24 @@
         // Removed Hologram Toggle
 
         // ================= UI STATE MANAGEMENT =================
+        function dismissAdminApology() {
+            const banner = document.getElementById('admin-apology-banner');
+            if (banner) banner.style.display = 'none';
+            localStorage.setItem('admin_apology_dismissed_v1', 'true');
+        }
+        window.dismissAdminApology = dismissAdminApology;
+
+        function checkAdminApology() {
+            const banner = document.getElementById('admin-apology-banner');
+            if (!banner) return;
+            if (localStorage.getItem('admin_apology_dismissed_v1') !== 'true') {
+                banner.style.display = 'flex';
+            } else {
+                banner.style.display = 'none';
+            }
+        }
+        window.checkAdminApology = checkAdminApology;
+
         function getCurrentNetId() {
             const profile = JSON.parse(localStorage.getItem('squadProfile') || '{}');
             const regNoRaw = document.getElementById('srm-reg')?.value || localStorage.getItem('syncRegNo') || localStorage.getItem('syncId') || profile.regNo || profile.netId || profile.net_id || profile.register_no || profile.reg_no || '';
@@ -7678,7 +7696,7 @@
                 document.getElementById('advisors-section').style.display = 'block';
                 if (footerEl) footerEl.style.display = 'block';
                 if (aiFabEl) aiFabEl.classList.remove('hidden-fab');
-                checkAdminApology();
+                if (typeof checkAdminApology === 'function') checkAdminApology();
             } else {
                 document.getElementById('unauth-hero').style.display = 'block';
                 document.getElementById('auth-dashboard').style.display = 'none';
@@ -10507,7 +10525,6 @@
                 let storedProfile = localStorage.getItem('squadProfile');
                 if (storedProfile) {
                     isLoggedIn = true;
-                    updateHomeState();
                     if (mainContent) { mainContent.style.display = 'block'; mainContent.classList.add('content-visible'); }
                     if (navBtn) navBtn.style.display = 'flex';
                     if (header) header.style.display = 'flex';
@@ -10515,6 +10532,7 @@
                     if (loginView) loginView.style.display = 'none';
                     const fab = document.getElementById('ai-fab');
                     if (fab) fab.classList.remove('hidden-fab');
+                    try { updateHomeState(); } catch(e) { console.warn("updateHomeState error:", e); }
 
                     try {
                         const profile = JSON.parse(storedProfile);
@@ -10702,13 +10720,15 @@ function checkAndShowHolidayBanner(viewId) {
             if (typeof playNotificationSound === 'function') {
                 playNotificationSound();
             }
-            if (Notification.permission === 'granted' && navigator.serviceWorker) {
-                navigator.serviceWorker.ready.then(reg => reg.active.postMessage({ type: 'SHOW_NOTIFICATION', title, body }));
+            if ('Notification' in window && Notification.permission === 'granted' && navigator.serviceWorker) {
+                navigator.serviceWorker.ready.then(reg => {
+                    if (reg && reg.active) reg.active.postMessage({ type: 'SHOW_NOTIFICATION', title, body });
+                });
             }
         }
 
         function checkAndScheduleNotifications(force = false) {
-            if (Notification.permission !== 'granted') return;
+            if (!('Notification' in window) || Notification.permission !== 'granted') return;
             const now = new Date(), hours = now.getHours(), minutes = now.getMinutes(), timeFloat = hours + (minutes / 60);
             const todaysMenu = messMenuData[['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][now.getDay()]];
             let notifiedEvents = JSON.parse(localStorage.getItem('notifiedEvents') || '{}');
@@ -19731,22 +19751,6 @@ function predictDateRangeUI() {
                 console.warn('requestPermission error:', err);
             });
         };
-
-        window.dismissAdminApology = function() {
-            const banner = document.getElementById('admin-apology-banner');
-            if (banner) banner.style.display = 'none';
-            localStorage.setItem('admin_apology_dismissed_v1', 'true');
-        };
-
-        function checkAdminApology() {
-            const banner = document.getElementById('admin-apology-banner');
-            if (!banner) return;
-            if (localStorage.getItem('admin_apology_dismissed_v1') !== 'true') {
-                banner.style.display = 'flex';
-            } else {
-                banner.style.display = 'none';
-            }
-        }
 
         window.dismissNotifBanner = function() {
             const banner = document.getElementById('notif-permission-banner');
