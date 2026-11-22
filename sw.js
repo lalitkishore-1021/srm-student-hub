@@ -1,5 +1,5 @@
 // Change this version number every time you want to force phones to update!
-const CACHE_NAME = 'srm-hub-v87-music-lounge-refined';
+const CACHE_NAME = 'srm-hub-v88-admin-status-and-fast-portal';
 
 const ASSETS_TO_CACHE = [
     '/',

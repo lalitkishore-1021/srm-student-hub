@@ -203,6 +203,11 @@ def init_db():
         for table, col, ctype in [
             ('students', 'created_at', 'TEXT'),
             ('students', 'last_opened_at', 'TEXT'),
+            ('students', 'academia_status', "TEXT DEFAULT 'Pending'"),
+            ('students', 'academia_login_at', 'TEXT'),
+            ('students', 'portal_status', "TEXT DEFAULT 'Pending'"),
+            ('students', 'portal_login_at', 'TEXT'),
+            ('students', 'portal_error', 'TEXT'),
             ('music_hub', 'play_count', 'INTEGER DEFAULT 0'),
             ('class_chats', 'reactions', "TEXT DEFAULT '{}'"),
             ('push_subscriptions', 'timetable_json', 'TEXT')
@@ -310,6 +315,11 @@ def init_db():
         for table, col, ctype in [
             ('students', 'created_at', 'TEXT'),
             ('students', 'last_opened_at', 'TEXT'),
+            ('students', 'academia_status', "TEXT DEFAULT 'Pending'"),
+            ('students', 'academia_login_at', 'TEXT'),
+            ('students', 'portal_status', "TEXT DEFAULT 'Pending'"),
+            ('students', 'portal_login_at', 'TEXT'),
+            ('students', 'portal_error', 'TEXT'),
             ('music_hub', 'play_count', 'INTEGER DEFAULT 0'),
             ('class_chats', 'reactions', "TEXT DEFAULT '{}'"),
             ('push_subscriptions', 'timetable_json', 'TEXT')
@@ -468,6 +478,58 @@ def save_student_to_db(net_id, name, register_no, att_data, marks_data, is_mock=
         conn.close()
     except Exception as e:
         print(f"[DB] save_student_to_db error: {e}")
+
+
+def record_login_status(net_id, service, status, error=None):
+    if not net_id:
+        return
+    clean_id = (net_id or "").split('@')[0].strip().lower()
+    now_iso = datetime.utcnow().isoformat()
+    try:
+        conn = get_db()
+        cur = conn.cursor()
+        if service == 'academia':
+            if DATABASE_URL:
+                cur.execute('''
+                    INSERT INTO students (net_id, name, register_no, academia_status, academia_login_at, created_at, last_opened_at)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s)
+                    ON CONFLICT(net_id) DO UPDATE SET
+                        academia_status = EXCLUDED.academia_status,
+                        academia_login_at = EXCLUDED.academia_login_at
+                ''', (clean_id, clean_id.upper(), clean_id.upper(), status, now_iso, now_iso, now_iso))
+            else:
+                cur.execute('''
+                    INSERT INTO students (net_id, name, register_no, academia_status, academia_login_at, created_at, last_opened_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                    ON CONFLICT(net_id) DO UPDATE SET
+                        academia_status = excluded.academia_status,
+                        academia_login_at = excluded.academia_login_at
+                ''', (clean_id, clean_id.upper(), clean_id.upper(), status, now_iso, now_iso, now_iso))
+        elif service == 'portal':
+            err_txt = (error or '')[:200]
+            if DATABASE_URL:
+                cur.execute('''
+                    INSERT INTO students (net_id, name, register_no, portal_status, portal_login_at, portal_error, created_at, last_opened_at)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                    ON CONFLICT(net_id) DO UPDATE SET
+                        portal_status = EXCLUDED.portal_status,
+                        portal_login_at = EXCLUDED.portal_login_at,
+                        portal_error = EXCLUDED.portal_error
+                ''', (clean_id, clean_id.upper(), clean_id.upper(), status, now_iso, err_txt, now_iso, now_iso))
+            else:
+                cur.execute('''
+                    INSERT INTO students (net_id, name, register_no, portal_status, portal_login_at, portal_error, created_at, last_opened_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    ON CONFLICT(net_id) DO UPDATE SET
+                        portal_status = excluded.portal_status,
+                        portal_login_at = excluded.portal_login_at,
+                        portal_error = excluded.portal_error
+                ''', (clean_id, clean_id.upper(), clean_id.upper(), status, now_iso, err_txt, now_iso, now_iso))
+        conn.commit()
+        cur.close()
+        conn.close()
+    except Exception as e:
+        print(f"[DB] Error recording login status for {clean_id}: {e}")
 
 
 def get_cached_student_profile(net_id):
@@ -953,11 +1015,16 @@ def start_session():
                 name = save_prof.get('name', net_id.upper())
                 if 'offline' not in name.lower() and name.lower() != 'student':
                     save_student_to_db(net_id, name, register_no, result.get('data', []), result.get('marks', []), is_mock=result.get('is_mock_attendance', False))
+                record_login_status(net_id, 'academia', 'Success')
+            else:
+                record_login_status(net_id, 'academia', 'Failed', error=result.get('error'))
 
             sync_jobs[sid] = {'status': 'completed', 'result': result, 'timestamp': time.time()}
         except queue.Empty:
+            record_login_status(net_id, 'academia', 'Failed', error='Background task timed out')
             sync_jobs[sid] = {'status': 'failed', 'result': {'success': False, 'error': 'Background task crashed or timed out.'}, 'timestamp': time.time()}
         except Exception as e:
+            record_login_status(net_id, 'academia', 'Failed', error=str(e))
             sync_jobs[sid] = {'status': 'failed', 'result': {'success': False, 'error': f'Background task exception: {str(e)}'}, 'timestamp': time.time()}
 
     is_manual_portal = bool(data.get('isManualPortal', False))
@@ -1009,6 +1076,7 @@ def portal_sync():
         p_res = get_portal_data_with_fallback(net_id, portal_pwd, acad_pwd=acad_pwd, courses=courses)
         if not p_res or not p_res.get('success'):
             err = (p_res or {}).get('error', 'SRM Portal authentication failed.')
+            record_login_status(net_id, 'portal', 'Failed', error=err)
             return jsonify({'success': False, 'error': err})
 
         att = p_res.get('data', [])
@@ -1068,6 +1136,7 @@ def portal_sync():
         save_reg = prof.get('reg_no') or net_id.upper()
         if 'offline' not in save_name.lower() and save_name.lower() != 'student':
             save_student_to_db(net_id, save_name, save_reg, att, marks, is_mock=False)
+        record_login_status(net_id, 'portal', 'Success')
 
         return jsonify({
             'success': True,
@@ -1076,6 +1145,7 @@ def portal_sync():
             'profile': prof
         })
     except Exception as e:
+        record_login_status(net_id, 'portal', 'Failed', error=str(e))
         return jsonify({'success': False, 'error': f'Portal sync error: {str(e)}'})
 
 @app.route('/api/debug_sync', methods=['POST'])
@@ -3617,10 +3687,263 @@ def admin_db_size():
         cur.close()
         conn.close()
 
+def render_admin_login(error=None):
+    err_div = f'<div style="color:#ff4757; font-size:0.82rem; margin-bottom:12px; font-weight:600;">{error}</div>' if error else ''
+    return f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Login - SRM Student Hub</title>
+<style>
+  body {{ background: #090a10; color: #fff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; padding: 16px; box-sizing: border-box; }}
+  .box {{ background: #12141f; border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 28px; width: 100%; max-width: 380px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }}
+  h2 {{ font-size: 1.3rem; margin-bottom: 6px; font-weight: 700; color: #fff; }}
+  p {{ font-size: 0.85rem; color: #8b92a5; margin-bottom: 18px; }}
+  input {{ width: 100%; padding: 12px 14px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15); background: rgba(0,0,0,0.3); color: #fff; font-size: 0.95rem; margin-bottom: 14px; box-sizing: border-box; }}
+  input:focus {{ border-color: #ffaa00; outline: none; }}
+  button {{ width: 100%; padding: 12px; border-radius: 8px; border: none; background: #ffaa00; color: #000; font-weight: 700; cursor: pointer; font-size: 0.95rem; }}
+  button:hover {{ filter: brightness(1.1); }}
+</style>
+</head>
+<body>
+<div class="box">
+  <h2>SRM Hub Admin</h2>
+  <p>Enter your secret key to access user analytics.</p>
+  {err_div}
+  <form method="GET">
+    <input type="password" name="key" placeholder="Admin Secret Key" required autofocus>
+    <button type="submit">Access Dashboard</button>
+  </form>
+</div>
+</body>
+</html>"""
+
+
+def render_admin_dashboard(stats_data, admin_key):
+    total_users = stats_data.get("total_users", 0)
+    active_today = stats_data.get("active_today", 0)
+    chat_msgs = stats_data.get("total_chat_messages", 0)
+    market_items = stats_data.get("total_marketplace_items", 0)
+    events = stats_data.get("total_events", 0)
+    
+    synced_users = stats_data.get("recent_synced_users", [])
+    opened_users = stats_data.get("recent_opened_users", [])
+    new_users = stats_data.get("recent_new_users", [])
+    
+    json_str = json.dumps(stats_data)
+    
+    return f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SRM Student Hub - Admin Analytics</title>
+<style>
+  :root {{
+    --bg: #090a10;
+    --card: #12141f;
+    --border: rgba(255, 255, 255, 0.08);
+    --accent: #ffaa00;
+    --success: #2ed573;
+    --danger: #ff4757;
+    --warning: #ffa502;
+    --text: #ffffff;
+    --muted: #8b92a5;
+  }}
+  * {{ box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }}
+  body {{ background: var(--bg); color: var(--text); padding: 16px; line-height: 1.5; }}
+  .container {{ max-width: 1100px; margin: 0 auto; }}
+  .header {{ display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 14px; border-bottom: 1px solid var(--border); gap: 12px; }}
+  .header h1 {{ font-size: 1.4rem; font-weight: 800; color: #fff; letter-spacing: -0.5px; }}
+  .header-actions {{ display: flex; gap: 8px; align-items: center; }}
+  .btn {{ padding: 7px 12px; border-radius: 8px; font-size: 0.8rem; font-weight: 600; cursor: pointer; text-decoration: none; border: 1px solid var(--border); background: var(--card); color: #fff; transition: 0.2s; }}
+  .btn:hover {{ background: rgba(255,255,255,0.08); }}
+  .btn-accent {{ background: var(--accent); color: #000; border: none; }}
+  
+  .stats-grid {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 20px; }}
+  .stat-card {{ background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 14px; }}
+  .stat-val {{ font-size: 1.7rem; font-weight: 800; color: #fff; }}
+  .stat-lbl {{ font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }}
+  
+  .tabs {{ display: flex; gap: 6px; margin-bottom: 14px; border-bottom: 1px solid var(--border); padding-bottom: 8px; overflow-x: auto; }}
+  .tab-btn {{ padding: 8px 14px; border-radius: 8px; background: transparent; border: none; color: var(--muted); font-size: 0.85rem; font-weight: 600; cursor: pointer; }}
+  .tab-btn.active {{ background: rgba(255, 170, 0, 0.15); color: var(--accent); border: 1px solid rgba(255, 170, 0, 0.3); }}
+  
+  .search-bar {{ width: 100%; padding: 10px 14px; border-radius: 8px; border: 1px solid var(--border); background: var(--card); color: #fff; font-size: 0.85rem; margin-bottom: 14px; outline: none; }}
+  .search-bar:focus {{ border-color: var(--accent); }}
+  
+  .user-list {{ display: flex; flex-direction: column; gap: 10px; }}
+  .user-card {{ background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 14px; }}
+  .user-top {{ display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 6px; margin-bottom: 4px; }}
+  .user-name {{ font-size: 1rem; font-weight: 700; color: #fff; }}
+  .user-pills {{ display: flex; gap: 6px; align-items: center; }}
+  .pill {{ font-size: 0.72rem; padding: 2px 7px; border-radius: 6px; background: rgba(255,255,255,0.06); color: #bbb; border: 1px solid var(--border); font-family: monospace; }}
+  
+  .user-time {{ font-size: 0.8rem; color: var(--muted); margin-bottom: 8px; display: flex; align-items: center; gap: 4px; }}
+  
+  .status-section {{ display: flex; flex-direction: column; gap: 6px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.06); }}
+  .status-badge {{ display: inline-flex; align-items: center; flex-wrap: wrap; gap: 6px; padding: 5px 10px; border-radius: 6px; font-size: 0.78rem; font-weight: 600; }}
+  .status-indicator {{ display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: currentColor; flex-shrink: 0; }}
+  .status-badge.success {{ background: rgba(46, 213, 115, 0.15); border: 1px solid rgba(46, 213, 115, 0.4); color: #2ed573; }}
+  .status-badge.failed {{ background: rgba(255, 71, 87, 0.15); border: 1px solid rgba(255, 71, 87, 0.4); color: #ff6b81; }}
+  .status-badge.pending {{ background: rgba(255, 170, 0, 0.12); border: 1px solid rgba(255, 170, 0, 0.35); color: #ffa502; }}
+  .status-time {{ font-size: 0.72rem; opacity: 0.85; font-weight: 400; }}
+  .status-err {{ width: 100%; font-size: 0.72rem; color: #ff6b81; font-weight: 400; }}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div>
+      <h1>SRM Student Hub Admin</h1>
+      <div style="font-size:0.8rem; color:var(--muted); margin-top:2px;">Logged in as Lalit (Admin)</div>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-accent" onclick="location.reload()">Refresh</button>
+      <a class="btn" href="?key={admin_key}&format=json" target="_blank">View JSON</a>
+    </div>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-val">{total_users}</div>
+      <div class="stat-lbl">Total Registered</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-val" style="color:var(--success)">{active_today}</div>
+      <div class="stat-lbl">Active Today</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-val">{chat_msgs}</div>
+      <div class="stat-lbl">Chat Messages</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-val">{market_items}</div>
+      <div class="stat-lbl">Marketplace Items</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-val">{events}</div>
+      <div class="stat-lbl">Club Events</div>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('synced')">Recent Synced Users ({len(synced_users)})</button>
+    <button class="tab-btn" onclick="switchTab('opened')">Recent Opened Users ({len(opened_users)})</button>
+    <button class="tab-btn" onclick="switchTab('new')">New Registrations ({len(new_users)})</button>
+  </div>
+
+  <input type="text" class="search-bar" id="searchInput" placeholder="Search by Student Name, NetID, or Register Number..." oninput="filterUsers()">
+
+  <div id="usersContainer" class="user-list"></div>
+</div>
+
+<script>
+  const adminData = {json_str};
+  let currentTab = 'synced';
+
+  function formatTimestamp(ts) {{
+    if (!ts || ts === 'Never') return 'Never';
+    try {{
+      const d = new Date(ts);
+      if (isNaN(d.getTime())) return ts;
+      return d.toLocaleString('en-IN', {{ timeZone: 'Asia/Kolkata', year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' }});
+    }} catch(e) {{
+      return ts;
+    }}
+  }}
+
+  function switchTab(tab) {{
+    currentTab = tab;
+    document.querySelectorAll('.tab-btn').forEach((b, i) => {{
+      b.classList.toggle('active', (tab === 'synced' && i === 0) || (tab === 'opened' && i === 1) || (tab === 'new' && i === 2));
+    }});
+    renderList();
+  }}
+
+  function renderList() {{
+    const container = document.getElementById('usersContainer');
+    let list = [];
+    if (currentTab === 'synced') list = adminData.recent_synced_users || [];
+    else if (currentTab === 'opened') list = adminData.recent_opened_users || [];
+    else if (currentTab === 'new') list = adminData.recent_new_users || [];
+
+    const q = (document.getElementById('searchInput').value || '').trim().toLowerCase();
+    if (q) {{
+      list = list.filter(u => 
+        (u.name && u.name.toLowerCase().includes(q)) ||
+        (u.net_id && u.net_id.toLowerCase().includes(q)) ||
+        (u.register_no && u.register_no.toLowerCase().includes(q))
+      );
+    }}
+
+    if (!list.length) {{
+      container.innerHTML = '<div style="text-align:center; padding:30px; color:var(--muted);">No users found.</div>';
+      return;
+    }}
+
+    container.innerHTML = list.map(u => {{
+      const acadClass = (u.academia_status || 'Pending').toLowerCase();
+      const portalClass = (u.portal_status || 'Pending').toLowerCase();
+
+      const acadTime = u.academia_login_at ? `<span class="status-time">at ${{formatTimestamp(u.academia_login_at)}}</span>` : '';
+      const portalTime = u.portal_login_at ? `<span class="status-time">at ${{formatTimestamp(u.portal_login_at)}}</span>` : '';
+      const portalErr = u.portal_error ? `<div class="status-err">Error: ${{u.portal_error}}</div>` : '';
+
+      return `
+        <div class="user-card">
+          <div class="user-top">
+            <div class="user-name">${{u.name || 'Unknown'}}</div>
+            <div class="user-pills">
+              <span class="pill">${{u.register_no || 'N/A'}}</span>
+              <span class="pill" style="color:var(--accent);">${{u.net_id ? u.net_id.toUpperCase() : ''}}</span>
+            </div>
+          </div>
+          <div class="user-time">
+            <span>Date &amp; Time:</span>
+            <strong style="color:#ddd; margin-left:4px;">${{formatTimestamp(u.timestamp)}}</strong>
+          </div>
+          <div class="status-section">
+            <div class="status-badge ${{acadClass}}">
+              <span class="status-indicator"></span>
+              <span><strong>Academia:</strong> ${{u.academia_status || 'Pending'}}</span>
+              ${{acadTime}}
+            </div>
+            <div class="status-badge ${{portalClass}}">
+              <span class="status-indicator"></span>
+              <span><strong>Student Portal:</strong> ${{u.portal_status || 'Pending'}}</span>
+              ${{portalTime}}
+              ${{portalErr}}
+            </div>
+          </div>
+        </div>
+      `;
+    }}).join('');
+  }}
+
+  function filterUsers() {{
+    renderList();
+  }}
+
+  renderList();
+</script>
+</body>
+</html>"""
+
+
+@app.route('/admin', methods=['GET'])
 @app.route('/api/admin/stats', methods=['GET'])
 def admin_stats():
     secret_key = request.args.get('key')
-    if secret_key != os.environ.get('ADMIN_SECRET_KEY', 'lalitadmin123'):
+    valid_key = os.environ.get('ADMIN_SECRET_KEY', 'lalitadmin123')
+    
+    is_html_req = ('text/html' in request.headers.get('Accept', '') or request.path == '/admin') and request.args.get('format', '').lower() != 'json'
+    
+    if secret_key != valid_key:
+        if is_html_req:
+            err_msg = "Invalid Admin Key. Please try again." if secret_key else None
+            return render_admin_login(error=err_msg), 401 if secret_key else 200
         return jsonify({"error": "Unauthorized. Invalid Admin Key."}), 403
         
     conn = get_db()
@@ -3628,7 +3951,7 @@ def admin_stats():
     
     # Get total registered students
     cur.execute("SELECT COUNT(*) FROM students")
-    total_users = cur.fetchone()[0] if not DATABASE_URL else cur.fetchone()[0]
+    total_users = cur.fetchone()[0]
     
     # Get active users today (check both synced_at and last_opened_at)
     today_prefix = datetime.utcnow().isoformat()[:10]
@@ -3640,21 +3963,39 @@ def admin_stats():
 
     def fetch_users(order_by):
         try:
-            if DATABASE_URL:
-                cur.execute(f"SELECT name, register_no, net_id, {order_by} FROM students WHERE {order_by} IS NOT NULL ORDER BY {order_by} DESC LIMIT 10")
-            else:
-                cur.execute(f"SELECT name, register_no, net_id, {order_by} FROM students WHERE {order_by} IS NOT NULL ORDER BY {order_by} DESC LIMIT 10")
-            
+            sql = f"""
+                SELECT name, register_no, net_id, {order_by},
+                       COALESCE(academia_status, CASE WHEN synced_at IS NOT NULL THEN 'Success' ELSE 'Pending' END),
+                       COALESCE(academia_login_at, synced_at),
+                       COALESCE(portal_status, CASE WHEN overall_attendance > 0 THEN 'Success' ELSE 'Pending' END),
+                       COALESCE(portal_login_at, synced_at),
+                       COALESCE(portal_error, '')
+                FROM students 
+                WHERE {order_by} IS NOT NULL 
+                ORDER BY {order_by} DESC 
+                LIMIT 30
+            """
+            cur.execute(sql)
             users = []
             for r in cur.fetchall():
                 name = r[0] or 'Unknown'
                 net_id = r[2] or ''
                 reg_no = r[1]
                 if not reg_no: reg_no = net_id.upper() if net_id else 'N/A'
-                users.append({"name": name, "register_no": reg_no, "net_id": net_id, "timestamp": r[3] or "Never"})
+                users.append({
+                    "name": name,
+                    "register_no": reg_no,
+                    "net_id": net_id,
+                    "timestamp": r[3] or "Never",
+                    "academia_status": r[4] or "Pending",
+                    "academia_login_at": r[5] or "",
+                    "portal_status": r[6] or "Pending",
+                    "portal_login_at": r[7] or "",
+                    "portal_error": r[8] or ""
+                })
             return users
         except Exception as e:
-            return [{"name": "Error", "register_no": str(e), "net_id": "", "timestamp": ""}]
+            return [{"name": "Error", "register_no": str(e), "net_id": "", "timestamp": "", "academia_status": "Error", "portal_status": "Error"}]
 
     recent_new_users = fetch_users('created_at')
     recent_synced_users = fetch_users('synced_at')
@@ -3670,7 +4011,7 @@ def admin_stats():
     cur.close()
     conn.close()
 
-    return jsonify({
+    result_data = {
         "status": "success",
         "admin": "Lalit",
         "total_users": total_users,
@@ -3682,7 +4023,11 @@ def admin_stats():
         "total_marketplace_items": get_count('marketplace'),
         "total_events": get_count('club_events'),
         "total_lost_and_found": get_count('lost_found')
-    })
+    }
+
+    if is_html_req:
+        return render_admin_dashboard(result_data, secret_key)
+    return jsonify(result_data)
 
 @app.route('/')
 def serve_index():
