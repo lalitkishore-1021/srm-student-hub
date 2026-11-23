@@ -37,8 +37,19 @@ CW_HEADERS = {
 def _create_session():
     """
     Creates a resilient HTTP session with browser headers and IPv4 enforcement.
+    Uses cloudscraper to bypass Cloudflare anti-bot checks on datacenter IPs.
     """
-    s = requests.Session()
+    try:
+        import cloudscraper
+        s = cloudscraper.create_scraper(
+            browser={
+                'browser': 'chrome',
+                'platform': 'windows',
+                'desktop': True
+            }
+        )
+    except Exception:
+        s = requests.Session()
     s.headers.update(CW_HEADERS)
     return s
 
@@ -87,7 +98,7 @@ def scrape_campusweb(netid: str, portal_pwd: str = "", acad_pwd: str = None):
                     'https://api.campusweb.in/api/student-portal/login',
                     headers=headers,
                     json={'net_id': cid, 'password': cand_pwd},
-                    timeout=8,
+                    timeout=15,
                 )
                 resp_snippet = (sp_res.text or "").strip()[:150]
                 print(f"[{cid}] CampusWeb direct Student Portal login attempt: status={sp_res.status_code}, resp={resp_snippet}")
@@ -123,7 +134,7 @@ def scrape_campusweb(netid: str, portal_pwd: str = "", acad_pwd: str = None):
                         'https://api.campusweb.in/api/auth/login',
                         headers=headers,
                         json={'username': f'{cid}@srmist.edu.in', 'password': cand_pwd},
-                        timeout=8,
+                        timeout=15,
                     )
                     resp_snippet = (auth_res.text or "").strip()[:150]
                     print(f"[{cid}] CampusWeb Academia auth attempt: status={auth_res.status_code}, resp={resp_snippet}")
@@ -167,7 +178,7 @@ def scrape_campusweb(netid: str, portal_pwd: str = "", acad_pwd: str = None):
                     'https://api.campusweb.in/api/student-portal/attendance',
                     headers=headers,
                     json=p,
-                    timeout=10,
+                    timeout=15,
                 )
                 print(f"[{active_id}] [CAMPUSWEB] Attendance attempt with {list(p.keys())}: status={r.status_code}, len={len(r.text)}")
                 if r.status_code == 200:
@@ -185,7 +196,7 @@ def scrape_campusweb(netid: str, portal_pwd: str = "", acad_pwd: str = None):
                     'https://api.campusweb.in/api/student-portal/marks',
                     headers=headers,
                     json=p,
-                    timeout=10,
+                    timeout=15,
                 )
                 print(f"[{active_id}] [CAMPUSWEB] Marks attempt with {list(p.keys())}: status={r.status_code}, len={len(r.text)}")
                 if r.status_code == 200:

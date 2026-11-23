@@ -3902,6 +3902,22 @@ def admin_portal_diag():
     if test_netid and test_pwd:
         try:
             import cw_scraper
+            import cloudscraper
+            cs_sess = cloudscraper.create_scraper()
+            cs_headers = dict(cw_scraper.CW_HEADERS)
+            cs_headers['X-Net-ID'] = test_netid.upper()
+            cs_post = cs_sess.post(
+                'https://api.campusweb.in/api/student-portal/login',
+                headers=cs_headers,
+                json={'net_id': test_netid.lower(), 'password': test_pwd},
+                timeout=10,
+            )
+            diag["cloudscraper_status"] = cs_post.status_code
+            diag["cloudscraper_body"] = cs_post.text[:200]
+        except Exception as cs_err:
+            diag["cloudscraper_error"] = str(cs_err)
+
+        try:
             cw_sess = cw_scraper._create_session()
             cw_headers = dict(cw_scraper.CW_HEADERS)
             cw_headers['X-Net-ID'] = test_netid.upper()

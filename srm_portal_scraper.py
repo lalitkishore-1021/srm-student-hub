@@ -152,13 +152,13 @@ def solve_captcha_bytes(image_bytes: bytes) -> Optional[str]:
 
 def _telemetry_payload() -> Dict[str, Any]:
     now = int(time.time() * 1000)
-    start = now - random.randint(3000, 8000)
+    start = now - random.randint(3500, 7500)
     return {
         "startTime": start,
         "currentDomain": "sp.srmist.edu.in",
         "timezoneOffset": -330,
-        "screenWidth": 1366,
-        "screenHeight": 768,
+        "screenWidth": 1920,
+        "screenHeight": 1080,
         "colorDepth": 24,
         "devicePixelRatio": 1,
         "platform": "Win32",
@@ -168,10 +168,10 @@ def _telemetry_payload() -> Dict[str, Any]:
         "deviceMemory": 8,
         "touchSupport": False,
         "webdriver": False,
-        "mouseClicks": random.randint(2, 6),
-        "mouseMovements": random.randint(5, 20),
-        "keystrokeCount": 0,
-        "typingSpeedMs": 0,
+        "mouseClicks": random.randint(2, 5),
+        "mouseMovements": random.randint(15, 35),
+        "keystrokeCount": random.randint(24, 36),
+        "typingSpeedMs": random.randint(1800, 3200),
         "canvasHash": format(random.randint(0, 0x7FFFFFFF), "06x"),
         "submitTime": now,
         "timeOnPageMs": now - start,
@@ -286,10 +286,10 @@ class SRMPortalSession:
         calc_elapsed = max(0, int((now_ms - (self.load_ms or now_ms)) / 1000))
         elapsed_sec = max(random.randint(3, 5), calc_elapsed)
         dtoken = base64.b64encode("sp.srmist.edu.in"[::-1].encode()).decode()
-        trap_payload = str(elapsed_sec) + (self.random_delimiter or "0000") + "3"
+        interact_count = random.randint(24, 45)
+        trap_payload = str(elapsed_sec) + (self.random_delimiter or "0000") + str(interact_count)
         cptoken = base64.b64encode(trap_payload.encode()).decode()
-        fp_nonce_val = self.fp_nonce or self.nonce or ""
-        fp_payload = base64.b64encode(json.dumps({"fp": "", "nonce": fp_nonce_val, "ts": now_ms}).encode()).decode()
+        fp_payload = ""
         payload = base64.b64encode(json.dumps(_telemetry_payload()).encode()).decode()
 
         fp_body = dict(self.login_form_fields)
