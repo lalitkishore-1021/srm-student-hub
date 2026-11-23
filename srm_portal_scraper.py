@@ -1018,38 +1018,27 @@ def fetch_portal_data(username: str, password: str, courses_list: Optional[List[
     login_attempts_made = 0
     courses_list = courses_list or []
 
-    # Single persistent session with in-session captcha reloading to prevent F5 WAF burst resets
-    max_submits = 3
+    # Fast 2-attempt budget matching Ratio-D (fails fast in <= 5s instead of stalling 35s)
+    max_submits = 2
     login_attempts_made = 0
     portal = SRMPortalSession()
     portal.load_captcha()
 
-    while login_attempts_made < max_submits and (time.time() - start_ts < 26.0):
+    while login_attempts_made < max_submits and (time.time() - start_ts < 12.0):
         try:
             if not portal.captcha_bytes:
-                reloaded = portal.reload_captcha()
-                if not reloaded or not portal.captcha_bytes:
-                    # Clean session recreation fallback matching Ratio-D
-                    portal = SRMPortalSession()
-                    portal.load_captcha()
-                if not portal.captcha_bytes:
-                    time.sleep(0.3)
-                    continue
+                portal = SRMPortalSession()
+                if not portal.load_captcha() or not portal.captcha_bytes:
+                    break
 
             solved = solve_captcha_bytes(portal.captcha_bytes)
-            # If predicted captcha is not strictly 6 alphanumeric characters, re-fetch up to 3 times
-            captcha_refetch = 0
-            while (not solved or len(solved) != 6) and captcha_refetch < 3:
-                captcha_refetch += 1
-                if portal.reload_captcha() and portal.captcha_bytes:
-                    solved = solve_captcha_bytes(portal.captcha_bytes)
-                elif portal.load_captcha() and portal.captcha_bytes:
-                    solved = solve_captcha_bytes(portal.captcha_bytes)
-
-            if not solved or len(solved) != 6:
-                portal.captcha_bytes = None
-                time.sleep(0.2)
-                continue
+            if not solved:
+                portal = SRMPortalSession()
+                if not portal.load_captcha() or not portal.captcha_bytes:
+                    break
+                solved = solve_captcha_bytes(portal.captcha_bytes)
+                if not solved:
+                    break
 
             login_attempts_made += 1
             print(f"[{netid}] [PORTAL-OCR] Attempt {login_attempts_made}/{max_submits} predicted captcha: '{solved}'", flush=True)
@@ -1065,19 +1054,19 @@ def fetch_portal_data(username: str, password: str, courses_list: Optional[List[
             last_reason = reason
             last_msg = msg
             print(f"[{netid}] [PORTAL] Attempt {login_attempts_made} failed ({reason}): {msg[:80]}", flush=True)
+
             if reason in ("account_locked", "invalid_credentials_fatal"):
                 print(f"[{netid}] [PORTAL] Auth stopped ({reason}): {msg}", flush=True)
                 return {"success": False, "error": msg, "reason": "account_locked" if reason == "account_locked" else "invalid_credentials"}
 
-            # Prepare for next attempt: clean session recreation (Ratio-D parity: avoids SCaptchaServlet 429 rate limit)
-            portal = SRMPortalSession()
-            portal.load_captcha()
-            time.sleep(0.1)
+            # If this was attempt 1, prepare a completely fresh session for quick attempt 2
+            if login_attempts_made < max_submits:
+                portal = SRMPortalSession()
+                portal.load_captcha()
+                time.sleep(0.05)
         except Exception as e:
             print(f"[{netid}] [PORTAL] Attempt error: {e}", flush=True)
-            portal.captcha_bytes = None
-            time.sleep(0.3)
-            continue
+            break
 
     if not active_portal:
         if login_attempts_made == 0:

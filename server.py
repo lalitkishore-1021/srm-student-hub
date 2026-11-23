@@ -4010,7 +4010,7 @@ def like_spotted(post_id):
 
 @app.route('/ping')
 def ping():
-    return jsonify({"status": "ok", "version": "v111-fresh-session-parity", "commit": "v111"})
+    return jsonify({"status": "ok", "version": "v112-fast-fail-parity", "commit": "v112"})
 
 
 @app.route('/api/admin/portal_diag', methods=['GET', 'POST'])
@@ -4066,11 +4066,15 @@ def admin_portal_diag():
         diag["load_captcha_error"] = str(e)
 
     # 4. Optional single attempt test to capture exact HTTP exchange
-    test_netid = request.args.get('netid') or (request.json or {}).get('netid')
-    test_pwd = request.args.get('pwd') or (request.json or {}).get('pwd')
+    body_json = request.get_json(silent=True) if request.is_json else {}
+    test_netid = request.args.get('netid') or (body_json or {}).get('netid')
+    test_pwd = request.args.get('pwd') or (body_json or {}).get('pwd')
+    manual_captcha = request.args.get('captcha') or (body_json or {}).get('captcha')
     if test_netid and test_pwd and sess and sess.captcha_bytes:
         try:
-            solved = diag.get("solved_captcha") or "123456"
+            from bs4 import BeautifulSoup
+            solved = manual_captcha or diag.get("solved_captcha") or "123456"
+            diag["submitted_captcha"] = solved
             t0 = time.time()
             single_res = sess.login_attempt(test_netid, test_pwd, solved)
             diag["single_attempt_time"] = round(time.time() - t0, 3)
@@ -4078,7 +4082,7 @@ def admin_portal_diag():
             diag["single_attempt_status"] = sess.last_status
             diag["single_attempt_url"] = sess.last_url
             diag["single_attempt_body_len"] = len(sess.last_body) if sess.last_body else 0
-            diag["single_attempt_body_preview"] = (sess.last_body or "")[:500]
+            diag["single_attempt_body_preview"] = (sess.last_body or "")[:1500]
             soup_res = BeautifulSoup(sess.last_body or "", "html.parser")
             alert_tag = soup_res.find(class_=lambda c: c and ("alert" in c or "error" in c))
             diag["single_attempt_alert"] = alert_tag.get_text(separator=" ", strip=True) if alert_tag else None
