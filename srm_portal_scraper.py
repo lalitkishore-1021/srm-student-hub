@@ -193,6 +193,10 @@ class SRMPortalSession:
         self.captcha_bytes = None
         self.load_ms = None
         self.server_ts = None
+        self.last_body = ""
+        self.last_status = None
+        self.last_url = None
+        self.captcha_page = None
 
     def load_captcha(self) -> bool:
         try:
@@ -264,12 +268,14 @@ class SRMPortalSession:
         Reloads a fresh captcha on the existing session without initiating a new TLS handshake.
         Extracts new nonce and tokens from the last response body if available, or GETs LOGIN_URL.
         """
-        text = self.last_body or ""
+        text = getattr(self, "last_body", None) or getattr(self, "captcha_page", None) or ""
         m_cap = re.search(r"SCaptchaServlet[^'\" ]*", text)
         if not m_cap or "nonce" not in text:
             try:
                 r = self.session.get(LOGIN_URL, timeout=8.0)
                 text = r.text
+                self.last_body = text
+                self.captcha_page = text
                 m_cap = re.search(r"SCaptchaServlet[^'\" ]*", text)
             except Exception:
                 return False
@@ -387,28 +393,34 @@ class SRMPortalSession:
     @staticmethod
     def _classify_failure(body: str) -> Dict[str, Any]:
         soup = BeautifulSoup(body, "html.parser")
-        alert_el = soup.find(class_=lambda c: c and ("alert" in c or "error" in c))
+        alert_el = soup.find(class_=lambda c: c and ("alert-icon-content" in c or "alert-danger" in c or "alert" in c or "error" in c))
         if alert_el:
             alert_text = alert_el.get_text(separator=" ", strip=True)
             if alert_text.lower().startswith("alert"):
                 alert_text = alert_text[5:].strip()
             blob = alert_text.lower()
+            if any(k in blob for k in ["invalid captcha", "captcha", "verification code", "security code"]):
+                return {"ok": False, "reason": "wrong_captcha", "message": alert_text or "Invalid captcha."}
             if "locked" in blob:
                 return {"ok": False, "reason": "account_locked", "message": alert_text}
-            if any(k in blob for k in ["captcha", "verification code", "security code"]):
-                return {"ok": False, "reason": "wrong_captcha", "message": alert_text}
-            if any(k in blob for k in ["attempts remaining", "attempt remaining", "0 out of 3", "1 out of 3", "2 out of 3"]):
+            if any(k in blob for k in [
+                "invalid login credentials", "invalid credentials", "attempts remaining", "attempt remaining",
+                "invalid password", "invalid user", "invalid", "unsuccessful", "user id or password"
+            ]):
                 return {"ok": False, "reason": "invalid_credentials", "message": alert_text}
-            return {"ok": False, "reason": "credential_or_captcha_mismatch", "message": alert_text}
+            return {"ok": False, "reason": "login_failed", "message": alert_text}
 
         body_lower = (body or "").lower()
         if "invalid captcha" in body_lower or "captcha" in body_lower:
             return {"ok": False, "reason": "wrong_captcha", "message": "Invalid captcha."}
         if "locked" in body_lower:
             return {"ok": False, "reason": "account_locked", "message": "Account temporarily locked."}
-        if any(k in body_lower for k in ["attempts remaining", "attempt remaining", "0 out of 3", "1 out of 3", "2 out of 3"]):
+        if any(k in body_lower for k in [
+            "invalid login credentials", "invalid credentials", "attempts remaining", "attempt remaining",
+            "invalid password", "invalid user", "invalid", "unsuccessful", "user id or password"
+        ]):
             return {"ok": False, "reason": "invalid_credentials", "message": "Invalid login credentials."}
-        return {"ok": False, "reason": "credential_or_captcha_mismatch", "message": "Invalid credentials or verification code."}
+        return {"ok": False, "reason": "login_failed", "message": "Could not authenticate with SRM Student Portal."}
 
     def get_attendance_html(self) -> Optional[str]:
         try:
@@ -984,14 +996,19 @@ def fetch_portal_data(username: str, password: str, courses_list: Optional[List[
     login_attempts_made = 0
     portal = SRMPortalSession()
     if not portal.load_captcha() or not portal.captcha_bytes:
-        time.sleep(0.5)
+        time.sleep(0.4)
         portal.load_captcha()
 
     while login_attempts_made < max_submits and (time.time() - start_ts < 26.0):
         try:
             if not portal.captcha_bytes:
-                if not portal.reload_captcha() or not portal.captcha_bytes:
-                    time.sleep(0.5)
+                reloaded = portal.reload_captcha()
+                if not reloaded or not portal.captcha_bytes:
+                    # Clean session recreation fallback matching Ratio-D
+                    portal = SRMPortalSession()
+                    portal.load_captcha()
+                if not portal.captcha_bytes:
+                    time.sleep(0.4)
                     continue
 
             solved = solve_captcha_bytes(portal.captcha_bytes)
@@ -1034,7 +1051,7 @@ def fetch_portal_data(username: str, password: str, courses_list: Optional[List[
                 "error": "Could not reach SRM Student Portal security server. Please try again in a few moments.",
                 "reason": "network_or_captcha_load_failed"
             }
-        if last_reason in ("wrong_captcha", "credential_or_captcha_mismatch", "captcha_solve_failed", "captcha_load_failed"):
+        if last_reason == "wrong_captcha":
             return {
                 "success": False, 
                 "error": "Student Portal security verification (CAPTCHA) timed out. Please click TRY AGAIN.", 
