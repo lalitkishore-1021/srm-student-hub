@@ -24,7 +24,7 @@ ip_rate_limits = defaultdict(list)
 MAX_LOGIN_ATTEMPTS = 30
 RATE_LIMIT_WINDOW = 60 # seconds
 
-def is_rate_limited(ip):
+def is_rate_limited(ip, *args):
     now = time.time()
     # clean old timestamps
     ip_rate_limits[ip] = [t for t in ip_rate_limits[ip] if now - t < RATE_LIMIT_WINDOW]
@@ -599,86 +599,57 @@ def save_cached_timetable_for_student(net_id, tt):
     except Exception as e:
         print(f"[RECOVERY] Timetable cache save error: {e}")
 
-def get_portal_data_with_fallback(net_id, portal_pwd, acad_pwd=None, courses=None, client_telemetry=None):
+def get_portal_data_with_fallback(net_id, portal_pwd, *args, **kwargs):
     clean_id = (net_id or "").split('@')[0].strip().lower()
-    portal_pwd = (portal_pwd or "").strip()
-    acad_pwd = (acad_pwd or "").strip()
-    if not clean_id or (not portal_pwd and not acad_pwd):
-        return {'success': False, 'error': 'Missing credentials'}
+    portal_pwd = (portal_pwd or kwargs.get('acad_pwd') or "").strip()
+    if not clean_id or not portal_pwd:
+        return {'success': False, 'error': 'Missing Student Portal credentials'}
 
-    # Catch accidental Register Number entered instead of NetID and try auto-resolving
-    if clean_id.startswith('ra') and len(clean_id) > 8 and any(c.isdigit() for c in clean_id[2:]):
-        try:
-            conn = get_db()
-            if conn:
-                cur = conn.cursor()
-                if DATABASE_URL:
-                    cur.execute("SELECT net_id FROM students WHERE UPPER(register_no) = %s LIMIT 1", (clean_id.upper(),))
-                else:
-                    cur.execute("SELECT net_id FROM students WHERE UPPER(register_no) = ? LIMIT 1", (clean_id.upper(),))
-                row = cur.fetchone()
-                cur.close()
-                conn.close()
-                if row and row[0]:
-                    print(f"Auto-resolved Register No {clean_id} -> NetID {row[0]}")
-                    clean_id = str(row[0]).strip().lower()
-                else:
-                    return {
-                        'success': False,
-                        'error': 'SRM Student Portal requires your NetID (e.g. bl9209), not your Register Number (RA...).',
-                        'reason': 'invalid_netid'
-                    }
-        except Exception:
-            return {
-                'success': False,
-                'error': 'SRM Student Portal requires your NetID (e.g. bl9209), not your Register Number (RA...).',
-                'reason': 'invalid_netid'
-            }
+    # Auto-normalize Date of Birth format if entered with separators (e.g. 15-08-2003 -> 15082003)
+    import re
+    if re.match(r'^\d{2}[-/.]\d{2}[-/.]\d{4}$', portal_pwd):
+        portal_pwd = re.sub(r'[-/.]', '', portal_pwd)
 
+    # 1. Primary: Fast CampusWeb API (operates via India-hosted gateway, avoids Render US cloud geoblock, ~2s)
     p_res = None
+    try:
+        import cw_scraper
+        print(f"[{clean_id}] Initiating fast Student Portal sync via CampusWeb API...")
+        cw_res = cw_scraper.scrape_campusweb(clean_id, portal_pwd)
+        if cw_res and cw_res.get('success'):
+            print(f"[{clean_id}] [CAMPUSWEB] CampusWeb API succeeded in <2.5s!")
+            p_res = {
+                'success': True,
+                'data': cw_res.get('attendance', []),
+                'marks': cw_res.get('marks', []),
+                'profile': cw_res.get('profile', {}),
+                'source': 'campusweb_api'
+            }
+        else:
+            print(f"[{clean_id}] CampusWeb attempt returned: {(cw_res or {}).get('error')}")
+    except Exception as cwe:
+        print(f"[{clean_id}] CampusWeb exception: {cwe}")
+
+    # 2. Secondary fallback: Direct sp.srmist.edu.in scraper if CampusWeb was unavailable
+    if not (p_res and p_res.get('success')):
+        try:
+            import srm_portal_scraper
+            print(f"[{clean_id}] Trying direct sp.srmist.edu.in scraper fallback...")
+            p_res = srm_portal_scraper.fetch_portal_data(clean_id, portal_pwd)
+        except Exception as se:
+            print(f"[{clean_id}] Direct portal scrape exception: {se}")
+
     cache_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'portal_data_cache.json')
 
-    pwd_to_use = portal_pwd or acad_pwd
-    if not pwd_to_use:
-        return {
-            'success': False,
-            'error': 'Please enter your SRM Student Portal password.',
-            'reason': 'missing_credentials'
-        }
-
-    # 1. Primary: Direct sp.srmist.edu.in scraper for Student Portal passwords
-    try:
-        import srm_portal_scraper
-        print(f"[{clean_id}] Initiating live Student Portal sync via sp.srmist.edu.in...", flush=True)
-        sp_res = srm_portal_scraper.fetch_portal_data(clean_id, pwd_to_use, courses_list=courses, client_telemetry=client_telemetry)
-        if sp_res and sp_res.get('success'):
-            print(f"[{clean_id}] [PORTAL] Direct Student Portal sync succeeded!", flush=True)
-            p_res = sp_res
-        elif sp_res:
-            print(f"[{clean_id}] Direct portal sync attempt returned: {sp_res.get('error')}", flush=True)
-            p_res = sp_res
-    except Exception as se:
-        print(f"[{clean_id}] Direct portal scrape exception: {se}", flush=True)
-        p_res = {
-            'success': False,
-            'error': 'Could not connect to SRM Student Portal. Please try again.',
-            'reason': 'portal_exception'
-        }
-
-    # If live scrape succeeded, cache the fresh data
+    # If live scrape succeeded from either source, cache the fresh data
     if p_res and p_res.get('success'):
         try:
             c_dict = {}
             if os.path.exists(cache_file):
                 with open(cache_file, 'r', encoding='utf-8') as f:
                     c_dict = json.load(f)
-            prev_entry = c_dict.get(clean_id, {})
-            import hashlib
-            p_hash = hashlib.sha256(portal_pwd.strip().encode('utf-8')).hexdigest() if portal_pwd else prev_entry.get('portal_pwd_hash', '')
-            a_hash = hashlib.sha256(acad_pwd.strip().encode('utf-8')).hexdigest() if acad_pwd else prev_entry.get('acad_pwd_hash', '')
             c_dict[clean_id] = {
-                'portal_pwd_hash': p_hash,
-                'acad_pwd_hash': a_hash,
+                'portal_password': portal_pwd,
                 'data': p_res.get('data', []),
                 'marks': p_res.get('marks', []),
                 'profile': p_res.get('profile', {}),
@@ -691,58 +662,46 @@ def get_portal_data_with_fallback(net_id, portal_pwd, acad_pwd=None, courses=Non
             print(f"[{clean_id}] Cache write warning: {se}")
         return p_res
 
-    # Fallback to verified cached data if password matches and live portal had a temporary network/captcha glitch
-    if portal_pwd or acad_pwd:
-        try:
-            if os.path.exists(cache_file):
-                with open(cache_file, 'r', encoding='utf-8') as f:
-                    c_dict = json.load(f)
+    # If live scrape failed, check verified cache
+    cached_entry = None
+    try:
+        if os.path.exists(cache_file):
+            with open(cache_file, 'r', encoding='utf-8') as f:
+                c_dict = json.load(f)
                 entry = c_dict.get(clean_id)
-                if entry and (entry.get('data') or entry.get('marks')):
-                    import hashlib
-                    exp_hashes = {entry.get('portal_pwd_hash'), entry.get('acad_pwd_hash')} - {None, ''}
-                    # Also check legacy plain passwords if present
-                    legacy_pwds = {entry.get('portal_password'), entry.get('acad_password')} - {None, ''}
-                    pwd_matches = False
-                    for entered_pwd in [portal_pwd, acad_pwd]:
-                        if not entered_pwd:
-                            continue
-                        e_hash = hashlib.sha256(entered_pwd.strip().encode('utf-8')).hexdigest()
-                        if e_hash in exp_hashes or any(lp.strip().lower() == entered_pwd.strip().lower() for lp in legacy_pwds):
-                            pwd_matches = True
-                            break
-                    if pwd_matches:
-                        print(f"[{clean_id}] [CACHE] Serving verified cached Student Portal data")
+                if entry:
+                    exp_pwd = (entry.get('portal_password') or "").strip()
+                    # Verify password matches if recorded
+                    if not exp_pwd or exp_pwd.lower() == portal_pwd.lower():
+                        cached_entry = entry
+                    else:
                         return {
-                            'success': True,
-                            'data': entry.get('data', []),
-                            'marks': entry.get('marks', []),
-                            'profile': entry.get('profile', {}),
-                            'source': 'srm_portal_verified_cache'
+                            'success': False,
+                            'error': 'Invalid SRM Student Portal Password. Student Portal (sp.srmist.edu.in) uses a separate password from Academia (default is your Date of Birth in DDMMYYYY format). Reset at https://ssp.srmist.edu.in/resetpassword/',
+                            'reason': 'invalid_credentials'
                         }
-        except Exception as ce:
-            print(f"[{clean_id}] Cache fallback warning: {ce}")
+    except Exception as ce:
+        print(f"[{clean_id}] Cache read error: {ce}")
+
+    if cached_entry:
+        print(f"[{clean_id}] [CACHE] Using verified Student Portal data (cached)!")
+        return {
+            'success': True,
+            'data': cached_entry.get('data', []),
+            'marks': cached_entry.get('marks', []),
+            'profile': cached_entry.get('profile', {}),
+            'source': 'srm_portal_verified'
+        }
 
     err = (p_res or {}).get('error', 'SRM Portal authentication failed.')
-    reason = (p_res or {}).get('reason', 'portal_error')
-    if reason == 'account_locked' or 'locked' in err.lower():
-        err = 'Your SRM Student Portal account is temporarily locked due to previous failed attempts. Please unlock or reset it at https://ssp.srmist.edu.in/resetpassword/'
-        reason = 'account_locked'
-    elif reason == 'invalid_netid':
-        err = (p_res or {}).get('error')
-    elif reason == 'wrong_captcha':
-        err = 'Student Portal security verification (CAPTCHA) timed out. Please click TRY AGAIN.'
-    elif reason == 'invalid_credentials' or any(w in err.lower() for w in ['invalid login credentials', 'user id or password', 'attempts remaining']):
-        err = 'Invalid NetID or Student Portal password. Note: This requires your SRM Student Portal password (from sp.srmist.edu.in), not your Academia password. You can reset your password at https://ssp.srmist.edu.in/resetpassword/'
-        reason = 'invalid_credentials'
-    else:
-        err = (p_res or {}).get('error', 'Could not connect to SRM Student Portal. Please try again.')
-    return {'success': False, 'error': err, 'reason': reason}
+    if any(w in err.lower() for w in ['invalid', 'password', 'credential', 'user id']):
+        err = 'Invalid SRM Student Portal Password. Student Portal (sp.srmist.edu.in) uses a separate password from Academia (default is your Date of Birth in DDMMYYYY format). You can reset it at https://ssp.srmist.edu.in/resetpassword/'
+    return {'success': False, 'error': err, 'reason': (p_res or {}).get('reason')}
 
 def scrape_academia_worker(reg_no, pwd, batch, out_queue):
     import academia_fast_client
     try:
-        res = academia_fast_client.fetch_academia_fast(reg_no, pwd, batch_override=batch)
+        res = academia_fast_client.fetch_academia_fast(reg_no, pwd)
         out_queue.put(res)
     except Exception as e:
         out_queue.put({'success': False, 'error': str(e)})
@@ -769,7 +728,7 @@ def start_session():
     acad_pwd = (data.get('pwd') or '').strip()
     portal_pwd = (data.get('portalPwd') or data.get('portal_pwd') or '').strip()
 
-    def worker_wrapper(reg_no, acad_pwd_in, portal_pwd_in, batch, sid, is_manual_portal=False):
+    def worker_wrapper(reg_no, acad_pwd_in, portal_pwd_in, batch, sid):
         import concurrent.futures
         try:
             import srm_portal_scraper
@@ -784,7 +743,7 @@ def start_session():
                 out_queue = queue.Queue()
                 scrape_academia_worker(reg_no, acad_pwd_in, batch, out_queue)
                 try:
-                    res = out_queue.get(timeout=20)
+                    res = out_queue.get(timeout=70)
                     if res and res.get('success') and res.get('timetable'):
                         tt = res['timetable']
                         has_classes = any(isinstance(v, list) and len(v) > 0 for v in tt.values())
@@ -799,9 +758,9 @@ def start_session():
 
             def run_portal():
                 if not portal_pwd_in:
-                    return {'success': False, 'error': 'No Student Portal credentials provided'}
+                    return {'success': False, 'error': 'No SRM Portal password provided'}
                 try:
-                    p_res = get_portal_data_with_fallback(net_id, portal_pwd_in, acad_pwd=None)
+                    p_res = get_portal_data_with_fallback(net_id, portal_pwd_in)
                     if p_res and p_res.get('success'):
                         print(f"[{net_id}] SRM Student Portal resolved successfully!")
                         return p_res
@@ -812,63 +771,41 @@ def start_session():
                     print(f"[{net_id}] SRM Portal scraper exception: {pe}")
                     return {'success': False, 'error': str(pe)}
             
-            # Run Portal ONLY if portal password is provided!
+            # Run Portal only if portal password provided; run Academia if acad password provided
             future_portal = executor.submit(run_portal) if portal_pwd_in else None
             future_ac = executor.submit(run_academia) if acad_pwd_in else None
             
             portal_res = None
             ac_res = None
 
-            if future_portal and not future_ac:
+            if future_portal:
                 try:
-                    portal_res = future_portal.result(timeout=25)
+                    portal_res = future_portal.result(timeout=14)
                 except Exception as e:
                     print(f"[{reg_no}] SRM Portal wait: {e}")
-            elif future_ac and not future_portal:
+
+            if future_ac:
                 try:
-                    ac_res = future_ac.result(timeout=20)
+                    ac_res = future_ac.result(timeout=28)
                 except Exception as e:
                     print(f"[{reg_no}] Academia wait: {e}")
-            elif future_portal and future_ac:
-                # Concurrent wait when both credentials are provided
-                done, _ = concurrent.futures.wait([future_portal, future_ac], timeout=20)
-                try:
-                    portal_res = future_portal.result(timeout=0.1) if future_portal in done else None
-                except Exception:
-                    pass
-                try:
-                    ac_res = future_ac.result(timeout=0.1) if future_ac in done else None
-                except Exception:
-                    pass
 
             executor.shutdown(wait=False)
 
             ac_ok = bool(ac_res and ac_res.get('success'))
             portal_ok = bool(portal_res and portal_res.get('success'))
 
-            # If both failed (or the only provided auth failed)
             if not ac_ok and not portal_ok:
                 p_err = (portal_res or {}).get('error', '')
                 ac_err = (ac_res or {}).get('error', '')
                 if not portal_pwd_in:
-                    final_err = ac_err or "Wrong NetID or Password. Please check your Academia password."
-                elif not acad_pwd_in:
-                    final_err = p_err or "Wrong NetID or Password. Please check your Student Portal password."
+                    final_err = "Wrong NetID or Password. Please check your Academia password."
                 else:
-                    ac_is_cred = any(w in ac_err.lower() for w in ['wrong', 'password', 'credential', 'invalid'])
-                    p_is_cred = any(w in p_err.lower() for w in ['wrong', 'password', 'credential', 'invalid'])
-                    if ac_is_cred and p_is_cred:
-                        final_err = "Invalid NetID or Password. Please check your Academia and Student Portal passwords."
-                    elif ac_is_cred:
-                        final_err = ac_err
-                    elif p_is_cred:
-                        final_err = p_err
-                    else:
-                        final_err = ac_err or p_err or "Wrong NetID or Password. Please check your credentials."
-
-                if 'network' in (p_err + ac_err).lower() or 'timeout' in (p_err + ac_err).lower():
-                    if not any(w in final_err.lower() for w in ['password', 'credential', 'invalid', 'wrong']):
-                        final_err = "University servers took too long to respond. Please try again."
+                    final_err = "Wrong NetID or Password. Please check your Academia & SRM Portal passwords."
+                if any(w in p_err.lower() or w in ac_err.lower() for w in ['password', 'credential', 'invalid', 'wrong']):
+                    pass
+                elif 'network' in p_err.lower() or 'network' in ac_err.lower() or 'timeout' in p_err.lower() or 'timeout' in ac_err.lower():
+                    final_err = "University servers took too long to respond. Please try again."
                 sync_jobs[sid] = {'status': 'failed', 'result': {'success': False, 'error': final_err}, 'timestamp': time.time()}
                 return
 
@@ -909,29 +846,9 @@ def start_session():
                     code_key = (c.get('code') or c.get('courseCode') or c.get('course_code') or '').strip().upper()
                     if code_key:
                         course_by_code[code_key] = c
-                        norm_k = re.sub(r'[^A-Z0-9]', '', code_key)
-                        if norm_k:
-                            course_by_code[norm_k] = c
-                            base_k = re.sub(r'(REGULAR|THEORY|PRACTICAL|LAB)$', '', norm_k)
-                            if base_k:
-                                course_by_code[base_k] = c
-
-                def match_meta_course(item_obj):
-                    ck = (item_obj.get('courseCode') or item_obj.get('code') or item_obj.get('course_code') or '').strip().upper()
-                    norm_ck = re.sub(r'[^A-Z0-9]', '', ck)
-                    base_ck = re.sub(r'(REGULAR|THEORY|PRACTICAL|LAB)$', '', norm_ck)
-                    matched = course_by_code.get(ck) or course_by_code.get(norm_ck) or course_by_code.get(base_ck)
-                    if not matched:
-                        item_t = re.sub(r'[^A-Z0-9]', '', (item_obj.get('courseTitle') or item_obj.get('title') or '').upper())
-                        if item_t:
-                            for cc in merged_courses:
-                                cc_t = re.sub(r'[^A-Z0-9]', '', (cc.get('title') or cc.get('name') or '').upper())
-                                if cc_t and (cc_t == item_t or cc_t in item_t or item_t in cc_t):
-                                    return cc
-                    return matched
-
                 for item in merged_att:
-                    mc = match_meta_course(item)
+                    ck = (item.get('courseCode') or item.get('code') or item.get('course_code') or '').strip().upper()
+                    mc = course_by_code.get(ck)
                     if mc:
                         c_cred = mc.get('credit') if mc.get('credit') is not None else mc.get('credits')
                         if c_cred is not None:
@@ -948,7 +865,8 @@ def start_session():
                         if c_rm and not item.get('room'):
                             item['room'] = c_rm
                 for m_item in merged_marks:
-                    mc = match_meta_course(m_item)
+                    ck = (m_item.get('courseCode') or m_item.get('code') or m_item.get('course_code') or '').strip().upper()
+                    mc = course_by_code.get(ck)
                     if mc:
                         c_cred = mc.get('credit') if mc.get('credit') is not None else mc.get('credits')
                         if c_cred is not None:
@@ -965,39 +883,7 @@ def start_session():
                 'courses': merged_courses,
                 'profile': merged_profile,
                 'is_mock_attendance': False,
-                'portal_ok': portal_ok,
-                'acad_ok': ac_ok,
             }
-            if portal_pwd_in and not portal_ok:
-                result['portal_error'] = (portal_res or {}).get('error') or "Invalid NetID or Student Portal password."
-            if acad_pwd_in and not ac_ok:
-                result['acad_error'] = (ac_res or {}).get('error') or "Wrong NetID or Password. Please check your Academia password."
-
-            # Automatically cache verified attendance & marks to portal_data_cache.json for universal resilience
-            if merged_att or merged_marks:
-                try:
-                    c_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'portal_data_cache.json')
-                    c_dict = {}
-                    if os.path.exists(c_file):
-                        with open(c_file, 'r', encoding='utf-8') as f:
-                            c_dict = json.load(f)
-                    p_entry = c_dict.get(net_id, {})
-                    import hashlib
-                    p_h = hashlib.sha256(portal_pwd_in.strip().encode('utf-8')).hexdigest() if portal_pwd_in else p_entry.get('portal_pwd_hash', '')
-                    a_h = hashlib.sha256(acad_pwd_in.strip().encode('utf-8')).hexdigest() if acad_pwd_in else p_entry.get('acad_pwd_hash', '')
-                    c_dict[net_id] = {
-                        'portal_pwd_hash': p_h,
-                        'acad_pwd_hash': a_h,
-                        'data': merged_att,
-                        'marks': merged_marks,
-                        'profile': merged_profile,
-                        'source': 'session_sync'
-                    }
-                    with open(c_file, 'w', encoding='utf-8') as f:
-                        json.dump(c_dict, f, indent=2)
-                    print(f"[{net_id}] Resilient portal cache updated in start_session.")
-                except Exception as ce:
-                    print(f"[{net_id}] Cache update notice: {ce}")
 
             # Profile resolution
             cached_prof = get_cached_student_profile(net_id)
@@ -1030,20 +916,14 @@ def start_session():
                 name = save_prof.get('name', net_id.upper())
                 if 'offline' not in name.lower() and name.lower() != 'student':
                     save_student_to_db(net_id, name, register_no, result.get('data', []), result.get('marks', []), is_mock=result.get('is_mock_attendance', False))
-                record_login_status(net_id, 'academia', 'Success')
-            else:
-                record_login_status(net_id, 'academia', 'Failed', error=result.get('error'))
 
             sync_jobs[sid] = {'status': 'completed', 'result': result, 'timestamp': time.time()}
         except queue.Empty:
-            record_login_status(net_id, 'academia', 'Failed', error='Background task timed out')
             sync_jobs[sid] = {'status': 'failed', 'result': {'success': False, 'error': 'Background task crashed or timed out.'}, 'timestamp': time.time()}
         except Exception as e:
-            record_login_status(net_id, 'academia', 'Failed', error=str(e))
             sync_jobs[sid] = {'status': 'failed', 'result': {'success': False, 'error': f'Background task exception: {str(e)}'}, 'timestamp': time.time()}
 
-    is_manual_portal = bool(data.get('isManualPortal', False))
-    t = threading.Thread(target=worker_wrapper, args=(data.get('regNo'), acad_pwd, portal_pwd, data.get('batch', 1), sync_id, is_manual_portal))
+    t = threading.Thread(target=worker_wrapper, args=(data.get('regNo'), acad_pwd, portal_pwd, data.get('batch', 1), sync_id))
     t.start()
     return jsonify({'success': True, 'sync_id': sync_id})
 
@@ -1075,59 +955,34 @@ def portal_sync():
     raw_reg = data.get('regNo') or data.get('username') or ''
     net_id = raw_reg.split('@')[0].strip().lower()
     portal_pwd = (data.get('portalPwd') or data.get('portal_pwd') or data.get('password') or '').strip()
-    acad_pwd = (data.get('acadPwd') or data.get('pwd') or '').strip()
+    if not portal_pwd and (data.get('acadPwd') or data.get('pwd')):
+        portal_pwd = (data.get('acadPwd') or data.get('pwd') or '').strip()
     client_courses = data.get('courses') or []
-    if client_courses and net_id:
-        _STUDENT_COURSES_CACHE[net_id] = client_courses
 
-    if not portal_pwd and acad_pwd:
-        portal_pwd = acad_pwd
-
-    if not net_id or (not portal_pwd and not acad_pwd):
-        return jsonify({'success': False, 'error': 'Please enter your SRM Student Portal Password or Academia Password.'}), 400
+    if not net_id or not portal_pwd:
+        return jsonify({'success': False, 'error': 'Please enter your SRM Student Portal Password.'}), 400
 
     try:
-        client_telemetry = data.get('telemetry') or data.get('telemetryPayload')
-        courses = client_courses or _STUDENT_COURSES_CACHE.get(net_id) or []
-        p_res = get_portal_data_with_fallback(net_id, portal_pwd, acad_pwd=acad_pwd, courses=courses, client_telemetry=client_telemetry)
+        p_res = get_portal_data_with_fallback(net_id, portal_pwd)
         if not p_res or not p_res.get('success'):
             err = (p_res or {}).get('error', 'SRM Portal authentication failed.')
-            record_login_status(net_id, 'portal', 'Failed', error=err)
+            if any(w in err.lower() for w in ['invalid', 'password', 'credential', 'user id']):
+                err = 'Invalid SRM Student Portal Password. Student Portal (sp.srmist.edu.in) uses a separate password from Academia (default is your Date of Birth in DDMMYYYY format). You can reset it at https://ssp.srmist.edu.in/resetpassword/'
             return jsonify({'success': False, 'error': err})
 
         att = p_res.get('data', [])
         marks = p_res.get('marks', [])
 
+        courses = client_courses or _STUDENT_COURSES_CACHE.get(net_id) or []
         if courses:
-            _STUDENT_COURSES_CACHE[net_id] = courses
             course_by_code = {}
             for c in courses:
                 code_key = (c.get('code') or c.get('courseCode') or c.get('course_code') or '').strip().upper()
                 if code_key:
                     course_by_code[code_key] = c
-                    norm_k = re.sub(r'[^A-Z0-9]', '', code_key)
-                    if norm_k:
-                        course_by_code[norm_k] = c
-                        base_k = re.sub(r'(REGULAR|THEORY|PRACTICAL|LAB)$', '', norm_k)
-                        if base_k:
-                            course_by_code[base_k] = c
-
-            def match_sync_course(item_obj):
-                ck = (item_obj.get('courseCode') or item_obj.get('code') or item_obj.get('course_code') or '').strip().upper()
-                norm_ck = re.sub(r'[^A-Z0-9]', '', ck)
-                base_ck = re.sub(r'(REGULAR|THEORY|PRACTICAL|LAB)$', '', norm_ck)
-                matched = course_by_code.get(ck) or course_by_code.get(norm_ck) or course_by_code.get(base_ck)
-                if not matched:
-                    item_t = re.sub(r'[^A-Z0-9]', '', (item_obj.get('courseTitle') or item_obj.get('title') or '').upper())
-                    if item_t:
-                        for cc in courses:
-                            cc_t = re.sub(r'[^A-Z0-9]', '', (cc.get('title') or cc.get('name') or '').upper())
-                            if cc_t and (cc_t == item_t or cc_t in item_t or item_t in cc_t):
-                                return cc
-                return matched
-
             for item in att:
-                mc = match_sync_course(item)
+                ck = (item.get('courseCode') or item.get('code') or item.get('course_code') or '').strip().upper()
+                mc = course_by_code.get(ck)
                 if mc:
                     c_cred = mc.get('credit') if mc.get('credit') is not None else mc.get('credits')
                     if c_cred is not None:
@@ -1140,7 +995,8 @@ def portal_sync():
                     if c_rm and not item.get('room'):
                         item['room'] = c_rm
             for m_item in marks:
-                mc = match_sync_course(m_item)
+                ck = (m_item.get('courseCode') or m_item.get('code') or m_item.get('course_code') or '').strip().upper()
+                mc = course_by_code.get(ck)
                 if mc:
                     c_cred = mc.get('credit') if mc.get('credit') is not None else mc.get('credits')
                     if c_cred is not None:
@@ -1152,7 +1008,6 @@ def portal_sync():
         save_reg = prof.get('reg_no') or net_id.upper()
         if 'offline' not in save_name.lower() and save_name.lower() != 'student':
             save_student_to_db(net_id, save_name, save_reg, att, marks, is_mock=False)
-        record_login_status(net_id, 'portal', 'Success')
 
         return jsonify({
             'success': True,
@@ -1161,81 +1016,37 @@ def portal_sync():
             'profile': prof
         })
     except Exception as e:
-        record_login_status(net_id, 'portal', 'Failed', error=str(e))
         return jsonify({'success': False, 'error': f'Portal sync error: {str(e)}'})
 
 @app.route('/api/debug_sync', methods=['POST'])
 def debug_sync():
     data = request.json or {}
-    reg = (data.get('regNo') or '').strip()
-    p_pwd = (data.get('portalPwd') or '').strip()
-    a_pwd = (data.get('acadPwd') or '').strip()
+    reg = data.get('regNo', 'bl9209')
+    p_pwd = data.get('portalPwd', 'Bmounika@2003')
     import traceback
     try:
-        from bs4 import BeautifulSoup
         import srm_portal_scraper
-        import cw_scraper
         import requests
         ip = requests.get('https://api.ipify.org', timeout=5).text
+        portal = srm_portal_scraper.SRMPortalSession()
+        portal.load_captcha()
+        solved = srm_portal_scraper.solve_captcha_bytes(portal.captcha_bytes)
+        res = portal.login_attempt(reg, p_pwd, solved)
         
-        diag = {
-            'ip': ip,
-            'cw_steps': [],
-            'sp_steps': []
-        }
+        soup = srm_portal_scraper.BeautifulSoup(getattr(portal, 'last_body', ''), 'html.parser')
+        alert_el = soup.find(class_=lambda c: c and ("alert-icon-content" in c or "alert-danger" in c))
+        alert_html = str(alert_el) if alert_el else 'None'
+        all_alerts = [str(x) for x in soup.find_all(class_=lambda c: c and 'alert' in str(c).lower())]
         
-        # Test 1: Direct portal single OCR attempt diagnostic
-        try:
-            portal = srm_portal_scraper.SRMPortalSession()
-            loaded = portal.load_captcha()
-            c_b64 = base64.b64encode(portal.captcha_bytes or b'').decode('utf-8') if (loaded and portal.captcha_bytes) else ''
-            diag['sp_steps'].append({'step': 'load_captcha', 'loaded': loaded, 'bytes': len(portal.captcha_bytes or b''), 'nonce': portal.nonce, 'captcha_b64': c_b64})
-            if loaded and portal.captcha_bytes:
-                solved = srm_portal_scraper.solve_captcha_bytes(portal.captcha_bytes)
-                diag['sp_steps'].append({'step': 'ocr_solve', 'solved': solved})
-                att_res = portal.login_attempt(reg, p_pwd, solved)
-                diag['sp_steps'].append({
-                    'step': 'login_attempt',
-                    'ok': att_res.get('ok'),
-                    'reason': att_res.get('reason'),
-                    'msg': att_res.get('message'),
-                    'status': getattr(portal, 'last_status', None),
-                    'url': getattr(portal, 'last_url', None),
-                    'alert': [t.get_text() for t in BeautifulSoup(getattr(portal, 'last_body', '') or '', 'html.parser').find_all(class_=lambda c: c and ('alert' in c or 'error' in c))],
-                    'body_snippet': (getattr(portal, 'last_body', '') or '')[:600]
-                })
-        except Exception as spe:
-            diag['sp_steps'].append({'step': 'sp_err', 'err': str(spe)})
-
-        # Test 2: CW requests diagnostic
-        try:
-            s = requests.Session()
-            cw_h = dict(cw_scraper.CW_HEADERS)
-            cw_h['X-Net-ID'] = reg
-            
-            # SP login via CW
-            r_sp = s.post('https://api.campusweb.in/api/student-portal/login', json={'net_id': reg, 'password': p_pwd}, headers=cw_h, timeout=8)
-            diag['cw_steps'].append({'step': 'sp_login', 'status': r_sp.status_code, 'body': r_sp.text[:120]})
-            
-            # Acad login via CW
-            r_acad = s.post('https://api.campusweb.in/api/auth/login', json={'username': f'{reg}@srmist.edu.in', 'password': a_pwd}, headers=cw_h, timeout=8)
-            diag['cw_steps'].append({'step': 'acad_login', 'status': r_acad.status_code, 'body': r_acad.text[:120]})
-            
-            if r_acad.status_code == 200:
-                acad_j = r_acad.json()
-                h_att = dict(cw_h)
-                if acad_j.get('Cookies'):
-                    h_att['X-CSRF-Token'] = acad_j['Cookies']
-                if acad_j.get('sessionToken'):
-                    h_att['X-Session-Token'] = acad_j['sessionToken']
-                r_att = s.post('https://api.campusweb.in/api/student-portal/attendance', json={'net_id': reg}, headers=h_att, timeout=8)
-                diag['cw_steps'].append({'step': 'acad_att', 'status': r_att.status_code, 'len': len(r_att.text), 'body': r_att.text[:120]})
-        except Exception as cwe:
-            diag['cw_steps'].append({'step': 'cw_err', 'err': str(cwe)})
-
         return jsonify({
             'ok': True,
-            'diag': diag
+            'ip': ip,
+            'solved': solved,
+            'res': res,
+            'alert_html': alert_html,
+            'all_alerts': all_alerts,
+            'status': getattr(portal, 'last_status', None),
+            'url': getattr(portal, 'last_url', None)
         })
     except Exception as e:
         return jsonify({'ok': False, 'err': str(e), 'trace': traceback.format_exc()})
