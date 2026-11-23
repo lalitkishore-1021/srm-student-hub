@@ -189,6 +189,8 @@ class SRMPortalSession:
         if proxy:
             self.session.proxies.update({"http": proxy, "https": proxy})
         self.nonce = None
+        self.captcha_nonce = None
+        self.fp_nonce = None
         self.login_form_fields = {}
         self.domain_field_name = "dtoken_x"
         self.captcha_field_name = "cptoken_x"
@@ -209,12 +211,15 @@ class SRMPortalSession:
         text = r.text
         self.captcha_page = text
         self.last_body = text
-        m = re.search(r"window\.SECURE_CONFIG\s*=\s*\{[^}]*?nonce\s*:\s*'([^']+)'", text)
-        if not m:
-            m = re.search(r"window\.SECURE_CONFIG\.nonce\s*=\s*'([^']+)'", text)
-        if not m:
-            m = re.search(r'id="fpNonce"\s*value="([^"]+)"', text)
-        self.nonce = m.group(1) if m else ""
+
+        m_sec = re.search(r"window\.SECURE_CONFIG\s*=\s*\{[^}]*?nonce\s*:\s*'([^']+)'", text)
+        if not m_sec:
+            m_sec = re.search(r"window\.SECURE_CONFIG\.nonce\s*=\s*'([^']+)'", text)
+        self.captcha_nonce = m_sec.group(1) if m_sec else ""
+        self.nonce = self.captcha_nonce
+
+        m_fp = re.search(r'id="fpNonce"\s*value="([^"]+)"', text)
+        self.fp_nonce = m_fp.group(1) if m_fp else ""
 
         df = re.search(r'domainFieldName\s*=\s*[\'"]([^\'"]+)[\'"]', text)
         cf = re.search(r'captchaFieldName\s*=\s*[\'"]([^\'"]+)[\'"]', text)
@@ -237,13 +242,15 @@ class SRMPortalSession:
                 fields[inp_name] = inp.get("value") or ""
         self.login_form_fields = fields
 
-        # Extract server timestamp from secureToken for perfect synchronization
+        # Extract server timestamp and matching fpNonce from secureToken
         self.server_ts = None
         sec_token = fields.get("secureToken", "")
         if sec_token:
             try:
                 decoded = base64.b64decode(sec_token).decode("utf-8", errors="ignore")
                 parts = decoded.split("|")
+                if len(parts) >= 1 and parts[0]:
+                    self.fp_nonce = parts[0]
                 if len(parts) >= 3 and parts[2].isdigit():
                     self.server_ts = int(parts[2])
             except Exception:
@@ -254,7 +261,7 @@ class SRMPortalSession:
             return False
         seg = m_cap.group(0)
         captcha_url = BASE_URL + "/" + seg if not seg.startswith("/") else "https://sp.srmist.edu.in" + seg
-        proof = base64.b64encode(f"{self.nonce}:sp.srmist.edu.in".encode()).decode()
+        proof = base64.b64encode(f"{self.captcha_nonce or self.nonce}:sp.srmist.edu.in".encode()).decode()
         try:
             cr = self.session.get(
                 captcha_url,
@@ -275,28 +282,26 @@ class SRMPortalSession:
 
     def reload_captcha(self) -> bool:
         """
-        Reloads a fresh captcha on the existing session without initiating a new TLS handshake.
-        Extracts new nonce and tokens from the last response body if available, or GETs LOGIN_URL.
+        Reloads a fresh captcha by fetching a fresh LOGIN_URL on the existing keep-alive session.
+        Guarantees fresh nonce, fresh secureToken HMAC, and fresh unburned captcha.
         """
-        text = getattr(self, "last_body", None) or getattr(self, "captcha_page", None) or ""
-        m_cap = re.search(r"SCaptchaServlet[^'\" ]*", text)
-        if not m_cap or "nonce" not in text:
-            try:
-                r = self.session.get(LOGIN_URL, timeout=8.0)
-                text = r.text
-                self.last_body = text
-                self.captcha_page = text
-                m_cap = re.search(r"SCaptchaServlet[^'\" ]*", text)
-            except Exception:
-                return False
+        try:
+            r = self.session.get(LOGIN_URL, timeout=8.0)
+            text = r.text
+        except Exception:
+            return False
 
-        m = re.search(r"window\.SECURE_CONFIG\s*=\s*\{[^}]*?nonce\s*:\s*'([^']+)'", text)
-        if not m:
-            m = re.search(r"window\.SECURE_CONFIG\.nonce\s*=\s*'([^']+)'", text)
-        if not m:
-            m = re.search(r'id="fpNonce"\s*value="([^"]+)"', text)
-        if m:
-            self.nonce = m.group(1)
+        self.captcha_page = text
+        self.last_body = text
+
+        m_sec = re.search(r"window\.SECURE_CONFIG\s*=\s*\{[^}]*?nonce\s*:\s*'([^']+)'", text)
+        if not m_sec:
+            m_sec = re.search(r"window\.SECURE_CONFIG\.nonce\s*=\s*'([^']+)'", text)
+        self.captcha_nonce = m_sec.group(1) if m_sec else ""
+        self.nonce = self.captcha_nonce
+
+        m_fp = re.search(r'id="fpNonce"\s*value="([^"]+)"', text)
+        self.fp_nonce = m_fp.group(1) if m_fp else ""
 
         df = re.search(r'domainFieldName\s*=\s*[\'"]([^\'"]+)[\'"]', text)
         cf = re.search(r'captchaFieldName\s*=\s*[\'"]([^\'"]+)[\'"]', text)
@@ -309,7 +314,6 @@ class SRMPortalSession:
         if m_delim:
             self.random_delimiter = m_delim.group(1)
 
-        self.captcha_page = text
         clean_text = re.sub(r"<!--.*?-->", "", text, flags=re.DOTALL)
         soup_page = BeautifulSoup(clean_text, "html.parser")
         form_el = soup_page.find("form", id="login_form")
@@ -322,11 +326,24 @@ class SRMPortalSession:
         if fields:
             self.login_form_fields = fields
 
+        sec_token = fields.get("secureToken", "")
+        if sec_token:
+            try:
+                decoded = base64.b64decode(sec_token).decode("utf-8", errors="ignore")
+                parts = decoded.split("|")
+                if len(parts) >= 1 and parts[0]:
+                    self.fp_nonce = parts[0]
+                if len(parts) >= 3 and parts[2].isdigit():
+                    self.server_ts = int(parts[2])
+            except Exception:
+                pass
+
+        m_cap = re.search(r"SCaptchaServlet[^'\" ]*", text)
         if not m_cap:
             return False
         seg = m_cap.group(0)
         captcha_url = BASE_URL + "/" + seg if not seg.startswith("/") else "https://sp.srmist.edu.in" + seg
-        proof = base64.b64encode(f"{self.nonce}:sp.srmist.edu.in".encode()).decode()
+        proof = base64.b64encode(f"{self.captcha_nonce or self.nonce}:sp.srmist.edu.in".encode()).decode()
         try:
             cr = self.session.get(
                 captcha_url,
@@ -355,7 +372,7 @@ class SRMPortalSession:
         dtoken = base64.b64encode("sp.srmist.edu.in"[::-1].encode()).decode()
         trap_payload = str(elapsed_sec) + (self.random_delimiter or "0000") + "3"
         cptoken = base64.b64encode(trap_payload.encode()).decode()
-        fp_payload = base64.b64encode(json.dumps({"fp": "", "nonce": self.nonce or "", "ts": now_ms}).encode()).decode()
+        fp_payload = base64.b64encode(json.dumps({"fp": "", "nonce": self.fp_nonce or self.nonce or "", "ts": self.server_ts or now_ms}).encode()).decode()
         tel_data = _telemetry_payload(start_ms, now_ms)
         payload = base64.b64encode(json.dumps(tel_data).encode()).decode()
 
