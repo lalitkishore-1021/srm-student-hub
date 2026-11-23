@@ -432,9 +432,9 @@ class SRMPortalSession:
             blob = alert_text.lower()
             if "locked" in blob:
                 return {"ok": False, "reason": "account_locked", "message": alert_text}
-            if any(k in blob for k in ["attempts remaining", "attempt remaining", "login attempts", "0 out of 3", "1 out of 3"]):
+            if any(k in blob for k in ["attempts remaining", "attempt remaining", "login attempts", "out of 3", "0 out of", "1 out of", "2 out of"]):
                 return {"ok": False, "reason": "invalid_credentials_fatal", "message": alert_text}
-            if any(k in blob for k in ["invalid captcha", "wrong captcha", "captcha mismatch", "incorrect captcha"]):
+            if any(k in blob for k in ["invalid captcha", "wrong captcha", "captcha mismatch", "incorrect captcha", "captcha"]):
                 return {"ok": False, "reason": "wrong_captcha", "message": alert_text}
             # sp.srmist.edu.in emits 'AlertInvalid credentials' for BOTH bad captcha predictions and bad passwords.
             # Mark it retryable so TinyOCR attempts 2, 3, and 4 can run.
@@ -1069,9 +1069,10 @@ def fetch_portal_data(username: str, password: str, courses_list: Optional[List[
                 print(f"[{netid}] [PORTAL] Auth stopped ({reason}): {msg}", flush=True)
                 return {"success": False, "error": msg, "reason": "account_locked" if reason == "account_locked" else "invalid_credentials"}
 
-            # Prepare for next attempt: reset captcha_bytes to trigger reload_captcha on same session
-            portal.captcha_bytes = None
-            time.sleep(0.3)
+            # Prepare for next attempt: clean session recreation (Ratio-D parity: avoids SCaptchaServlet 429 rate limit)
+            portal = SRMPortalSession()
+            portal.load_captcha()
+            time.sleep(0.1)
         except Exception as e:
             print(f"[{netid}] [PORTAL] Attempt error: {e}", flush=True)
             portal.captcha_bytes = None

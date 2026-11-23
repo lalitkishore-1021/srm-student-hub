@@ -2338,13 +2338,14 @@
         }
         .music-upload-close {
             position: absolute; top: 16px; right: 16px;
-            width: 32px; height: 32px; border-radius: 50%; background: rgba(255,255,255,0.06);
+            width: 38px; height: 38px; border-radius: 50%; background: rgba(255,255,255,0.12);
             backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
-            border: 1px solid rgba(255,255,255,0.12); color: rgba(255,255,255,0.7);
-            font-size: 18px; display: flex; align-items: center; justify-content: center;
-            transition: all 0.2s cubic-bezier(0.2,0.8,0.2,1); cursor: pointer; z-index: 2;
+            border: 1px solid rgba(255,255,255,0.22); color: rgba(255,255,255,0.9);
+            font-size: 22px; line-height: 1; display: flex; align-items: center; justify-content: center;
+            transition: all 0.2s cubic-bezier(0.2,0.8,0.2,1); cursor: pointer; z-index: 20;
+            user-select: none; -webkit-tap-highlight-color: transparent;
         }
-        .music-upload-close:hover { background: rgba(255,255,255,0.15); color: #fff; transform: scale(1.05); }
+        .music-upload-close:hover, .music-upload-close:active { background: rgba(255,255,255,0.25); color: #fff; transform: scale(1.08); }
         .music-upload-input {
             background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.10);
             border-radius: 14px; padding: 13px 16px; color: #ffffff; font-size: 14px; width: 100%; margin-bottom: 12px;
@@ -7040,7 +7041,10 @@
                     <input type="file" id="music-audio-file" accept="audio/*" style="display: none;" onchange="if(this.files.length) { document.getElementById('music-audio-text').innerHTML = '<span style=\'color:#4ade80;\'>✓ ' + this.files[0].name + '</span>'; } else { document.getElementById('music-audio-text').innerText = 'Required · MP3, WAV, OGG · Max 10MB'; }">
                 </label>
                 
-                <button class="music-upload-cta" id="music-upload-cta" onclick="submitMusic()">UPLOAD TRACK</button>
+                <div style="display: flex; gap: 10px; margin-top: 4px;">
+                    <button class="music-upload-cta" id="music-upload-cta" onclick="submitMusic()" style="flex: 1;">UPLOAD TRACK</button>
+                    <button type="button" class="music-upload-cta" onclick="document.getElementById('musicSubmitModal').style.display='none'" style="flex: 0.45; background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.85); border: 1px solid rgba(255,255,255,0.15);">CANCEL</button>
+                </div>
                 <p id="music-status" style="font-size: 0.85rem; font-weight: bold; text-align: center; min-height: 20px; color: rgba(255,255,255,0.7); margin-top: 10px;"></p>
             </div>
         </div>
@@ -7597,6 +7601,10 @@
             document.body.classList.remove('in-music-lounge');
             const dock = document.getElementById('levyra-bottom-dock');
             if (dock) dock.style.display = 'none';
+            const uploadModal = document.getElementById('musicSubmitModal');
+            if (uploadModal) uploadModal.style.display = 'none';
+            const importModal = document.getElementById('playlistImportModal');
+            if (importModal) importModal.style.display = 'none';
             switchNav('home-view', document.querySelector('.nav-item'));
         }
 
@@ -7609,6 +7617,10 @@
         }
 
         function switchNav(viewId, element) {
+            const uploadModal = document.getElementById('musicSubmitModal');
+            if (uploadModal) uploadModal.style.display = 'none';
+            const importModal = document.getElementById('playlistImportModal');
+            if (importModal) importModal.style.display = 'none';
             if (typeof playUiSound === 'function') playUiSound('tab');
             if (typeof triggerHaptic === 'function') triggerHaptic('light');
             document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
@@ -7638,6 +7650,18 @@
                 } catch(e) {}
             }
         }
+
+        // Global dismiss for overlays on Escape key
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                const uploadModal = document.getElementById('musicSubmitModal');
+                if (uploadModal && uploadModal.style.display !== 'none') uploadModal.style.display = 'none';
+                const importModal = document.getElementById('playlistImportModal');
+                if (importModal && importModal.style.display !== 'none') importModal.style.display = 'none';
+                const createPlModal = document.getElementById('createPlaylistModal');
+                if (createPlModal && createPlModal.style.display !== 'none') createPlModal.style.display = 'none';
+            }
+        });
 
         window.addEventListener('load', () => {
             // Track site open
@@ -12294,28 +12318,52 @@ function checkAndShowHolidayBanner(viewId) {
                 .slice(0, 4);
             const excludeTitles = recentTracks.slice(0, 15).map(t => t.title).filter(Boolean);
 
-            try {
-                const topRes = await fetch(`${BACKEND_URL}/api/music/trending?country=${currentMusicCountry}&category=top&n=8&t=${Date.now()}`);
-                const topData = await topRes.json();
-                if (topData.success && Array.isArray(topData.results) && topData.results.length > 0) {
-                    homeTopTracks = topData.results;
-                    renderHomeSongList(homeTopTracks.slice(0, 4), topList, 'homeTop');
-                }
-            } catch(e) {
-                console.warn("Home top songs error:", e);
+            // 0ms Instant Stale-While-Revalidate: Render cached home tracks immediately
+            if (!force) {
+                try {
+                    const localTop = localStorage.getItem('srm_home_top');
+                    if (localTop) {
+                        const parsedTop = JSON.parse(localTop);
+                        if (Array.isArray(parsedTop) && parsedTop.length > 0) {
+                            homeTopTracks = parsedTop;
+                            renderHomeSongList(homeTopTracks.slice(0, 4), topList, 'homeTop');
+                        }
+                    }
+                    const localPicked = localStorage.getItem('srm_home_picked');
+                    if (localPicked) {
+                        const parsedPicked = JSON.parse(localPicked);
+                        if (Array.isArray(parsedPicked) && parsedPicked.length > 0) {
+                            homePickedTracks = parsedPicked;
+                            renderHomeSongList(homePickedTracks.slice(0, 4), pickedList, 'homePicked');
+                        }
+                    }
+                } catch(e) {}
             }
 
+            const seedParam = encodeURIComponent(seedArtists.join(','));
+            const excludeParam = encodeURIComponent(excludeTitles.join(','));
+            const refreshParam = force ? '&refresh=1' : '';
+
+            // Fetch Top Charts & Personalized "Picked For You" concurrently in parallel
+            const topPromise = fetch(`${BACKEND_URL}/api/music/trending?country=${currentMusicCountry}&category=top&n=8${refreshParam}`).then(r => r.json());
+            const pickPromise = fetch(`${BACKEND_URL}/api/music/trending?country=${currentMusicCountry}&category=picked&seed_artists=${seedParam}&exclude=${excludeParam}&n=8${refreshParam}`).then(r => r.json());
+
             try {
-                const seedParam = encodeURIComponent(seedArtists.join(','));
-                const excludeParam = encodeURIComponent(excludeTitles.join(','));
-                const pickRes = await fetch(`${BACKEND_URL}/api/music/trending?country=${currentMusicCountry}&category=picked&seed_artists=${seedParam}&exclude=${excludeParam}&n=8&t=${Date.now()}`);
-                const pickData = await pickRes.json();
-                if (pickData.success && Array.isArray(pickData.results) && pickData.results.length > 0) {
-                    homePickedTracks = pickData.results;
+                const [topRes, pickRes] = await Promise.allSettled([topPromise, pickPromise]);
+
+                if (topRes.status === 'fulfilled' && topRes.value.success && Array.isArray(topRes.value.results) && topRes.value.results.length > 0) {
+                    homeTopTracks = topRes.value.results;
+                    renderHomeSongList(homeTopTracks.slice(0, 4), topList, 'homeTop');
+                    try { localStorage.setItem('srm_home_top', JSON.stringify(homeTopTracks)); } catch(e) {}
+                }
+
+                if (pickRes.status === 'fulfilled' && pickRes.value.success && Array.isArray(pickRes.value.results) && pickRes.value.results.length > 0) {
+                    homePickedTracks = pickRes.value.results;
                     renderHomeSongList(homePickedTracks.slice(0, 4), pickedList, 'homePicked');
+                    try { localStorage.setItem('srm_home_picked', JSON.stringify(homePickedTracks)); } catch(e) {}
                 }
             } catch(e) {
-                console.warn("Home picked error:", e);
+                console.warn("Home songs fetch error:", e);
             }
 
             if (carousel) {
@@ -13744,6 +13792,7 @@ function checkAndShowHolidayBanner(viewId) {
                 const data = await res.json();
                 const importedTracks = (data.tracks && data.tracks.length > 0) ? data.tracks : (data.playlist && data.playlist.tracks ? data.playlist.tracks : []);
                 const importedName = data.name || (data.playlist && data.playlist.name) || (currentImportSource.charAt(0).toUpperCase() + currentImportSource.slice(1) + ' Playlist');
+                const importedCover = (data.playlist && data.playlist.cover_url) || (importedTracks[0] && importedTracks[0].cover_url) || '';
                 if (data.success && importedTracks.length > 0) {
                     const newId = 'pl_' + Date.now();
                     if (!userMusicLibrary.playlists) userMusicLibrary.playlists = [];
@@ -13751,6 +13800,7 @@ function checkAndShowHolidayBanner(viewId) {
                         id: newId,
                         name: importedName,
                         created_at: Date.now(),
+                        cover_url: importedCover,
                         tracks: importedTracks
                     };
                     userMusicLibrary.playlists.push(newPlaylist);
@@ -13906,8 +13956,9 @@ function checkAndShowHolidayBanner(viewId) {
             customPlaylists.forEach(p => {
                 const count = (p.tracks || []).length;
                 let coverImg = '';
-                if (count > 0 && p.tracks[0].cover_url) {
-                    coverImg = `<img src="${p.tracks[0].cover_url}" style="width:100%; height:100%; object-fit:cover; border-radius:14px;">`;
+                const pCover = p.cover_url || (count > 0 && p.tracks[0].cover_url) || (count > 0 && p.tracks[0].cover_data);
+                if (pCover) {
+                    coverImg = `<img src="${pCover}" style="width:100%; height:100%; object-fit:cover; border-radius:14px;" onerror="this.onerror=null; this.src='images/app-icon.svg';">`;
                 } else {
                     coverImg = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>`;
                 }
@@ -13993,15 +14044,63 @@ function checkAndShowHolidayBanner(viewId) {
             const tracks = playlist.tracks || [];
             if (titleEl) titleEl.innerText = playlist.name || playlist.title || 'Playlist';
             if (countEl) countEl.innerText = `${tracks.length} song${tracks.length === 1 ? '' : 's'}`;
+            
+            const validCover = playlist.cover_url || (tracks.length > 0 && (tracks[0].cover_url || (tracks[0].has_cover ? `${BACKEND_URL}/api/music/cover/${tracks[0].id}.jpg` : tracks[0].cover_data))) || '';
             if (heroArt) {
-                if (tracks.length > 0 && (tracks[0].cover_url || tracks[0].has_cover || tracks[0].cover_data)) {
-                    heroArt.src = tracks[0].cover_url || (tracks[0].has_cover ? `${BACKEND_URL}/api/music/cover/${tracks[0].id}.jpg` : (tracks[0].cover_data || 'images/app-icon.svg'));
-                } else {
-                    heroArt.src = 'images/app-icon.svg';
-                }
+                heroArt.src = validCover || 'images/app-icon.svg';
             }
 
             renderPlaylistTracks(playlist);
+            hydratePlaylistCovers(playlist);
+        }
+
+        async function hydratePlaylistCovers(playlist) {
+            if (!playlist || !Array.isArray(playlist.tracks) || playlist.tracks.length === 0) return;
+            const needsCover = playlist.tracks.filter(t => !t.cover_url || t.cover_url === 'images/app-icon.svg' || !t.audio_url);
+            if (needsCover.length === 0) return;
+
+            const batch = needsCover.slice(0, 20).map(t => ({
+                id: t.id,
+                title: t.title,
+                artist: t.artist
+            }));
+
+            try {
+                const res = await fetch(`${BACKEND_URL}/api/music/resolve_batch`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ tracks: batch })
+                });
+                const data = await res.json();
+                if (data.success && data.resolved) {
+                    let updated = false;
+                    Object.keys(data.resolved).forEach(tid => {
+                        const info = data.resolved[tid];
+                        const track = playlist.tracks.find(t => String(t.id) === String(tid));
+                        if (track && info) {
+                            if (info.cover_url) {
+                                track.cover_url = info.cover_url;
+                                updated = true;
+                                const rowImg = document.querySelector(`.apple-track-row[data-id="${tid}"] img.apple-track-thumb`);
+                                if (rowImg) rowImg.src = info.cover_url;
+                            }
+                            if (info.audio_url && !track.audio_url) {
+                                track.audio_url = info.audio_url;
+                                updated = true;
+                            }
+                        }
+                    });
+                    if (updated) {
+                        const heroArt = document.getElementById('playlist-detail-hero-art');
+                        if (heroArt && (!playlist.cover_url || heroArt.src.includes('app-icon.svg')) && playlist.tracks[0] && playlist.tracks[0].cover_url) {
+                            heroArt.src = playlist.tracks[0].cover_url;
+                        }
+                        saveUserMusicLibrary();
+                    }
+                }
+            } catch(e) {
+                console.warn("Hydrate covers error:", e);
+            }
         }
 
         function openPlaylistOptions(playlistId) {

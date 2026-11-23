@@ -1,6 +1,7 @@
 
 import time
 import threading
+import concurrent.futures
 import queue
 import os
 import re
@@ -2471,15 +2472,22 @@ def search_online_music():
 
 _country_music_cache = {}
 _official_chart_cache = {}
+_saavn_playlist_cache = {}
+_artist_catalog_cache = {}
 
 def fetch_jiosaavn_playlist_tracks(listid, limit=35):
+    now = time.time()
+    cache_key = str(listid)
+    if cache_key in _saavn_playlist_cache and now - _saavn_playlist_cache[cache_key]['time'] < 3600:
+        return _saavn_playlist_cache[cache_key]['tracks'][:limit]
+
     url = f"https://www.jiosaavn.com/api.php?__call=playlist.getDetails&_format=json&_marker=0&cc=in&listid={listid}"
     try:
         r = requests.get(url, headers={'User-Agent': 'Mozilla/5.0'}, timeout=8)
         data = r.json()
         songs = data.get('songs', [])
         results = []
-        for item in songs[:limit]:
+        for item in songs:
             enc = item.get('encrypted_media_url')
             media_url = decrypt_saavn_url(enc) if enc else item.get('media_preview_url')
             img = (item.get('image') or '').replace('150x150.jpg', '500x500.jpg').replace('http://', 'https://')
@@ -2495,9 +2503,45 @@ def fetch_jiosaavn_playlist_tracks(listid, limit=35):
                 'has_video': False,
                 'is_online': True
             })
-        return results
+        if results:
+            _saavn_playlist_cache[cache_key] = {'time': now, 'tracks': results}
+        return results[:limit]
     except Exception as e:
         print(f"Error fetching JioSaavn playlist {listid}: {e}")
+        return []
+
+def fetch_artist_catalog_tracks(artist, limit=8):
+    now = time.time()
+    cache_key = artist.strip().lower()
+    if cache_key in _artist_catalog_cache and now - _artist_catalog_cache[cache_key]['time'] < 3600:
+        return _artist_catalog_cache[cache_key]['tracks'][:limit]
+    url = f"https://www.jiosaavn.com/api.php?__call=search.getResults&_format=json&_marker=0&cc=in&p=1&n=8&q={urllib.parse.quote(artist)}"
+    try:
+        r = requests.get(url, headers={'User-Agent': 'Mozilla/5.0'}, timeout=4)
+        data = r.json()
+        tracks = []
+        for item in data.get('results', []):
+            sid = str(item.get('id'))
+            stitle = clean_saavn_text(item.get('song') or item.get('title'))
+            enc = item.get('encrypted_media_url')
+            media_url = decrypt_saavn_url(enc) if enc else item.get('media_preview_url')
+            img = (item.get('image') or '').replace('150x150.jpg', '500x500.jpg').replace('http://', 'https://')
+            tracks.append({
+                'id': sid,
+                'title': stitle,
+                'artist': clean_saavn_text(item.get('singers') or item.get('primary_artists') or item.get('music')),
+                'album': clean_saavn_text(item.get('album')),
+                'year': item.get('year', ''),
+                'duration': int(item.get('duration') or 0),
+                'cover_url': img,
+                'audio_url': media_url,
+                'has_video': False,
+                'is_online': True
+            })
+        if tracks:
+            _artist_catalog_cache[cache_key] = {'time': now, 'tracks': tracks}
+        return tracks[:limit]
+    except Exception:
         return []
 
 @app.route('/api/music/trending', methods=['GET'])
@@ -2505,7 +2549,7 @@ def get_trending_music():
     global _country_music_cache, _official_chart_cache
     country = request.args.get('country', 'IN').upper().strip()
     category = request.args.get('category', 'top').lower().strip()
-    force_refresh = request.args.get('refresh') == '1' or 't' in request.args
+    force_refresh = request.args.get('refresh') == '1'
     seed_artists_param = request.args.get('seed_artists', '').strip()
     exclude_param = request.args.get('exclude', '').strip()
     now = time.time()
@@ -2529,35 +2573,15 @@ def get_trending_music():
         if seed_artists:
             user_recs = []
             seen_ids = set()
-            # Fetch top catalog hits for each artist the user actually listens to
-            for artist in seed_artists[:4]:
-                url = f"https://www.jiosaavn.com/api.php?__call=search.getResults&_format=json&_marker=0&cc=in&p=1&n=8&q={urllib.parse.quote(artist)}"
-                try:
-                    r = requests.get(url, headers={'User-Agent': 'Mozilla/5.0'}, timeout=5)
-                    data = r.json()
-                    for item in data.get('results', []):
-                        sid = str(item.get('id'))
-                        stitle = clean_saavn_text(item.get('song') or item.get('title'))
-                        if sid in seen_ids or stitle.lower() in exclude_titles:
-                            continue
-                        seen_ids.add(sid)
-                        enc = item.get('encrypted_media_url')
-                        media_url = decrypt_saavn_url(enc) if enc else item.get('media_preview_url')
-                        img = (item.get('image') or '').replace('150x150.jpg', '500x500.jpg').replace('http://', 'https://')
-                        user_recs.append({
-                            'id': sid,
-                            'title': stitle,
-                            'artist': clean_saavn_text(item.get('singers') or item.get('primary_artists') or item.get('music')),
-                            'album': clean_saavn_text(item.get('album')),
-                            'year': item.get('year', ''),
-                            'duration': int(item.get('duration') or 0),
-                            'cover_url': img,
-                            'audio_url': media_url,
-                            'has_video': False,
-                            'is_online': True
-                        })
-                except Exception as e:
-                    print(f"Error fetching artist recs for {artist}: {e}")
+            # Fetch top catalog hits for seed artists in parallel
+            with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
+                artist_hits = list(executor.map(lambda a: fetch_artist_catalog_tracks(a, 8), seed_artists[:4]))
+            for tracks in artist_hits:
+                for t in tracks:
+                    if t['id'] in seen_ids or t['title'].lower() in exclude_titles:
+                        continue
+                    seen_ids.add(t['id'])
+                    user_recs.append(t)
             
             # If fewer than 8, top up with Spotify / JioSaavn curated Indie discovery hits
             if len(user_recs) < 8:
@@ -2675,6 +2699,16 @@ def import_spotify_playlist(url_or_id):
     title = entity.get('name') or entity.get('title') or ('Spotify Album' if is_album else 'Spotify Playlist')
     raw_tracks = entity.get('trackList', [])
     
+    # Extract authentic Spotify cover image (visualIdentity 640x640 or coverArt)
+    playlist_cover = ''
+    cover_art = entity.get('coverArt', {})
+    if isinstance(cover_art, dict) and cover_art.get('sources'):
+        playlist_cover = cover_art['sources'][0].get('url', '')
+    if not playlist_cover:
+        v_img = entity.get('visualIdentity', {}).get('image', [])
+        if isinstance(v_img, list) and v_img:
+            playlist_cover = v_img[-1].get('url', '')
+
     tracks = []
     for t in raw_tracks:
         track_title = t.get('title', '').strip()
@@ -2687,17 +2721,47 @@ def import_spotify_playlist(url_or_id):
                 'title': track_title,
                 'artist': track_artist or 'Spotify Artist',
                 'duration': dur_sec,
-                'cover_url': '',
+                'cover_url': playlist_cover, # High-res playlist cover as instant fallback (never SRM logo)
                 'is_online': True
             })
             
     if not tracks:
         raise Exception("No playable songs found in this Spotify playlist or album.")
 
+    # Concurrently resolve actual 500x500 song covers & audio streams for top 12 tracks
+    def _resolve_initial_sp_track(track):
+        try:
+            q = f"{track['title']} {track['artist']}".strip()
+            s_url = f"https://www.jiosaavn.com/api.php?__call=search.getResults&_format=json&_marker=0&cc=in&p=1&n=1&q={urllib.parse.quote(q)}"
+            sr = requests.get(s_url, headers={'User-Agent': 'Mozilla/5.0'}, timeout=3).json()
+            items = sr.get('results', [])
+            if items:
+                it = items[0]
+                img = (it.get('image') or '').replace('150x150.jpg', '500x500.jpg').replace('http://', 'https://')
+                if img:
+                    track['cover_url'] = img
+                enc = it.get('encrypted_media_url')
+                if enc:
+                    track['audio_url'] = decrypt_saavn_url(enc)
+                elif it.get('media_preview_url'):
+                    track['audio_url'] = it.get('media_preview_url')
+        except Exception:
+            pass
+
+    try:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=6) as ex:
+            list(ex.map(_resolve_initial_sp_track, tracks[:12]))
+    except Exception:
+        pass
+
+    if not playlist_cover and tracks and tracks[0].get('cover_url'):
+        playlist_cover = tracks[0]['cover_url']
+
     return {
         'id': f"pl_sp_{int(time.time())}",
         'name': title,
         'source': 'spotify',
+        'cover_url': playlist_cover,
         'created_at': int(time.time() * 1000),
         'tracks': tracks
     }
@@ -2864,10 +2928,12 @@ def import_youtube_playlist(url_or_id):
     if not tracks:
         raise Exception("Could not find songs in playlist. Please make sure the playlist is Public or Unlisted.")
         
+    pl_cover = tracks[0].get('cover_url') if tracks else ''
     return {
         'id': f"pl_yt_{int(time.time())}",
         'name': title,
         'source': 'youtube',
+        'cover_url': pl_cover,
         'created_at': int(time.time() * 1000),
         'tracks': tracks
     }
@@ -2895,10 +2961,39 @@ def import_csv_playlist(csv_text, name="Imported CSV Playlist"):
             'cover_url': '',
             'is_online': True
         })
+
+    def _resolve_csv_track(track):
+        try:
+            q = f"{track['title']} {track['artist']}".strip()
+            s_url = f"https://www.jiosaavn.com/api.php?__call=search.getResults&_format=json&_marker=0&cc=in&p=1&n=1&q={urllib.parse.quote(q)}"
+            sr = requests.get(s_url, headers={'User-Agent': 'Mozilla/5.0'}, timeout=3).json()
+            items = sr.get('results', [])
+            if items:
+                it = items[0]
+                img = (it.get('image') or '').replace('150x150.jpg', '500x500.jpg').replace('http://', 'https://')
+                if img:
+                    track['cover_url'] = img
+                enc = it.get('encrypted_media_url')
+                if enc:
+                    track['audio_url'] = decrypt_saavn_url(enc)
+                elif it.get('media_preview_url'):
+                    track['audio_url'] = it.get('media_preview_url')
+        except Exception:
+            pass
+
+    try:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=6) as ex:
+            list(ex.map(_resolve_csv_track, tracks[:10]))
+    except Exception:
+        pass
+
+    pl_cover = tracks[0].get('cover_url') if tracks else ''
+
     return {
         'id': f"pl_csv_{int(time.time())}",
         'name': name or "Imported CSV Playlist",
         'source': 'csv',
+        'cover_url': pl_cover,
         'created_at': int(time.time() * 1000),
         'tracks': tracks
     }
@@ -2948,8 +3043,53 @@ def import_playlist_endpoint():
     except Exception as e:
         print(f"Playlist import error: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/music/resolve_batch', methods=['POST'])
+def resolve_music_batch():
+    try:
+        data = request.get_json(force=True, silent=True) or {}
+        tracks = data.get('tracks', [])
+        if not tracks or not isinstance(tracks, list):
+            return jsonify({'success': False, 'error': 'No tracks provided'}), 400
+            
+        def resolve_single(t):
+            title = t.get('title', '').strip()
+            artist = t.get('artist', '').strip()
+            tid = str(t.get('id', ''))
+            if not title:
+                return tid, None
+            q = f"{title} {artist}".strip()
+            url = f"https://www.jiosaavn.com/api.php?__call=search.getResults&_format=json&_marker=0&cc=in&p=1&n=1&q={urllib.parse.quote(q)}"
+            try:
+                r = requests.get(url, headers={'User-Agent': 'Mozilla/5.0'}, timeout=3).json()
+                items = r.get('results', [])
+                if items:
+                    it = items[0]
+                    img = (it.get('image') or '').replace('150x150.jpg', '500x500.jpg').replace('http://', 'https://')
+                    enc = it.get('encrypted_media_url')
+                    media_url = decrypt_saavn_url(enc) if enc else it.get('media_preview_url')
+                    return tid, {
+                        'id': str(it.get('id')),
+                        'title': clean_saavn_text(it.get('song') or it.get('title')),
+                        'artist': clean_saavn_text(it.get('singers') or it.get('primary_artists') or it.get('music')),
+                        'cover_url': img,
+                        'audio_url': media_url,
+                        'duration': int(it.get('duration') or 0)
+                    }
+            except Exception:
+                pass
+            return tid, None
+
+        results = {}
+        with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
+            resolved_pairs = list(executor.map(resolve_single, tracks[:25]))
+            for tid, info in resolved_pairs:
+                if tid and info:
+                    results[tid] = info
+                    
+        return jsonify({'success': True, 'resolved': results})
     except Exception as e:
-        print(f"Playlist import error: {e}")
+        print(f"Resolve batch error: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/music/resolve', methods=['GET'])
@@ -3870,7 +4010,7 @@ def like_spotted(post_id):
 
 @app.route('/ping')
 def ping():
-    return jsonify({"status": "ok", "version": "v110-deep-diag", "commit": "v110"})
+    return jsonify({"status": "ok", "version": "v111-fresh-session-parity", "commit": "v111"})
 
 
 @app.route('/api/admin/portal_diag', methods=['GET', 'POST'])

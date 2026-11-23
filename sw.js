@@ -1,5 +1,5 @@
 // Change this version number every time you want to force phones to update!
-const CACHE_NAME = 'srm-hub-v109-dual-nonce-fp-fix';
+const CACHE_NAME = 'srm-hub-v111-fresh-session-parity';
 
 const ASSETS_TO_CACHE = [
     '/',
