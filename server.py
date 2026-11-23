@@ -3895,11 +3895,21 @@ def admin_portal_diag():
     except Exception as e:
         diag["load_captcha_error"] = str(e)
 
-    # 3b. Test CampusWeb API if credentials provided
+    # 3b. Test Direct SRM Portal Scraper & CampusWeb API if credentials provided
     body_json = request.get_json(silent=True) if request.is_json else {}
     test_netid = request.args.get('netid') or (body_json or {}).get('netid')
     test_pwd = request.args.get('pwd') or (body_json or {}).get('pwd')
     if test_netid and test_pwd:
+        try:
+            t_fetch0 = time.time()
+            direct_data = srm_portal_scraper.fetch_portal_data(test_netid, test_pwd)
+            diag["direct_fetch_time"] = round(time.time() - t_fetch0, 3)
+            diag["direct_fetch_success"] = direct_data.get("success")
+            diag["direct_fetch_data_len"] = len(direct_data.get("data", []))
+            diag["direct_fetch_marks_len"] = len(direct_data.get("marks", []))
+            diag["direct_fetch_error"] = direct_data.get("error")
+        except Exception as fe:
+            diag["direct_fetch_exception"] = str(fe)
         try:
             import cw_scraper
             import cloudscraper
