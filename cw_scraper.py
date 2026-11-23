@@ -60,76 +60,91 @@ def scrape_campusweb(netid: str, portal_pwd: str = "", acad_pwd: str = None):
     if not clean_id or (not portal_pwd and not acad_pwd):
         return {'success': False, 'error': 'Missing credentials for CampusWeb sync', 'reason': 'missing_credentials'}
 
-    session = _create_session()
-    headers = dict(CW_HEADERS)
-    headers['X-Net-ID'] = clean_id.upper()
+    cand_ids = [clean_id]
+    if re.match(r'^[a-z]1\d{4}$', clean_id):
+        # Auto-correct common typo where student types digit 1 instead of letter l (e.g. b19209 -> bl9209)
+        cand_ids.insert(0, clean_id[0] + 'l' + clean_id[2:])
 
+    session = _create_session()
     has_auth = False
     working_portal_pwd = None
+    active_id = clean_id
+    headers = dict(CW_HEADERS)
 
-    # Step 1: Direct Student Portal authentication (candidates)
-    cand_portal_pwds = []
-    if portal_pwd:
-        cand_portal_pwds.append(portal_pwd)
-    if acad_pwd and acad_pwd not in cand_portal_pwds:
-        cand_portal_pwds.append(acad_pwd)
+    for cid in cand_ids:
+        headers['X-Net-ID'] = cid.upper()
 
-    for cand_pwd in cand_portal_pwds:
-        try:
-            sp_res = session.post(
-                'https://api.campusweb.in/api/student-portal/login',
-                headers=headers,
-                json={'net_id': clean_id, 'password': cand_pwd},
-                timeout=6,
-            )
-            resp_snippet = (sp_res.text or "").strip()[:150]
-            print(f"[{clean_id}] CampusWeb direct Student Portal login attempt: status={sp_res.status_code}, resp={resp_snippet}")
-            if sp_res.status_code == 200:
-                sp_data = sp_res.json()
-                if sp_data.get('status') == 'success' and sp_data.get('session_token'):
-                    headers['X-Session-Token'] = sp_data['session_token']
-                    headers['X-CSRF-Token'] = 'sp_session=http_only'
-                    has_auth = True
-                    working_portal_pwd = cand_pwd
-                    print(f"[{clean_id}] CampusWeb direct Student Portal login succeeded!")
-                    break
-            elif sp_res.status_code == 429:
-                print(f"[{clean_id}] CampusWeb direct portal login rate limited, falling back to Academia auth...")
-        except Exception as e:
-            print(f"[{clean_id}] CampusWeb direct portal login notice: {e}")
+        # Step 1: Direct Student Portal authentication (candidates)
+        cand_portal_pwds = []
+        if portal_pwd:
+            cand_portal_pwds.append(portal_pwd)
+        if acad_pwd and acad_pwd not in cand_portal_pwds:
+            cand_portal_pwds.append(acad_pwd)
 
-    # Step 2: Academia authentication via /api/auth/login
-    cand_acad_pwds = []
-    if acad_pwd:
-        cand_acad_pwds.append(acad_pwd)
-    if portal_pwd and portal_pwd not in cand_acad_pwds:
-        cand_acad_pwds.append(portal_pwd)
-
-    if not has_auth or not working_portal_pwd:
-        for cand_pwd in cand_acad_pwds:
+        for cand_pwd in cand_portal_pwds:
             try:
-                auth_res = session.post(
-                    'https://api.campusweb.in/api/auth/login',
+                sp_res = session.post(
+                    'https://api.campusweb.in/api/student-portal/login',
                     headers=headers,
-                    json={'username': f'{clean_id}@srmist.edu.in', 'password': cand_pwd},
-                    timeout=6,
+                    json={'net_id': cid, 'password': cand_pwd},
+                    timeout=8,
                 )
-                resp_snippet = (auth_res.text or "").strip()[:150]
-                print(f"[{clean_id}] CampusWeb Academia auth attempt: status={auth_res.status_code}, resp={resp_snippet}")
-                if auth_res.status_code == 200:
-                    auth_data = auth_res.json()
-                    if auth_data.get('Status') == 'success':
-                        session_token = auth_data.get('sessionToken')
-                        cookies_str = auth_data.get('Cookies')
-                        if cookies_str:
-                            headers['X-CSRF-Token'] = cookies_str
-                        if session_token:
-                            headers['X-Session-Token'] = session_token
+                resp_snippet = (sp_res.text or "").strip()[:150]
+                print(f"[{cid}] CampusWeb direct Student Portal login attempt: status={sp_res.status_code}, resp={resp_snippet}")
+                if sp_res.status_code == 200:
+                    sp_data = sp_res.json()
+                    if sp_data.get('status') == 'success' and sp_data.get('session_token'):
+                        headers['X-Session-Token'] = sp_data['session_token']
+                        headers['X-CSRF-Token'] = 'sp_session=http_only'
                         has_auth = True
-                        print(f"[{clean_id}] CampusWeb Academia auth succeeded!")
+                        working_portal_pwd = cand_pwd
+                        active_id = cid
+                        print(f"[{cid}] CampusWeb direct Student Portal login succeeded!")
                         break
-            except Exception as ae:
-                print(f"[{clean_id}] CampusWeb Academia auth notice: {ae}")
+                elif sp_res.status_code == 429:
+                    print(f"[{cid}] CampusWeb direct portal login rate limited, falling back to Academia auth...")
+            except Exception as e:
+                print(f"[{cid}] CampusWeb direct portal login notice: {e}")
+
+        if has_auth:
+            break
+
+        # Step 2: Academia authentication via /api/auth/login
+        cand_acad_pwds = []
+        if acad_pwd:
+            cand_acad_pwds.append(acad_pwd)
+        if portal_pwd and portal_pwd not in cand_acad_pwds:
+            cand_acad_pwds.append(portal_pwd)
+
+        if not has_auth or not working_portal_pwd:
+            for cand_pwd in cand_acad_pwds:
+                try:
+                    auth_res = session.post(
+                        'https://api.campusweb.in/api/auth/login',
+                        headers=headers,
+                        json={'username': f'{cid}@srmist.edu.in', 'password': cand_pwd},
+                        timeout=8,
+                    )
+                    resp_snippet = (auth_res.text or "").strip()[:150]
+                    print(f"[{cid}] CampusWeb Academia auth attempt: status={auth_res.status_code}, resp={resp_snippet}")
+                    if auth_res.status_code == 200:
+                        auth_data = auth_res.json()
+                        if auth_data.get('Status') == 'success':
+                            session_token = auth_data.get('sessionToken')
+                            cookies_str = auth_data.get('Cookies')
+                            if cookies_str:
+                                headers['X-CSRF-Token'] = cookies_str
+                            if session_token:
+                                headers['X-Session-Token'] = session_token
+                            has_auth = True
+                            active_id = cid
+                            print(f"[{cid}] CampusWeb Academia auth succeeded!")
+                            break
+                except Exception as ae:
+                    print(f"[{cid}] CampusWeb Academia auth notice: {ae}")
+
+        if has_auth:
+            break
 
     if not has_auth:
         return {
@@ -138,49 +153,54 @@ def scrape_campusweb(netid: str, portal_pwd: str = "", acad_pwd: str = None):
             'reason': 'invalid_credentials'
         }
 
-    # Step 3: Fetch Attendance & Marks sequentially (robust payload fallback)
-    payload_with_pwd = {'net_id': clean_id, 'password': working_portal_pwd or portal_pwd or acad_pwd}
-    payload_no_pwd = {'net_id': clean_id}
+    # Step 3: Fetch Attendance & Marks concurrently (parallel thread pool, 10s timeout)
+    payload_with_pwd = {'net_id': active_id, 'password': working_portal_pwd or portal_pwd or acad_pwd}
+    payload_no_pwd = {'net_id': active_id}
 
     att_payloads = [payload_with_pwd] if working_portal_pwd else [payload_no_pwd, payload_with_pwd]
-
-    att_json = {}
-    for p in att_payloads:
-        try:
-            r = session.post(
-                'https://api.campusweb.in/api/student-portal/attendance',
-                headers=headers,
-                json=p,
-                timeout=6,
-            )
-            print(f"[{clean_id}] [CAMPUSWEB] Attendance attempt with {list(p.keys())}: status={r.status_code}, len={len(r.text)}")
-            if r.status_code == 200:
-                res_j = r.json()
-                if res_j.get('attendance') or res_j.get('data'):
-                    att_json = res_j
-                    break
-        except Exception as e:
-            print(f"[{clean_id}] CampusWeb att fetch notice: {e}")
-
     marks_payloads = [payload_with_pwd] if working_portal_pwd else [payload_no_pwd, payload_with_pwd]
 
-    marks_json = {}
-    for p in marks_payloads:
-        try:
-            r = session.post(
-                'https://api.campusweb.in/api/student-portal/marks',
-                headers=headers,
-                json=p,
-                timeout=6,
-            )
-            print(f"[{clean_id}] [CAMPUSWEB] Marks attempt with {list(p.keys())}: status={r.status_code}, len={len(r.text)}")
-            if r.status_code == 200:
-                res_j = r.json()
-                if res_j.get('testPerformances') or res_j.get('status') == 'success':
-                    marks_json = res_j
-                    break
-        except Exception as e:
-            print(f"[{clean_id}] CampusWeb marks fetch notice: {e}")
+    def _fetch_att():
+        for p in att_payloads:
+            try:
+                r = session.post(
+                    'https://api.campusweb.in/api/student-portal/attendance',
+                    headers=headers,
+                    json=p,
+                    timeout=10,
+                )
+                print(f"[{active_id}] [CAMPUSWEB] Attendance attempt with {list(p.keys())}: status={r.status_code}, len={len(r.text)}")
+                if r.status_code == 200:
+                    res_j = r.json()
+                    if res_j.get('attendance') or res_j.get('data'):
+                        return res_j
+            except Exception as e:
+                print(f"[{active_id}] CampusWeb att fetch notice: {e}")
+        return {}
+
+    def _fetch_marks():
+        for p in marks_payloads:
+            try:
+                r = session.post(
+                    'https://api.campusweb.in/api/student-portal/marks',
+                    headers=headers,
+                    json=p,
+                    timeout=10,
+                )
+                print(f"[{active_id}] [CAMPUSWEB] Marks attempt with {list(p.keys())}: status={r.status_code}, len={len(r.text)}")
+                if r.status_code == 200:
+                    res_j = r.json()
+                    if res_j.get('testPerformances') or res_j.get('status') == 'success':
+                        return res_j
+            except Exception as e:
+                print(f"[{active_id}] CampusWeb marks fetch notice: {e}")
+        return {}
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as ex:
+        f_att = ex.submit(_fetch_att)
+        f_marks = ex.submit(_fetch_marks)
+        att_json = f_att.result()
+        marks_json = f_marks.result()
 
     raw_att_list = []
     if isinstance(att_json, dict):
@@ -227,26 +247,37 @@ def scrape_campusweb(netid: str, portal_pwd: str = "", acad_pwd: str = None):
 
             tests_dict = item.get('tests', {}) if isinstance(item.get('tests'), dict) else {}
             test_list = []
+            perf_parts = []
             for test_name, test_info in tests_dict.items():
                 if not isinstance(test_info, dict):
                     continue
-                scored = float(test_info.get('got', 0) if test_info.get('got') is not None else test_info.get('scored', 0) or 0)
-                max_marks = float(test_info.get('total', 0) if test_info.get('total') is not None else test_info.get('max', 0) or 0)
+                scored = float(test_info.get('got', 0) if test_info.get('got') is not None else (test_info.get('scored', 0) or 0))
+                max_marks = float(test_info.get('total', 0) if test_info.get('total') is not None else (test_info.get('max', 0) or 0))
                 pct = float(test_info.get('percentage', 0) or 0)
                 test_list.append({
                     'name': test_name,
+                    'test_name': test_name,
+                    'testName': test_name,
                     'scored': round(scored, 2),
+                    'obtained': round(scored, 2),
+                    'got': round(scored, 2),
                     'max': round(max_marks, 2),
+                    'total': round(max_marks, 2),
                     'percentage': round(pct, 2)
                 })
+                if max_marks > 0:
+                    perf_parts.append(f"{test_name}/{round(max_marks, 2)} | {round(scored, 2)}")
 
-            total_got = float(item.get('totalMarkGot', 0) if item.get('totalMarkGot') is not None else item.get('totalScored', 0) or 0)
-            total_max = float(item.get('totalMarks', 0) if item.get('totalMarks') is not None else item.get('totalMax', 0) or 0)
+            total_got = float(item.get('totalMarkGot', 0) if item.get('totalMarkGot') is not None else (item.get('totalScored', 0) or 0))
+            total_max = float(item.get('totalMarks', 0) if item.get('totalMarks') is not None else (item.get('totalMax', 0) or 0))
             ctitle = (item.get('courseName') or item.get('courseTitle') or ccode).strip()
+            perf_formatted = " \n ".join(perf_parts)
 
             marks_data.append({
                 'courseCode': ccode,
                 'courseTitle': ctitle,
+                'performance': perf_formatted,
+                'Test Performance': perf_formatted,
                 'tests': test_list,
                 'totalScored': round(total_got, 2),
                 'totalMax': round(total_max, 2),

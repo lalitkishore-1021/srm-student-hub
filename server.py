@@ -605,8 +605,12 @@ def get_portal_data_with_fallback(net_id, portal_pwd, *args, **kwargs):
     if not clean_id or not portal_pwd:
         return {'success': False, 'error': 'Missing Student Portal credentials'}
 
-    # Auto-normalize Date of Birth format if entered with separators (e.g. 15-08-2003 -> 15082003)
     import re
+    # Auto-correct common typo where user types digit 1 instead of letter l (e.g. b19209 -> bl9209)
+    if re.match(r'^[a-z]1\d{4}$', clean_id):
+        clean_id = clean_id[0] + 'l' + clean_id[2:]
+
+    # Auto-normalize Date of Birth format if entered with separators (e.g. 15-08-2003 -> 15082003)
     if re.match(r'^\d{2}[-/.]\d{2}[-/.]\d{4}$', portal_pwd):
         portal_pwd = re.sub(r'[-/.]', '', portal_pwd)
 
@@ -648,13 +652,18 @@ def get_portal_data_with_fallback(net_id, portal_pwd, *args, **kwargs):
             if os.path.exists(cache_file):
                 with open(cache_file, 'r', encoding='utf-8') as f:
                     c_dict = json.load(f)
-            c_dict[clean_id] = {
+            entry_data = {
                 'portal_password': portal_pwd,
                 'data': p_res.get('data', []),
                 'marks': p_res.get('marks', []),
                 'profile': p_res.get('profile', {}),
                 'source': p_res.get('source', 'srm_portal')
             }
+            c_dict[clean_id] = entry_data
+            # Also cache under variant if net_id was entered with 1
+            raw_clean = (net_id or "").split('@')[0].strip().lower()
+            if raw_clean != clean_id:
+                c_dict[raw_clean] = entry_data
             with open(cache_file, 'w', encoding='utf-8') as f:
                 json.dump(c_dict, f, indent=2)
             print(f"[{clean_id}] Fresh portal data cached to disk.")
@@ -668,7 +677,7 @@ def get_portal_data_with_fallback(net_id, portal_pwd, *args, **kwargs):
         if os.path.exists(cache_file):
             with open(cache_file, 'r', encoding='utf-8') as f:
                 c_dict = json.load(f)
-                entry = c_dict.get(clean_id)
+                entry = c_dict.get(clean_id) or c_dict.get((net_id or "").split('@')[0].strip().lower())
                 if entry:
                     exp_pwd = (entry.get('portal_password') or "").strip()
                     # Verify password matches if recorded
@@ -694,7 +703,7 @@ def get_portal_data_with_fallback(net_id, portal_pwd, *args, **kwargs):
         }
 
     err = (p_res or {}).get('error', 'SRM Portal authentication failed.')
-    if any(w in err.lower() for w in ['invalid', 'password', 'credential', 'user id']):
+    if any(w in err.lower() for w in ['invalid', 'password', 'credential', 'user id', 'could not authenticate']):
         err = 'Invalid SRM Student Portal Password. Student Portal (sp.srmist.edu.in) uses a separate password from Academia (default is your Date of Birth in DDMMYYYY format). You can reset it at https://ssp.srmist.edu.in/resetpassword/'
     return {'success': False, 'error': err, 'reason': (p_res or {}).get('reason')}
 
@@ -735,6 +744,9 @@ def start_session():
             import cw_scraper
             raw_reg = reg_no or ''
             net_id = raw_reg.split('@')[0].strip().lower()
+            import re
+            if re.match(r'^[a-z]1\d{4}$', net_id):
+                net_id = net_id[0] + 'l' + net_id[2:]
             executor = concurrent.futures.ThreadPoolExecutor(max_workers=2)
             
             def run_academia():
@@ -954,6 +966,9 @@ def portal_sync():
     data = request.json or {}
     raw_reg = data.get('regNo') or data.get('username') or ''
     net_id = raw_reg.split('@')[0].strip().lower()
+    import re
+    if re.match(r'^[a-z]1\d{4}$', net_id):
+        net_id = net_id[0] + 'l' + net_id[2:]
     portal_pwd = (data.get('portalPwd') or data.get('portal_pwd') or data.get('password') or '').strip()
     if not portal_pwd and (data.get('acadPwd') or data.get('pwd')):
         portal_pwd = (data.get('acadPwd') or data.get('pwd') or '').strip()
@@ -966,7 +981,7 @@ def portal_sync():
         p_res = get_portal_data_with_fallback(net_id, portal_pwd)
         if not p_res or not p_res.get('success'):
             err = (p_res or {}).get('error', 'SRM Portal authentication failed.')
-            if any(w in err.lower() for w in ['invalid', 'password', 'credential', 'user id']):
+            if any(w in err.lower() for w in ['invalid', 'password', 'credential', 'user id', 'could not authenticate']):
                 err = 'Invalid SRM Student Portal Password. Student Portal (sp.srmist.edu.in) uses a separate password from Academia (default is your Date of Birth in DDMMYYYY format). You can reset it at https://ssp.srmist.edu.in/resetpassword/'
             return jsonify({'success': False, 'error': err})
 

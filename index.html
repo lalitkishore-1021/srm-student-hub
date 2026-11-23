@@ -8187,6 +8187,11 @@
                 else if (savedProf.email) cleanNetId = savedProf.email.split('@')[0].toLowerCase();
             }
             
+            // Auto-correct common digit 1 vs letter l typo (e.g. b19209 -> bl9209)
+            if (/^[a-z]1\d{4}$/i.test(cleanNetId)) {
+                cleanNetId = (cleanNetId[0] + 'l' + cleanNetId.slice(2)).toLowerCase();
+            }
+            
             const netIdInput = document.getElementById('portal-modal-netid');
             if (netIdInput && cleanNetId && !/^RA\d{6,}/i.test(cleanNetId)) {
                 netIdInput.value = cleanNetId;
@@ -8287,6 +8292,12 @@
             let rawId = (netIdInput ? netIdInput.value.trim() : '') || localStorage.getItem('syncRegNo') || '';
             let netId = rawId.split('@')[0].trim().toLowerCase();
             let portalPwd = (pwdInput ? pwdInput.value : '').trim();
+            
+            // Auto-correct common digit 1 vs letter l typo (e.g. b19209 -> bl9209)
+            if (/^[a-z]1\d{4}$/i.test(netId)) {
+                netId = (netId[0] + 'l' + netId.slice(2)).toLowerCase();
+                if (netIdInput) netIdInput.value = netId;
+            }
             
             // Auto resolve if user accidentally entered Register Number (RA...) instead of NetID
             const savedProf = JSON.parse(localStorage.getItem('squadProfile') || '{}');
@@ -8837,6 +8848,9 @@
                                 if (p.net_id) cleanNetId = p.net_id.toLowerCase();
                                 else if (p.email) cleanNetId = p.email.split('@')[0].toLowerCase();
                             } catch(e) {}
+                        }
+                        if (/^[a-z]1\d{4}$/i.test(cleanNetId)) {
+                            cleanNetId = (cleanNetId[0] + 'l' + cleanNetId.slice(2)).toLowerCase();
                         }
                         const clientTel = typeof generatePortalTelemetry === 'function' ? generatePortalTelemetry() : '';
                         const pRes = await fetch(`${BACKEND_URL}/api/portal_sync`, {
@@ -9666,8 +9680,8 @@
         if (Array.isArray(item.tests) && item.tests.length > 0) {
             item.tests.forEach(t => {
                 const testName = (t.test_name || t.testName || t.name || 'Test').trim();
-                const max = parseFloat(t.max || t.total || 0);
-                const obtained = parseFloat(t.obtained || t.got || 0);
+                const max = parseFloat(t.max !== undefined ? t.max : (t.total || 0));
+                const obtained = parseFloat(t.obtained !== undefined ? t.obtained : (t.got !== undefined ? t.got : (t.scored !== undefined ? t.scored : 0)));
                 if (max > 0) {
                     courseMax += max;
                     courseObtained += obtained;
