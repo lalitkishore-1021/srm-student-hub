@@ -80,7 +80,7 @@ def scrape_campusweb(netid: str, portal_pwd: str = "", acad_pwd: str = None):
                 'https://api.campusweb.in/api/student-portal/login',
                 headers=headers,
                 json={'net_id': clean_id, 'password': cand_pwd},
-                timeout=12,
+                timeout=6,
             )
             resp_snippet = (sp_res.text or "").strip()[:150]
             print(f"[{clean_id}] CampusWeb direct Student Portal login attempt: status={sp_res.status_code}, resp={resp_snippet}")
@@ -112,7 +112,7 @@ def scrape_campusweb(netid: str, portal_pwd: str = "", acad_pwd: str = None):
                     'https://api.campusweb.in/api/auth/login',
                     headers=headers,
                     json={'username': f'{clean_id}@srmist.edu.in', 'password': cand_pwd},
-                    timeout=12,
+                    timeout=6,
                 )
                 resp_snippet = (auth_res.text or "").strip()[:150]
                 print(f"[{clean_id}] CampusWeb Academia auth attempt: status={auth_res.status_code}, resp={resp_snippet}")
@@ -142,12 +142,7 @@ def scrape_campusweb(netid: str, portal_pwd: str = "", acad_pwd: str = None):
     payload_with_pwd = {'net_id': clean_id, 'password': working_portal_pwd or portal_pwd or acad_pwd}
     payload_no_pwd = {'net_id': clean_id}
 
-    att_payloads = []
-    if working_portal_pwd:
-        att_payloads.append(payload_with_pwd)
-    att_payloads.append(payload_no_pwd)
-    if portal_pwd and payload_with_pwd not in att_payloads:
-        att_payloads.append(payload_with_pwd)
+    att_payloads = [payload_with_pwd] if working_portal_pwd else [payload_no_pwd, payload_with_pwd]
 
     att_json = {}
     for p in att_payloads:
@@ -156,7 +151,7 @@ def scrape_campusweb(netid: str, portal_pwd: str = "", acad_pwd: str = None):
                 'https://api.campusweb.in/api/student-portal/attendance',
                 headers=headers,
                 json=p,
-                timeout=15,
+                timeout=6,
             )
             print(f"[{clean_id}] [CAMPUSWEB] Attendance attempt with {list(p.keys())}: status={r.status_code}, len={len(r.text)}")
             if r.status_code == 200:
@@ -167,12 +162,7 @@ def scrape_campusweb(netid: str, portal_pwd: str = "", acad_pwd: str = None):
         except Exception as e:
             print(f"[{clean_id}] CampusWeb att fetch notice: {e}")
 
-    marks_payloads = []
-    if working_portal_pwd:
-        marks_payloads.append(payload_with_pwd)
-    marks_payloads.append(payload_no_pwd)
-    if portal_pwd and payload_with_pwd not in marks_payloads:
-        marks_payloads.append(payload_with_pwd)
+    marks_payloads = [payload_with_pwd] if working_portal_pwd else [payload_no_pwd, payload_with_pwd]
 
     marks_json = {}
     for p in marks_payloads:
@@ -181,7 +171,7 @@ def scrape_campusweb(netid: str, portal_pwd: str = "", acad_pwd: str = None):
                 'https://api.campusweb.in/api/student-portal/marks',
                 headers=headers,
                 json=p,
-                timeout=15,
+                timeout=6,
             )
             print(f"[{clean_id}] [CAMPUSWEB] Marks attempt with {list(p.keys())}: status={r.status_code}, len={len(r.text)}")
             if r.status_code == 200:
