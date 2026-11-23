@@ -404,28 +404,24 @@ class SRMPortalSession:
             if alert_text.lower().startswith("alert"):
                 alert_text = alert_text[5:].strip()
             blob = alert_text.lower()
-            if any(k in blob for k in ["invalid captcha", "captcha", "verification code", "security code"]):
-                return {"ok": False, "reason": "wrong_captcha", "message": alert_text or "Invalid captcha."}
             if "locked" in blob:
                 return {"ok": False, "reason": "account_locked", "message": alert_text}
-            if any(k in blob for k in [
-                "invalid login credentials", "invalid credentials", "attempts remaining", "attempt remaining",
-                "invalid password", "invalid user", "invalid", "unsuccessful", "user id or password"
-            ]):
-                return {"ok": False, "reason": "invalid_credentials", "message": alert_text}
-            return {"ok": False, "reason": "login_failed", "message": alert_text}
+            if any(k in blob for k in ["attempts remaining", "attempt remaining", "login attempts", "0 out of 3", "1 out of 3"]):
+                return {"ok": False, "reason": "invalid_credentials_fatal", "message": alert_text}
+            if any(k in blob for k in ["invalid captcha", "captcha", "verification code", "security code"]):
+                return {"ok": False, "reason": "wrong_captcha", "message": alert_text}
+            # sp.srmist.edu.in emits 'AlertInvalid credentials' for BOTH bad captcha predictions and bad passwords.
+            # Mark it retryable so TinyOCR attempts 2, 3, and 4 can run.
+            return {"ok": False, "reason": "credential_or_captcha_mismatch", "message": alert_text}
 
         body_lower = (body or "").lower()
-        if "invalid captcha" in body_lower or "captcha" in body_lower:
-            return {"ok": False, "reason": "wrong_captcha", "message": "Invalid captcha."}
         if "locked" in body_lower:
             return {"ok": False, "reason": "account_locked", "message": "Account temporarily locked."}
-        if any(k in body_lower for k in [
-            "invalid login credentials", "invalid credentials", "attempts remaining", "attempt remaining",
-            "invalid password", "invalid user", "invalid", "unsuccessful", "user id or password"
-        ]):
-            return {"ok": False, "reason": "invalid_credentials", "message": "Invalid login credentials."}
-        return {"ok": False, "reason": "login_failed", "message": "Could not authenticate with SRM Student Portal."}
+        if any(k in body_lower for k in ["attempts remaining", "attempt remaining", "login attempts", "0 out of 3", "1 out of 3"]):
+            return {"ok": False, "reason": "invalid_credentials_fatal", "message": "Invalid login credentials."}
+        if any(k in body_lower for k in ["invalid captcha", "captcha", "verification code", "security code"]):
+            return {"ok": False, "reason": "wrong_captcha", "message": "Invalid captcha."}
+        return {"ok": False, "reason": "credential_or_captcha_mismatch", "message": "Invalid credentials or verification code."}
 
     def get_attendance_html(self) -> Optional[str]:
         try:
@@ -1015,7 +1011,16 @@ def fetch_portal_data(username: str, password: str, courses_list: Optional[List[
                     continue
 
             solved = solve_captcha_bytes(portal.captcha_bytes)
-            if not solved:
+            # If predicted captcha is not strictly 6 alphanumeric characters, re-fetch up to 3 times
+            captcha_refetch = 0
+            while (not solved or len(solved) != 6) and captcha_refetch < 3:
+                captcha_refetch += 1
+                if portal.reload_captcha() and portal.captcha_bytes:
+                    solved = solve_captcha_bytes(portal.captcha_bytes)
+                elif portal.load_captcha() and portal.captcha_bytes:
+                    solved = solve_captcha_bytes(portal.captcha_bytes)
+
+            if not solved or len(solved) != 6:
                 portal.captcha_bytes = None
                 time.sleep(0.2)
                 continue
@@ -1034,9 +1039,9 @@ def fetch_portal_data(username: str, password: str, courses_list: Optional[List[
             last_reason = reason
             last_msg = msg
             print(f"[{netid}] [PORTAL] Attempt {login_attempts_made} failed ({reason}): {msg[:80]}", flush=True)
-            if reason in ("account_locked", "invalid_credentials"):
+            if reason in ("account_locked", "invalid_credentials_fatal"):
                 print(f"[{netid}] [PORTAL] Auth stopped ({reason}): {msg}", flush=True)
-                return {"success": False, "error": msg, "reason": reason}
+                return {"success": False, "error": msg, "reason": "account_locked" if reason == "account_locked" else "invalid_credentials"}
 
             # Prepare for next attempt: reset captcha_bytes to trigger reload_captcha on same session
             portal.captcha_bytes = None
