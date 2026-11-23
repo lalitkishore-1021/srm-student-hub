@@ -3870,7 +3870,73 @@ def like_spotted(post_id):
 
 @app.route('/ping')
 def ping():
-    return jsonify({"status": "ok", "version": "v107-secure-token-fix", "commit": "v107"})
+    return jsonify({"status": "ok", "version": "v108-portal-diag", "commit": "v108"})
+
+
+@app.route('/api/admin/portal_diag', methods=['GET', 'POST'])
+def admin_portal_diag():
+    secret_key = request.args.get('key') or (request.json or {}).get('key')
+    valid_key = os.environ.get('ADMIN_SECRET_KEY', 'lalitadmin123')
+    if secret_key != valid_key:
+        return jsonify({'error': 'Unauthorized'}), 403
+
+    import srm_portal_scraper
+    import socket
+
+    diag = {}
+    # 1. DNS check
+    try:
+        ip = socket.gethostbyname("sp.srmist.edu.in")
+        diag["dns_ip"] = ip
+    except Exception as e:
+        diag["dns_error"] = str(e)
+
+    # 2. CRNN Weights check
+    try:
+        w = srm_portal_scraper._get_crnn_weights()
+        diag["weights_loaded"] = w is not None
+        diag["weights_keys_count"] = len(w) if w else 0
+        diag["weights_path_exists"] = os.path.exists(srm_portal_scraper._WEIGHTS_PATH)
+        diag["weights_path"] = srm_portal_scraper._WEIGHTS_PATH
+    except Exception as e:
+        diag["weights_error"] = str(e)
+
+    # 3. HTTP GET LOGIN_URL check
+    try:
+        t0 = time.time()
+        sess = srm_portal_scraper.SRMPortalSession()
+        loaded = sess.load_captcha()
+        diag["load_captcha_ok"] = loaded
+        diag["load_captcha_time"] = round(time.time() - t0, 3)
+        diag["nonce"] = sess.nonce
+        diag["form_fields_count"] = len(sess.login_form_fields)
+        diag["form_fields"] = list(sess.login_form_fields.keys())
+        diag["secure_token_present"] = bool(sess.login_form_fields.get("secureToken"))
+        diag["secure_token_preview"] = (sess.login_form_fields.get("secureToken") or "")[:30]
+        diag["captcha_bytes_len"] = len(sess.captcha_bytes) if sess.captcha_bytes else 0
+        if sess.captcha_bytes:
+            solved = srm_portal_scraper.solve_captcha_bytes(sess.captcha_bytes)
+            diag["solved_captcha"] = solved
+    except Exception as e:
+        diag["load_captcha_error"] = str(e)
+
+    # 4. Optional full login test if credentials supplied
+    test_netid = request.args.get('netid') or (request.json or {}).get('netid')
+    test_pwd = request.args.get('pwd') or (request.json or {}).get('pwd')
+    if test_netid and test_pwd:
+        try:
+            t0 = time.time()
+            res = srm_portal_scraper.fetch_portal_data(test_netid, test_pwd)
+            diag["login_test_time"] = round(time.time() - t0, 3)
+            diag["login_test_success"] = res.get("success")
+            diag["login_test_reason"] = res.get("reason")
+            diag["login_test_error"] = res.get("error")
+            diag["login_test_att_count"] = len(res.get("data", []))
+            diag["login_test_marks_count"] = len(res.get("marks", []))
+        except Exception as e:
+            diag["login_test_exception"] = str(e)
+
+    return jsonify(diag)
 
 
 @app.route('/api/admin/db_size', methods=['GET'])
