@@ -3869,7 +3869,7 @@ def like_spotted(post_id):
 
 @app.route('/ping')
 def ping():
-    return jsonify({"status": "ok", "version": "v98-resilient-portal-sync", "commit": "ed20e02"})
+    return jsonify({"status": "ok", "version": "v100-resilient-portal-sync", "commit": "v100"})
 
 
 @app.route('/api/admin/db_size', methods=['GET'])
