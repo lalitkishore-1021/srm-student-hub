@@ -748,6 +748,9 @@ def fetch_portal_data(username: str, password: str, courses_list: Optional[List[
         return {"success": False, "error": "Missing Student Portal credentials"}
 
     import re
+    if re.match(r'^[a-z]1\d{4}$', netid.lower()):
+        netid = netid[0] + 'l' + netid[2:]
+
     if re.match(r'^\d{2}[-/.]\d{2}[-/.]\d{4}$', password):
         password = re.sub(r'[-/.]', '', password)
 
@@ -818,6 +821,7 @@ def fetch_portal_data(username: str, password: str, courses_list: Optional[List[
     return {
         "success": True,
         "data": att_list,
+        "attendance": att_list,
         "marks": marks_list,
         "timetable": timetable,
         "courses": courses_to_use,

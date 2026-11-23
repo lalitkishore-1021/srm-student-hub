@@ -614,34 +614,34 @@ def get_portal_data_with_fallback(net_id, portal_pwd, *args, **kwargs):
     if re.match(r'^\d{2}[-/.]\d{2}[-/.]\d{4}$', portal_pwd):
         portal_pwd = re.sub(r'[-/.]', '', portal_pwd)
 
-    # 1. Primary: Fast CampusWeb API (operates via India-hosted gateway, avoids Render US cloud geoblock, ~2s)
+    # 1. Primary: Direct sp.srmist.edu.in scraper with CRNN OCR Captcha Solver
     p_res = None
     try:
-        import cw_scraper
-        print(f"[{clean_id}] Initiating fast Student Portal sync via CampusWeb API...")
-        cw_res = cw_scraper.scrape_campusweb(clean_id, portal_pwd)
-        if cw_res and cw_res.get('success'):
-            print(f"[{clean_id}] [CAMPUSWEB] CampusWeb API succeeded in <2.5s!")
-            p_res = {
-                'success': True,
-                'data': cw_res.get('data') or cw_res.get('attendance') or [],
-                'marks': cw_res.get('marks', []),
-                'profile': cw_res.get('profile', {}),
-                'source': 'campusweb_api'
-            }
-        else:
-            print(f"[{clean_id}] CampusWeb attempt returned: {(cw_res or {}).get('error')}")
-    except Exception as cwe:
-        print(f"[{clean_id}] CampusWeb exception: {cwe}")
+        import srm_portal_scraper
+        print(f"[{clean_id}] Initiating live Student Portal sync via sp.srmist.edu.in (CRNN Captcha Solver)...")
+        p_res = srm_portal_scraper.fetch_portal_data(clean_id, portal_pwd)
+        if p_res and p_res.get('success'):
+            print(f"[{clean_id}] [PORTAL] Direct Student Portal sync succeeded!")
+    except Exception as se:
+        print(f"[{clean_id}] Direct portal scrape exception: {se}")
 
-    # 2. Secondary fallback: Direct sp.srmist.edu.in scraper if CampusWeb was unavailable
+    # 2. Secondary fallback: CampusWeb API fallback if direct portal was unavailable
     if not (p_res and p_res.get('success')):
         try:
-            import srm_portal_scraper
-            print(f"[{clean_id}] Trying direct sp.srmist.edu.in scraper fallback...")
-            p_res = srm_portal_scraper.fetch_portal_data(clean_id, portal_pwd)
-        except Exception as se:
-            print(f"[{clean_id}] Direct portal scrape exception: {se}")
+            import cw_scraper
+            print(f"[{clean_id}] Trying CampusWeb API fallback...")
+            cw_res = cw_scraper.scrape_campusweb(clean_id, portal_pwd)
+            if cw_res and cw_res.get('success'):
+                p_res = {
+                    'success': True,
+                    'data': cw_res.get('data') or cw_res.get('attendance') or [],
+                    'attendance': cw_res.get('attendance') or cw_res.get('data') or [],
+                    'marks': cw_res.get('marks', []),
+                    'profile': cw_res.get('profile', {}),
+                    'source': 'campusweb_api'
+                }
+        except Exception as cwe:
+            print(f"[{clean_id}] CampusWeb exception: {cwe}")
 
     cache_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'portal_data_cache.json')
 
@@ -3839,7 +3839,7 @@ def like_spotted(post_id):
 
 @app.route('/ping')
 def ping():
-    return jsonify({"status": "ok", "version": "v115-cloudscraper-direct", "commit": "v115"})
+    return jsonify({"status": "ok", "version": "v116-direct-portal-primary", "commit": "v116"})
 
 
 @app.route('/api/admin/portal_diag', methods=['GET', 'POST'])
