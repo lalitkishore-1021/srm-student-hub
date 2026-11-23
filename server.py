@@ -1036,8 +1036,10 @@ def portal_sync():
 @app.route('/api/debug_sync', methods=['POST'])
 def debug_sync():
     data = request.json or {}
-    reg = data.get('regNo', 'bl9209')
-    p_pwd = data.get('portalPwd', 'Bmounika@2003')
+    reg = (data.get('regNo') or '').strip()
+    p_pwd = (data.get('portalPwd') or '').strip()
+    if not reg or not p_pwd:
+        return jsonify({'error': 'Missing credentials'}), 400
     import traceback
     try:
         import srm_portal_scraper
@@ -3893,27 +3895,28 @@ def admin_portal_diag():
     except Exception as e:
         diag["load_captcha_error"] = str(e)
 
-    # 3b. Test CampusWeb API from this server
-    try:
-        import cw_scraper
-        cw_sess = cw_scraper._create_session()
-        cw_headers = dict(cw_scraper.CW_HEADERS)
-        cw_headers['X-Net-ID'] = 'BL9209'
-        cw_post = cw_sess.post(
-            'https://api.campusweb.in/api/student-portal/login',
-            headers=cw_headers,
-            json={'net_id': 'bl9209', 'password': 'Bmounika@2003'},
-            timeout=8,
-        )
-        diag["cw_sp_status"] = cw_post.status_code
-        diag["cw_sp_body"] = cw_post.text[:200]
-    except Exception as cwe:
-        diag["cw_sp_error"] = str(cwe)
-
-    # 4. Optional single attempt test to capture exact HTTP exchange
+    # 3b. Test CampusWeb API if credentials provided
     body_json = request.get_json(silent=True) if request.is_json else {}
     test_netid = request.args.get('netid') or (body_json or {}).get('netid')
     test_pwd = request.args.get('pwd') or (body_json or {}).get('pwd')
+    if test_netid and test_pwd:
+        try:
+            import cw_scraper
+            cw_sess = cw_scraper._create_session()
+            cw_headers = dict(cw_scraper.CW_HEADERS)
+            cw_headers['X-Net-ID'] = test_netid.upper()
+            cw_post = cw_sess.post(
+                'https://api.campusweb.in/api/student-portal/login',
+                headers=cw_headers,
+                json={'net_id': test_netid.lower(), 'password': test_pwd},
+                timeout=8,
+            )
+            diag["cw_sp_status"] = cw_post.status_code
+            diag["cw_sp_body"] = cw_post.text[:200]
+        except Exception as cwe:
+            diag["cw_sp_error"] = str(cwe)
+
+    # 4. Optional single attempt test to capture exact HTTP exchange
     manual_captcha = request.args.get('captcha') or (body_json or {}).get('captcha')
     if test_netid and test_pwd and sess and sess.captcha_bytes:
         try:
