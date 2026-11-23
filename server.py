@@ -620,7 +620,7 @@ def get_portal_data_with_fallback(net_id, portal_pwd, *args, **kwargs):
             print(f"[{clean_id}] [CAMPUSWEB] CampusWeb API succeeded in <2.5s!")
             p_res = {
                 'success': True,
-                'data': cw_res.get('attendance', []),
+                'data': cw_res.get('data') or cw_res.get('attendance') or [],
                 'marks': cw_res.get('marks', []),
                 'profile': cw_res.get('profile', {}),
                 'source': 'campusweb_api'

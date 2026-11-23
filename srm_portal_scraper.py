@@ -16,7 +16,6 @@ import math
 import os
 import random
 import re
-import socket
 import time
 from typing import Dict, Any, List, Optional, Tuple
 
@@ -145,22 +144,21 @@ def solve_captcha_bytes(image_bytes: bytes) -> Optional[str]:
                 collapsed.append(idx_int)
             prev = idx_int
         text = "".join(VOCAB[i - 1] for i in collapsed if i != 0)
-        if text and len(text) == 6:
-            return text
-        return None
+        return text if text else None
     except Exception as e:
         print(f"[PORTAL-OCR] Error solving captcha: {e}")
         return None
 
 
-def _telemetry_payload(start_ms: int, now_ms: int) -> Dict[str, Any]:
-    time_on_page = max(3500, now_ms - start_ms)
+def _telemetry_payload() -> Dict[str, Any]:
+    now = int(time.time() * 1000)
+    start = now - random.randint(3000, 8000)
     return {
-        "startTime": start_ms,
+        "startTime": start,
         "currentDomain": "sp.srmist.edu.in",
         "timezoneOffset": -330,
-        "screenWidth": 1920,
-        "screenHeight": 1080,
+        "screenWidth": 1366,
+        "screenHeight": 768,
         "colorDepth": 24,
         "devicePixelRatio": 1,
         "platform": "Win32",
@@ -171,182 +169,76 @@ def _telemetry_payload(start_ms: int, now_ms: int) -> Dict[str, Any]:
         "touchSupport": False,
         "webdriver": False,
         "mouseClicks": random.randint(2, 6),
-        "mouseMovements": random.randint(15, 30),
-        "keystrokeCount": random.randint(18, 28),
-        "typingSpeedMs": random.randint(2200, 3800),
-        "canvasHash": "canvas-error",
-        "submitTime": now_ms,
-        "timeOnPageMs": time_on_page,
+        "mouseMovements": random.randint(5, 20),
+        "keystrokeCount": 0,
+        "typingSpeedMs": 0,
+        "canvasHash": format(random.randint(0, 0x7FFFFFFF), "06x"),
+        "submitTime": now,
+        "timeOnPageMs": now - start,
     }
 
 
 class SRMPortalSession:
     def __init__(self):
         self.session = requests.Session()
-        adapter = requests.adapters.HTTPAdapter(pool_connections=10, pool_maxsize=10, max_retries=1)
-        self.session.mount("https://", adapter)
-        self.session.mount("http://", adapter)
         self.session.headers.update(HEADERS)
         proxy = os.environ.get("PORTAL_PROXY") or os.environ.get("HTTPS_PROXY") or os.environ.get("HTTP_PROXY")
         if proxy:
             self.session.proxies.update({"http": proxy, "https": proxy})
         self.nonce = None
-        self.captcha_nonce = None
-        self.fp_nonce = None
         self.login_form_fields = {}
         self.domain_field_name = "dtoken_x"
         self.captcha_field_name = "cptoken_x"
         self.random_delimiter = "0000"
         self.captcha_bytes = None
         self.load_ms = None
-        self.server_ts = None
         self.last_body = ""
         self.last_status = None
         self.last_url = None
-        self.captcha_page = None
 
     def load_captcha(self) -> bool:
         try:
-            r = self.session.get(LOGIN_URL, timeout=8.0)
-        except Exception:
-            return False
-        text = r.text
-        self.captcha_page = text
-        self.last_body = text
-
-        m_sec = re.search(r"window\.SECURE_CONFIG\s*=\s*\{[^}]*?nonce\s*:\s*'([^']+)'", text)
-        if not m_sec:
-            m_sec = re.search(r"window\.SECURE_CONFIG\.nonce\s*=\s*'([^']+)'", text)
-        self.captcha_nonce = m_sec.group(1) if m_sec else ""
-        self.nonce = self.captcha_nonce
-
-        m_fp = re.search(r'id="fpNonce"\s*value="([^"]+)"', text)
-        self.fp_nonce = m_fp.group(1) if m_fp else ""
-
-        df = re.search(r'domainFieldName\s*=\s*[\'"]([^\'"]+)[\'"]', text)
-        cf = re.search(r'captchaFieldName\s*=\s*[\'"]([^\'"]+)[\'"]', text)
-        self.domain_field_name = df.group(1) if df else "dtoken_x"
-        self.captcha_field_name = cf.group(1) if cf else "cptoken_x"
-
-        m_delim = re.search(r"randomDelimiter\s*=\s*'([^']+)'", text)
-        self.random_delimiter = m_delim.group(1) if m_delim else "0000"
-
-        self.captcha_page = text
-        # Strip HTML comments before extracting form input fields
-        clean_text = re.sub(r"<!--.*?-->", "", text, flags=re.DOTALL)
-        soup_page = BeautifulSoup(clean_text, "html.parser")
-        form_el = soup_page.find("form", id="login_form")
-        fields = {}
-        tag_list = form_el.find_all("input") if form_el else soup_page.find_all("input")
-        for inp in tag_list:
-            inp_name = inp.get("name")
-            if inp_name:
-                fields[inp_name] = inp.get("value") or ""
-        self.login_form_fields = fields
-
-        # Extract server timestamp and matching fpNonce from secureToken
-        self.server_ts = None
-        sec_token = fields.get("secureToken", "")
-        if sec_token:
-            try:
-                decoded = base64.b64decode(sec_token).decode("utf-8", errors="ignore")
-                parts = decoded.split("|")
-                if len(parts) >= 1 and parts[0]:
-                    self.fp_nonce = parts[0]
-                if len(parts) >= 3 and parts[2].isdigit():
-                    self.server_ts = int(parts[2])
-            except Exception:
-                pass
-
-        m_cap = re.search(r"SCaptchaServlet[^'\" ]*", text)
-        if not m_cap:
-            return False
-        seg = m_cap.group(0)
-        captcha_url = BASE_URL + "/" + seg if not seg.startswith("/") else "https://sp.srmist.edu.in" + seg
-        proof = base64.b64encode(f"{self.captcha_nonce or self.nonce}:sp.srmist.edu.in".encode()).decode()
-        try:
-            cr = self.session.get(
-                captcha_url,
-                headers={
-                    "X-Domain-Proof": proof,
-                    "Accept": "image/png, image/jpeg, image/svg+xml, image/*",
-                    "Referer": LOGIN_URL,
-                },
-                timeout=10.0,
-            )
-            if cr.status_code == 200 and cr.content:
-                self.captcha_bytes = cr.content
-                self.load_ms = int(time.time() * 1000)
-                return True
-        except Exception:
-            pass
-        return False
-
-    def reload_captcha(self) -> bool:
-        """
-        Reloads a fresh captcha by fetching a fresh LOGIN_URL on the existing keep-alive session.
-        Guarantees fresh nonce, fresh secureToken HMAC, and fresh unburned captcha.
-        """
-        try:
-            r = self.session.get(LOGIN_URL, timeout=8.0)
+            r = self.session.get(LOGIN_URL, timeout=10)
             text = r.text
-        except Exception:
-            return False
+            self.last_body = text
 
-        self.captcha_page = text
-        self.last_body = text
+            m = re.search(r"window\.SECURE_CONFIG\s*=\s*\{[^}]*?nonce\s*:\s*'([^']+)'", text)
+            if not m:
+                m = re.search(r"window\.SECURE_CONFIG\.nonce\s*=\s*'([^']+)'", text)
+            if not m:
+                m = re.search(r'id="fpNonce"\s*value="([^"]+)"', text)
+            self.nonce = m.group(1) if m else ""
 
-        m_sec = re.search(r"window\.SECURE_CONFIG\s*=\s*\{[^}]*?nonce\s*:\s*'([^']+)'", text)
-        if not m_sec:
-            m_sec = re.search(r"window\.SECURE_CONFIG\.nonce\s*=\s*'([^']+)'", text)
-        self.captcha_nonce = m_sec.group(1) if m_sec else ""
-        self.nonce = self.captcha_nonce
+            df = re.search(r'domainFieldName\s*=\s*[\'"]([^\'"]+)[\'"]', text)
+            cf = re.search(r'captchaFieldName\s*=\s*[\'"]([^\'"]+)[\'"]', text)
+            self.domain_field_name = df.group(1) if df else "dtoken_x"
+            self.captcha_field_name = cf.group(1) if cf else "cptoken_x"
 
-        m_fp = re.search(r'id="fpNonce"\s*value="([^"]+)"', text)
-        self.fp_nonce = m_fp.group(1) if m_fp else ""
+            m_delim = re.search(r"randomDelimiter\s*=\s*'([^']+)'", text)
+            self.random_delimiter = m_delim.group(1) if m_delim else "0000"
 
-        df = re.search(r'domainFieldName\s*=\s*[\'"]([^\'"]+)[\'"]', text)
-        cf = re.search(r'captchaFieldName\s*=\s*[\'"]([^\'"]+)[\'"]', text)
-        if df:
-            self.domain_field_name = df.group(1)
-        if cf:
-            self.captcha_field_name = cf.group(1)
-
-        m_delim = re.search(r"randomDelimiter\s*=\s*'([^']+)'", text)
-        if m_delim:
-            self.random_delimiter = m_delim.group(1)
-
-        clean_text = re.sub(r"<!--.*?-->", "", text, flags=re.DOTALL)
-        soup_page = BeautifulSoup(clean_text, "html.parser")
-        form_el = soup_page.find("form", id="login_form")
-        fields = {}
-        tag_list = form_el.find_all("input") if form_el else soup_page.find_all("input")
-        for inp in tag_list:
-            inp_name = inp.get("name")
-            if inp_name:
-                fields[inp_name] = inp.get("value") or ""
-        if fields:
+            # Parse input fields preserving exact values of secureToken and honeypots
+            soup_page = BeautifulSoup(text, "html.parser")
+            form_el = soup_page.find("form", id="login_form") or soup_page.find("form")
+            fields = {}
+            if form_el:
+                for inp in form_el.find_all("input"):
+                    inp_name = inp.get("name")
+                    if inp_name:
+                        fields[inp_name] = inp.get("value") or ""
+            else:
+                for inp in soup_page.find_all("input"):
+                    inp_name = inp.get("name")
+                    if inp_name:
+                        fields[inp_name] = inp.get("value") or ""
             self.login_form_fields = fields
 
-        sec_token = fields.get("secureToken", "")
-        if sec_token:
-            try:
-                decoded = base64.b64decode(sec_token).decode("utf-8", errors="ignore")
-                parts = decoded.split("|")
-                if len(parts) >= 1 and parts[0]:
-                    self.fp_nonce = parts[0]
-                if len(parts) >= 3 and parts[2].isdigit():
-                    self.server_ts = int(parts[2])
-            except Exception:
-                pass
-
-        m_cap = re.search(r"SCaptchaServlet[^'\" ]*", text)
-        if not m_cap:
-            return False
-        seg = m_cap.group(0)
-        captcha_url = BASE_URL + "/" + seg if not seg.startswith("/") else "https://sp.srmist.edu.in" + seg
-        proof = base64.b64encode(f"{self.captcha_nonce or self.nonce}:sp.srmist.edu.in".encode()).decode()
-        try:
+            m_cap = re.search(r"SCaptchaServlet[^'\" ]*", text)
+            if not m_cap:
+                return False
+            seg = m_cap.group(0)
+            captcha_url = BASE_URL + "/" + seg if not seg.startswith("/") else "https://sp.srmist.edu.in" + seg
+            proof = base64.b64encode(f"{self.nonce}:sp.srmist.edu.in".encode()).decode()
             cr = self.session.get(
                 captcha_url,
                 headers={
@@ -354,39 +246,32 @@ class SRMPortalSession:
                     "Accept": "image/png, image/jpeg, image/svg+xml, image/*",
                     "Referer": LOGIN_URL,
                 },
-                timeout=10.0,
+                timeout=10,
             )
             if cr.status_code == 200 and cr.content:
                 self.captcha_bytes = cr.content
                 self.load_ms = int(time.time() * 1000)
                 return True
+            return False
         except Exception:
-            pass
-        return False
+            return False
 
-    def login_attempt(self, netid: str, password: str, captcha_code: str, client_telemetry: Optional[str] = None) -> Dict[str, Any]:
+    def login_attempt(self, netid: str, password: str, captcha_code: str) -> Dict[str, Any]:
         now_ms = int(time.time() * 1000)
         calc_elapsed = max(0, int((now_ms - (self.load_ms or now_ms)) / 1000))
-        elapsed_sec = max(random.randint(4, 6), calc_elapsed)
-        start_ms = now_ms - (elapsed_sec * 1000)
-
-        interact_count = random.randint(18, 35)
+        elapsed_sec = max(random.randint(3, 5), calc_elapsed)
         dtoken = base64.b64encode("sp.srmist.edu.in"[::-1].encode()).decode()
-        trap_payload = str(elapsed_sec) + (self.random_delimiter or "0000") + str(interact_count)
+        trap_payload = str(elapsed_sec) + (self.random_delimiter or "0000") + "3"
         cptoken = base64.b64encode(trap_payload.encode()).decode()
-
-        if client_telemetry and len(client_telemetry) > 20:
-            payload = client_telemetry
-        else:
-            tel_data = _telemetry_payload(start_ms, now_ms)
-            payload = base64.b64encode(json.dumps(tel_data).encode()).decode()
+        fp_payload = base64.b64encode(json.dumps({"fp": "", "nonce": self.nonce, "ts": now_ms}).encode()).decode()
+        payload = base64.b64encode(json.dumps(_telemetry_payload()).encode()).decode()
 
         fp_body = dict(self.login_form_fields)
         fp_body.update({
             "username": netid.strip(),
             "password": password,
             "captcha": captcha_code.strip(),
-            "fpPayload": "",
+            "fpPayload": fp_payload,
             "fpToken": "",
             "recaptchaToken": "",
             "telemetryPayload": payload,
@@ -394,16 +279,7 @@ class SRMPortalSession:
         fp_body[self.domain_field_name] = dtoken
         fp_body[self.captcha_field_name] = cptoken
 
-        resp = None
-        try:
-            resp = self.session.post(LOGIN_SERVLET, data=fp_body, timeout=12.0)
-        except (requests.exceptions.ConnectionError, requests.exceptions.ChunkedEncodingError) as ce:
-            # If server dropped stale keep-alive connection, retry immediately on a fresh socket
-            try:
-                resp = self.session.post(LOGIN_SERVLET, data=fp_body, timeout=12.0, headers={"Connection": "close"})
-            except Exception:
-                raise ce
-
+        resp = self.session.post(LOGIN_SERVLET, data=fp_body, timeout=12)
         body = resp.text or ""
         self.last_status = resp.status_code
         self.last_url = str(resp.url)
@@ -411,34 +287,20 @@ class SRMPortalSession:
         url_lower = str(resp.url).lower()
 
         if "logout.jsp" in url_lower or "attendance" in url_lower or "hrdsystem" in url_lower:
-            try:
-                self.session.get(HRD_URL, headers={"Referer": LOGIN_URL}, timeout=6)
-            except Exception:
-                pass
             att_html = self.get_attendance_html()
-            return {"ok": True, "att_html": att_html or ""}
-
-        # Check if login succeeded without explicit redirect in URL (e.g. JS forward)
-        if "alert" not in body.lower() and "invalid" not in body.lower():
-            try:
-                self.session.get(HRD_URL, headers={"Referer": LOGIN_URL}, timeout=6)
-            except Exception:
-                pass
-            att_html = self.get_attendance_html()
-            if att_html and len(att_html) > 500:
+            if att_html:
                 return {"ok": True, "att_html": att_html}
-
-        # Fallback check: test if session is authenticated
-        att_html = self.get_attendance_html()
-        if att_html and len(att_html) > 1000 and "table" in att_html.lower() and "attendance" in att_html.lower():
-            return {"ok": True, "att_html": att_html}
+        else:
+            att_html = self.get_attendance_html()
+            if att_html:
+                return {"ok": True, "att_html": att_html}
 
         return self._classify_failure(body)
 
     @staticmethod
     def _classify_failure(body: str) -> Dict[str, Any]:
         soup = BeautifulSoup(body, "html.parser")
-        alert_el = soup.find(class_=lambda c: c and ("alert-icon-content" in c or "alert-danger" in c or "alert" in c or "error" in c))
+        alert_el = soup.find(class_=lambda c: c and ("alert" in c or "error" in c))
         if alert_el:
             alert_text = alert_el.get_text(separator=" ", strip=True)
             if alert_text.lower().startswith("alert"):
@@ -446,26 +308,16 @@ class SRMPortalSession:
             blob = alert_text.lower()
             if "locked" in blob:
                 return {"ok": False, "reason": "account_locked", "message": alert_text}
-            if any(k in blob for k in ["attempts remaining", "attempt remaining", "login attempts", "out of 3", "0 out of", "1 out of", "2 out of"]):
+            if any(k in blob for k in ["attempts remaining", "attempt remaining", "out of 3", "0 out of", "1 out of", "2 out of"]):
                 return {"ok": False, "reason": "invalid_credentials_fatal", "message": alert_text}
-            if any(k in blob for k in ["invalid captcha", "wrong captcha", "captcha mismatch", "incorrect captcha", "captcha"]):
+            if any(k in blob for k in ["captcha", "code", "verification", "security"]):
                 return {"ok": False, "reason": "wrong_captcha", "message": alert_text}
-            # sp.srmist.edu.in emits 'AlertInvalid credentials' for BOTH bad captcha predictions and bad passwords.
-            # Mark it retryable so TinyOCR attempts 2, 3, and 4 can run.
             return {"ok": False, "reason": "credential_or_captcha_mismatch", "message": alert_text}
-
-        body_lower = (body or "").lower()
-        if "locked" in body_lower:
-            return {"ok": False, "reason": "account_locked", "message": "Account temporarily locked."}
-        if any(k in body_lower for k in ["attempts remaining", "attempt remaining", "login attempts", "0 out of 3", "1 out of 3"]):
-            return {"ok": False, "reason": "invalid_credentials_fatal", "message": "Invalid login credentials."}
-        if any(k in body_lower for k in ["invalid captcha", "wrong captcha", "captcha mismatch", "incorrect captcha"]):
-            return {"ok": False, "reason": "wrong_captcha", "message": "Invalid captcha."}
-        return {"ok": False, "reason": "credential_or_captcha_mismatch", "message": "Invalid credentials or verification code."}
+        return {"ok": False, "reason": "wrong_captcha", "message": "Captcha mismatch"}
 
     def get_attendance_html(self) -> Optional[str]:
         try:
-            r = self.session.get(ATT_URL, headers={"Referer": HRD_URL}, timeout=10.0)
+            r = self.session.get(ATT_URL, timeout=10)
             url_l = str(r.url).lower()
             txt_l = r.text.lower()
             if (
@@ -483,7 +335,7 @@ class SRMPortalSession:
 
     def get_marks_html(self) -> Optional[str]:
         try:
-            r = self.session.get(MARKS_URL, headers={"Referer": HRD_URL}, timeout=10.0)
+            r = self.session.get(MARKS_URL, timeout=10)
             if r.status_code == 200 and "table" in r.text.lower():
                 return r.text
         except Exception:
@@ -508,8 +360,8 @@ class SRMPortalSession:
                 "hdnFormDetails": "1",
                 "csrfPreventionSalt": "",
             }
-            r = self.session.post(TIMETABLE_URL, data=payload, timeout=20)
-            if r.status_code == 200 and "table" in r.text.lower() and "day 1" in r.text.lower():
+            r = self.session.post(TIMETABLE_URL, data=payload, timeout=15)
+            if r.status_code == 200 and "table" in r.text.lower():
                 return r.text
         except Exception:
             pass
@@ -518,7 +370,7 @@ class SRMPortalSession:
     def get_profile_html(self) -> Optional[str]:
         try:
             r = self.session.get(PROFILE_URL, timeout=10)
-            if r.status_code == 200 and "student name" in r.text.lower():
+            if r.status_code == 200 and "table" in r.text.lower():
                 return r.text
         except Exception:
             pass
@@ -556,16 +408,7 @@ def _parse_portal_profile(html_content: Optional[str], netid: str) -> Dict[str, 
             elif "program" in label:
                 profile["program"] = val
             elif "batch" in label:
-                m_b_exp = re.search(r"batch\D*([12])", val, re.I)
-                if m_b_exp:
-                    profile["batch"] = m_b_exp.group(1)
-                elif "/" in val:
-                    after_slash = val.split("/")[-1].strip()
-                    m_s = re.search(r"\b([12])\b", after_slash)
-                    profile["batch"] = m_s.group(1) if m_s else "1"
-                else:
-                    m_b = re.search(r"\b([12])\b", val)
-                    profile["batch"] = m_b.group(1) if m_b else "1"
+                profile["batch"] = val
             elif "semester" in label:
                 profile["semester"] = val
             elif "section" in label:
@@ -582,46 +425,21 @@ def _parse_portal_timetable_and_courses(html_content: Optional[str]) -> Tuple[Di
         return final_tt, courses_list
 
     soup = BeautifulSoup(html_content, "html.parser")
-    variants: Dict[str, List[Dict[str, Any]]] = {}
-    courses_map: Dict[str, Dict[str, Any]] = {}
-    known_slots = set()
-
-    def slot_tokens(s_str: str) -> set:
-        if not s_str: return set()
-        return {s.replace(" ", "").upper() for s in re.split(r'[,/]', s_str) if s.strip()}
-
-    # 1. Parse Course info table
-    room_split = re.compile(r"[,/]|(?:\s+(?:Drafting|Lab|Room|Hall))", re.I)
-    abbr_regex = re.compile(r"\(([^)]+)\)")
-    lab_regex = re.compile(r"(lab|practical)", re.I)
+    courses_map = {}
 
     for table in soup.find_all("table"):
-        headers = [th.get_text(" ", strip=True).lower() for th in table.find_all(["th", "td"])]
-        if any("course code" in h for h in headers) and any("faculty" in h or "slot" in h for h in headers):
-            # Dynamic column mapping
-            code_col, name_col, credit_col, slot_col, faculty_col, bld_col, room_col = 0, 1, 2, 3, 4, 5, 7
-            for h_idx, h in enumerate(headers):
-                if "code" in h: code_col = h_idx
-                elif "name" in h or "title" in h: name_col = h_idx
-                elif "credit" in h: credit_col = h_idx
-                elif "slot" in h: slot_col = h_idx
-                elif "faculty" in h or "staff" in h: faculty_col = h_idx
-                elif "building" in h: bld_col = h_idx
-                elif "room" in h: room_col = h_idx
-
+        headers = [th.get_text(" ", strip=True).lower() for th in table.find_all("th")]
+        if any("course code" in h for h in headers) and any("faculty" in h for h in headers):
             for row in table.find_all("tr"):
                 cols = [td.get_text(" ", strip=True) for td in row.find_all("td")]
-                if len(cols) >= 4:
-                    c_code = cols[code_col].strip() if code_col < len(cols) else cols[0].strip()
-                    c_name = cols[name_col].strip() if name_col < len(cols) else (cols[1].strip() if len(cols) > 1 else "")
-                    c_credits_str = cols[credit_col].strip() if credit_col < len(cols) else (cols[2].strip() if len(cols) > 2 else "")
-                    c_slot = cols[slot_col].strip() if slot_col < len(cols) else (cols[3].strip() if len(cols) > 3 else "")
-                    c_faculty = cols[faculty_col].strip() if faculty_col < len(cols) else "TBA"
-                    building = cols[bld_col].strip() if bld_col < len(cols) else ""
-                    raw_room = cols[room_col].strip() if room_col < len(cols) else ""
-
-                    if not c_code or c_code.isdigit() or len(c_code) < 4:
-                        continue
+                if len(cols) >= 5:
+                    c_code = cols[0].strip()
+                    c_name = cols[1].strip()
+                    c_credits_str = cols[2].strip()
+                    c_slot = cols[3].strip()
+                    c_faculty = cols[4].strip()
+                    building = cols[5].strip() if len(cols) > 5 else ""
+                    raw_room = cols[7].strip() if len(cols) > 7 else ""
 
                     try:
                         c_credit = float(c_credits_str)
@@ -630,8 +448,8 @@ def _parse_portal_timetable_and_courses(html_content: Optional[str]) -> Tuple[Di
                     except Exception:
                         c_credit = get_course_credit(c_code, c_name)
 
-                    clean_room = room_split.split(raw_room)[0].strip() if raw_room else ""
-                    m_abbr = abbr_regex.search(building)
+                    clean_room = re.split(r"[,/]|(?:\s+(?:Drafting|Lab|Room|Hall))", raw_room, flags=re.I)[0].strip() if raw_room else ""
+                    m_abbr = re.search(r"\(([^)]+)\)", building)
                     b_abbr = m_abbr.group(1).strip().upper() if m_abbr else ""
                     if clean_room and b_abbr and not clean_room.upper().startswith(b_abbr):
                         full_room = f"{b_abbr} {clean_room}"
@@ -639,14 +457,13 @@ def _parse_portal_timetable_and_courses(html_content: Optional[str]) -> Tuple[Di
                         full_room = clean_room or b_abbr or "TBA"
 
                     slots = [s.strip().upper() for s in c_slot.split(",") if s.strip()]
-                    is_lab = bool(lab_regex.search(c_name)) or any(s.startswith("P") or s.startswith("L") for s in slots)
+                    is_lab = bool(re.search(r"\b(lab|practical)\b", c_name, flags=re.I)) or any(s.startswith("P") for s in slots)
                     ctype = "Practical" if is_lab else "Theory"
 
                     c_info = {
                         "code": c_code,
                         "title": c_name,
                         "credit": c_credit,
-                        "credits": c_credit,
                         "category": ctype,
                         "type": ctype,
                         "faculty": c_faculty or "TBA",
@@ -654,155 +471,72 @@ def _parse_portal_timetable_and_courses(html_content: Optional[str]) -> Tuple[Di
                         "room": full_room,
                     }
                     courses_list.append(c_info)
-                    variants.setdefault(c_code, []).append(c_info)
                     if c_code not in courses_map:
                         courses_map[c_code] = c_info
-                    for tok in slot_tokens(c_slot):
-                        known_slots.add(tok)
 
-    # 2. Find and classify all Day Order grid tables (Ratio-D parity)
-    time_regex = re.compile(r"(\d{1,2}:\d{2})\s*-\s*(\d{1,2}:\d{2})")
-    day_regex = re.compile(r"^Day\s*([1-5])$", re.I)
-
-    grids = []
-    for t_idx, table in enumerate(soup.find_all("table")):
-        rows = {}
+    # Find day order grid table
+    for table in soup.find_all("table"):
+        day_rows = {}
         for row in table.find_all("tr"):
-            cols = [td.get_text(" ", strip=True) for td in row.find_all(["td", "th"])]
+            cols = [td.get_text(" ", strip=True) for td in row.find_all("td")]
             if not cols:
                 continue
-            m = day_regex.search(cols[0].strip())
-            if m:
-                rows[m.group(1)] = cols[1:]
-        if not rows:
+            m_day = re.search(r"^Day\s*([1-5])$", cols[0].strip(), re.I)
+            if m_day:
+                day_rows[m_day.group(1)] = cols[1:]
+
+        if not day_rows:
             continue
 
-        # Header times from table headers
-        times = []
-        for tr in table.find_all(["thead", "tr"]):
-            cells = [td.get_text(" ", strip=True) for td in tr.find_all(["th", "td"])]
-            matched = []
-            for c in cells:
-                tm = time_regex.search(c)
-                if tm:
-                    matched.append(f"{tm.group(1)} - {tm.group(2)}")
-            if len(matched) >= 2:
-                times = matched
-                break
+        # Check if this grid contains course codes
+        sample_vals = [v.strip() for r in day_rows.values() for v in r if v.strip() and v.strip() not in ("-", "--")]
+        if not any(v in courses_map for v in sample_vals):
+            continue
 
-        course_hits = sum(1 for codes in rows.values() for c in codes if c in variants)
-        slot_hits = sum(1 for codes in rows.values() for s in codes if s.replace(" ", "").upper() in known_slots)
-
-        grids.append({
-            "idx": t_idx,
-            "rows": rows,
-            "times": times,
-            "course_hits": course_hits,
-            "slot_hits": slot_hits,
-        })
-
-    if not grids:
-        return final_tt, courses_list
-
-    # Pick grid with highest course_hits
-    best_grid = max(grids, key=lambda g: g["course_hits"])
-    slot_grid = None
-    other_grids = [g for g in grids if g["idx"] != best_grid["idx"]]
-    if other_grids:
-        best_slot_g = max(other_grids, key=lambda g: g["slot_hits"])
-        if best_slot_g["slot_hits"] > 0:
-            slot_grid = best_slot_g
-
-    # 3. Populate final timetable with exact branch times and course variants
-    for day_num, codes in best_grid["rows"].items():
-        for i, code_val in enumerate(codes):
-            code = code_val.strip()
-            if not code or code in ("-", "--"):
-                continue
-
-            if best_grid["times"] and i < len(best_grid["times"]):
-                p_time = best_grid["times"][i]
-                start_t, end_t = p_time.split(" - ")
-            elif i < len(SRM_PERIOD_TIMES):
-                pt = SRM_PERIOD_TIMES[i]
-                p_time = f"{pt['start']} - {pt['end']}"
-                start_t, end_t = pt["start"], pt["end"]
-            else:
-                p_time = "TBA"
-                start_t, end_t = "TBA", "TBA"
-
-            actual_slot = None
-            if slot_grid:
-                slot_row = slot_grid["rows"].get(day_num, [])
-                if i < len(slot_row):
-                    actual_slot = slot_row[i].strip()
-
-            choices = variants.get(code, [])
-            chosen = None
-            if choices:
-                if actual_slot:
-                    norm_actual = actual_slot.replace(" ", "").upper()
-                    for c in choices:
-                        if norm_actual in slot_tokens(c.get("slot", "")):
-                            chosen = c
-                            break
-                if not chosen:
-                    chosen = choices[0]
-            else:
-                chosen = courses_map.get(code)
-
-            if not chosen:
-                chosen = {
+        for day_num, cell_codes in day_rows.items():
+            for idx, raw_code in enumerate(cell_codes):
+                if idx >= len(SRM_PERIOD_TIMES):
+                    break
+                code = raw_code.strip()
+                if not code or code in ("-", "--"):
+                    continue
+                pt = SRM_PERIOD_TIMES[idx]
+                c_info = courses_map.get(code, {
                     "code": code,
                     "title": code,
                     "type": "Theory",
                     "room": "TBA",
                     "faculty": "TBA",
-                    "slot": actual_slot or "",
+                    "slot": "",
+                })
+                entry = {
+                    "time": f"{pt['start']} - {pt['end']}",
+                    "time_from": pt["start"],
+                    "time_to": pt["end"],
+                    "subject": c_info["title"],
+                    "code": code,
+                    "room": c_info.get("room", "TBA"),
+                    "faculty": c_info.get("faculty", "TBA"),
+                    "type": c_info.get("type", "Theory"),
+                    "slot": c_info.get("slot", ""),
+                    "period": pt["period"],
+                    "period_end": pt["period"],
                 }
-
-            entry = {
-                "time": p_time,
-                "time_from": start_t,
-                "time_to": end_t,
-                "subject": chosen["title"],
-                "code": chosen["code"],
-                "room": chosen.get("room", "TBA"),
-                "faculty": chosen.get("faculty", "TBA"),
-                "type": chosen.get("type", "Theory"),
-                "slot": actual_slot or chosen.get("slot", ""),
-                "period": i + 1,
-                "period_end": i + 1,
-            }
-
-            last = final_tt[day_num][-1] if final_tt[day_num] else None
-            if (last and last["code"] == entry["code"] and last["type"] == entry["type"] and last["period_end"] + 1 == entry["period"]):
-                last["time"] = f"{last['time_from']} - {end_t}"
-                last["time_to"] = end_t
-                last["period_end"] = entry["period"]
-            else:
-                final_tt[day_num].append(entry)
+                last = final_tt[day_num][-1] if final_tt[day_num] else None
+                if (
+                    last
+                    and last["code"] == entry["code"]
+                    and last["period_end"] + 1 == pt["period"]
+                ):
+                    last["time"] = f"{last['time_from']} - {pt['end']}"
+                    last["time_to"] = pt["end"]
+                    last["period_end"] = pt["period"]
+                else:
+                    final_tt[day_num].append(entry)
+        break
 
     return final_tt, courses_list
 
-
-def _find_course_meta(cd: str, nm: str, courses_list: List[Dict[str, Any]]) -> Dict[str, Any]:
-    norm_cd = re.sub(r'[^A-Z0-9]', '', (cd or '').upper())
-    base_cd = re.sub(r'(REGULAR|THEORY|PRACTICAL|LAB)$', '', norm_cd)
-    norm_nm = re.sub(r'[^A-Z0-9]', '', (nm or '').upper())
-
-    for c in courses_list:
-        rc_cd = re.sub(r'[^A-Z0-9]', '', str(c.get("code", "")).upper())
-        base_rc = re.sub(r'(REGULAR|THEORY|PRACTICAL|LAB)$', '', rc_cd)
-        if rc_cd and (rc_cd == norm_cd or base_rc == base_cd or norm_cd.startswith(base_rc) or base_cd.startswith(base_rc)):
-            return c
-
-    for c in courses_list:
-        rc_nm = re.sub(r'[^A-Z0-9]', '', str(c.get("title", c.get("name", ""))).upper())
-        if rc_nm and (rc_nm == norm_nm or norm_nm in rc_nm or rc_nm in norm_nm):
-            return c
-
-    return {}
 
 def _parse_portal_attendance(html_content: Optional[str], courses_list: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     att_list = []
@@ -810,13 +544,14 @@ def _parse_portal_attendance(html_content: Optional[str], courses_list: List[Dic
         return att_list
 
     soup = BeautifulSoup(html_content, "html.parser")
+    course_lookup = {c["code"]: c for c in courses_list if c.get("code")}
 
     for row in soup.find_all("tr"):
         cells = [c.get_text(" ", strip=True) for c in row.find_all(["td", "th"])]
         if len(cells) < 6:
             continue
         code = cells[0].strip()
-        if not re.match(r"^[A-Z0-9]{4,15}$", code):
+        if not re.match(r"^[A-Z0-9]{6,12}$", code):
             continue
         try:
             conducted = int(cells[2])
@@ -827,17 +562,8 @@ def _parse_portal_attendance(html_content: Optional[str], courses_list: List[Dic
             continue
 
         title = cells[1].strip()
-        c_meta = _find_course_meta(code, title, courses_list)
-        cred_from_meta = c_meta.get("credit") if c_meta.get("credit") is not None else c_meta.get("credits")
-        if cred_from_meta is not None and str(cred_from_meta).strip() not in ("", "0"):
-            try:
-                credit = float(cred_from_meta)
-                if credit.is_integer(): credit = int(credit)
-            except Exception:
-                credit = get_course_credit(code, title, courses_list)
-        else:
-            credit = get_course_credit(code, title, courses_list)
-
+        c_meta = course_lookup.get(code, {})
+        credit = get_course_credit(code, title, courses_list)
         safe_margin, classes_needed, status_badge = calculate_bunk_margin_and_needed(percent, conducted, absent)
 
         att_list.append({
@@ -852,7 +578,6 @@ def _parse_portal_attendance(html_content: Optional[str], courses_list: List[Dic
             "present": present,
             "attended": percent,
             "credit": credit,
-            "credits": credit,
             "bunk_margin": safe_margin,
             "classes_needed": classes_needed,
             "status_badge": status_badge,
@@ -861,7 +586,7 @@ def _parse_portal_attendance(html_content: Optional[str], courses_list: List[Dic
     return att_list
 
 
-def _parse_portal_marks(portal: SRMPortalSession, marks_html: Optional[str], courses_list: List[Dict[str, Any]], att_list: Optional[List[Dict[str, Any]]] = None) -> List[Dict[str, Any]]:
+def _parse_portal_marks(portal: SRMPortalSession, marks_html: Optional[str], courses_list: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     marks_list = []
     if not marks_html:
         return marks_list
@@ -938,8 +663,7 @@ def _parse_portal_marks(portal: SRMPortalSession, marks_html: Optional[str], cou
                         pass
         return tests
 
-    worker_count = min(4, max(len(raw_subjects), 1))
-    with concurrent.futures.ThreadPoolExecutor(max_workers=worker_count) as ex:
+    with concurrent.futures.ThreadPoolExecutor(max_workers=6) as ex:
         futures = {ex.submit(fetch_inner, s): s for s in raw_subjects}
         for fut in concurrent.futures.as_completed(futures):
             s = futures[fut]
@@ -961,16 +685,7 @@ def _parse_portal_marks(portal: SRMPortalSession, marks_html: Optional[str], cou
 
         perf_strings = [f"{t['test_name']}/{t['max']:.2f} | {t['obtained']:.2f}" for t in tests]
         perf_formatted = "   ".join(perf_strings) if perf_strings else "No tests available."
-        c_meta = _find_course_meta(code, title, courses_list)
-        cred_from_meta = c_meta.get("credit") if c_meta.get("credit") is not None else c_meta.get("credits")
-        if cred_from_meta is not None and str(cred_from_meta).strip() not in ("", "0"):
-            try:
-                credit = float(cred_from_meta)
-                if credit.is_integer(): credit = int(credit)
-            except Exception:
-                credit = get_course_credit(code, title, courses_list)
-        else:
-            credit = get_course_credit(code, title, courses_list)
+        credit = get_course_credit(code, title, courses_list)
 
         marks_list.append({
             "courseTitle": title,
@@ -980,36 +695,7 @@ def _parse_portal_marks(portal: SRMPortalSession, marks_html: Optional[str], cou
             "Test Performance": perf_formatted,
             "tests": tests,
             "credit": credit,
-            "credits": credit,
         })
-
-    # Merge any registered courses from courses_list or att_list that don't have test entries yet
-    marked_codes = {s["code"].upper() for s in raw_subjects}
-    candidate_sources = list(courses_list) + (att_list or [])
-    for c in candidate_sources:
-        c_code = (c.get("code") or c.get("courseCode") or "").strip().upper()
-        if c_code and c_code not in marked_codes:
-            c_title = c.get("title") or c.get("courseTitle") or c_code
-            c_cred = c.get("credit") if c.get("credit") is not None else c.get("credits")
-            if c_cred is None or str(c_cred).strip() in ("", "0"):
-                c_cred = get_course_credit(c_code, c_title, courses_list)
-            else:
-                try:
-                    c_cred = float(c_cred)
-                    if c_cred.is_integer(): c_cred = int(c_cred)
-                except Exception:
-                    c_cred = get_course_credit(c_code, c_title, courses_list)
-            marks_list.append({
-                "courseTitle": c_title,
-                "courseCode": c_code,
-                "courseType": "Theory",
-                "performance": "No tests conducted yet",
-                "Test Performance": "No tests conducted yet",
-                "tests": [],
-                "credit": c_cred,
-                "credits": c_cred,
-            })
-            marked_codes.add(c_code)
 
     return marks_list
 
@@ -1017,7 +703,7 @@ def _parse_portal_marks(portal: SRMPortalSession, marks_html: Optional[str], cou
 def fetch_portal_data(username: str, password: str, courses_list: Optional[List[Dict[str, Any]]] = None, client_telemetry: Optional[str] = None) -> Dict[str, Any]:
     """
     Logs into sp.srmist.edu.in using Ratio-D's TinyOCR CAPTCHA solver and fetches
-    Attendance, Component-wise Internal Marks, and Profile in parallel.
+    Attendance, Component-wise Internal Marks, Timetable, Courses, and Profile.
     """
     start_ts = time.time()
     netid = (username or "").strip().split("@")[0].strip()
@@ -1025,105 +711,72 @@ def fetch_portal_data(username: str, password: str, courses_list: Optional[List[
     if not netid or not password:
         return {"success": False, "error": "Missing Student Portal credentials"}
 
+    import re
+    if re.match(r'^\d{2}[-/.]\d{2}[-/.]\d{4}$', password):
+        password = re.sub(r'[-/.]', '', password)
+
     att_html = None
     active_portal = None
-    last_reason = "login_failed"
-    last_msg = "Could not authenticate with SRM Student Portal"
-    courses_list = courses_list or []
+    max_attempts = 4
 
-    max_submits = 3
-    login_attempts_made = 0
-    portal = SRMPortalSession()
-    portal.load_captcha()
-
-    while login_attempts_made < max_submits and (time.time() - start_ts < 22.0):
+    for attempt in range(1, max_attempts + 1):
+        if time.time() - start_ts > 22.0:
+            break
+        portal = SRMPortalSession()
         try:
-            if not portal.captcha_bytes:
-                portal = SRMPortalSession()
-                if not portal.load_captcha() or not portal.captcha_bytes:
-                    break
-
+            if not portal.load_captcha() or not portal.captcha_bytes:
+                continue
             solved = solve_captcha_bytes(portal.captcha_bytes)
-            if not solved:
-                portal = SRMPortalSession()
-                if not portal.load_captcha() or not portal.captcha_bytes:
-                    break
-                solved = solve_captcha_bytes(portal.captcha_bytes)
-                if not solved:
-                    break
+            if not solved or len(solved) != 6:
+                if portal.load_captcha() and portal.captcha_bytes:
+                    solved = solve_captcha_bytes(portal.captcha_bytes)
+            if not solved or len(solved) != 6:
+                continue
 
-            login_attempts_made += 1
-            print(f"[{netid}] [PORTAL-OCR] Attempt {login_attempts_made}/{max_submits} predicted captcha: '{solved}'", flush=True)
-            res = portal.login_attempt(netid, password, solved, client_telemetry=client_telemetry)
+            print(f"[{netid}] [PORTAL-OCR] Attempt {attempt}/{max_attempts} predicted captcha: '{solved}'", flush=True)
+            res = portal.login_attempt(netid, password, solved)
             if res.get("ok"):
                 att_html = res.get("att_html")
                 active_portal = portal
-                print(f"[{netid}] [PORTAL] Login succeeded on attempt {login_attempts_made} in {time.time() - start_ts:.2f}s!", flush=True)
+                print(f"[{netid}] [PORTAL] Login succeeded on attempt {attempt} in {time.time() - start_ts:.2f}s!", flush=True)
                 break
-
             reason = res.get("reason", "")
-            msg = res.get("message", "Invalid Student Portal credentials")
-            last_reason = reason
-            last_msg = msg
-            print(f"[{netid}] [PORTAL] Attempt {login_attempts_made} failed ({reason}): {msg[:80]}", flush=True)
-
             if reason in ("account_locked", "invalid_credentials_fatal"):
+                msg = res.get("message", "Invalid Student Portal credentials")
                 print(f"[{netid}] [PORTAL] Auth stopped ({reason}): {msg}", flush=True)
-                return {"success": False, "error": msg, "reason": "account_locked" if reason == "account_locked" else "invalid_credentials"}
-
-            # Prepare a fresh session for next attempt
-            if login_attempts_made < max_submits:
-                portal = SRMPortalSession()
-                portal.load_captcha()
-                time.sleep(0.05)
+                return {"success": False, "error": msg, "reason": "invalid_credentials"}
         except Exception as e:
-            print(f"[{netid}] [PORTAL] Attempt {login_attempts_made} error: {e}", flush=True)
-            last_reason = "network_error"
-            last_msg = "Could not reach SRM Student Portal security server. Please click TRY AGAIN."
-            if login_attempts_made < max_submits and (time.time() - start_ts < 20.0):
-                portal = SRMPortalSession()
-                portal.load_captcha()
-                time.sleep(0.1)
+            print(f"[{netid}] [PORTAL] Attempt {attempt} error: {e}", flush=True)
 
-    if not active_portal:
-        if login_attempts_made == 0 or last_reason in ("network_error", "network_or_captcha_load_failed"):
-            return {
-                "success": False,
-                "error": "Could not reach SRM Student Portal security server. Please click TRY AGAIN.",
-                "reason": "network_or_captcha_load_failed"
-            }
-        if last_reason == "wrong_captcha":
-            return {
-                "success": False, 
-                "error": "Student Portal security verification (CAPTCHA) timed out. Please click TRY AGAIN.", 
-                "reason": "wrong_captcha"
-            }
-        error_msg = last_msg if last_msg and "invalid" in last_msg.lower() else "Invalid NetID or Student Portal password. Note: This requires your SRM Student Portal password (from sp.srmist.edu.in), not your Academia password. You can reset your password at https://ssp.srmist.edu.in/resetpassword/"
-        return {
-            "success": False, 
-            "error": error_msg, 
-            "reason": "invalid_credentials"
-        }
+    if not active_portal or not att_html:
+        return {"success": False, "error": "Could not authenticate with SRM Student Portal"}
 
-    # Streamlined fetch: att_html is already extracted upon login; marks is a fast single GET
-    if not att_html:
-        att_html = active_portal.get_attendance_html()
-    marks_html = active_portal.get_marks_html()
+    with concurrent.futures.ThreadPoolExecutor(max_workers=3) as ex:
+        f_marks = ex.submit(active_portal.get_marks_html)
+        f_tt = ex.submit(active_portal.get_timetable_html)
+        f_prof = ex.submit(active_portal.get_profile_html)
 
-    att_list = _parse_portal_attendance(att_html, courses_list)
-    marks_list = _parse_portal_marks(active_portal, marks_html, courses_list, att_list=att_list)
-    profile = _parse_portal_profile(None, netid)
+        marks_html = f_marks.result()
+        tt_html = f_tt.result()
+        prof_html = f_prof.result()
+
+    timetable, parsed_courses = _parse_portal_timetable_and_courses(tt_html)
+    courses_to_use = courses_list or parsed_courses or []
+    att_list = _parse_portal_attendance(att_html, courses_to_use)
+    marks_list = _parse_portal_marks(active_portal, marks_html, courses_to_use)
+    profile = _parse_portal_profile(prof_html, netid)
 
     print(
         f"[{netid}] [PORTAL] Completed in {time.time() - start_ts:.2f}s "
-        f"(Att: {len(att_list)}, Marks: {len(marks_list)}, Courses: {len(courses_list)})"
+        f"(Att: {len(att_list)}, Marks: {len(marks_list)}, Courses: {len(courses_to_use)})",
+        flush=True
     )
     return {
         "success": True,
         "data": att_list,
         "marks": marks_list,
-        "timetable": {},
-        "courses": courses_list,
+        "timetable": timetable,
+        "courses": courses_to_use,
         "profile": profile,
         "is_mock_attendance": False,
         "source": "srm_portal",
