@@ -993,12 +993,12 @@ def fetch_portal_data(username: str, password: str, courses_list: Optional[List[
     courses_list = courses_list or []
 
     # Single persistent session with in-session captcha reloading to prevent F5 WAF burst resets
-    max_submits = 4
+    max_submits = 3
     login_attempts_made = 0
     portal = SRMPortalSession()
     portal.load_captcha()
 
-    while login_attempts_made < max_submits and (time.time() - start_ts < 35.0):
+    while login_attempts_made < max_submits and (time.time() - start_ts < 26.0):
         try:
             if not portal.captcha_bytes:
                 reloaded = portal.reload_captcha()
