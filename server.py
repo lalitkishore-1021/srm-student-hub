@@ -3870,7 +3870,7 @@ def like_spotted(post_id):
 
 @app.route('/ping')
 def ping():
-    return jsonify({"status": "ok", "version": "v109-dual-nonce-fp-fix", "commit": "v109"})
+    return jsonify({"status": "ok", "version": "v110-deep-diag", "commit": "v110"})
 
 
 @app.route('/api/admin/portal_diag', methods=['GET', 'POST'])
@@ -3902,6 +3902,7 @@ def admin_portal_diag():
         diag["weights_error"] = str(e)
 
     # 3. HTTP GET LOGIN_URL check
+    sess = None
     try:
         t0 = time.time()
         sess = srm_portal_scraper.SRMPortalSession()
@@ -3909,32 +3910,40 @@ def admin_portal_diag():
         diag["load_captcha_ok"] = loaded
         diag["load_captcha_time"] = round(time.time() - t0, 3)
         diag["nonce"] = sess.nonce
+        diag["captcha_nonce"] = sess.captcha_nonce
+        diag["fp_nonce"] = sess.fp_nonce
+        diag["server_ts"] = sess.server_ts
         diag["form_fields_count"] = len(sess.login_form_fields)
         diag["form_fields"] = list(sess.login_form_fields.keys())
         diag["secure_token_present"] = bool(sess.login_form_fields.get("secureToken"))
         diag["secure_token_preview"] = (sess.login_form_fields.get("secureToken") or "")[:30]
         diag["captcha_bytes_len"] = len(sess.captcha_bytes) if sess.captcha_bytes else 0
         if sess.captcha_bytes:
+            diag["captcha_b64"] = base64.b64encode(sess.captcha_bytes).decode('ascii')
             solved = srm_portal_scraper.solve_captcha_bytes(sess.captcha_bytes)
             diag["solved_captcha"] = solved
     except Exception as e:
         diag["load_captcha_error"] = str(e)
 
-    # 4. Optional full login test if credentials supplied
+    # 4. Optional single attempt test to capture exact HTTP exchange
     test_netid = request.args.get('netid') or (request.json or {}).get('netid')
     test_pwd = request.args.get('pwd') or (request.json or {}).get('pwd')
-    if test_netid and test_pwd:
+    if test_netid and test_pwd and sess and sess.captcha_bytes:
         try:
+            solved = diag.get("solved_captcha") or "123456"
             t0 = time.time()
-            res = srm_portal_scraper.fetch_portal_data(test_netid, test_pwd)
-            diag["login_test_time"] = round(time.time() - t0, 3)
-            diag["login_test_success"] = res.get("success")
-            diag["login_test_reason"] = res.get("reason")
-            diag["login_test_error"] = res.get("error")
-            diag["login_test_att_count"] = len(res.get("data", []))
-            diag["login_test_marks_count"] = len(res.get("marks", []))
+            single_res = sess.login_attempt(test_netid, test_pwd, solved)
+            diag["single_attempt_time"] = round(time.time() - t0, 3)
+            diag["single_attempt_res"] = single_res
+            diag["single_attempt_status"] = sess.last_status
+            diag["single_attempt_url"] = sess.last_url
+            diag["single_attempt_body_len"] = len(sess.last_body) if sess.last_body else 0
+            diag["single_attempt_body_preview"] = (sess.last_body or "")[:500]
+            soup_res = BeautifulSoup(sess.last_body or "", "html.parser")
+            alert_tag = soup_res.find(class_=lambda c: c and ("alert" in c or "error" in c))
+            diag["single_attempt_alert"] = alert_tag.get_text(separator=" ", strip=True) if alert_tag else None
         except Exception as e:
-            diag["login_test_exception"] = str(e)
+            diag["single_attempt_exception"] = str(e)
 
     return jsonify(diag)
 
