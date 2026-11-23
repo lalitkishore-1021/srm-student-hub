@@ -1,5 +1,5 @@
 // Change this version number every time you want to force phones to update!
-const CACHE_NAME = 'srm-hub-v100-resilient-portal-sync';
+const CACHE_NAME = 'srm-hub-v101-session-reuse-sync';
 
 const ASSETS_TO_CACHE = [
     '/',

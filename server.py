@@ -1186,7 +1186,8 @@ def debug_sync():
         try:
             portal = srm_portal_scraper.SRMPortalSession()
             loaded = portal.load_captcha()
-            diag['sp_steps'].append({'step': 'load_captcha', 'loaded': loaded, 'bytes': len(portal.captcha_bytes or b''), 'nonce': portal.nonce})
+            c_b64 = base64.b64encode(portal.captcha_bytes or b'').decode('utf-8') if (loaded and portal.captcha_bytes) else ''
+            diag['sp_steps'].append({'step': 'load_captcha', 'loaded': loaded, 'bytes': len(portal.captcha_bytes or b''), 'nonce': portal.nonce, 'captcha_b64': c_b64})
             if loaded and portal.captcha_bytes:
                 solved = srm_portal_scraper.solve_captcha_bytes(portal.captcha_bytes)
                 diag['sp_steps'].append({'step': 'ocr_solve', 'solved': solved})
@@ -3869,7 +3870,7 @@ def like_spotted(post_id):
 
 @app.route('/ping')
 def ping():
-    return jsonify({"status": "ok", "version": "v100-resilient-portal-sync", "commit": "v100"})
+    return jsonify({"status": "ok", "version": "v101-session-reuse-sync", "commit": "v101"})
 
 
 @app.route('/api/admin/db_size', methods=['GET'])

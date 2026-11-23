@@ -259,6 +259,71 @@ class SRMPortalSession:
             pass
         return False
 
+    def reload_captcha(self) -> bool:
+        """
+        Reloads a fresh captcha on the existing session without initiating a new TLS handshake.
+        Extracts new nonce and tokens from the last response body if available, or GETs LOGIN_URL.
+        """
+        text = self.last_body or ""
+        m_cap = re.search(r"SCaptchaServlet[^'\" ]*", text)
+        if not m_cap or "nonce" not in text:
+            try:
+                r = self.session.get(LOGIN_URL, timeout=8.0)
+                text = r.text
+                m_cap = re.search(r"SCaptchaServlet[^'\" ]*", text)
+            except Exception:
+                return False
+
+        m = re.search(r"window\.SECURE_CONFIG\s*=\s*\{[^}]*?nonce\s*:\s*'([^']+)'", text)
+        if not m:
+            m = re.search(r"window\.SECURE_CONFIG\.nonce\s*=\s*'([^']+)'", text)
+        if not m:
+            m = re.search(r'id="fpNonce"\s*value="([^"]+)"', text)
+        if m:
+            self.nonce = m.group(1)
+
+        df = re.search(r'domainFieldName\s*=\s*[\'"]([^\'"]+)[\'"]', text)
+        cf = re.search(r'captchaFieldName\s*=\s*[\'"]([^\'"]+)[\'"]', text)
+        if df:
+            self.domain_field_name = df.group(1)
+        if cf:
+            self.captcha_field_name = cf.group(1)
+
+        m_delim = re.search(r"randomDelimiter\s*=\s*'([^']+)'", text)
+        if m_delim:
+            self.random_delimiter = m_delim.group(1)
+
+        self.captcha_page = text
+        clean_text = re.sub(r"<!--.*?-->", "", text, flags=re.DOTALL)
+        fields = {}
+        for inp in re.finditer(r"<input[^>]*name=['\"]([^'\"]+)['\"][^>]*>", clean_text, re.IGNORECASE):
+            fields[inp.group(1)] = ""
+        if fields:
+            self.login_form_fields = fields
+
+        if not m_cap:
+            return False
+        seg = m_cap.group(0)
+        captcha_url = BASE_URL + "/" + seg if not seg.startswith("/") else "https://sp.srmist.edu.in" + seg
+        proof = base64.b64encode(f"{self.nonce}:sp.srmist.edu.in".encode()).decode()
+        try:
+            cr = self.session.get(
+                captcha_url,
+                headers={
+                    "X-Domain-Proof": proof,
+                    "Accept": "image/png, image/jpeg, image/svg+xml, image/*",
+                    "Referer": LOGIN_URL,
+                },
+                timeout=10.0,
+            )
+            if cr.status_code == 200 and cr.content:
+                self.captcha_bytes = cr.content
+                self.load_ms = int(time.time() * 1000)
+                return True
+        except Exception:
+            pass
+        return False
+
     def login_attempt(self, netid: str, password: str, captcha_code: str) -> Dict[str, Any]:
         now_ms = int(time.time() * 1000)
         calc_elapsed = max(0, int((now_ms - (self.load_ms or now_ms)) / 1000))
@@ -294,6 +359,16 @@ class SRMPortalSession:
         url_lower = str(resp.url).lower()
 
         if "logout.jsp" in url_lower or "attendance" in url_lower or "hrdsystem" in url_lower:
+            try:
+                self.session.get(HRD_URL, headers={"Referer": LOGIN_URL}, timeout=6)
+            except Exception:
+                pass
+            att_html = self.get_attendance_html()
+            if att_html and len(att_html) > 500:
+                return {"ok": True, "att_html": att_html}
+
+        # Check if login succeeded without explicit redirect in URL (e.g. JS forward)
+        if "alert" not in body.lower() and "invalid" not in body.lower():
             try:
                 self.session.get(HRD_URL, headers={"Referer": LOGIN_URL}, timeout=6)
             except Exception:
@@ -904,20 +979,24 @@ def fetch_portal_data(username: str, password: str, courses_list: Optional[List[
     login_attempts_made = 0
     courses_list = courses_list or []
 
-    # Sequential clean attempts to avoid triggering F5 BIG-IP WAF concurrent session resets
-    max_submits = 3
+    # Single persistent session with in-session captcha reloading to prevent F5 WAF burst resets
+    max_submits = 4
     login_attempts_made = 0
-    while login_attempts_made < max_submits and (time.time() - start_ts < 28.0):
+    portal = SRMPortalSession()
+    if not portal.load_captcha() or not portal.captcha_bytes:
+        time.sleep(0.5)
+        portal.load_captcha()
+
+    while login_attempts_made < max_submits and (time.time() - start_ts < 26.0):
         try:
-            portal = SRMPortalSession()
-            if not portal.load_captcha() or not portal.captcha_bytes:
-                last_reason = "captcha_load_failed"
-                time.sleep(0.3)
-                continue
+            if not portal.captcha_bytes:
+                if not portal.reload_captcha() or not portal.captcha_bytes:
+                    time.sleep(0.5)
+                    continue
 
             solved = solve_captcha_bytes(portal.captcha_bytes)
             if not solved or len(solved) != 6:
-                last_reason = "captcha_solve_failed"
+                portal.captcha_bytes = None
                 time.sleep(0.2)
                 continue
 
@@ -939,10 +1018,13 @@ def fetch_portal_data(username: str, password: str, courses_list: Optional[List[
                 print(f"[{netid}] [PORTAL] Auth stopped ({reason}): {msg}")
                 return {"success": False, "error": msg, "reason": reason}
 
+            # Prepare for next attempt: reset captcha_bytes to trigger reload_captcha on same session
+            portal.captcha_bytes = None
             time.sleep(0.4)
         except Exception as e:
             print(f"[{netid}] [PORTAL] Attempt error: {e}")
-            time.sleep(0.3)
+            portal.captcha_bytes = None
+            time.sleep(0.4)
             continue
 
     if not active_portal:
