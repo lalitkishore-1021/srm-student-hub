@@ -145,20 +145,22 @@ def solve_captcha_bytes(image_bytes: bytes) -> Optional[str]:
                 collapsed.append(idx_int)
             prev = idx_int
         text = "".join(VOCAB[i - 1] for i in collapsed if i != 0)
-        return text if text else None
+        if text and len(text) == 6:
+            return text
+        return None
     except Exception as e:
         print(f"[PORTAL-OCR] Error solving captcha: {e}")
         return None
 
 
 def _telemetry_payload(start_ms: int, now_ms: int) -> Dict[str, Any]:
-    time_on_page = max(2000, now_ms - start_ms)
+    time_on_page = max(3500, now_ms - start_ms)
     return {
         "startTime": start_ms,
         "currentDomain": "sp.srmist.edu.in",
         "timezoneOffset": -330,
-        "screenWidth": 1366,
-        "screenHeight": 768,
+        "screenWidth": 1920,
+        "screenHeight": 1080,
         "colorDepth": 24,
         "devicePixelRatio": 1,
         "platform": "Win32",
@@ -169,10 +171,10 @@ def _telemetry_payload(start_ms: int, now_ms: int) -> Dict[str, Any]:
         "touchSupport": False,
         "webdriver": False,
         "mouseClicks": random.randint(2, 6),
-        "mouseMovements": random.randint(5, 20),
-        "keystrokeCount": 0,
-        "typingSpeedMs": 0,
-        "canvasHash": format(random.randint(0, 0x7FFFFFFF), "06x"),
+        "mouseMovements": random.randint(15, 30),
+        "keystrokeCount": random.randint(18, 28),
+        "typingSpeedMs": random.randint(2200, 3800),
+        "canvasHash": "canvas-error",
         "submitTime": now_ms,
         "timeOnPageMs": time_on_page,
     }
@@ -362,26 +364,29 @@ class SRMPortalSession:
             pass
         return False
 
-    def login_attempt(self, netid: str, password: str, captcha_code: str) -> Dict[str, Any]:
+    def login_attempt(self, netid: str, password: str, captcha_code: str, client_telemetry: Optional[str] = None) -> Dict[str, Any]:
         now_ms = int(time.time() * 1000)
         calc_elapsed = max(0, int((now_ms - (self.load_ms or now_ms)) / 1000))
-        elapsed_sec = max(random.randint(3, 5), calc_elapsed)
-        start_ms = now_ms - random.randint(3500, 7500)
-        time_on_page = max(2000, now_ms - start_ms)
+        elapsed_sec = max(random.randint(4, 6), calc_elapsed)
+        start_ms = now_ms - (elapsed_sec * 1000)
 
+        interact_count = random.randint(18, 35)
         dtoken = base64.b64encode("sp.srmist.edu.in"[::-1].encode()).decode()
-        trap_payload = str(elapsed_sec) + (self.random_delimiter or "0000") + "3"
+        trap_payload = str(elapsed_sec) + (self.random_delimiter or "0000") + str(interact_count)
         cptoken = base64.b64encode(trap_payload.encode()).decode()
-        fp_payload = base64.b64encode(json.dumps({"fp": "", "nonce": self.fp_nonce or self.nonce or "", "ts": self.server_ts or now_ms}).encode()).decode()
-        tel_data = _telemetry_payload(start_ms, now_ms)
-        payload = base64.b64encode(json.dumps(tel_data).encode()).decode()
+
+        if client_telemetry and len(client_telemetry) > 20:
+            payload = client_telemetry
+        else:
+            tel_data = _telemetry_payload(start_ms, now_ms)
+            payload = base64.b64encode(json.dumps(tel_data).encode()).decode()
 
         fp_body = dict(self.login_form_fields)
         fp_body.update({
             "username": netid.strip(),
             "password": password,
             "captcha": captcha_code.strip(),
-            "fpPayload": fp_payload,
+            "fpPayload": "",
             "fpToken": "",
             "recaptchaToken": "",
             "telemetryPayload": payload,
@@ -1000,7 +1005,7 @@ def _parse_portal_marks(portal: SRMPortalSession, marks_html: Optional[str], cou
     return marks_list
 
 
-def fetch_portal_data(username: str, password: str, courses_list: Optional[List[Dict[str, Any]]] = None) -> Dict[str, Any]:
+def fetch_portal_data(username: str, password: str, courses_list: Optional[List[Dict[str, Any]]] = None, client_telemetry: Optional[str] = None) -> Dict[str, Any]:
     """
     Logs into sp.srmist.edu.in using Ratio-D's TinyOCR CAPTCHA solver and fetches
     Attendance, Component-wise Internal Marks, and Profile in parallel.
@@ -1015,16 +1020,14 @@ def fetch_portal_data(username: str, password: str, courses_list: Optional[List[
     active_portal = None
     last_reason = "login_failed"
     last_msg = "Could not authenticate with SRM Student Portal"
-    login_attempts_made = 0
     courses_list = courses_list or []
 
-    # Fast 2-attempt budget matching Ratio-D (fails fast in <= 5s instead of stalling 35s)
-    max_submits = 2
+    max_submits = 3
     login_attempts_made = 0
     portal = SRMPortalSession()
     portal.load_captcha()
 
-    while login_attempts_made < max_submits and (time.time() - start_ts < 12.0):
+    while login_attempts_made < max_submits and (time.time() - start_ts < 22.0):
         try:
             if not portal.captcha_bytes:
                 portal = SRMPortalSession()
@@ -1042,7 +1045,7 @@ def fetch_portal_data(username: str, password: str, courses_list: Optional[List[
 
             login_attempts_made += 1
             print(f"[{netid}] [PORTAL-OCR] Attempt {login_attempts_made}/{max_submits} predicted captcha: '{solved}'", flush=True)
-            res = portal.login_attempt(netid, password, solved)
+            res = portal.login_attempt(netid, password, solved, client_telemetry=client_telemetry)
             if res.get("ok"):
                 att_html = res.get("att_html")
                 active_portal = portal
@@ -1059,7 +1062,7 @@ def fetch_portal_data(username: str, password: str, courses_list: Optional[List[
                 print(f"[{netid}] [PORTAL] Auth stopped ({reason}): {msg}", flush=True)
                 return {"success": False, "error": msg, "reason": "account_locked" if reason == "account_locked" else "invalid_credentials"}
 
-            # If this was attempt 1, prepare a completely fresh session for quick attempt 2
+            # Prepare a fresh session for next attempt
             if login_attempts_made < max_submits:
                 portal = SRMPortalSession()
                 portal.load_captcha()

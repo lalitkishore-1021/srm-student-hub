@@ -8245,6 +8245,39 @@
             }
         }
 
+        function generatePortalTelemetry() {
+            try {
+                const now = Date.now();
+                const start = now - (Math.floor(Math.random() * 2000) + 3500);
+                const tel = {
+                    startTime: start,
+                    currentDomain: "sp.srmist.edu.in",
+                    timezoneOffset: new Date().getTimezoneOffset(),
+                    screenWidth: window.screen ? window.screen.width : 1920,
+                    screenHeight: window.screen ? window.screen.height : 1080,
+                    colorDepth: window.screen ? window.screen.colorDepth : 24,
+                    devicePixelRatio: window.devicePixelRatio || 1,
+                    platform: navigator.platform || "Win32",
+                    userAgent: navigator.userAgent || "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
+                    language: navigator.language || "en-US",
+                    hardwareConcurrency: navigator.hardwareConcurrency || 8,
+                    deviceMemory: navigator.deviceMemory || 8,
+                    touchSupport: (('ontouchstart' in window) || (navigator.maxTouchPoints > 0)),
+                    webdriver: !navigator.webdriver,
+                    mouseClicks: Math.floor(Math.random() * 3) + 2,
+                    mouseMovements: Math.floor(Math.random() * 15) + 15,
+                    keystrokeCount: Math.floor(Math.random() * 10) + 18,
+                    typingSpeedMs: Math.floor(Math.random() * 1500) + 2200,
+                    canvasHash: "canvas-error",
+                    submitTime: now,
+                    timeOnPageMs: now - start
+                };
+                return btoa(JSON.stringify(tel));
+            } catch(e) {
+                return "";
+            }
+        }
+
         async function submitPortalSync() {
             const netIdInput = document.getElementById('portal-modal-netid');
             const pwdInput = document.getElementById('portal-modal-pwd');
@@ -8322,6 +8355,7 @@
             }
             
             try {
+                const clientTel = typeof generatePortalTelemetry === 'function' ? generatePortalTelemetry() : '';
                 const res = await fetch(`${BACKEND_URL}/api/portal_sync`, {
                     method: 'POST',
                     headers: {
@@ -8333,7 +8367,8 @@
                         portalPwd: portalPwd,
                         acadPwd: localStorage.getItem('syncPwd') || '',
                         courses: JSON.parse(localStorage.getItem('squadCourses') || '[]'),
-                        batch: typeof currentBatch !== 'undefined' ? currentBatch : 1
+                        batch: typeof currentBatch !== 'undefined' ? currentBatch : 1,
+                        telemetry: clientTel
                     })
                 });
                 
@@ -8803,6 +8838,7 @@
                                 else if (p.email) cleanNetId = p.email.split('@')[0].toLowerCase();
                             } catch(e) {}
                         }
+                        const clientTel = typeof generatePortalTelemetry === 'function' ? generatePortalTelemetry() : '';
                         const pRes = await fetch(`${BACKEND_URL}/api/portal_sync`, {
                             method: "POST",
                             headers: { "Content-Type": "application/json", "X-App-Key": "srm-hub-protected-x9f2" },
@@ -8811,7 +8847,8 @@
                                 portalPwd: portalPwd, 
                                 acadPwd: pwd || localStorage.getItem('syncPwd') || '', 
                                 batch: batch,
-                                courses: JSON.parse(localStorage.getItem('squadCourses') || '[]')
+                                courses: JSON.parse(localStorage.getItem('squadCourses') || '[]'),
+                                telemetry: clientTel
                             })
                         });
                         const pData = await pRes.json();

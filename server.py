@@ -599,7 +599,7 @@ def save_cached_timetable_for_student(net_id, tt):
     except Exception as e:
         print(f"[RECOVERY] Timetable cache save error: {e}")
 
-def get_portal_data_with_fallback(net_id, portal_pwd, acad_pwd=None, courses=None):
+def get_portal_data_with_fallback(net_id, portal_pwd, acad_pwd=None, courses=None, client_telemetry=None):
     clean_id = (net_id or "").split('@')[0].strip().lower()
     portal_pwd = (portal_pwd or "").strip()
     acad_pwd = (acad_pwd or "").strip()
@@ -650,7 +650,7 @@ def get_portal_data_with_fallback(net_id, portal_pwd, acad_pwd=None, courses=Non
     try:
         import srm_portal_scraper
         print(f"[{clean_id}] Initiating live Student Portal sync via sp.srmist.edu.in...", flush=True)
-        sp_res = srm_portal_scraper.fetch_portal_data(clean_id, pwd_to_use, courses_list=courses)
+        sp_res = srm_portal_scraper.fetch_portal_data(clean_id, pwd_to_use, courses_list=courses, client_telemetry=client_telemetry)
         if sp_res and sp_res.get('success'):
             print(f"[{clean_id}] [PORTAL] Direct Student Portal sync succeeded!", flush=True)
             p_res = sp_res
@@ -1087,8 +1087,9 @@ def portal_sync():
         return jsonify({'success': False, 'error': 'Please enter your SRM Student Portal Password or Academia Password.'}), 400
 
     try:
+        client_telemetry = data.get('telemetry') or data.get('telemetryPayload')
         courses = client_courses or _STUDENT_COURSES_CACHE.get(net_id) or []
-        p_res = get_portal_data_with_fallback(net_id, portal_pwd, acad_pwd=acad_pwd, courses=courses)
+        p_res = get_portal_data_with_fallback(net_id, portal_pwd, acad_pwd=acad_pwd, courses=courses, client_telemetry=client_telemetry)
         if not p_res or not p_res.get('success'):
             err = (p_res or {}).get('error', 'SRM Portal authentication failed.')
             record_login_status(net_id, 'portal', 'Failed', error=err)
@@ -4010,12 +4011,13 @@ def like_spotted(post_id):
 
 @app.route('/ping')
 def ping():
-    return jsonify({"status": "ok", "version": "v112-fast-fail-parity", "commit": "v112"})
+    return jsonify({"status": "ok", "version": "v113-guard-parity", "commit": "v113"})
 
 
 @app.route('/api/admin/portal_diag', methods=['GET', 'POST'])
 def admin_portal_diag():
-    secret_key = request.args.get('key') or (request.json or {}).get('key')
+    body_json = request.get_json(silent=True) if request.is_json else {}
+    secret_key = request.args.get('key') or (body_json or {}).get('key')
     valid_key = os.environ.get('ADMIN_SECRET_KEY', 'lalitadmin123')
     if secret_key != valid_key:
         return jsonify({'error': 'Unauthorized'}), 403
@@ -4076,7 +4078,7 @@ def admin_portal_diag():
             solved = manual_captcha or diag.get("solved_captcha") or "123456"
             diag["submitted_captcha"] = solved
             t0 = time.time()
-            single_res = sess.login_attempt(test_netid, test_pwd, solved)
+            single_res = sess.login_attempt(test_netid, test_pwd, solved, client_telemetry=body_json.get('telemetry'))
             diag["single_attempt_time"] = round(time.time() - t0, 3)
             diag["single_attempt_res"] = single_res
             diag["single_attempt_status"] = sess.last_status
