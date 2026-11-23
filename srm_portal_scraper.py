@@ -300,9 +300,13 @@ class SRMPortalSession:
         interact_count = random.randint(24, 45)
         trap_payload = str(elapsed_sec) + (self.random_delimiter or "0000") + str(interact_count)
         cptoken = base64.b64encode(trap_payload.encode()).decode()
-        fp_payload = ""
-        payload = base64.b64encode(json.dumps(_telemetry_payload()).encode()).decode()
+        client_tel = kwargs.get('client_telemetry')
+        if client_tel and isinstance(client_tel, str) and len(client_tel) > 20:
+            payload = client_tel
+        else:
+            payload = base64.b64encode(json.dumps(_telemetry_payload()).encode()).decode()
 
+        fp_payload = ""
         fp_body = dict(self.login_form_fields)
         fp_body.update({
             "username": netid.strip(),
@@ -316,7 +320,18 @@ class SRMPortalSession:
         fp_body[self.domain_field_name] = dtoken
         fp_body[self.captcha_field_name] = cptoken
 
-        resp = self.session.post(LOGIN_SERVLET, data=fp_body, timeout=12)
+        headers = {
+            "Origin": "https://sp.srmist.edu.in",
+            "Referer": LOGIN_URL,
+            "Content-Type": "application/x-www-form-urlencoded",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
+            "Sec-Fetch-Site": "same-origin",
+            "Sec-Fetch-Mode": "navigate",
+            "Sec-Fetch-Dest": "document",
+            "Sec-Fetch-User": "?1",
+            "Upgrade-Insecure-Requests": "1"
+        }
+        resp = self.session.post(LOGIN_SERVLET, data=fp_body, headers=headers, timeout=15)
         body = resp.text or ""
         self.last_status = resp.status_code
         self.last_url = str(resp.url)
@@ -756,13 +771,13 @@ def fetch_portal_data(username: str, password: str, courses_list: Optional[List[
 
     att_html = None
     active_portal = None
-    max_attempts = 4
+    max_attempts = 5
 
     last_fail_msg = "Could not authenticate with SRM Student Portal"
     last_reason = "auth_failed"
 
     for attempt in range(1, max_attempts + 1):
-        if time.time() - start_ts > 24.0:
+        if time.time() - start_ts > 80.0:
             break
         portal = SRMPortalSession()
         try:
@@ -778,7 +793,7 @@ def fetch_portal_data(username: str, password: str, courses_list: Optional[List[
                 continue
 
             print(f"[{netid}] [PORTAL-OCR] Attempt {attempt}/{max_attempts} predicted captcha: '{solved}'", flush=True)
-            res = portal.login_attempt(netid, password, solved)
+            res = portal.login_attempt(netid, password, solved, client_telemetry=client_telemetry)
             if res.get("ok"):
                 att_html = res.get("att_html")
                 active_portal = portal
