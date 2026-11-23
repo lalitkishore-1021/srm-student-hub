@@ -964,8 +964,11 @@ def portal_sync():
         p_res = get_portal_data_with_fallback(net_id, portal_pwd, client_telemetry=data.get('telemetry'))
         if not p_res or not p_res.get('success'):
             err = (p_res or {}).get('error', 'SRM Portal authentication failed.')
-            if any(w in err.lower() for w in ['invalid', 'password', 'credential', 'user id', 'could not authenticate']):
+            reason = (p_res or {}).get('reason', '')
+            if reason in ('invalid_credentials', 'invalid_credentials_fatal') or any(w in err.lower() for w in ['wrong password', 'user id or password entered is invalid']):
                 err = 'Invalid SRM Student Portal Password. Student Portal (sp.srmist.edu.in) uses a separate password from Academia (default is your Date of Birth in DDMMYYYY format). You can reset it at https://ssp.srmist.edu.in/resetpassword/'
+            elif not err or err == 'Could not authenticate with SRM Student Portal':
+                err = 'SRM Portal is busy or verifying security check. Please try clicking Try Again in a few seconds.'
             return jsonify({'success': False, 'error': err})
 
         att = p_res.get('data', [])
@@ -3822,7 +3825,7 @@ def like_spotted(post_id):
 
 @app.route('/ping')
 def ping():
-    return jsonify({"status": "ok", "version": "v117-direct-portal-rocksolid", "commit": "v117"})
+    return jsonify({"status": "ok", "version": "v118-f5-bypass-direct", "commit": "v118"})
 
 
 @app.route('/api/admin/portal_diag', methods=['GET', 'POST'])
@@ -3862,6 +3865,8 @@ def admin_portal_diag():
         loaded = sess.load_captcha()
         diag["load_captcha_ok"] = loaded
         diag["load_captcha_time"] = round(time.time() - t0, 3)
+        diag["has_bobcmn"] = "bobcmn" in (sess.last_body or "")
+        diag["last_body_preview"] = (sess.last_body or "")[:300]
         diag["nonce"] = getattr(sess, "nonce", "")
         diag["captcha_nonce"] = getattr(sess, "captcha_nonce", "")
         diag["fp_nonce"] = getattr(sess, "fp_nonce", "")
@@ -3878,8 +3883,7 @@ def admin_portal_diag():
     except Exception as e:
         diag["load_captcha_error"] = str(e)
 
-    # 3b. Test Direct SRM Portal Scraper & CampusWeb API if credentials provided
-    body_json = request.get_json(silent=True) if request.is_json else {}
+    # 3b. Test Direct SRM Portal Scraper if credentials provided
     test_netid = request.args.get('netid') or (body_json or {}).get('netid')
     test_pwd = request.args.get('pwd') or (body_json or {}).get('pwd')
     if test_netid and test_pwd:
@@ -3891,39 +3895,9 @@ def admin_portal_diag():
             diag["direct_fetch_data_len"] = len(direct_data.get("data", []))
             diag["direct_fetch_marks_len"] = len(direct_data.get("marks", []))
             diag["direct_fetch_error"] = direct_data.get("error")
+            diag["direct_fetch_reason"] = direct_data.get("reason")
         except Exception as fe:
             diag["direct_fetch_exception"] = str(fe)
-        try:
-            import cw_scraper
-            import cloudscraper
-            cs_sess = cloudscraper.create_scraper()
-            cs_headers = dict(cw_scraper.CW_HEADERS)
-            cs_headers['X-Net-ID'] = test_netid.upper()
-            cs_post = cs_sess.post(
-                'https://api.campusweb.in/api/student-portal/login',
-                headers=cs_headers,
-                json={'net_id': test_netid.lower(), 'password': test_pwd},
-                timeout=10,
-            )
-            diag["cloudscraper_status"] = cs_post.status_code
-            diag["cloudscraper_body"] = cs_post.text[:200]
-        except Exception as cs_err:
-            diag["cloudscraper_error"] = str(cs_err)
-
-        try:
-            cw_sess = cw_scraper._create_session()
-            cw_headers = dict(cw_scraper.CW_HEADERS)
-            cw_headers['X-Net-ID'] = test_netid.upper()
-            cw_post = cw_sess.post(
-                'https://api.campusweb.in/api/student-portal/login',
-                headers=cw_headers,
-                json={'net_id': test_netid.lower(), 'password': test_pwd},
-                timeout=8,
-            )
-            diag["cw_sp_status"] = cw_post.status_code
-            diag["cw_sp_body"] = cw_post.text[:200]
-        except Exception as cwe:
-            diag["cw_sp_error"] = str(cwe)
 
     # 4. Optional single attempt test to capture exact HTTP exchange
     manual_captcha = request.args.get('captcha') or (body_json or {}).get('captcha')

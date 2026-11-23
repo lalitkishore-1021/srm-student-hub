@@ -38,15 +38,34 @@ LOGIN_SERVLET = BASE_URL + "/LoginServlet"
 
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
-    "Referer": LOGIN_URL,
-    "Origin": "https://sp.srmist.edu.in",
-    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
     "Accept-Language": "en-US,en;q=0.9",
+    "Accept-Encoding": "gzip, deflate, br",
+    "Connection": "keep-alive",
+    "Upgrade-Insecure-Requests": "1",
 }
 
 VOCAB = "0123456789abcdefghijklmnopqrstuvwxyz"
 _WEIGHTS_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "captcha_crnn.npz")
 _CRNN_WEIGHTS = None
+
+
+def extract_and_apply_f5_cookie(session: requests.Session, html_text: str) -> bool:
+    """Detects and bypasses F5 BIG-IP ASM WAF challenges (window['bobcmn'])."""
+    if not html_text or "bobcmn" not in html_text:
+        return False
+    m = re.search(r'3000000e0([0-9a-fA-F]{224})', html_text)
+    if not m:
+        m = re.search(r'TSPD_\w+.*?([0-9a-fA-F]{224})', html_text)
+    if not m:
+        m = re.search(r'([0-9a-fA-F]{224})', html_text)
+    if m:
+        tspd_val = m.group(1)
+        session.cookies.set("TSPD_101", tspd_val, domain="sp.srmist.edu.in", path="/")
+        session.cookies.set("TSPD_101", tspd_val, path="/")
+        print(f"[PORTAL] F5 BIG-IP WAF TSPD_101 cookie bypassed ({tspd_val[:16]}...)", flush=True)
+        return True
+    return False
 
 
 def _get_crnn_weights():
@@ -201,8 +220,10 @@ class SRMPortalSession:
 
     def load_captcha(self) -> bool:
         try:
-            r = self.session.get(LOGIN_URL, timeout=10)
-            text = r.text
+            r = self.session.get(LOGIN_URL, timeout=12)
+            if extract_and_apply_f5_cookie(self.session, r.text or ""):
+                r = self.session.get(LOGIN_URL, timeout=12)
+            text = r.text or ""
             self.last_body = text
 
             m = re.search(r"window\.SECURE_CONFIG\s*=\s*\{[^}]*?nonce\s*:\s*'([^']+)'", text)
@@ -332,6 +353,8 @@ class SRMPortalSession:
             "Upgrade-Insecure-Requests": "1"
         }
         resp = self.session.post(LOGIN_SERVLET, data=fp_body, headers=headers, timeout=15)
+        if extract_and_apply_f5_cookie(self.session, resp.text or ""):
+            resp = self.session.post(LOGIN_SERVLET, data=fp_body, headers=headers, timeout=15)
         body = resp.text or ""
         self.last_status = resp.status_code
         self.last_url = str(resp.url)
@@ -339,7 +362,7 @@ class SRMPortalSession:
         url_lower = str(resp.url).lower()
 
         try:
-            self.session.get(HRD_URL, headers={"Referer": LOGIN_URL}, timeout=6)
+            self.session.get(HRD_URL, headers={"Referer": LOGIN_URL}, timeout=8)
         except Exception:
             pass
         att_html = self.get_attendance_html()
@@ -368,9 +391,11 @@ class SRMPortalSession:
 
     def get_attendance_html(self) -> Optional[str]:
         try:
-            r = self.session.get(ATT_URL, timeout=10)
+            r = self.session.get(ATT_URL, headers={"Referer": HRD_URL}, timeout=12)
+            if extract_and_apply_f5_cookie(self.session, r.text or ""):
+                r = self.session.get(ATT_URL, headers={"Referer": HRD_URL}, timeout=12)
             url_l = str(r.url).lower()
-            txt_l = r.text.lower()
+            txt_l = (r.text or "").lower()
             if (
                 r.status_code != 200
                 or "youlogin" in url_l
@@ -378,6 +403,8 @@ class SRMPortalSession:
                 or "loginform" in txt_l
                 or "login_form" in txt_l
                 or "thegr8loginloader" in txt_l
+                or "bobcmn" in txt_l
+                or "table" not in txt_l
             ):
                 return None
             return r.text
@@ -386,8 +413,10 @@ class SRMPortalSession:
 
     def get_marks_html(self) -> Optional[str]:
         try:
-            r = self.session.get(MARKS_URL, timeout=10)
-            if r.status_code == 200 and "table" in r.text.lower():
+            r = self.session.get(MARKS_URL, headers={"Referer": HRD_URL}, timeout=12)
+            if extract_and_apply_f5_cookie(self.session, r.text or ""):
+                r = self.session.get(MARKS_URL, headers={"Referer": HRD_URL}, timeout=12)
+            if r.status_code == 200 and "table" in r.text.lower() and "bobcmn" not in r.text.lower():
                 return r.text
         except Exception:
             pass
@@ -396,8 +425,10 @@ class SRMPortalSession:
     def get_inner_marks_html(self, subject_id: str, status: str = "2") -> Optional[str]:
         try:
             payload = {"iden": "1", "hdnSubjectId": subject_id, "status": status}
-            r = self.session.post(INNER_MARKS_URL, data=payload, headers={"Referer": MARKS_URL}, timeout=6.0)
-            if r.status_code == 200:
+            r = self.session.post(INNER_MARKS_URL, data=payload, headers={"Referer": MARKS_URL}, timeout=8.0)
+            if extract_and_apply_f5_cookie(self.session, r.text or ""):
+                r = self.session.post(INNER_MARKS_URL, data=payload, headers={"Referer": MARKS_URL}, timeout=8.0)
+            if r.status_code == 200 and "table" in r.text.lower() and "bobcmn" not in r.text.lower():
                 return r.text
         except Exception:
             pass
@@ -411,8 +442,10 @@ class SRMPortalSession:
                 "hdnFormDetails": "1",
                 "csrfPreventionSalt": "",
             }
-            r = self.session.post(TIMETABLE_URL, data=payload, timeout=15)
-            if r.status_code == 200 and "table" in r.text.lower():
+            r = self.session.post(TIMETABLE_URL, data=payload, headers={"Referer": HRD_URL}, timeout=15)
+            if extract_and_apply_f5_cookie(self.session, r.text or ""):
+                r = self.session.post(TIMETABLE_URL, data=payload, headers={"Referer": HRD_URL}, timeout=15)
+            if r.status_code == 200 and "table" in r.text.lower() and "bobcmn" not in r.text.lower():
                 return r.text
         except Exception:
             pass
@@ -420,8 +453,10 @@ class SRMPortalSession:
 
     def get_profile_html(self) -> Optional[str]:
         try:
-            r = self.session.get(PROFILE_URL, timeout=10)
-            if r.status_code == 200 and "table" in r.text.lower():
+            r = self.session.get(PROFILE_URL, headers={"Referer": HRD_URL}, timeout=12)
+            if extract_and_apply_f5_cookie(self.session, r.text or ""):
+                r = self.session.get(PROFILE_URL, headers={"Referer": HRD_URL}, timeout=12)
+            if r.status_code == 200 and "table" in r.text.lower() and "bobcmn" not in r.text.lower():
                 return r.text
         except Exception:
             pass
@@ -757,13 +792,13 @@ def fetch_portal_data(username: str, password: str, courses_list: Optional[List[
     Attendance, Component-wise Internal Marks, Timetable, Courses, and Profile.
     """
     start_ts = time.time()
-    netid = (username or "").strip().split("@")[0].strip()
+    netid = (username or "").strip().split("@")[0].strip().lower()
     password = (password or "").strip()
     if not netid or not password:
         return {"success": False, "error": "Missing Student Portal credentials"}
 
     import re
-    if re.match(r'^[a-z]1\d{4}$', netid.lower()):
+    if re.match(r'^[a-z]1\d{4}$', netid):
         netid = netid[0] + 'l' + netid[2:]
 
     if re.match(r'^\d{2}[-/.]\d{2}[-/.]\d{4}$', password):
@@ -783,13 +818,15 @@ def fetch_portal_data(username: str, password: str, courses_list: Optional[List[
         try:
             if not portal.load_captcha() or not portal.captcha_bytes:
                 print(f"[{netid}] [PORTAL] Attempt {attempt} load_captcha failed", flush=True)
+                time.sleep(1.0)
                 continue
             solved = solve_captcha_bytes(portal.captcha_bytes)
-            if not solved or len(solved) != 6:
+            if not solved or len(solved) not in (5, 6):
                 if portal.load_captcha() and portal.captcha_bytes:
                     solved = solve_captcha_bytes(portal.captcha_bytes)
-            if not solved or len(solved) != 6:
+            if not solved or len(solved) not in (5, 6):
                 print(f"[{netid}] [PORTAL] Attempt {attempt} solved captcha invalid ('{solved}')", flush=True)
+                time.sleep(1.0)
                 continue
 
             print(f"[{netid}] [PORTAL-OCR] Attempt {attempt}/{max_attempts} predicted captcha: '{solved}'", flush=True)
@@ -807,8 +844,10 @@ def fetch_portal_data(username: str, password: str, courses_list: Optional[List[
             if reason in ("account_locked", "invalid_credentials_fatal"):
                 print(f"[{netid}] [PORTAL] Auth stopped ({reason}): {msg}", flush=True)
                 return {"success": False, "error": msg, "reason": "invalid_credentials"}
+            time.sleep(random.uniform(1.0, 1.8))
         except Exception as e:
             print(f"[{netid}] [PORTAL] Attempt {attempt} error: {e}", flush=True)
+            time.sleep(1.0)
 
     if not active_portal or not att_html:
         return {"success": False, "error": last_fail_msg, "reason": last_reason}
