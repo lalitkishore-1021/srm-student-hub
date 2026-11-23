@@ -8,6 +8,7 @@ import urllib3.util.connection as urllib3_cn
 # Force IPv4 socket resolution to prevent Cloudflare IPv6 handshake timeouts on Windows/Linux
 try:
     urllib3_cn.allowed_gai_family = lambda: socket.AF_INET
+    urllib3_cn.HAS_IPV6 = False
 except Exception:
     pass
 
@@ -81,7 +82,8 @@ def scrape_campusweb(netid: str, portal_pwd: str = "", acad_pwd: str = None):
                 json={'net_id': clean_id, 'password': cand_pwd},
                 timeout=12,
             )
-            print(f"[{clean_id}] CampusWeb direct Student Portal login attempt: status={sp_res.status_code}")
+            resp_snippet = (sp_res.text or "").strip()[:150]
+            print(f"[{clean_id}] CampusWeb direct Student Portal login attempt: status={sp_res.status_code}, resp={resp_snippet}")
             if sp_res.status_code == 200:
                 sp_data = sp_res.json()
                 if sp_data.get('status') == 'success' and sp_data.get('session_token'):
@@ -112,7 +114,8 @@ def scrape_campusweb(netid: str, portal_pwd: str = "", acad_pwd: str = None):
                     json={'username': f'{clean_id}@srmist.edu.in', 'password': cand_pwd},
                     timeout=12,
                 )
-                print(f"[{clean_id}] CampusWeb Academia auth attempt: status={auth_res.status_code}")
+                resp_snippet = (auth_res.text or "").strip()[:150]
+                print(f"[{clean_id}] CampusWeb Academia auth attempt: status={auth_res.status_code}, resp={resp_snippet}")
                 if auth_res.status_code == 200:
                     auth_data = auth_res.json()
                     if auth_data.get('Status') == 'success':

@@ -186,6 +186,9 @@ class SRMPortalSession:
         if proxy:
             self.session.proxies.update({"http": proxy, "https": proxy})
         self.nonce = None
+        self.captcha_nonce = None
+        self.fp_nonce = None
+        self.server_ts = None
         self.login_form_fields = {}
         self.domain_field_name = "dtoken_x"
         self.captcha_field_name = "cptoken_x"
@@ -205,9 +208,13 @@ class SRMPortalSession:
             m = re.search(r"window\.SECURE_CONFIG\s*=\s*\{[^}]*?nonce\s*:\s*'([^']+)'", text)
             if not m:
                 m = re.search(r"window\.SECURE_CONFIG\.nonce\s*=\s*'([^']+)'", text)
+            self.captcha_nonce = m.group(1) if m else ""
             if not m:
                 m = re.search(r'id="fpNonce"\s*value="([^"]+)"', text)
             self.nonce = m.group(1) if m else ""
+
+            m_fp = re.search(r'id="fpNonce"\s*value="([^"]+)"', text)
+            self.fp_nonce = m_fp.group(1) if m_fp else ""
 
             df = re.search(r'domainFieldName\s*=\s*[\'"]([^\'"]+)[\'"]', text)
             cf = re.search(r'captchaFieldName\s*=\s*[\'"]([^\'"]+)[\'"]', text)
@@ -233,8 +240,24 @@ class SRMPortalSession:
                         fields[inp_name] = inp.get("value") or ""
             self.login_form_fields = fields
 
+            # Extract server timestamp from secureToken if present
+            self.server_ts = None
+            sec_token = fields.get("secureToken", "")
+            if sec_token:
+                try:
+                    decoded = base64.b64decode(sec_token).decode("utf-8", errors="ignore")
+                    parts = decoded.split("|")
+                    if len(parts) >= 1 and parts[0] and not self.fp_nonce:
+                        self.fp_nonce = parts[0]
+                    if len(parts) >= 3 and parts[2].isdigit():
+                        self.server_ts = int(parts[2])
+                except Exception:
+                    pass
+
             m_cap = re.search(r"SCaptchaServlet[^'\" ]*", text)
             if not m_cap:
+                is_f5 = "bobcmn" in text
+                print(f"[PORTAL] load_captcha: SCaptchaServlet not found (status={r.status_code}, len={len(text)}, f5_waf={is_f5})", flush=True)
                 return False
             seg = m_cap.group(0)
             captcha_url = BASE_URL + "/" + seg if not seg.startswith("/") else "https://sp.srmist.edu.in" + seg
@@ -252,18 +275,21 @@ class SRMPortalSession:
                 self.captcha_bytes = cr.content
                 self.load_ms = int(time.time() * 1000)
                 return True
+            print(f"[PORTAL] load_captcha: captcha image HTTP {cr.status_code}, len={len(cr.content) if cr.content else 0}", flush=True)
             return False
-        except Exception:
+        except Exception as e:
+            print(f"[PORTAL] load_captcha exception: {e}", flush=True)
             return False
 
-    def login_attempt(self, netid: str, password: str, captcha_code: str) -> Dict[str, Any]:
+    def login_attempt(self, netid: str, password: str, captcha_code: str, *args, **kwargs) -> Dict[str, Any]:
         now_ms = int(time.time() * 1000)
         calc_elapsed = max(0, int((now_ms - (self.load_ms or now_ms)) / 1000))
         elapsed_sec = max(random.randint(3, 5), calc_elapsed)
         dtoken = base64.b64encode("sp.srmist.edu.in"[::-1].encode()).decode()
         trap_payload = str(elapsed_sec) + (self.random_delimiter or "0000") + "3"
         cptoken = base64.b64encode(trap_payload.encode()).decode()
-        fp_payload = base64.b64encode(json.dumps({"fp": "", "nonce": self.nonce, "ts": now_ms}).encode()).decode()
+        fp_nonce_val = self.fp_nonce or self.nonce or ""
+        fp_payload = base64.b64encode(json.dumps({"fp": "", "nonce": fp_nonce_val, "ts": now_ms}).encode()).decode()
         payload = base64.b64encode(json.dumps(_telemetry_payload()).encode()).decode()
 
         fp_body = dict(self.login_form_fields)
@@ -286,14 +312,13 @@ class SRMPortalSession:
         self.last_body = body
         url_lower = str(resp.url).lower()
 
-        if "logout.jsp" in url_lower or "attendance" in url_lower or "hrdsystem" in url_lower:
-            att_html = self.get_attendance_html()
-            if att_html:
-                return {"ok": True, "att_html": att_html}
-        else:
-            att_html = self.get_attendance_html()
-            if att_html:
-                return {"ok": True, "att_html": att_html}
+        try:
+            self.session.get(HRD_URL, headers={"Referer": LOGIN_URL}, timeout=6)
+        except Exception:
+            pass
+        att_html = self.get_attendance_html()
+        if att_html:
+            return {"ok": True, "att_html": att_html}
 
         return self._classify_failure(body)
 
@@ -719,18 +744,23 @@ def fetch_portal_data(username: str, password: str, courses_list: Optional[List[
     active_portal = None
     max_attempts = 4
 
+    last_fail_msg = "Could not authenticate with SRM Student Portal"
+    last_reason = "auth_failed"
+
     for attempt in range(1, max_attempts + 1):
-        if time.time() - start_ts > 22.0:
+        if time.time() - start_ts > 24.0:
             break
         portal = SRMPortalSession()
         try:
             if not portal.load_captcha() or not portal.captcha_bytes:
+                print(f"[{netid}] [PORTAL] Attempt {attempt} load_captcha failed", flush=True)
                 continue
             solved = solve_captcha_bytes(portal.captcha_bytes)
             if not solved or len(solved) != 6:
                 if portal.load_captcha() and portal.captcha_bytes:
                     solved = solve_captcha_bytes(portal.captcha_bytes)
             if not solved or len(solved) != 6:
+                print(f"[{netid}] [PORTAL] Attempt {attempt} solved captcha invalid ('{solved}')", flush=True)
                 continue
 
             print(f"[{netid}] [PORTAL-OCR] Attempt {attempt}/{max_attempts} predicted captcha: '{solved}'", flush=True)
@@ -741,15 +771,18 @@ def fetch_portal_data(username: str, password: str, courses_list: Optional[List[
                 print(f"[{netid}] [PORTAL] Login succeeded on attempt {attempt} in {time.time() - start_ts:.2f}s!", flush=True)
                 break
             reason = res.get("reason", "")
+            msg = res.get("message", "Invalid Student Portal credentials")
+            last_reason = reason
+            last_fail_msg = msg
+            print(f"[{netid}] [PORTAL] Attempt {attempt} failed ({reason}): {msg}", flush=True)
             if reason in ("account_locked", "invalid_credentials_fatal"):
-                msg = res.get("message", "Invalid Student Portal credentials")
                 print(f"[{netid}] [PORTAL] Auth stopped ({reason}): {msg}", flush=True)
                 return {"success": False, "error": msg, "reason": "invalid_credentials"}
         except Exception as e:
             print(f"[{netid}] [PORTAL] Attempt {attempt} error: {e}", flush=True)
 
     if not active_portal or not att_html:
-        return {"success": False, "error": "Could not authenticate with SRM Student Portal"}
+        return {"success": False, "error": last_fail_msg, "reason": last_reason}
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=3) as ex:
         f_marks = ex.submit(active_portal.get_marks_html)

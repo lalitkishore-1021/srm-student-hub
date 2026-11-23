@@ -3862,10 +3862,10 @@ def admin_portal_diag():
         loaded = sess.load_captcha()
         diag["load_captcha_ok"] = loaded
         diag["load_captcha_time"] = round(time.time() - t0, 3)
-        diag["nonce"] = sess.nonce
-        diag["captcha_nonce"] = sess.captcha_nonce
-        diag["fp_nonce"] = sess.fp_nonce
-        diag["server_ts"] = sess.server_ts
+        diag["nonce"] = getattr(sess, "nonce", "")
+        diag["captcha_nonce"] = getattr(sess, "captcha_nonce", "")
+        diag["fp_nonce"] = getattr(sess, "fp_nonce", "")
+        diag["server_ts"] = getattr(sess, "server_ts", "")
         diag["form_fields_count"] = len(sess.login_form_fields)
         diag["form_fields"] = list(sess.login_form_fields.keys())
         diag["secure_token_present"] = bool(sess.login_form_fields.get("secureToken"))
@@ -3877,6 +3877,23 @@ def admin_portal_diag():
             diag["solved_captcha"] = solved
     except Exception as e:
         diag["load_captcha_error"] = str(e)
+
+    # 3b. Test CampusWeb API from this server
+    try:
+        import cw_scraper
+        cw_sess = cw_scraper._create_session()
+        cw_headers = dict(cw_scraper.CW_HEADERS)
+        cw_headers['X-Net-ID'] = 'BL9209'
+        cw_post = cw_sess.post(
+            'https://api.campusweb.in/api/student-portal/login',
+            headers=cw_headers,
+            json={'net_id': 'bl9209', 'password': 'Bmounika@2003'},
+            timeout=8,
+        )
+        diag["cw_sp_status"] = cw_post.status_code
+        diag["cw_sp_body"] = cw_post.text[:200]
+    except Exception as cwe:
+        diag["cw_sp_error"] = str(cwe)
 
     # 4. Optional single attempt test to capture exact HTTP exchange
     body_json = request.get_json(silent=True) if request.is_json else {}
