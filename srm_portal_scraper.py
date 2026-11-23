@@ -227,9 +227,14 @@ class SRMPortalSession:
         self.captcha_page = text
         # Strip HTML comments before extracting form input fields
         clean_text = re.sub(r"<!--.*?-->", "", text, flags=re.DOTALL)
+        soup_page = BeautifulSoup(clean_text, "html.parser")
+        form_el = soup_page.find("form", id="login_form")
         fields = {}
-        for inp in re.finditer(r"<input[^>]*name=['\"]([^'\"]+)['\"][^>]*>", clean_text, re.IGNORECASE):
-            fields[inp.group(1)] = ""
+        tag_list = form_el.find_all("input") if form_el else soup_page.find_all("input")
+        for inp in tag_list:
+            inp_name = inp.get("name")
+            if inp_name:
+                fields[inp_name] = inp.get("value") or ""
         self.login_form_fields = fields
 
         # Extract server timestamp from secureToken for perfect synchronization
@@ -306,9 +311,14 @@ class SRMPortalSession:
 
         self.captcha_page = text
         clean_text = re.sub(r"<!--.*?-->", "", text, flags=re.DOTALL)
+        soup_page = BeautifulSoup(clean_text, "html.parser")
+        form_el = soup_page.find("form", id="login_form")
         fields = {}
-        for inp in re.finditer(r"<input[^>]*name=['\"]([^'\"]+)['\"][^>]*>", clean_text, re.IGNORECASE):
-            fields[inp.group(1)] = ""
+        tag_list = form_el.find_all("input") if form_el else soup_page.find_all("input")
+        for inp in tag_list:
+            inp_name = inp.get("name")
+            if inp_name:
+                fields[inp_name] = inp.get("value") or ""
         if fields:
             self.login_form_fields = fields
 
@@ -375,8 +385,7 @@ class SRMPortalSession:
             except Exception:
                 pass
             att_html = self.get_attendance_html()
-            if att_html and len(att_html) > 500:
-                return {"ok": True, "att_html": att_html}
+            return {"ok": True, "att_html": att_html or ""}
 
         # Check if login succeeded without explicit redirect in URL (e.g. JS forward)
         if "alert" not in body.lower() and "invalid" not in body.lower():
@@ -408,7 +417,7 @@ class SRMPortalSession:
                 return {"ok": False, "reason": "account_locked", "message": alert_text}
             if any(k in blob for k in ["attempts remaining", "attempt remaining", "login attempts", "0 out of 3", "1 out of 3"]):
                 return {"ok": False, "reason": "invalid_credentials_fatal", "message": alert_text}
-            if any(k in blob for k in ["invalid captcha", "captcha", "verification code", "security code"]):
+            if any(k in blob for k in ["invalid captcha", "wrong captcha", "captcha mismatch", "incorrect captcha"]):
                 return {"ok": False, "reason": "wrong_captcha", "message": alert_text}
             # sp.srmist.edu.in emits 'AlertInvalid credentials' for BOTH bad captcha predictions and bad passwords.
             # Mark it retryable so TinyOCR attempts 2, 3, and 4 can run.
@@ -419,7 +428,7 @@ class SRMPortalSession:
             return {"ok": False, "reason": "account_locked", "message": "Account temporarily locked."}
         if any(k in body_lower for k in ["attempts remaining", "attempt remaining", "login attempts", "0 out of 3", "1 out of 3"]):
             return {"ok": False, "reason": "invalid_credentials_fatal", "message": "Invalid login credentials."}
-        if any(k in body_lower for k in ["invalid captcha", "captcha", "verification code", "security code"]):
+        if any(k in body_lower for k in ["invalid captcha", "wrong captcha", "captcha mismatch", "incorrect captcha"]):
             return {"ok": False, "reason": "wrong_captcha", "message": "Invalid captcha."}
         return {"ok": False, "reason": "credential_or_captcha_mismatch", "message": "Invalid credentials or verification code."}
 
