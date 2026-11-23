@@ -394,7 +394,16 @@ class SRMPortalSession:
         fp_body[self.domain_field_name] = dtoken
         fp_body[self.captcha_field_name] = cptoken
 
-        resp = self.session.post(LOGIN_SERVLET, data=fp_body, timeout=12.0)
+        resp = None
+        try:
+            resp = self.session.post(LOGIN_SERVLET, data=fp_body, timeout=12.0)
+        except (requests.exceptions.ConnectionError, requests.exceptions.ChunkedEncodingError) as ce:
+            # If server dropped stale keep-alive connection, retry immediately on a fresh socket
+            try:
+                resp = self.session.post(LOGIN_SERVLET, data=fp_body, timeout=12.0, headers={"Connection": "close"})
+            except Exception:
+                raise ce
+
         body = resp.text or ""
         self.last_status = resp.status_code
         self.last_url = str(resp.url)
@@ -1068,14 +1077,19 @@ def fetch_portal_data(username: str, password: str, courses_list: Optional[List[
                 portal.load_captcha()
                 time.sleep(0.05)
         except Exception as e:
-            print(f"[{netid}] [PORTAL] Attempt error: {e}", flush=True)
-            break
+            print(f"[{netid}] [PORTAL] Attempt {login_attempts_made} error: {e}", flush=True)
+            last_reason = "network_error"
+            last_msg = "Could not reach SRM Student Portal security server. Please click TRY AGAIN."
+            if login_attempts_made < max_submits and (time.time() - start_ts < 20.0):
+                portal = SRMPortalSession()
+                portal.load_captcha()
+                time.sleep(0.1)
 
     if not active_portal:
-        if login_attempts_made == 0:
+        if login_attempts_made == 0 or last_reason in ("network_error", "network_or_captcha_load_failed"):
             return {
                 "success": False,
-                "error": "Could not reach SRM Student Portal security server. Please try again in a few moments.",
+                "error": "Could not reach SRM Student Portal security server. Please click TRY AGAIN.",
                 "reason": "network_or_captcha_load_failed"
             }
         if last_reason == "wrong_captcha":

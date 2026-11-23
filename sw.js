@@ -1,5 +1,5 @@
 // Change this version number every time you want to force phones to update!
-const CACHE_NAME = 'srm-hub-v113-guard-parity';
+const CACHE_NAME = 'srm-hub-v114-keepalive-resilience';
 
 const ASSETS_TO_CACHE = [
     '/',
