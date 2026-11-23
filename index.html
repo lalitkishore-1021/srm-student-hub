@@ -4089,22 +4089,41 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            width: 80px;
+            text-align: center;
+            width: 86px;
             flex-shrink: 0;
             cursor: pointer;
-            transition: transform 0.2s;
+            transition: transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
+            user-select: none;
+            -webkit-user-select: none;
         }
         .charts-artist-item:hover {
-            transform: translateY(-3px);
+            transform: translateY(-4px);
         }
+        .charts-artist-item:active {
+            transform: scale(0.94);
+        }
+        .charts-artist-avatar,
         .charts-artist-circle {
-            width: 70px;
-            height: 70px;
-            border-radius: 50%;
-            object-fit: cover;
-            margin-bottom: 6px;
-            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.5);
-            background: rgba(255, 255, 255, 0.08);
+            width: 78px !important;
+            height: 78px !important;
+            min-width: 78px !important;
+            min-height: 78px !important;
+            max-width: 78px !important;
+            max-height: 78px !important;
+            border-radius: 50% !important;
+            object-fit: cover !important;
+            display: block !important;
+            margin: 0 auto 8px auto !important;
+            box-shadow: 0 8px 22px rgba(0, 0, 0, 0.6) !important;
+            background: #181820;
+            border: 2px solid rgba(255, 255, 255, 0.12) !important;
+            transition: border-color 0.2s ease, transform 0.2s ease;
+        }
+        .charts-artist-item:hover .charts-artist-avatar,
+        .charts-artist-item:hover .charts-artist-circle {
+            border-color: rgba(255, 255, 255, 0.4) !important;
+            transform: scale(1.05);
         }
         .charts-artist-name {
             font-size: 0.78rem;
@@ -4115,6 +4134,18 @@
             overflow: hidden;
             text-overflow: ellipsis;
             width: 100%;
+            line-height: 1.25;
+            letter-spacing: -0.2px;
+        }
+        .charts-artist-sub {
+            font-size: 0.68rem;
+            color: rgba(255, 255, 255, 0.5);
+            text-align: center;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            width: 100%;
+            margin-top: 3px;
         }
 
         /* Library Tab Elements & Dropdown Menu */
@@ -12531,14 +12562,66 @@ function checkAndShowHolidayBanner(viewId) {
         ];
 
         const TOP_ARTISTS = [
-            { name: "YoungBoy Never Broke Again", sub: "12.8M monthly listeners", query: "YoungBoy Never Broke Again hits", img: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=150&h=150&fit=crop" },
-            { name: "Drake", sub: "82.3M monthly listeners", query: "Drake top songs", img: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=150&h=150&fit=crop" },
-            { name: "Lil Baby", sub: "31.4M monthly listeners", query: "Lil Baby top hits", img: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop" },
-            { name: "Fuerza Regida", sub: "28.1M monthly listeners", query: "Fuerza Regida canciones", img: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop" },
-            { name: "Arijit Singh", sub: "45.7M monthly listeners", query: "Arijit Singh hits", img: "https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=150&h=150&fit=crop" },
-            { name: "The Weeknd", sub: "108M monthly listeners", query: "The Weeknd greatest hits", img: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&h=150&fit=crop" },
-            { name: "Bad Bunny", sub: "72.4M monthly listeners", query: "Bad Bunny exitos", img: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=150&h=150&fit=crop" },
-            { name: "Taylor Swift", sub: "102M monthly listeners", query: "Taylor Swift top songs", img: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&h=150&fit=crop" }
+            { 
+                name: "Arijit Singh", 
+                sub: "45.8M listeners", 
+                query: "Arijit Singh", 
+                img: "https://c.saavncdn.com/artists/Arijit_Singh_004_20241118063717_500x500.jpg" 
+            },
+            { 
+                name: "Anirudh", 
+                sub: "28.2M listeners", 
+                query: "Anirudh Ravichander", 
+                img: "https://c.saavncdn.com/artists/Anirudh_Ravichander_003_20260121134149_500x500.jpg" 
+            },
+            { 
+                name: "Shreya Ghoshal", 
+                sub: "34.5M listeners", 
+                query: "Shreya Ghoshal", 
+                img: "https://c.saavncdn.com/artists/Shreya_Ghoshal_007_20241101074144_500x500.jpg" 
+            },
+            { 
+                name: "A.R. Rahman", 
+                sub: "32.1M listeners", 
+                query: "A.R. Rahman", 
+                img: "https://c.saavncdn.com/artists/AR_Rahman_002_20210120084455_500x500.jpg" 
+            },
+            { 
+                name: "Diljit Dosanjh", 
+                sub: "24.9M listeners", 
+                query: "Diljit Dosanjh", 
+                img: "https://c.saavncdn.com/artists/Diljit_Dosanjh_005_20231025073054_500x500.jpg" 
+            },
+            { 
+                name: "Karan Aujla", 
+                sub: "18.7M listeners", 
+                query: "Karan Aujla", 
+                img: "https://c.saavncdn.com/artists/Karan_Aujla_005_20260925061936_500x500.jpg" 
+            },
+            { 
+                name: "Sid Sriram", 
+                sub: "16.4M listeners", 
+                query: "Sid Sriram", 
+                img: "https://c.saavncdn.com/artists/Sid_Sriram_005_20240425180600_500x500.jpg" 
+            },
+            { 
+                name: "Sachin-Jigar", 
+                sub: "21.0M listeners", 
+                query: "Sachin-Jigar", 
+                img: "https://c.saavncdn.com/artists/Sachin_Jigar_003_20251222093820_500x500.jpg" 
+            },
+            { 
+                name: "Badshah", 
+                sub: "19.5M listeners", 
+                query: "Badshah", 
+                img: "https://c.saavncdn.com/artists/Badshah_006_20241118064015_500x500.jpg" 
+            },
+            { 
+                name: "Thaman S", 
+                sub: "14.2M listeners", 
+                query: "Thaman S", 
+                img: "https://c.saavncdn.com/artists/Thaman_S__007_20231106094011_500x500.jpg" 
+            }
         ];
 
         async function loadChartsData(force = false) {
@@ -12549,8 +12632,8 @@ function checkAndShowHolidayBanner(viewId) {
 
             if (chartsCarousel) {
                 chartsCarousel.innerHTML = CHARTS_COLLECTIONS.map(c => `
-                    <div class="charts-card" onclick="playDivePlaylist('${c.query.replace(/'/g, "\\'")}', '${c.title.replace(/'/g, "\\'")}')">
-                        <div class="charts-card-cover" style="position:relative; overflow:hidden; border-radius:14px; border:1px solid rgba(255,255,255,0.08); box-shadow:0 8px 24px rgba(0,0,0,0.5);">
+                    <div class="charts-card" onclick="playDivePlaylist('${c.query.replace(/'/g, "\\'")}', '${c.title.replace(/'/g, "\\'")}', '${c.curated_id || ''}')">
+                        <div class="charts-card-cover">
                             <img src="${c.image}" style="width:100%; height:100%; object-fit:cover; position:absolute; inset:0;" alt="${escapeHtml(c.title)}" onerror="this.src='images/app-icon.svg'">
                             <div style="position:absolute; inset:0; background:linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(185,28,28,0.25) 60%, rgba(0,0,0,0.5) 100%); padding:12px; display:flex; flex-direction:column; justify-content:space-between;">
                                 <div style="font-size:11px; font-weight:900; letter-spacing:0.5px; line-height:1.2; text-transform:uppercase; color:#fff;">${c.header}</div>
@@ -12566,7 +12649,7 @@ function checkAndShowHolidayBanner(viewId) {
             if (genresCarousel) {
                 genresCarousel.innerHTML = GENRES_COLLECTIONS.map(g => `
                     <div class="charts-card" onclick="playDivePlaylist('${g.query.replace(/'/g, "\\'")}', '${g.title.replace(/'/g, "\\'")}')">
-                        <div class="charts-card-cover" style="position:relative; overflow:hidden; border-radius:14px; border:1px solid rgba(255,255,255,0.08); box-shadow:0 8px 24px rgba(0,0,0,0.5); display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center;">
+                        <div class="charts-card-cover">
                             <img src="${g.image}" style="width:100%; height:100%; object-fit:cover; position:absolute; inset:0;" alt="${escapeHtml(g.title)}" onerror="this.src='images/app-icon.svg'">
                             <div style="position:absolute; inset:0; background:${g.tint}; padding:10px; display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center;">
                                 <div style="font-size:14px; font-weight:900; letter-spacing:0.5px; color:#fff;">${g.text}</div>
@@ -12582,7 +12665,7 @@ function checkAndShowHolidayBanner(viewId) {
             if (artistsCarousel) {
                 artistsCarousel.innerHTML = TOP_ARTISTS.map(a => `
                     <div class="charts-artist-item" onclick="playDivePlaylist('${a.query.replace(/'/g, "\\'")}', '${a.name.replace(/'/g, "\\'")}')">
-                        <img src="${a.img}" class="charts-artist-avatar" onerror="this.src='images/app-icon.svg'" alt="${escapeHtml(a.name)}">
+                        <img src="${a.img}" class="charts-artist-avatar" onerror="this.src='images/app-icon.svg'" alt="${escapeHtml(a.name)}" loading="lazy">
                         <div class="charts-artist-name">${escapeHtml(a.name)}</div>
                         <div class="charts-artist-sub">${escapeHtml(a.sub)}</div>
                     </div>
