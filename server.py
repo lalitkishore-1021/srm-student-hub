@@ -2469,53 +2469,16 @@ def search_online_music():
         return jsonify({'success': False, 'error': str(e), 'results': []})
 
 _country_music_cache = {}
+_official_chart_cache = {}
 
-@app.route('/api/music/trending', methods=['GET'])
-def get_trending_music():
-    global _trending_music_cache, _country_music_cache
-    country = request.args.get('country', 'IN').upper().strip()
-    category = request.args.get('category', 'top').lower().strip()
-    force_refresh = request.args.get('refresh') == '1' or 't' in request.args
-    cache_key = f"{country}_{category}"
-    now = time.time()
-    
-    if not force_refresh and cache_key in _country_music_cache:
-        cached = _country_music_cache[cache_key]
-        if now - cached['timestamp'] < 90: # 90s freshness
-            return jsonify({'success': True, 'results': cached['data']})
-            
-    # Search query tailored to Indian trending and category
-    if category == 'picked':
-        picked_queries = [
-            "South Indian Top Hits Telugu Tamil 2026",
-            "Trending Telugu Tamil Songs 2026",
-            "Top Tamil Telugu Hits Anirudh Thaman 2026",
-            "Top Indie Hindi Telugu Hits 2026"
-        ]
-        query = random.choice(picked_queries)
-    elif category == 'charts':
-        query = "Top 50 Bollywood Hindi Hits Chart 2026"
-    elif country == 'IN' or country == 'INDIA':
-        indian_trending_queries = [
-            "Top 50 Bollywood Hits 2026 Trending",
-            "Latest Hindi Trending Songs 2026",
-            "Top Bollywood Songs 2026 Arijit Shreya",
-            "New Hindi Punjabi Trending Hits 2026"
-        ]
-        query = random.choice(indian_trending_queries)
-    elif country == 'US':
-        query = "Billboard Hot 100 Top English Hits Snoh Aalegra Mariah Carey Shakira Ella Langley"
-    elif country == 'GB' or country == 'UK':
-        query = "UK Top 40 Singles Chart Hits"
-    else:
-        query = f"Top Viral Songs 2026 {country}"
-
-    url = f"https://www.jiosaavn.com/api.php?__call=search.getResults&_format=json&_marker=0&cc=in&p=1&n=35&q={urllib.parse.quote(query)}"
+def fetch_jiosaavn_playlist_tracks(listid, limit=35):
+    url = f"https://www.jiosaavn.com/api.php?__call=playlist.getDetails&_format=json&_marker=0&cc=in&listid={listid}"
     try:
         r = requests.get(url, headers={'User-Agent': 'Mozilla/5.0'}, timeout=8)
         data = r.json()
+        songs = data.get('songs', [])
         results = []
-        for item in data.get('results', []):
+        for item in songs[:limit]:
             enc = item.get('encrypted_media_url')
             media_url = decrypt_saavn_url(enc) if enc else item.get('media_preview_url')
             img = (item.get('image') or '').replace('150x150.jpg', '500x500.jpg').replace('http://', 'https://')
@@ -2531,43 +2494,148 @@ def get_trending_music():
                 'has_video': False,
                 'is_online': True
             })
-        if results:
-            _country_music_cache[cache_key] = {'timestamp': now, 'data': results}
-            return jsonify({'success': True, 'results': results})
+        return results
     except Exception as e:
-        print(f"Country trending fetch error: {e}")
+        print(f"Error fetching JioSaavn playlist {listid}: {e}")
+        return []
 
-    # Fallback to playlist 1134548194
-    url = 'https://www.jiosaavn.com/api.php?__call=playlist.getDetails&_format=json&_marker=0&cc=in&listid=1134548194'
-    try:
-        r = requests.get(url, headers={'User-Agent': 'Mozilla/5.0'}, timeout=8)
-        data = r.json()
-        songs = data.get('songs', [])
-        results = []
-        for item in songs:
-            enc = item.get('encrypted_media_url')
-            media_url = decrypt_saavn_url(enc) if enc else None
-            if not media_url:
-                media_url = item.get('media_preview_url')
-            img = (item.get('image') or '').replace('150x150.jpg', '500x500.jpg').replace('http://', 'https://')
-            results.append({
-                'id': str(item.get('id')),
-                'title': clean_saavn_text(item.get('song') or item.get('title')),
-                'artist': clean_saavn_text(item.get('singers') or item.get('primary_artists') or item.get('music')),
-                'album': clean_saavn_text(item.get('album')),
-                'year': item.get('year', ''),
-                'duration': int(item.get('duration') or 0),
-                'cover_url': img,
-                'audio_url': media_url,
-                'has_video': False,
-                'is_online': True
-            })
-        if results:
-            _country_music_cache[cache_key] = {'timestamp': now, 'data': results}
-            return jsonify({'success': True, 'results': results})
-    except Exception as e:
-        print(f"Trending playlist error: {e}")
-        return jsonify({'success': False, 'error': str(e), 'results': []})
+@app.route('/api/music/trending', methods=['GET'])
+def get_trending_music():
+    global _country_music_cache, _official_chart_cache
+    country = request.args.get('country', 'IN').upper().strip()
+    category = request.args.get('category', 'top').lower().strip()
+    force_refresh = request.args.get('refresh') == '1' or 't' in request.args
+    seed_artists_param = request.args.get('seed_artists', '').strip()
+    exclude_param = request.args.get('exclude', '').strip()
+    now = time.time()
+
+    # Dynamic cache key accounts for user seed artists
+    cache_key = f"{country}_{category}_{seed_artists_param[:50]}"
+    
+    if not force_refresh and cache_key in _country_music_cache:
+        cached = _country_music_cache[cache_key]
+        if now - cached['timestamp'] < 300: # 5 min cache for trending/picked
+            return jsonify({'success': True, 'results': cached['data']})
+
+    # =========================================================================
+    # 1. SPOTIFY-STYLE "PICKED FOR YOU" / "MADE FOR YOU" ALGORITHM
+    # =========================================================================
+    if category == 'picked':
+        seed_artists = [a.strip() for a in seed_artists_param.split(',') if a.strip()]
+        exclude_titles = [t.strip().lower() for t in exclude_param.split(',') if t.strip()]
+        
+        # If the user has a listening profile with favorite/recently played artists:
+        if seed_artists:
+            user_recs = []
+            seen_ids = set()
+            # Fetch top catalog hits for each artist the user actually listens to
+            for artist in seed_artists[:4]:
+                url = f"https://www.jiosaavn.com/api.php?__call=search.getResults&_format=json&_marker=0&cc=in&p=1&n=8&q={urllib.parse.quote(artist)}"
+                try:
+                    r = requests.get(url, headers={'User-Agent': 'Mozilla/5.0'}, timeout=5)
+                    data = r.json()
+                    for item in data.get('results', []):
+                        sid = str(item.get('id'))
+                        stitle = clean_saavn_text(item.get('song') or item.get('title'))
+                        if sid in seen_ids or stitle.lower() in exclude_titles:
+                            continue
+                        seen_ids.add(sid)
+                        enc = item.get('encrypted_media_url')
+                        media_url = decrypt_saavn_url(enc) if enc else item.get('media_preview_url')
+                        img = (item.get('image') or '').replace('150x150.jpg', '500x500.jpg').replace('http://', 'https://')
+                        user_recs.append({
+                            'id': sid,
+                            'title': stitle,
+                            'artist': clean_saavn_text(item.get('singers') or item.get('primary_artists') or item.get('music')),
+                            'album': clean_saavn_text(item.get('album')),
+                            'year': item.get('year', ''),
+                            'duration': int(item.get('duration') or 0),
+                            'cover_url': img,
+                            'audio_url': media_url,
+                            'has_video': False,
+                            'is_online': True
+                        })
+                except Exception as e:
+                    print(f"Error fetching artist recs for {artist}: {e}")
+            
+            # If fewer than 8, top up with Spotify / JioSaavn curated Indie discovery hits
+            if len(user_recs) < 8:
+                discovery = fetch_jiosaavn_playlist_tracks('107605145', 15) # Best of Indie Hindi
+                for t in discovery:
+                    if t['id'] not in seen_ids and t['title'].lower() not in exclude_titles:
+                        seen_ids.add(t['id'])
+                        user_recs.append(t)
+                        if len(user_recs) >= 12:
+                            break
+                            
+            if user_recs:
+                _country_music_cache[cache_key] = {'timestamp': now, 'data': user_recs}
+                return jsonify({'success': True, 'results': user_recs})
+        
+        # Fallback for new users with no history yet -> Spotify Curated Discovery
+        # Serves real Indie India / Viral discovery songs (Husn, Paro, Choo Lo, Dilruba Dilnasheen...)
+        indie_tracks = fetch_jiosaavn_playlist_tracks('107605145', 20) # Best of Indie Hindi
+        if not indie_tracks:
+            indie_tracks = fetch_jiosaavn_playlist_tracks('902306817', 20) # Viral Nation
+            
+        if indie_tracks:
+            _country_music_cache[cache_key] = {'timestamp': now, 'data': indie_tracks}
+            return jsonify({'success': True, 'results': indie_tracks})
+
+    # =========================================================================
+    # 2. SPOTIFY OFFICIAL TOP SONGS / TOP CHARTS
+    # =========================================================================
+    results = []
+    if country in ('IN', 'INDIA'):
+        # Official Indian flagship chart (Hindi Superhits Top 50: Tu Mil Jaaye, Dilruba Dilnasheen, Gehra Hua...)
+        results = fetch_jiosaavn_playlist_tracks('1134543272', 35)
+        if not results:
+            results = fetch_jiosaavn_playlist_tracks('1134548194', 35) # India Superhits Top 50
+    else:
+        # Spotify Today's Top Hits / Top 50 Global & US
+        sp_cache_key = f"sp_top_{country}"
+        if sp_cache_key in _official_chart_cache and now - _official_chart_cache[sp_cache_key]['time'] < 7200:
+            results = _official_chart_cache[sp_cache_key]['tracks']
+        else:
+            try:
+                sp_data = import_spotify_playlist('37i9dQZF1DXcBWIGoYBM5M') # Today's Top Hits
+                raw_sp_tracks = sp_data.get('tracks', [])
+                for t in raw_sp_tracks[:8]:
+                    q = f"{t.get('title')} {t.get('artist')}"
+                    s_url = f"https://www.jiosaavn.com/api.php?__call=search.getResults&_format=json&_marker=0&cc=in&p=1&n=2&q={urllib.parse.quote(q)}"
+                    try:
+                        sr = requests.get(s_url, headers={'User-Agent': 'Mozilla/5.0'}, timeout=4).json()
+                        items = sr.get('results', [])
+                        if items:
+                            it = items[0]
+                            enc = it.get('encrypted_media_url')
+                            media_url = decrypt_saavn_url(enc) if enc else it.get('media_preview_url')
+                            img = (it.get('image') or '').replace('150x150.jpg', '500x500.jpg').replace('http://', 'https://')
+                            results.append({
+                                'id': str(it.get('id')),
+                                'title': clean_saavn_text(it.get('song') or it.get('title')),
+                                'artist': clean_saavn_text(it.get('singers') or it.get('primary_artists') or item.get('music')),
+                                'album': clean_saavn_text(it.get('album')),
+                                'year': it.get('year', ''),
+                                'duration': int(it.get('duration') or 0),
+                                'cover_url': img or t.get('cover_url'),
+                                'audio_url': media_url,
+                                'has_video': False,
+                                'is_online': True
+                            })
+                    except Exception:
+                        pass
+                if results:
+                    _official_chart_cache[sp_cache_key] = {'time': now, 'tracks': results}
+            except Exception as e:
+                print(f"Error loading Spotify global chart: {e}")
+                results = fetch_jiosaavn_playlist_tracks('1134543272', 35)
+
+    if results:
+        _country_music_cache[cache_key] = {'timestamp': now, 'data': results}
+        return jsonify({'success': True, 'results': results})
+
+    return jsonify({'success': False, 'results': []})
 
 def import_spotify_playlist(url_or_id):
     if not url_or_id:
@@ -2917,6 +2985,129 @@ def resolve_music_track():
         return jsonify({'success': False, 'error': 'No match found'})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
+
+_curated_cache = {}
+
+@app.route('/api/music/curated', methods=['GET'])
+def get_curated_playlist():
+    global _curated_cache
+    pid = request.args.get('id', '').strip()
+    if not pid:
+        return jsonify({'success': False, 'error': 'id parameter required'}), 400
+        
+    now = time.time()
+    if pid in _curated_cache and now - _curated_cache[pid]['time'] < 7200:
+        return jsonify({'success': True, 'playlist': _curated_cache[pid]['data']})
+
+    try:
+        # Check if it is a JioSaavn playlist ID (pure numeric)
+        if pid.isdigit():
+            tracks = fetch_jiosaavn_playlist_tracks(pid, 50)
+            url = f"https://www.jiosaavn.com/api.php?__call=playlist.getDetails&_format=json&_marker=0&cc=in&listid={pid}"
+            r = requests.get(url, headers={'User-Agent': 'Mozilla/5.0'}, timeout=8)
+            d = r.json()
+            title = clean_saavn_text(d.get('title') or d.get('listname') or 'Curated Playlist')
+            cover = (d.get('image') or '').replace('150x150.jpg', '500x500.jpg')
+            playlist_data = {
+                'id': pid,
+                'name': title,
+                'cover_url': cover,
+                'tracks': tracks
+            }
+            _curated_cache[pid] = {'time': now, 'data': playlist_data}
+            return jsonify({'success': True, 'playlist': playlist_data})
+
+        # Else treat as Spotify playlist ID
+        sp = import_spotify_playlist(pid)
+        raw_tracks = sp.get('tracks', [])
+        resolved_tracks = []
+        for t in raw_tracks[:30]:
+            q = f"{t.get('title')} {t.get('artist')}"
+            s_url = f"https://www.jiosaavn.com/api.php?__call=search.getResults&_format=json&_marker=0&cc=in&p=1&n=2&q={urllib.parse.quote(q)}"
+            try:
+                sr = requests.get(s_url, headers={'User-Agent': 'Mozilla/5.0'}, timeout=4).json()
+                items = sr.get('results', [])
+                if items:
+                    it = items[0]
+                    enc = it.get('encrypted_media_url')
+                    media_url = decrypt_saavn_url(enc) if enc else it.get('media_preview_url')
+                    img = (it.get('image') or '').replace('150x150.jpg', '500x500.jpg').replace('http://', 'https://')
+                    resolved_tracks.append({
+                        'id': str(it.get('id')),
+                        'title': clean_saavn_text(it.get('song') or it.get('title')),
+                        'artist': clean_saavn_text(it.get('singers') or it.get('primary_artists') or it.get('music')),
+                        'album': clean_saavn_text(it.get('album')),
+                        'year': it.get('year', ''),
+                        'duration': int(it.get('duration') or 0),
+                        'cover_url': img or t.get('cover_url'),
+                        'audio_url': media_url,
+                        'has_video': False,
+                        'is_online': True
+                    })
+                else:
+                    resolved_tracks.append(t)
+            except Exception:
+                resolved_tracks.append(t)
+                
+        playlist_data = {
+            'id': pid,
+            'name': sp.get('name', 'Curated Playlist'),
+            'cover_url': resolved_tracks[0].get('cover_url', '') if resolved_tracks else '',
+            'tracks': resolved_tracks
+        }
+        _curated_cache[pid] = {'time': now, 'data': playlist_data}
+        return jsonify({'success': True, 'playlist': playlist_data})
+    except Exception as e:
+        print(f"Error fetching curated playlist {pid}: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/music/recommendations', methods=['GET'])
+def get_track_recommendations():
+    artist = request.args.get('artist', '').strip()
+    title = request.args.get('title', '').strip()
+    if not artist and not title:
+        tracks = fetch_jiosaavn_playlist_tracks('107605145', 15)
+        return jsonify({'success': True, 'results': tracks})
+
+    main_artist = artist.split(',')[0].split('&')[0].strip() or artist
+    url = f"https://www.jiosaavn.com/api.php?__call=search.getResults&_format=json&_marker=0&cc=in&p=1&n=12&q={urllib.parse.quote(main_artist)}"
+    try:
+        r = requests.get(url, headers={'User-Agent': 'Mozilla/5.0'}, timeout=5)
+        data = r.json()
+        results = []
+        seen = {title.lower().strip()}
+        for item in data.get('results', []):
+            stitle = clean_saavn_text(item.get('song') or item.get('title'))
+            if stitle.lower().strip() in seen:
+                continue
+            seen.add(stitle.lower().strip())
+            enc = item.get('encrypted_media_url')
+            media_url = decrypt_saavn_url(enc) if enc else item.get('media_preview_url')
+            img = (item.get('image') or '').replace('150x150.jpg', '500x500.jpg').replace('http://', 'https://')
+            results.append({
+                'id': str(item.get('id')),
+                'title': stitle,
+                'artist': clean_saavn_text(item.get('singers') or item.get('primary_artists') or item.get('music')),
+                'album': clean_saavn_text(item.get('album')),
+                'year': item.get('year', ''),
+                'duration': int(item.get('duration') or 0),
+                'cover_url': img,
+                'audio_url': media_url,
+                'has_video': False,
+                'is_online': True
+            })
+        if len(results) < 8:
+            discovery = fetch_jiosaavn_playlist_tracks('107605145', 10)
+            for t in discovery:
+                if t['title'].lower().strip() not in seen:
+                    seen.add(t['title'].lower().strip())
+                    results.append(t)
+                    if len(results) >= 12:
+                        break
+        return jsonify({'success': True, 'results': results})
+    except Exception as e:
+        print(f"Error in recommendations: {e}")
+        return jsonify({'success': False, 'error': str(e), 'results': []})
 
 @app.route('/api/music/library', methods=['GET', 'POST'])
 def handle_user_music_library():

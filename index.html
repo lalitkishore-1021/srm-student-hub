@@ -3914,6 +3914,17 @@
             box-shadow: 0 8px 24px rgba(0, 0, 0, 0.55);
             border: 1px solid rgba(255, 255, 255, 0.08);
         }
+        .charts-card-cover {
+            width: 148px;
+            height: 148px;
+            border-radius: 16px;
+            position: relative;
+            overflow: hidden;
+            margin-bottom: 9px;
+            background: #18181f;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.55);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
         .music-playlist-dive-img {
             width: 100%;
             height: 100%;
@@ -12230,6 +12241,28 @@ function checkAndShowHolidayBanner(viewId) {
                 `).join('');
             }
 
+            // Spotify-Style Recommendation Engine:
+            // Extract top artists & recent track titles from user's actual history and favorites
+            const recentTracks = (window.userMusicLibrary && window.userMusicLibrary.recently_played) ? window.userMusicLibrary.recently_played : [];
+            const favTracks = (window.userMusicLibrary && window.userMusicLibrary.favorite) ? window.userMusicLibrary.favorite : [];
+            const allUserTracks = [...favTracks, ...recentTracks];
+            const artistCounts = {};
+            allUserTracks.forEach(t => {
+                if (t && t.artist) {
+                    const parts = t.artist.split(/[,/&]/);
+                    parts.forEach(p => {
+                        const clean = p.trim();
+                        if (clean.length > 2 && !clean.toLowerCase().includes('unknown') && !clean.toLowerCase().includes('various') && !clean.toLowerCase().includes('spotify')) {
+                            artistCounts[clean] = (artistCounts[clean] || 0) + 1;
+                        }
+                    });
+                }
+            });
+            const seedArtists = Object.keys(artistCounts)
+                .sort((a, b) => artistCounts[b] - artistCounts[a])
+                .slice(0, 4);
+            const excludeTitles = recentTracks.slice(0, 15).map(t => t.title).filter(Boolean);
+
             try {
                 const topRes = await fetch(`${BACKEND_URL}/api/music/trending?country=${currentMusicCountry}&category=top&n=8&t=${Date.now()}`);
                 const topData = await topRes.json();
@@ -12242,7 +12275,9 @@ function checkAndShowHolidayBanner(viewId) {
             }
 
             try {
-                const pickRes = await fetch(`${BACKEND_URL}/api/music/trending?country=${currentMusicCountry}&category=picked&n=8&t=${Date.now()}`);
+                const seedParam = encodeURIComponent(seedArtists.join(','));
+                const excludeParam = encodeURIComponent(excludeTitles.join(','));
+                const pickRes = await fetch(`${BACKEND_URL}/api/music/trending?country=${currentMusicCountry}&category=picked&seed_artists=${seedParam}&exclude=${excludeParam}&n=8&t=${Date.now()}`);
                 const pickData = await pickRes.json();
                 if (pickData.success && Array.isArray(pickData.results) && pickData.results.length > 0) {
                     homePickedTracks = pickData.results;
@@ -12312,6 +12347,7 @@ function checkAndShowHolidayBanner(viewId) {
             {
                 title: "Hits of 2026 (So Far)",
                 sub: "Top Chartbusters",
+                curated_id: "1302009764",
                 query: "top hits 2026",
                 image: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=500&auto=format&fit=crop&q=80",
                 tag: "HITS OF 2026"
@@ -12319,6 +12355,7 @@ function checkAndShowHolidayBanner(viewId) {
             {
                 title: "Uncut Bollywood",
                 sub: "Arijit Singh",
+                curated_id: "1134543272",
                 query: "arijit singh bollywood hits",
                 image: "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=500&auto=format&fit=crop&q=80",
                 tag: "BOLLYWOOD"
@@ -12326,6 +12363,7 @@ function checkAndShowHolidayBanner(viewId) {
             {
                 title: "Bollywood Hitlist",
                 sub: "Shashwat Sachdev",
+                curated_id: "1080335349",
                 query: "bollywood hitlist new songs",
                 image: "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=500&auto=format&fit=crop&q=80",
                 tag: "HITLIST"
@@ -12333,6 +12371,7 @@ function checkAndShowHolidayBanner(viewId) {
             {
                 title: "Punjabi 101",
                 sub: "Karan Aujla, Diljit Dosanjh",
+                curated_id: "37i9dQZF1DX14fiWYoe7Oh",
                 query: "punjabi top hits karan aujla diljit dosanjh",
                 image: "https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=500&auto=format&fit=crop&q=80",
                 tag: "PUNJABI"
@@ -12340,6 +12379,7 @@ function checkAndShowHolidayBanner(viewId) {
             {
                 title: "South Sensations",
                 sub: "Anirudh, Thaman S",
+                curated_id: "37i9dQZF1DX4WYpdgoIcn6",
                 query: "top tamil telugu songs anirudh thaman",
                 image: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=500&auto=format&fit=crop&q=80",
                 tag: "SOUTH HITS"
@@ -12347,6 +12387,7 @@ function checkAndShowHolidayBanner(viewId) {
             {
                 title: "Today's Top Hits",
                 sub: "Global Superstars",
+                curated_id: "37i9dQZF1DXcBWIGoYBM5M",
                 query: "billboard hot 100",
                 image: "https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=500&auto=format&fit=crop&q=80",
                 tag: "TOP HITS"
@@ -12358,7 +12399,7 @@ function checkAndShowHolidayBanner(viewId) {
             let html = '';
             DIVE_PLAYLISTS.forEach((d) => {
                 html += `
-                    <div class="music-playlist-dive-card" onclick="playDivePlaylist('${d.query.replace(/'/g, "\\'")}', '${d.title.replace(/'/g, "\\'")}')">
+                    <div class="music-playlist-dive-card" onclick="playDivePlaylist('${(d.curated_id || d.query).replace(/'/g, "\\'")}', '${d.title.replace(/'/g, "\\'")}', '${d.curated_id || ''}')">
                         <div class="music-playlist-dive-cover">
                             <img class="music-playlist-dive-img" src="${d.image}" alt="${escapeHtml(d.title)}" loading="lazy" onerror="this.src='images/app-icon.svg'">
                             <div class="music-playlist-dive-overlay">
@@ -12376,10 +12417,20 @@ function checkAndShowHolidayBanner(viewId) {
             container.innerHTML = html;
         }
 
-        async function playDivePlaylist(query, title) {
+        async function playDivePlaylist(queryOrId, title, curatedId = '') {
             showNotification(`Loading "${title}"...`);
             try {
-                const res = await fetch(`${BACKEND_URL}/api/music/search?q=${encodeURIComponent(query)}&n=25`);
+                if (curatedId) {
+                    const curRes = await fetch(`${BACKEND_URL}/api/music/curated?id=${encodeURIComponent(curatedId)}`);
+                    const curData = await curRes.json();
+                    if (curData.success && curData.playlist && Array.isArray(curData.playlist.tracks) && curData.playlist.tracks.length > 0) {
+                        currentPlaylist = curData.playlist.tracks;
+                        playMusicTrack(0, true);
+                        showNotification(`Playing "${title}"`);
+                        return;
+                    }
+                }
+                const res = await fetch(`${BACKEND_URL}/api/music/search?q=${encodeURIComponent(queryOrId)}&n=25`);
                 const data = await res.json();
                 if (data.success && data.results && data.results.length > 0) {
                     currentPlaylist = data.results;
@@ -12540,12 +12591,15 @@ function checkAndShowHolidayBanner(viewId) {
 
             if (justReleasedList && (!chartsTracksCache.length || force)) {
                 try {
-                    const query = currentChartsSubTab === 'spotify' ? 'spotify global viral 50' : (currentChartsSubTab === 'podcasts' ? 'popular podcast talk show' : `top music releases ${currentMusicCountryName}`);
-                    const res = await fetch(`${BACKEND_URL}/api/music/search?q=${encodeURIComponent(query)}&n=10`);
+                    let fetchUrl = `${BACKEND_URL}/api/music/trending?country=${currentMusicCountry}&category=top&n=15&t=${Date.now()}`;
+                    if (currentChartsSubTab === 'spotify') {
+                        fetchUrl = `${BACKEND_URL}/api/music/curated?id=37i9dQZF1DXcBWIGoYBM5M`;
+                    }
+                    const res = await fetch(fetchUrl);
                     const data = await res.json();
-                    if (data.success && Array.isArray(data.results)) {
-                        chartsTracksCache = data.results;
-                        renderHomeSongList(chartsTracksCache.slice(0, 6), justReleasedList, 'charts');
+                    if (data.success && (data.results || (data.playlist && data.playlist.tracks))) {
+                        chartsTracksCache = data.results || data.playlist.tracks;
+                        renderHomeSongList(chartsTracksCache.slice(0, 8), justReleasedList, 'charts');
                     }
                 } catch(e) {}
             }
@@ -15373,6 +15427,26 @@ function checkAndShowHolidayBanner(viewId) {
             } else {
                 let nextIdx = currentTrackIndex + 1;
                 if (nextIdx >= currentPlaylist.length) {
+                    // Spotify Autoplay: Fetch continuous recommended tracks when current playlist finishes
+                    const currentTrack = currentPlaylist[currentTrackIndex];
+                    if (currentTrack && (currentTrack.artist || currentTrack.title)) {
+                        fetch(`${BACKEND_URL}/api/music/recommendations?artist=${encodeURIComponent(currentTrack.artist || '')}&title=${encodeURIComponent(currentTrack.title || '')}`)
+                            .then(r => r.json())
+                            .then(data => {
+                                if (data.success && Array.isArray(data.results) && data.results.length > 0) {
+                                    const existingIds = new Set(currentPlaylist.map(t => t.id));
+                                    const newTracks = data.results.filter(t => !existingIds.has(t.id));
+                                    if (newTracks.length > 0) {
+                                        currentPlaylist = currentPlaylist.concat(newTracks);
+                                        playMusicTrack(nextIdx, userInitiated);
+                                        return;
+                                    }
+                                }
+                                playMusicTrack(0, userInitiated);
+                            })
+                            .catch(() => playMusicTrack(0, userInitiated));
+                        return;
+                    }
                     nextIdx = 0;
                 }
                 playMusicTrack(nextIdx, userInitiated);
