@@ -648,16 +648,16 @@ def get_portal_data_with_fallback(net_id, portal_pwd, acad_pwd=None, courses=Non
     # 1. Primary: Direct sp.srmist.edu.in scraper for Student Portal passwords
     try:
         import srm_portal_scraper
-        print(f"[{clean_id}] Initiating live Student Portal sync via sp.srmist.edu.in...")
+        print(f"[{clean_id}] Initiating live Student Portal sync via sp.srmist.edu.in...", flush=True)
         sp_res = srm_portal_scraper.fetch_portal_data(clean_id, pwd_to_use, courses_list=courses)
         if sp_res and sp_res.get('success'):
-            print(f"[{clean_id}] [PORTAL] Direct Student Portal sync succeeded!")
+            print(f"[{clean_id}] [PORTAL] Direct Student Portal sync succeeded!", flush=True)
             p_res = sp_res
         elif sp_res:
-            print(f"[{clean_id}] Direct portal sync attempt returned: {sp_res.get('error')}")
+            print(f"[{clean_id}] Direct portal sync attempt returned: {sp_res.get('error')}", flush=True)
             p_res = sp_res
     except Exception as se:
-        print(f"[{clean_id}] Direct portal scrape exception: {se}")
+        print(f"[{clean_id}] Direct portal scrape exception: {se}", flush=True)
         p_res = {
             'success': False,
             'error': 'Could not connect to SRM Student Portal. Please try again.',
@@ -3870,7 +3870,7 @@ def like_spotted(post_id):
 
 @app.route('/ping')
 def ping():
-    return jsonify({"status": "ok", "version": "v103-portal-auth-fix", "commit": "v103"})
+    return jsonify({"status": "ok", "version": "v104-portal-pool-sync", "commit": "v104"})
 
 
 @app.route('/api/admin/db_size', methods=['GET'])

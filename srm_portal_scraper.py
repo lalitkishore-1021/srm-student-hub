@@ -181,6 +181,9 @@ def _telemetry_payload(start_ms: int, now_ms: int) -> Dict[str, Any]:
 class SRMPortalSession:
     def __init__(self):
         self.session = requests.Session()
+        adapter = requests.adapters.HTTPAdapter(pool_connections=10, pool_maxsize=10, max_retries=1)
+        self.session.mount("https://", adapter)
+        self.session.mount("http://", adapter)
         self.session.headers.update(HEADERS)
         proxy = os.environ.get("PORTAL_PROXY") or os.environ.get("HTTPS_PROXY") or os.environ.get("HTTP_PROXY")
         if proxy:
@@ -200,10 +203,12 @@ class SRMPortalSession:
 
     def load_captcha(self) -> bool:
         try:
-            r = self.session.get(LOGIN_URL, timeout=10.0)
+            r = self.session.get(LOGIN_URL, timeout=8.0)
         except Exception:
             return False
         text = r.text
+        self.captcha_page = text
+        self.last_body = text
         m = re.search(r"window\.SECURE_CONFIG\s*=\s*\{[^}]*?nonce\s*:\s*'([^']+)'", text)
         if not m:
             m = re.search(r"window\.SECURE_CONFIG\.nonce\s*=\s*'([^']+)'", text)
@@ -995,11 +1000,9 @@ def fetch_portal_data(username: str, password: str, courses_list: Optional[List[
     max_submits = 4
     login_attempts_made = 0
     portal = SRMPortalSession()
-    if not portal.load_captcha() or not portal.captcha_bytes:
-        time.sleep(0.4)
-        portal.load_captcha()
+    portal.load_captcha()
 
-    while login_attempts_made < max_submits and (time.time() - start_ts < 26.0):
+    while login_attempts_made < max_submits and (time.time() - start_ts < 35.0):
         try:
             if not portal.captcha_bytes:
                 reloaded = portal.reload_captcha()
@@ -1008,40 +1011,40 @@ def fetch_portal_data(username: str, password: str, courses_list: Optional[List[
                     portal = SRMPortalSession()
                     portal.load_captcha()
                 if not portal.captcha_bytes:
-                    time.sleep(0.4)
+                    time.sleep(0.3)
                     continue
 
             solved = solve_captcha_bytes(portal.captcha_bytes)
-            if not solved or len(solved) != 6:
+            if not solved:
                 portal.captcha_bytes = None
                 time.sleep(0.2)
                 continue
 
             login_attempts_made += 1
-            print(f"[{netid}] [PORTAL-OCR] Attempt {login_attempts_made}/{max_submits} predicted captcha: '{solved}'")
+            print(f"[{netid}] [PORTAL-OCR] Attempt {login_attempts_made}/{max_submits} predicted captcha: '{solved}'", flush=True)
             res = portal.login_attempt(netid, password, solved)
             if res.get("ok"):
                 att_html = res.get("att_html")
                 active_portal = portal
-                print(f"[{netid}] [PORTAL] Login succeeded on attempt {login_attempts_made} in {time.time() - start_ts:.2f}s!")
+                print(f"[{netid}] [PORTAL] Login succeeded on attempt {login_attempts_made} in {time.time() - start_ts:.2f}s!", flush=True)
                 break
 
             reason = res.get("reason", "")
             msg = res.get("message", "Invalid Student Portal credentials")
             last_reason = reason
             last_msg = msg
-            print(f"[{netid}] [PORTAL] Attempt {login_attempts_made} failed ({reason}): {msg[:80]}")
+            print(f"[{netid}] [PORTAL] Attempt {login_attempts_made} failed ({reason}): {msg[:80]}", flush=True)
             if reason in ("account_locked", "invalid_credentials"):
-                print(f"[{netid}] [PORTAL] Auth stopped ({reason}): {msg}")
+                print(f"[{netid}] [PORTAL] Auth stopped ({reason}): {msg}", flush=True)
                 return {"success": False, "error": msg, "reason": reason}
 
             # Prepare for next attempt: reset captcha_bytes to trigger reload_captcha on same session
             portal.captcha_bytes = None
-            time.sleep(0.4)
+            time.sleep(0.3)
         except Exception as e:
-            print(f"[{netid}] [PORTAL] Attempt error: {e}")
+            print(f"[{netid}] [PORTAL] Attempt error: {e}", flush=True)
             portal.captcha_bytes = None
-            time.sleep(0.4)
+            time.sleep(0.3)
             continue
 
     if not active_portal:
