@@ -209,9 +209,11 @@ class SRMPortalSession:
             if not m:
                 m = re.search(r"window\.SECURE_CONFIG\.nonce\s*=\s*'([^']+)'", text)
             self.captcha_nonce = m.group(1) if m else ""
-            if not m:
-                m = re.search(r'id="fpNonce"\s*value="([^"]+)"', text)
-            self.nonce = m.group(1) if m else ""
+            if not self.captcha_nonce:
+                m_fp_val = re.search(r'id="fpNonce"\s*value="([^"]+)"', text)
+                self.nonce = m_fp_val.group(1) if m_fp_val else ""
+            else:
+                self.nonce = self.captcha_nonce
 
             m_fp = re.search(r'id="fpNonce"\s*value="([^"]+)"', text)
             self.fp_nonce = m_fp.group(1) if m_fp else ""
@@ -259,17 +261,26 @@ class SRMPortalSession:
                 is_f5 = "bobcmn" in text
                 print(f"[PORTAL] load_captcha: SCaptchaServlet not found (status={r.status_code}, len={len(text)}, f5_waf={is_f5})", flush=True)
                 return False
-            seg = m_cap.group(0)
-            captcha_url = BASE_URL + "/" + seg if not seg.startswith("/") else "https://sp.srmist.edu.in" + seg
-            proof = base64.b64encode(f"{self.nonce}:sp.srmist.edu.in".encode()).decode()
+            import html
+            seg = html.unescape(m_cap.group(0))
+            if not seg.startswith("/"):
+                seg = "/" + seg
+            if not seg.startswith("/srmiststudentportal"):
+                seg = "/srmiststudentportal" + seg
+            captcha_url = "https://sp.srmist.edu.in" + seg
+            active_nonce = self.captcha_nonce or self.nonce or ""
+            proof = base64.b64encode(f"{active_nonce}:sp.srmist.edu.in".encode()).decode()
             cr = self.session.get(
                 captcha_url,
                 headers={
                     "X-Domain-Proof": proof,
-                    "Accept": "image/png, image/jpeg, image/svg+xml, image/*",
+                    "Accept": "image/png, image/jpeg, image/svg+xml, image/*;q=0.9",
                     "Referer": LOGIN_URL,
+                    "Sec-Fetch-Site": "same-origin",
+                    "Sec-Fetch-Mode": "cors",
+                    "Sec-Fetch-Dest": "empty",
                 },
-                timeout=10,
+                timeout=12,
             )
             if cr.status_code == 200 and cr.content:
                 self.captcha_bytes = cr.content

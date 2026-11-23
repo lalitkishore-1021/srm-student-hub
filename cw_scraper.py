@@ -315,6 +315,7 @@ def scrape_campusweb(netid: str, portal_pwd: str = "", acad_pwd: str = None):
     return {
         'success': True,
         'data': att_data,
+        'attendance': att_data,
         'marks': marks_data,
         'profile': {},
         'source': 'campusweb_api',
