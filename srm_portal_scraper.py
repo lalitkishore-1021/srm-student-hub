@@ -359,6 +359,9 @@ class SRMPortalSession:
         self.last_status = resp.status_code
         self.last_url = str(resp.url)
         self.last_body = body
+        soup_chk = BeautifulSoup(body, "html.parser")
+        alert_chk = soup_chk.find(class_=lambda c: c and ("alert" in c or "error" in c))
+        self.last_alert = alert_chk.get_text(separator=" ", strip=True) if alert_chk else ""
         url_lower = str(resp.url).lower()
 
         try:
@@ -807,6 +810,7 @@ def fetch_portal_data(username: str, password: str, courses_list: Optional[List[
     att_html = None
     active_portal = None
     max_attempts = 5
+    attempts_history = []
 
     last_fail_msg = "Could not authenticate with SRM Student Portal"
     last_reason = "auth_failed"
@@ -815,22 +819,36 @@ def fetch_portal_data(username: str, password: str, courses_list: Optional[List[
         if time.time() - start_ts > 80.0:
             break
         portal = SRMPortalSession()
+        att_rec = {"attempt": attempt}
         try:
             if not portal.load_captcha() or not portal.captcha_bytes:
                 print(f"[{netid}] [PORTAL] Attempt {attempt} load_captcha failed", flush=True)
+                att_rec["load_captcha"] = False
+                att_rec["last_body"] = (portal.last_body or "")[:300]
+                attempts_history.append(att_rec)
                 time.sleep(1.0)
                 continue
+            att_rec["load_captcha"] = True
             solved = solve_captcha_bytes(portal.captcha_bytes)
+            att_rec["solved"] = solved
             if not solved or len(solved) not in (5, 6):
                 if portal.load_captcha() and portal.captcha_bytes:
                     solved = solve_captcha_bytes(portal.captcha_bytes)
+                    att_rec["solved_retry"] = solved
             if not solved or len(solved) not in (5, 6):
                 print(f"[{netid}] [PORTAL] Attempt {attempt} solved captcha invalid ('{solved}')", flush=True)
+                att_rec["valid_captcha"] = False
+                attempts_history.append(att_rec)
                 time.sleep(1.0)
                 continue
 
             print(f"[{netid}] [PORTAL-OCR] Attempt {attempt}/{max_attempts} predicted captcha: '{solved}'", flush=True)
             res = portal.login_attempt(netid, password, solved, client_telemetry=client_telemetry)
+            att_rec["res"] = res
+            att_rec["status"] = portal.last_status
+            att_rec["alert"] = getattr(portal, "last_alert", "")
+            att_rec["url"] = portal.last_url
+            attempts_history.append(att_rec)
             if res.get("ok"):
                 att_html = res.get("att_html")
                 active_portal = portal
@@ -843,14 +861,16 @@ def fetch_portal_data(username: str, password: str, courses_list: Optional[List[
             print(f"[{netid}] [PORTAL] Attempt {attempt} failed ({reason}): {msg}", flush=True)
             if reason in ("account_locked", "invalid_credentials_fatal"):
                 print(f"[{netid}] [PORTAL] Auth stopped ({reason}): {msg}", flush=True)
-                return {"success": False, "error": msg, "reason": "invalid_credentials"}
+                return {"success": False, "error": msg, "reason": "invalid_credentials", "attempts": attempts_history}
             time.sleep(random.uniform(1.0, 1.8))
         except Exception as e:
             print(f"[{netid}] [PORTAL] Attempt {attempt} error: {e}", flush=True)
+            att_rec["error"] = str(e)
+            attempts_history.append(att_rec)
             time.sleep(1.0)
 
     if not active_portal or not att_html:
-        return {"success": False, "error": last_fail_msg, "reason": last_reason}
+        return {"success": False, "error": last_fail_msg, "reason": last_reason, "attempts": attempts_history}
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=3) as ex:
         f_marks = ex.submit(active_portal.get_marks_html)

@@ -686,9 +686,12 @@ def get_portal_data_with_fallback(net_id, portal_pwd, *args, **kwargs):
         }
 
     err = (p_res or {}).get('error', 'SRM Portal authentication failed.')
-    if any(w in err.lower() for w in ['invalid', 'password', 'credential', 'user id', 'could not authenticate']):
+    reason = (p_res or {}).get('reason', '')
+    if reason in ('invalid_credentials', 'invalid_credentials_fatal') or any(w in err.lower() for w in ['wrong password', 'user id or password entered is invalid']):
         err = 'Invalid SRM Student Portal Password. Student Portal (sp.srmist.edu.in) uses a separate password from Academia (default is your Date of Birth in DDMMYYYY format). You can reset it at https://ssp.srmist.edu.in/resetpassword/'
-    return {'success': False, 'error': err, 'reason': (p_res or {}).get('reason')}
+    elif not err or err == 'Could not authenticate with SRM Student Portal':
+        err = 'SRM Portal is busy or verifying security check. Please try clicking Try Again in a few seconds.'
+    return {'success': False, 'error': err, 'reason': reason, 'attempts': (p_res or {}).get('attempts')}
 
 def scrape_academia_worker(reg_no, pwd, batch, out_queue):
     import academia_fast_client
@@ -3825,7 +3828,7 @@ def like_spotted(post_id):
 
 @app.route('/ping')
 def ping():
-    return jsonify({"status": "ok", "version": "v118-f5-bypass-direct", "commit": "v118"})
+    return jsonify({"status": "ok", "version": "v119-telemetry-diag", "commit": "v119"})
 
 
 @app.route('/api/admin/portal_diag', methods=['GET', 'POST'])
@@ -3896,6 +3899,7 @@ def admin_portal_diag():
             diag["direct_fetch_marks_len"] = len(direct_data.get("marks", []))
             diag["direct_fetch_error"] = direct_data.get("error")
             diag["direct_fetch_reason"] = direct_data.get("reason")
+            diag["direct_fetch_attempts"] = direct_data.get("attempts", [])
         except Exception as fe:
             diag["direct_fetch_exception"] = str(fe)
 

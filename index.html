@@ -8268,7 +8268,7 @@
                     hardwareConcurrency: navigator.hardwareConcurrency || 8,
                     deviceMemory: navigator.deviceMemory || 8,
                     touchSupport: (('ontouchstart' in window) || (navigator.maxTouchPoints > 0)),
-                    webdriver: !navigator.webdriver,
+                    webdriver: false,
                     mouseClicks: Math.floor(Math.random() * 3) + 2,
                     mouseMovements: Math.floor(Math.random() * 15) + 15,
                     keystrokeCount: Math.floor(Math.random() * 10) + 18,
