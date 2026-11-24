@@ -197,7 +197,15 @@ def _telemetry_payload() -> Dict[str, Any]:
     }
 
 
-INDIAN_FALLBACK_IPS = ["106.51.72.18", "49.37.12.34", "103.4.221.143", "14.139.183.18"]
+INDIAN_FALLBACK_IPS = [
+    "106.51.72.18",    # Jio Bangalore/Chennai
+    "49.37.12.34",     # Airtel Broadband Chennai
+    "103.4.221.143",   # SRM Campus Subnet
+    "14.139.183.18",   # ERNET SRM Chennai
+    "117.193.45.67",   # BSNL Chennai
+    "157.49.12.89",    # Jio Mobile Tamil Nadu
+]
+INDIAN_FIRST_OCTETS = {"14", "27", "49", "103", "106", "117", "122", "125", "139", "157", "182", "183", "202", "203", "223"}
 
 
 class SRMPortalSession:
@@ -205,8 +213,9 @@ class SRMPortalSession:
         self.session = requests.Session()
         self.session.headers.update(HEADERS)
 
-        eff_ip = client_ip
-        if not eff_ip or any(eff_ip.startswith(p) for p in ["127.", "10.", "172.", "192.168.", "::1", "localhost"]):
+        eff_ip = (client_ip or "").strip()
+        first_oct = eff_ip.split('.')[0] if '.' in eff_ip else ''
+        if not eff_ip or first_oct not in INDIAN_FIRST_OCTETS:
             eff_ip = random.choice(INDIAN_FALLBACK_IPS)
         self.client_ip = eff_ip
         self.session.headers.update({
