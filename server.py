@@ -617,10 +617,11 @@ def get_portal_data_with_fallback(net_id, portal_pwd, *args, **kwargs):
     # Direct sp.srmist.edu.in scraper with CRNN OCR Captcha Solver
     p_res = None
     client_tel = kwargs.get('client_telemetry')
+    client_ip = kwargs.get('client_ip')
     try:
         import srm_portal_scraper
         print(f"[{clean_id}] Initiating live Student Portal sync via sp.srmist.edu.in (CRNN Captcha Solver)...")
-        p_res = srm_portal_scraper.fetch_portal_data(clean_id, portal_pwd, client_telemetry=client_tel)
+        p_res = srm_portal_scraper.fetch_portal_data(clean_id, portal_pwd, client_telemetry=client_tel, client_ip=client_ip)
         if p_res and p_res.get('success'):
             print(f"[{clean_id}] [PORTAL] Direct Student Portal sync succeeded!")
     except Exception as se:
@@ -964,7 +965,7 @@ def portal_sync():
         return jsonify({'success': False, 'error': 'Please enter your SRM Student Portal Password.'}), 400
 
     try:
-        p_res = get_portal_data_with_fallback(net_id, portal_pwd, client_telemetry=data.get('telemetry'))
+        p_res = get_portal_data_with_fallback(net_id, portal_pwd, client_telemetry=data.get('telemetry'), client_ip=client_ip)
         if not p_res or not p_res.get('success'):
             err = (p_res or {}).get('error', 'SRM Portal authentication failed.')
             reason = (p_res or {}).get('reason', '')
@@ -3828,7 +3829,7 @@ def like_spotted(post_id):
 
 @app.route('/ping')
 def ping():
-    return jsonify({"status": "ok", "version": "v119-telemetry-diag", "commit": "v119"})
+    return jsonify({"status": "ok", "version": "v120-geo-ip-fix", "commit": "v120"})
 
 
 @app.route('/api/admin/portal_diag', methods=['GET', 'POST'])
@@ -3842,7 +3843,12 @@ def admin_portal_diag():
     import srm_portal_scraper
     import socket
 
+    req_ip = request.headers.get('X-Forwarded-For', request.remote_addr)
+    if req_ip:
+        req_ip = req_ip.split(',')[0].strip()
+
     diag = {}
+    diag["client_ip"] = req_ip
     # 1. DNS check
     try:
         ip = socket.gethostbyname("sp.srmist.edu.in")
@@ -3864,7 +3870,7 @@ def admin_portal_diag():
     sess = None
     try:
         t0 = time.time()
-        sess = srm_portal_scraper.SRMPortalSession()
+        sess = srm_portal_scraper.SRMPortalSession(client_ip=req_ip)
         loaded = sess.load_captcha()
         diag["load_captcha_ok"] = loaded
         diag["load_captcha_time"] = round(time.time() - t0, 3)
@@ -3892,7 +3898,7 @@ def admin_portal_diag():
     if test_netid and test_pwd:
         try:
             t_fetch0 = time.time()
-            direct_data = srm_portal_scraper.fetch_portal_data(test_netid, test_pwd)
+            direct_data = srm_portal_scraper.fetch_portal_data(test_netid, test_pwd, client_ip=req_ip)
             diag["direct_fetch_time"] = round(time.time() - t_fetch0, 3)
             diag["direct_fetch_success"] = direct_data.get("success")
             diag["direct_fetch_data_len"] = len(direct_data.get("data", []))

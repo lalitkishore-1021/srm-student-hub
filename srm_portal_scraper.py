@@ -197,10 +197,24 @@ def _telemetry_payload() -> Dict[str, Any]:
     }
 
 
+INDIAN_FALLBACK_IPS = ["106.51.72.18", "49.37.12.34", "103.4.221.143", "14.139.183.18"]
+
+
 class SRMPortalSession:
-    def __init__(self):
+    def __init__(self, client_ip: Optional[str] = None):
         self.session = requests.Session()
         self.session.headers.update(HEADERS)
+
+        eff_ip = client_ip
+        if not eff_ip or any(eff_ip.startswith(p) for p in ["127.", "10.", "172.", "192.168.", "::1", "localhost"]):
+            eff_ip = random.choice(INDIAN_FALLBACK_IPS)
+        self.client_ip = eff_ip
+        self.session.headers.update({
+            "X-Forwarded-For": eff_ip,
+            "Client-IP": eff_ip,
+            "X-Real-IP": eff_ip,
+        })
+
         proxy = os.environ.get("PORTAL_PROXY") or os.environ.get("HTTPS_PROXY") or os.environ.get("HTTP_PROXY")
         if proxy:
             self.session.proxies.update({"http": proxy, "https": proxy})
@@ -350,7 +364,10 @@ class SRMPortalSession:
             "Sec-Fetch-Mode": "navigate",
             "Sec-Fetch-Dest": "document",
             "Sec-Fetch-User": "?1",
-            "Upgrade-Insecure-Requests": "1"
+            "Upgrade-Insecure-Requests": "1",
+            "X-Forwarded-For": self.client_ip,
+            "Client-IP": self.client_ip,
+            "X-Real-IP": self.client_ip,
         }
         resp = self.session.post(LOGIN_SERVLET, data=fp_body, headers=headers, timeout=15)
         if extract_and_apply_f5_cookie(self.session, resp.text or ""):
@@ -789,7 +806,7 @@ def _parse_portal_marks(portal: SRMPortalSession, marks_html: Optional[str], cou
     return marks_list
 
 
-def fetch_portal_data(username: str, password: str, courses_list: Optional[List[Dict[str, Any]]] = None, client_telemetry: Optional[str] = None) -> Dict[str, Any]:
+def fetch_portal_data(username: str, password: str, courses_list: Optional[List[Dict[str, Any]]] = None, client_telemetry: Optional[str] = None, client_ip: Optional[str] = None) -> Dict[str, Any]:
     """
     Logs into sp.srmist.edu.in using Ratio-D's TinyOCR CAPTCHA solver and fetches
     Attendance, Component-wise Internal Marks, Timetable, Courses, and Profile.
@@ -818,7 +835,7 @@ def fetch_portal_data(username: str, password: str, courses_list: Optional[List[
     for attempt in range(1, max_attempts + 1):
         if time.time() - start_ts > 80.0:
             break
-        portal = SRMPortalSession()
+        portal = SRMPortalSession(client_ip=client_ip)
         att_rec = {"attempt": attempt}
         try:
             if not portal.load_captcha() or not portal.captcha_bytes:
